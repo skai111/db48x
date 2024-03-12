@@ -433,7 +433,7 @@ algebraic_p arithmetic::non_numeric<mul>(algebraic_r x, algebraic_r y)
             xe = xe * ye;
             return unit::simple(xv, xe);
         }
-        else
+        else if (!y->is_symbolic())
         {
             xv = xv * y;
             return unit::simple(xv, xe);
@@ -441,10 +441,13 @@ algebraic_p arithmetic::non_numeric<mul>(algebraic_r x, algebraic_r y)
     }
     else if (unit_p yu = y->as<unit>())
     {
-        algebraic_g yv = yu->value();
-        algebraic_g ye = yu->uexpr();
-        yv = x * yv;
-        return unit::simple(yv, ye);
+        if (!x->is_symbolic())
+        {
+            algebraic_g yv = yu->value();
+            algebraic_g ye = yu->uexpr();
+            yv = x * yv;
+            return unit::simple(yv, ye);
+        }
     }
 
     // Deal with basic auto-simplifications rules
@@ -578,7 +581,7 @@ algebraic_p arithmetic::non_numeric<struct div>(algebraic_r x, algebraic_r y)
             xe = xe / ye;
             return unit::simple(xv, xe);
         }
-        else
+        else if (!y->is_symbolic())
         {
             xv = xv / y;
             return unit::simple(xv, xe);
@@ -586,11 +589,14 @@ algebraic_p arithmetic::non_numeric<struct div>(algebraic_r x, algebraic_r y)
     }
     else if (unit_p yu = y->as<unit>())
     {
-        algebraic_g yv = yu->value();
-        algebraic_g ye = yu->uexpr();
-        yv = x / yv;
-        ye = inv::run(ye);
-        return unit::simple(yv, ye);
+        if (!x->is_symbolic())
+        {
+            algebraic_g yv = yu->value();
+            algebraic_g ye = yu->uexpr();
+            yv = x / yv;
+            ye = inv::run(ye);
+            return unit::simple(yv, ye);
+        }
     }
 
     // Check divide by zero
