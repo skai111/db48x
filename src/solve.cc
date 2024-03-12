@@ -32,6 +32,7 @@
 #include "algebraic.h"
 #include "arithmetic.h"
 #include "compare.h"
+#include "equations.h"
 #include "expression.h"
 #include "functions.h"
 #include "integer.h"
@@ -66,6 +67,13 @@ COMMAND_BODY(Root)
     // a proram or equation on level 2
     symbol_g name = variable->as_quoted<symbol>();
     id eqty = eqobj->type();
+    if (eqty == ID_equation)
+    {
+        eqobj = equation_p(+eqobj)->value();
+        if (!eqobj)
+            return ERROR;
+        eqty = eqobj->type();
+    }
     if (eqty != ID_program && eqty != ID_expression)
         name = nullptr;
     if (!name)
