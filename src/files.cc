@@ -150,6 +150,7 @@ bool files::store_source(text_p name, object_p value) const
         {
             renderer r(f);
             value->render(r);
+            return true;
         }
         rt.error(f.error());
     }
