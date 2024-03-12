@@ -1024,5 +1024,9 @@ cstring get_month_shortcut(int month)
 
 int check_create_dir(const char * dir)
 {
+    struct stat st;
+    if (stat(dir, &st) == 0)
+        if (st.st_mode & S_IFDIR)
+            return 0;
     return mkdir(dir, 0777);
 }
