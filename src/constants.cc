@@ -402,7 +402,7 @@ object::result constant::do_parsing(config_r cfg, parser &p)
     size_t first = parsed;
 
     // Other characters must be alphabetic
-    while (parsed < max && !is_separator(source + parsed))
+    while (parsed < max && is_valid_in_name(source + parsed))
         parsed = utf8_next(source, parsed, max);
     if (parsed <= first)
         return SKIP;
