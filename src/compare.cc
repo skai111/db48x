@@ -64,6 +64,7 @@ bool comparison::compare(int *cmp, algebraic_r x, algebraic_r y)
     // Check if we had some error earlier, if so propagate
     if (!x || !y)
         return false;
+
     id xt = x->type();
     id yt = y->type();
 
@@ -246,7 +247,22 @@ object::result comparison::compare(comparison_fn comparator, id op)
 
     algebraic_g xa = algebraic_p(x);
     algebraic_g ya = algebraic_p(y);
-    algebraic_g ra = compare(comparator, op, xa, ya);
+
+    // Convert arguments to numeric if necessary
+    if (Settings.NumericalResults())
+    {
+        (void) to_decimal(xa, true);          // May fail silently
+        (void) to_decimal(ya, true);
+    }
+    if (!xa || !ya)
+        return ERROR;
+
+    algebraic_g ra;
+    if (xa->is_symbolic() || ya->is_symbolic())
+        ra = expression::make(op, xa, ya);
+    else
+        ra = compare(comparator, op, xa, ya);
+
 
     if (ra)
         if (rt.drop(2))
