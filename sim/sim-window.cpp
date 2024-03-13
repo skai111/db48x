@@ -528,7 +528,8 @@ bool MainWindow::eventFilter(QObject * obj, QEvent * ev)
             return true;
         }
 
-        if (ev->type() == QEvent::MouseButtonPress)
+        if (ev->type() == QEvent::MouseButtonPress ||
+            ev->type() == QEvent::MouseButtonDblClick)
         {
             QMouseEvent *me = static_cast < QMouseEvent * >(ev);
 #if QT_VERSION < 0x060000
