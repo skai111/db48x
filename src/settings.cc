@@ -422,12 +422,13 @@ object_p settings::recall(object::id name)
     switch (name)
     {
 #define ID(i)
-#define FLAG(Enable, Disable)                                   \
-        case ID_##Enable:                                       \
-            rty = Settings.Enable() ? ID_True : ID_False;       \
-            break;                                              \
-    case ID_##Disable:                                          \
-        rty = Settings.Disable() ? ID_True : ID_False;
+#define FLAG(Enable, Disable)                           \
+    case ID_##Enable:                                   \
+        rty = Settings.Enable() ? ID_True : ID_False;   \
+        break;                                          \
+    case ID_##Disable:                                  \
+        rty = Settings.Disable() ? ID_True : ID_False;  \
+        break;
 
 #define SETTING(Name, Low, High, Init)                          \
         case ID_##Name:                                         \
@@ -567,6 +568,8 @@ cstring setting::label(object::id ty)
     case ID_Sig:
         if (s.DisplayMode() == ID_Std)
             return printf("%s %u", disp_name(ty), s.DisplayDigits());
+        // fallthrough
+        [[fallthrough]];
     case ID_Fix:
     case ID_Sci:
     case ID_Eng:

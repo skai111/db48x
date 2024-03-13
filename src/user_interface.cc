@@ -3269,6 +3269,7 @@ bool user_interface::handle_help(int &key)
             }
         }
         // Otherwise fall-through and exit
+        [[fallthrough]];
 
     case KEY_EXIT:
         clear_help();
@@ -3556,6 +3557,7 @@ bool user_interface::handle_editing(int key)
                 }
                 return true;
             }
+            return false;
         }
         case KEY_EXIT:
             // Clear error if there is one, else clear editor

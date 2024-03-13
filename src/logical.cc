@@ -60,6 +60,8 @@ object::result logical::evaluate(binary_fn native, big_binary_fn big, bool num)
             rt.type_error();
             return ERROR;
         }
+        // fallthrough
+        [[fallthrough]];
 
     case ID_integer:
     case ID_neg_integer:
@@ -78,6 +80,9 @@ object::result logical::evaluate(binary_fn native, big_binary_fn big, bool num)
                 return OK;
             return ERROR; // Out of memory
         }
+        // fallthrough
+        [[fallthrough]];
+
 #if CONFIG_FIXED_BASED_OBJECTS
     case ID_bin_integer:
     case ID_oct_integer:
@@ -108,8 +113,9 @@ object::result logical::evaluate(binary_fn native, big_binary_fn big, bool num)
                 return ERROR; // Out of memory
             }
         }
-        // Fall through to bignum variants
     }
+    // fallthrough
+    [[fallthrough]];
 
 #if CONFIG_FIXED_BASED_OBJECTS
     case ID_bin_bignum:
@@ -175,6 +181,7 @@ object::result logical::evaluate(unary_fn native, big_unary_fn big, bool num)
             rt.type_error();
             return ERROR;
         }
+        // fallthrough
 
     case ID_integer:
     case ID_neg_integer:
@@ -189,7 +196,11 @@ object::result logical::evaluate(unary_fn native, big_unary_fn big, bool num)
             if (rt.top(command::static_object(xv ? ID_True : ID_False)))
                 return OK;
             return ERROR; // Out of memory
+            // fallthrough
         }
+        // fallthrough
+        [[fallthrough]];
+
 #if CONFIG_FIXED_BASED_OBJECTS
     case ID_bin_integer:
     case ID_oct_integer:
@@ -211,8 +222,10 @@ object::result logical::evaluate(unary_fn native, big_unary_fn big, bool num)
                 return OK;
             return ERROR; // Out of memory
         }
-        // Fall-through to bignum case
+        // fallthrough
     }
+    // fallthrough
+    [[fallthrough]];
 
 #if CONFIG_FIXED_BASED_OBJECTS
     case ID_bin_bignum:

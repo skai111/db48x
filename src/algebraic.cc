@@ -355,6 +355,7 @@ object::id algebraic::based_promotion(algebraic_g &x)
             bignum_g  xb = rt.make<bignum>(xt, xi);
             x = +xb;
         }
+        // fallthrough
 
     case ID_bignum:
     case ID_neg_bignum:
@@ -496,6 +497,7 @@ bool algebraic::to_decimal(algebraic_g &x, bool weak)
     case ID_neg_integer:
         if (weak)
             return true;
+        // fallthrough
     case ID_bignum:
     case ID_neg_bignum:
     case ID_fraction:
@@ -522,6 +524,7 @@ bool algebraic::to_decimal(algebraic_g &x, bool weak)
                         x = alg;
             return !rt.error();
         }
+        // fallthrough
     default:
         if (!weak)
             rt.type_error();

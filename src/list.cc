@@ -371,6 +371,7 @@ intptr_t list::list_render(renderer &r, unicode open, unicode close) const
         case ID_array:
             if (first && lty == oty)
                 unnest = true;
+            // fallthrough
         case ID_list:
         case ID_program:
         case ID_locals:

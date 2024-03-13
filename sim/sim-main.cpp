@@ -122,6 +122,7 @@ int main(int argc, char *argv[])
                 break;
             case 'T':
                 run_tests = true;
+                // fall-through
             case 'O':
                 if (argv[a][2])
                 {

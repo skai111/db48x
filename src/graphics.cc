@@ -135,6 +135,8 @@ bool PlotParametersAccess::parse(list_p parms)
                 valid = ok == 3;
                 break;
             }
+            // fallthrough
+            [[fallthrough]];
 
         case 6:                 // Dependent variable
             if (symbol_g sym = obj->as<symbol>())
