@@ -7736,7 +7736,7 @@ tests &tests::type(object::id ty, uint extrawait)
             return fail();
         }
 
-        if (utf8 out = Stack.recorded())
+        if (Stack.recorded())
         {
             object::id tty = Stack.type();
             if (tty == ty)
