@@ -132,10 +132,10 @@ object::result list::list_parse(id type,
                 bool parenthese = cp == '(' && !infix;
                 if (parenthese  || infix || prefix)
                 {
-                    int childp = infix ? infix->precedence() + 1
-                        : parenthese ? LOWEST
-                        : SYMBOL;
-                    parser child(p, s, childp);
+                    int     childp = infix      ? int(infix->precedence() + 1)
+                                   : parenthese ? int(LOWEST)
+                                                : int(SYMBOL);
+                    parser  child(p, s, childp);
                     unicode iopen = parenthese ? '(' : 0;
                     unicode iclose = parenthese ? ')' : 0;
                     id ctype = type == ID_unit ? ID_expression : type;

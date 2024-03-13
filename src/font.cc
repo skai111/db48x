@@ -178,7 +178,7 @@ struct font_cache
     {
         if (size)
         {
-            size_t count = size < MAX_GLYPHS ? size : MAX_GLYPHS;
+            size_t count = size < MAX_GLYPHS ? size : size_t(MAX_GLYPHS);
             data  *last  = cache + (size + ~0) % MAX_GLYPHS;
             data  *d     = last;
             for (size_t i = 0; i < count; i++)
