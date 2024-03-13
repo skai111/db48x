@@ -5150,8 +5150,9 @@ void tests::parsing_commands_by_name()
     BEGIN(commands);
 
 
-#define SPECIAL(ty, ref, name, rname)                                   \
-    (object::ID_##ty == object::ID_##ref && strcmp(name, rname) == 0)
+#define SPECIAL(ty, ref, name, rname)           \
+    (object::ID_##ty == object::ID_##ref &&     \
+     strcmp(name ? name : "", rname) == 0)
 
 #define ALIAS(ty, name)                                                 \
     if (object::is_command(object::ID_##ty))                            \
