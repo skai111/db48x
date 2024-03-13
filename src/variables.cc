@@ -227,7 +227,7 @@ bool directory::store(object_g name, object_g value)
         }
 
         // Clone any value in the stack that points to the existing value
-        rt.clone_global(evalue);
+        rt.clone_global(evalue, es);
 
         // Move memory above storage if necessary
         if (vs != es)
@@ -519,12 +519,18 @@ size_t directory::purge(object_p name)
     {
         size_t   ns     = name->size();
         object_p value  = name + ns;
+        if (rt.is_active_directory(value))
+        {
+            rt.purge_active_directory_error();
+            return 0;
+        }
         size_t   vs     = value->size();
         size_t   purged = ns + vs;
         object_p header = (object_p) payload();
         object_p body   = header;
         size_t   old    = leb128<size_t>(body); // Old size of directory
 
+        rt.clone_global(value, vs);
         rt.move_globals(name, name + purged);
 
         if (old < purged)

@@ -146,7 +146,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         // Test the current thing
-        numerical_integration_testing();
+        global_variables();
     }
     else
     {
@@ -1125,7 +1125,13 @@ void tests::global_variables()
     step("Entering sub-subdirectory")
         .test(CLEAR, "DirTest2", ENTER).noerror();
     step("Path in sub-subdirectory")
-        .test(CLEAR, "path", ENTER).expect("{ HomeDirectory DirTest DirTest2 }");
+        .test(CLEAR, "path", ENTER)
+        .expect("{ HomeDirectory DirTest DirTest2 }");
+
+    step("Check that we cannot purge a directory we are in")
+        .test(CLEAR, "'DirTest' PurgeAll", ENTER)
+        .error("Cannot purge active directory");
+
     step("Find variable from level above")
         .test(CLEAR, "Foo", ENTER).expect("242");
     step("Create local variable")
@@ -1138,6 +1144,19 @@ void tests::global_variables()
         .test(CLEAR, "DirTest2 Foo", ENTER).expect("\"Hello\"");
     step("Cleanup")
         .test(CLEAR, "'Foo' Purge", ENTER).noerror();
+
+    step("Make sure elements are cloned when purging (#854)")
+        .test(CLEAR, "{ 11 23 34 44 } 'X' Sto", ENTER).noerror()
+        .test("X", ENTER).expect("{ 11 23 34 44 }")
+        .test("X 1 GET", ENTER).expect("11")
+        .test("X 2 GET", ENTER).expect("23")
+        .test("X 3 GET", ENTER).expect("34")
+        .test("X 4 GET", ENTER).expect("44")
+        .test("'X' Purge", ENTER).expect("44")
+        .test(NOSHIFT, BSP).expect("34")
+        .test(NOSHIFT, BSP).expect("23")
+        .test(NOSHIFT, BSP).expect("11")
+        .test(NOSHIFT, BSP).expect("{ 11 23 34 44 }");
 
     step("Save to file as text")
         .test(CLEAR, "1.42 \"Hello.txt\"", NOSHIFT, G).noerror();

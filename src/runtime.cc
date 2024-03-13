@@ -716,21 +716,25 @@ object_p runtime::clone(object_p source)
 }
 
 
-object_p runtime::clone_global(object_p global)
+object_p runtime::clone_global(object_p global, size_t sz)
 // ----------------------------------------------------------------------------
 //   Check if any entry in the stack points to a given global, if so clone it
 // ----------------------------------------------------------------------------
+//   We scan everywhere to see if an object is used. If so, we clone it
+//   and adjust the pointer to the cloned value
+//   We clone the object at most once, and adjust objects in a list or
+//   program to preserve the original structure
 {
     object_p cloned = nullptr;
     object_p *begin = Stack;
-    object_p *end = CallStack;
+    object_p *end    = HighMem;
     for (object_p *s = begin; s < end; s++)
     {
-        if (*s == global)
+        if (*s >= global && *s < global + sz)
         {
             if (!cloned)
                 cloned = clone(global);
-            *s = cloned;
+            *s = cloned + (*s - global);
         }
     }
     return cloned;
@@ -1204,6 +1208,19 @@ bool runtime::unlocals(size_t count)
 //   Directories
 //
 // ============================================================================
+
+bool runtime::is_active_directory(object_p obj) const
+// ----------------------------------------------------------------------------
+//    Check if a global variable is referenced by the directories
+// ----------------------------------------------------------------------------
+{
+    size_t depth = (object_p *) CallStack - Directories;
+    for (size_t i = 0; i < depth; i++)
+        if (obj == Directories[i])
+            return true;
+    return false;
+}
+
 
 bool runtime::enter(directory_p dir)
 // ----------------------------------------------------------------------------

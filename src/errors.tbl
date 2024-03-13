@@ -96,6 +96,7 @@ ERROR(invalid_time,             "Invalid time")
 ERROR(graph_does_not_fit,       "Object does not fit in MaxW")
 ERROR(internal,                 "Internal error, please report")
 ERROR(invalid_path,             "Invalid path, access denied")
+ERROR(purge_active_directory,   "Cannot purge active directory")
 
 // Filesystem errors
 #ifndef FRROR

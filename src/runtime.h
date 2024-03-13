@@ -160,7 +160,7 @@ struct runtime
     //   Clone an object into the temporaries area
     // ------------------------------------------------------------------------
 
-    object_p clone_global(object_p source);
+    object_p clone_global(object_p source, size_t sz);
     // ------------------------------------------------------------------------
     //   Clone values in the stack that point to a global we will change
     // ------------------------------------------------------------------------
@@ -808,7 +808,7 @@ struct runtime
         return depth;
     }
 
-
+    bool is_active_directory(object_p obj) const;
     bool enter(directory_p dir);
     bool updir(size_t count = 1);
 
