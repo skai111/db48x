@@ -311,8 +311,8 @@ void processFont(cstring fontName,
 
     // Start on the left of the dense bitmap
     int32_t   denseBitMapX = 0;
-    int32_t   firstCode    = 0;
-    int32_t   currentCode  = 0;
+    FT_ULong  firstCode    = 0;
+    FT_ULong  currentCode  = 0;
 
     // Find the ranges in the font
     ints     rangesFirst;
@@ -336,7 +336,7 @@ void processFont(cstring fontName,
             if (numCodes)
             {
                 if (verbose)
-                    printf("New glyph range at %u, had %u codes in %u..%u\n",
+                    printf("New glyph range at %u, had %u codes in %lu..%lu\n",
                            (int) charCode, numCodes, firstCode, currentCode);
                 rangesFirst.push_back(firstCode);
                 rangesCount.push_back(numCodes);
