@@ -37,6 +37,8 @@
 #include "settings.h"
 #include "utf8.h"
 
+#include <inttypes.h>
+
 
 RECORDER(decimal, 32, "Variable-precision decimal data type");
 RECORDER(decimal_error, 32, "Variable-precision decimal data type");
@@ -646,7 +648,7 @@ RENDER_BODY(decimal)
             if (fancy)
             {
                 char expbuf[32];
-                size_t written = snprintf(expbuf, 32, "%lld", dispexp);
+                size_t written = snprintf(expbuf, 32, "%" PRId64, dispexp);
                 for (uint e = 0; e < written; e++)
                 {
                     char c = expbuf[e];
