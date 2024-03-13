@@ -43,7 +43,7 @@ bool db48x_keyboard = true;
 uint memory_size = 70;           // Memory size in kilobytes
 
 size_t recorder_render_object(intptr_t tracing,
-                              const char *UNUSED format,
+                              const char *UNUSED /* format */,
                               char *buffer, size_t size,
                               uintptr_t arg)
 // ----------------------------------------------------------------------------

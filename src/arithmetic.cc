@@ -807,7 +807,7 @@ inline bool mod::complex_ok(complex_g &, complex_g &)
 }
 
 
-inline bool rem::integer_ok(object::id &UNUSED xt, object::id &UNUSED yt,
+inline bool rem::integer_ok(object::id &/* xt */, object::id &/* yt */,
                             ularge &xv, ularge &yv)
 // ----------------------------------------------------------------------------
 //   The reminder of two integers is always an integer
@@ -994,7 +994,7 @@ inline bool pow::complex_ok(complex_g &x, complex_g &y)
 }
 
 
-inline bool pow::fraction_ok(fraction_g &UNUSED x, fraction_g &UNUSED y)
+inline bool pow::fraction_ok(fraction_g &/* x */, fraction_g &/* y */)
 // ----------------------------------------------------------------------------
 //   Compute y^x, works if x >= 0
 // ----------------------------------------------------------------------------
@@ -1003,8 +1003,8 @@ inline bool pow::fraction_ok(fraction_g &UNUSED x, fraction_g &UNUSED y)
 }
 
 
-inline bool hypot::integer_ok(object::id &UNUSED xt, object::id &UNUSED yt,
-                              ularge &UNUSED xv, ularge &UNUSED yv)
+inline bool hypot::integer_ok(object::id &/* xt */, object::id &/* yt */,
+                              ularge &/* xv */, ularge &/* yv */)
 // ----------------------------------------------------------------------------
 //   hypot() involves a square root, so not working on integers
 // ----------------------------------------------------------------------------
@@ -1014,7 +1014,7 @@ inline bool hypot::integer_ok(object::id &UNUSED xt, object::id &UNUSED yt,
 }
 
 
-inline bool hypot::bignum_ok(bignum_g &UNUSED x, bignum_g &UNUSED y)
+inline bool hypot::bignum_ok(bignum_g &/* x */, bignum_g &/* y */)
 // ----------------------------------------------------------------------------
 //   Hypot never works with big integers
 // ----------------------------------------------------------------------------
@@ -1023,7 +1023,7 @@ inline bool hypot::bignum_ok(bignum_g &UNUSED x, bignum_g &UNUSED y)
 }
 
 
-inline bool hypot::fraction_ok(fraction_g &UNUSED x, fraction_g &UNUSED y)
+inline bool hypot::fraction_ok(fraction_g &/* x */, fraction_g &/* y */)
 // ----------------------------------------------------------------------------
 //   Hypot never works with big integers
 // ----------------------------------------------------------------------------
@@ -1048,8 +1048,8 @@ inline bool hypot::complex_ok(complex_g &, complex_g &)
 //
 // ============================================================================
 
-inline bool atan2::integer_ok(object::id &UNUSED xt, object::id &UNUSED yt,
-                              ularge &UNUSED xv, ularge &UNUSED yv)
+inline bool atan2::integer_ok(object::id &/* xt */, object::id &/* yt */,
+                              ularge &/* xv */, ularge &/* yv */)
 // ----------------------------------------------------------------------------
 //   Optimized for integers on the real axis
 // ----------------------------------------------------------------------------
@@ -1058,7 +1058,7 @@ inline bool atan2::integer_ok(object::id &UNUSED xt, object::id &UNUSED yt,
 }
 
 
-inline bool atan2::bignum_ok(bignum_g &UNUSED x, bignum_g &UNUSED y)
+inline bool atan2::bignum_ok(bignum_g &/* x */, bignum_g &/* y */)
 // ----------------------------------------------------------------------------
 //   Optimize for bignums on the real axis
 // ----------------------------------------------------------------------------
@@ -1067,7 +1067,7 @@ inline bool atan2::bignum_ok(bignum_g &UNUSED x, bignum_g &UNUSED y)
 }
 
 
-inline bool atan2::fraction_ok(fraction_g &UNUSED x, fraction_g &UNUSED y)
+inline bool atan2::fraction_ok(fraction_g &/* x */, fraction_g &/* y */)
 // ----------------------------------------------------------------------------
 //   Optimize for fractions on the real and complex axis and for diagonals
 // ----------------------------------------------------------------------------
