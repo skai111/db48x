@@ -132,7 +132,7 @@ RENDER_BODY(command)
     id ty = o->type();
     if (ty < NUM_IDS)
     {
-        auto format = Settings.CommandDisplayMode();
+        id format = Settings.CommandDisplayMode();
 
         // Ensure that we display + as `+` irrespective of mode
         utf8 fname = object::name(ty);

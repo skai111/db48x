@@ -46,24 +46,26 @@ struct settings
 // ----------------------------------------------------------------------------
 {
 public:
+    using id = object::id;
+
 #define ID(id)
 #define FLAG(Enable, Disable)
-#define SETTING(Name, Low, High, Init)          typeof(Init) Name##_bits;
-#define SETTING_BITS(Name,Bits,Low,High,Init)
+#define SETTING(Name, Low, High, Init)                typeof(Init) Name##_bits;
+#define SETTING_BITS(Name,Type,Bits,Low,High,Init)
 #include "ids.tbl"
 
     // Define the packed bits settings
 #define ID(id)
 #define FLAG(Enable, Disable)
 #define SETTING(Name, Low, High, Init)
-#define SETTING_BITS(Name,Bits,Low,High,Init)   uint Name##_bits : Bits;
+#define SETTING_BITS(Name,Type,Bits,Low,High,Init)    uint Name##_bits : Bits;
 #include "ids.tbl"
 
     // Define the flags
 #define ID(id)
-#define FLAG(Enable, Disable)                   bool Enable##_bit : 1;
+#define FLAG(Enable, Disable)                         bool Enable##_bit : 1;
 #define SETTING(Name, Low, High, Init)
-#define SETTING_BITS(Name,Bits,Low,High,Init)
+#define SETTING_BITS(Name,Type,Bits,Low,High,Init)
 #include "ids.tbl"
 
     bool reserved : 1;
@@ -142,21 +144,21 @@ public:
 #define ID(id)
 #define FLAG(Enable, Disable)
 #define SETTING(Name,Low,High,Init)             Name##_bits(Init),
-#define SETTING_BITS(Name,Bits,Low,High,Init)
+#define SETTING_BITS(Name,Type,Bits,Low,High,Init)
 #include "ids.tbl"
 
     // Define the packed bits settings
 #define ID(id)
 #define FLAG(Enable, Disable)
 #define SETTING(Name, Low, High, Init)
-#define SETTING_BITS(Name,Bits,Low,High,Init)   Name##_bits(Init - Low),
+#define SETTING_BITS(Name,Type,Bits,Low,High,Init)   Name##_bits(Init - Low),
 #include "ids.tbl"
 
     // Define the flags
 #define ID(id)
 #define FLAG(Enable, Disable)                   Enable##_bit(false),
 #define SETTINGS(Name, Low, High, Init)
-#define SETTING_BITS(Name,Bits,Low,High,Init)
+#define SETTING_BITS(Name,Type,Bits,Low,High,Init)
 #include "ids.tbl"
 
         reserved(false)
@@ -172,9 +174,9 @@ public:
 #define SETTING(Name, Low, High, Init)                                  \
     typeof(Init) Name() const           { return Name##_bits;  }        \
     void Name(typeof(Init) value)       { Name##_bits = value; }
-#define SETTING_BITS(Name, Bits, Low, High, Init)                       \
-    typeof(Init) Name() const           { return (typeof(Init)) (Low + Name##_bits);  } \
-    void Name(typeof(Init) value)       { Name##_bits = value - Low; }
+#define SETTING_BITS(Name, Type, Bits, Low, High, Init)                 \
+    Type Name() const           { return (Type)(Low+Name##_bits);  }    \
+    void Name(Type value)       { Name##_bits = value - Low; }
 #include "ids.tbl"
 
     static font_p font(font_id sz);
@@ -236,15 +238,15 @@ public:
 #define FLAG(Enable,Disable)                    \
     SETTING(Enable,  false, true, false)        \
     SETTING(Disable, false, true, true)
-#define SETTING(Name, Low, High, Init)                          \
-    struct Save##Name                                           \
-    {                                                           \
-        Save##Name(typeof(Init) value);                         \
-        ~Save##Name();                                          \
-        typeof(Init) saved;                                     \
+#define SETTING_BITS(Name, Type, Bits, Low, High, Init) \
+    struct Save##Name                                   \
+    {                                                   \
+        Save##Name(Type value);                         \
+        ~Save##Name();                                  \
+        Type saved;                                     \
     };
-#define SETTING_BITS(Name, Bits, Low, High, Init)       \
-    SETTING(Name, Low, High, Init)
+#define SETTING(Name, Low, High, Init)                  \
+    SETTING_BITS(Name, typeof(Init), UNUSED, Low, High, Init)
 #include "ids.tbl"
 
     struct PrepareForProgramEvaluation
@@ -271,8 +273,8 @@ extern settings Settings;
 #define FLAG(Enable,Disable)                    \
     SETTING(Enable,  false, true, false)        \
     SETTING(Disable, false, true, true)
-#define SETTING(Name, Low, High, Init)                          \
-    inline settings::Save##Name::Save##Name(typeof(Init) value) \
+#define SETTING_BITS(Name, Type, Bits, Low, High, Init)         \
+    inline settings::Save##Name::Save##Name(Type value)         \
         : saved(Settings.Name())                                \
     {                                                           \
         Settings.Name(value);                                   \
@@ -281,7 +283,8 @@ extern settings Settings;
     {                                                           \
         Settings.Name(saved);                                   \
     }
-#define SETTING_BITS(Name, Bits, Low, High, Init) SETTING(Name, Low, High, Init)
+#define SETTING(Name, Low, High, Init)                          \
+    SETTING_BITS(Name, typeof(Init), UNUSED, Low, High, Init)
 #include "ids.tbl"
 
 
