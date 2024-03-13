@@ -42,8 +42,6 @@ GCP(integer);
 GCP(bignum);
 GCP(fraction);
 GCP(big_fraction);
-GCP(hwfloat);
-GCP(hwdouble);
 
 
 struct hwfp_base : algebraic
@@ -64,7 +62,7 @@ struct hwfp : hwfp_base
 // ----------------------------------------------------------------------------
 {
     using hwfp_p = const hwfp *;
-    using hwfp_r = gcp<const hwfp> &;
+    using hwfp_r = const gcp<hwfp> &;
 
     hwfp(id type, hw value): hwfp_base(type)
     // ------------------------------------------------------------------------
@@ -188,7 +186,7 @@ struct hwfp : hwfp_base
     {
         return make(-x->value());
     }
-    static hwfp_p    add(hwfp_r x, hwfp_r y)
+    static hwfp_p add(hwfp_r x, hwfp_r y)
     {
         return make(x->value() + y->value());
     }
@@ -515,6 +513,16 @@ public:
         return render(r, o->value());
     }
 };
+
+
+#define GCP_HWFLOAT(T)                          \
+    typedef const hwfp<T>      *hw##T##_p;      \
+    typedef gcp<hwfp<T>>        hw##T##_g;      \
+    typedef gcm<hwfp<T>>        hw##T##_m;      \
+    typedef const hw##T##_g    &hw##T##_r;
+
+GCP_HWFLOAT(float);
+GCP_HWFLOAT(double);
 
 
 struct hwfloat : hwfp<float>

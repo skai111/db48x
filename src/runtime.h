@@ -986,10 +986,10 @@ using object_r  = const object_g &;
 
 #define GCP(T)                                  \
     struct T;                                   \
-    typedef const T *T##_p;                     \
-    typedef gcp<T>   T##_g;                     \
-    typedef gcm<T>   T##_m;                     \
-    typedef const T##_g &T##_r;
+    typedef const T *           T##_p;          \
+    typedef gcp<T>              T##_g;          \
+    typedef gcm<T>              T##_m;          \
+    typedef const T##_g &       T##_r;
 
 
 // ============================================================================
