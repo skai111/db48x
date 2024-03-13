@@ -7080,9 +7080,9 @@ tests &tests::itest(long value)
 // ----------------------------------------------------------------------------
 {
     if (value < 0)
-        return itest(-value, CHS);
+        return itest((unsigned long long) (-value), CHS);
     else
-        return itest(value);
+        return itest((unsigned long long) value);
 }
 
 
