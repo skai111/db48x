@@ -4254,7 +4254,7 @@ bool user_interface::handle_functions(int key)
                 {
                     dirtyEditor = true;
                     edRows = 0;
-                    return obj->insert(*this) != object::ERROR;
+                    return obj->insert() != object::ERROR;
                 }
                 break;
 
@@ -4269,7 +4269,7 @@ bool user_interface::handle_functions(int key)
                 {
                     dirtyEditor = true;
                     edRows = 0;
-                    return obj->insert(*this) != object::ERROR;
+                    return obj->insert() != object::ERROR;
                 }
                 break;
 

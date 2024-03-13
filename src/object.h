@@ -181,7 +181,7 @@ struct object
     typedef result      (*evaluate_fn)(object_p o);
     typedef size_t      (*render_fn)(object_p o, renderer &r);
     typedef grob_p      (*graph_fn)(object_p o, grapher &g);
-    typedef result      (*insert_fn)(object_p o, user_interface &i);
+    typedef result      (*insert_fn)(object_p o);
     typedef bool        (*menu_fn)(object_p o, menu_info &m);
     typedef unicode     (*menu_marker_fn)(object_p o);
 
@@ -432,12 +432,12 @@ struct object
     // ------------------------------------------------------------------------
 
 
-    result insert(user_interface &i) const
+    result insert() const
     // ------------------------------------------------------------------------
     //   Insert in the editor at cursor position, with possible offset
     // ------------------------------------------------------------------------
     {
-        return ops().insert(this, i);
+        return ops().insert(this);
     }
 
 
