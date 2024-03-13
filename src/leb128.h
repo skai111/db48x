@@ -55,7 +55,7 @@ inline Int leb128(Data *&p)
     } while (*bp++ & 0x80);
     p = (Data *) bp;
     if (is_signed && (bp[-1] & 0x40))
-        result |= Int(~0ULL) << (shift - 1);
+        result |= Int(~0ULL << (shift - 1));
     return result;
 }
 
