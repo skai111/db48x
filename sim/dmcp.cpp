@@ -68,19 +68,51 @@ uint8_t              lcd_buffer[LCD_SCANLINE * LCD_H / 8];
 bool                 shift_held = false;
 bool                 alt_held   = false;
 
-static disp_stat_t   t20_ds     = { .f = &lib_mono_10x17 };
-static disp_stat_t   t24_ds     = { .f = &lib_mono_12x20 };
-static disp_stat_t   fReg_ds    = { .f = &lib_mono_17x25 };
+
+// Eliminate a really cumbersome warning
+#define DS_INIT                                 \
+    .x          = 0,                            \
+    .y          = 0,                            \
+    .ln_offs    = 0,                            \
+    .y_top_grd  = 0,                            \
+    .ya         = 0,                            \
+    .yb         = 0,                            \
+    .xspc       = 0,                            \
+    .xoffs      = 0,                            \
+    .fixed      = 0,                            \
+    .inv        = 0,                            \
+    .bgfill     = 0,                            \
+    .lnfill     = 0,                            \
+    .newln      = 0,                            \
+    .post_offs  = 0
+
+static disp_stat_t   t20_ds     = { .f = &lib_mono_10x17, DS_INIT };
+static disp_stat_t   t24_ds     = { .f = &lib_mono_12x20, DS_INIT };
+static disp_stat_t   fReg_ds    = { .f = &lib_mono_17x25, DS_INIT };
 static FIL           ppgm_fp_file;
 
 sys_sdb_t sdb =
 {
-    .ppgm_fp = &ppgm_fp_file,
-    .pds_t20 = &t20_ds,
-    .pds_t24 = &t24_ds,
-    .pds_fReg = &fReg_ds,
+    // Can't even use .field notation here because all fields are #defined!
+    /* calc_state         */ 0,
+    /* ppgm_fp            */ &ppgm_fp_file,
+    /* key_to_alpha_table */ nullptr,
+    /* run_menu_item_app  */ nullptr,
+    /* menu_line_str_app  */ nullptr,
+    /* after_fat_format   */ nullptr,
+    /* get_flag_dmy       */ nullptr,
+    /* set_flag_dmy       */ nullptr,
+    /* is_flag_clk24      */ nullptr,
+    /* set_flag_clk24     */ nullptr,
+    /* is_beep_mute       */ nullptr,
+    /* set_beep_mute      */ nullptr,
+    /* pds_t20            */ &t20_ds,
+    /* pds_t24            */ &t24_ds,
+    /* pds_fReg           */ &fReg_ds,
+    /* timer2_counter     */ nullptr,
+    /* timer3_counter     */ nullptr,
+    /* msc_end_cb         */ nullptr
 };
-
 
 void LCD_power_off(int UNUSED clear)
 {
@@ -619,7 +651,7 @@ int lcd_textWidth(disp_stat_t * ds, const char* text)
     while ((c = *p++))
     {
         c -= first;
-        if (c >= 0 && c < count)
+        if (c < count)
         {
             uint off = offs[c];
             width += data[off + 0] + data[off + 2] + xspc;

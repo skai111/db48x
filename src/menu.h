@@ -39,6 +39,9 @@ struct menu_info
 //  Info filled by the menu() interface
 // ----------------------------------------------------------------------------
 {
+    menu_info(uint page = 0, int planes = 0, uint skip = 0, int marker = 0)
+        : page(page), skip(skip), marker(marker),
+          pages(0), index(0), plane(0), planes(planes) {}
     uint page;   // In:  Page index
     uint skip;   // In:  Items to skip
     int  marker; // In:  Default marker
@@ -60,7 +63,7 @@ struct menu : command
 
     result update(uint page = 0) const
     {
-        info mi = { .page = page };
+        info mi(page);
         return ops().menu(this, mi) ? OK : ERROR;
     }
 
@@ -69,7 +72,7 @@ struct menu : command
     {
         items_init(mi, nitems, planes, planes);
     }
-    static void items(info &UNUSED mi) { }
+    static void items(info &) { }
     static void items(info &mi, id action);
     static void items(info &mi, cstring label, object_p action);
     static void items(info &mi, cstring label, id action)
