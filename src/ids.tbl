@@ -857,6 +857,8 @@ SETTING(MaximumShowHeight,      LCD_W, 16384U,   2048U)
 ALIAS(MaximumShowWidth,  "MaxW")
 ALIAS(MaximumShowHeight, "MaxH")
 
+SETTING(ErrorBeepFrequency,     0, 25000,       1400)
+SETTING(ErrorBeepDuration,      0, 500,         50)
 
 
 // ============================================================================

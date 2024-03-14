@@ -1343,23 +1343,26 @@ MENU(UserInterfaceModesMenu,
 // ----------------------------------------------------------------------------
      "GrStk",                                   ID_GraphicResultDisplay,
      "Beep",                                    ID_BeepOn,
+     "Flash",                                   ID_SilentBeepOn,
+     ErrorBeepFrequency::label,                 ID_ErrorBeepFrequency,
+     ErrorBeepDuration::label,                  ID_ErrorBeepDuration,
+
      ResultFont::label,                         ID_ResultFont,
      StackFont::label,                          ID_StackFont,
      EditorFont::label,                         ID_EditorFont,
      MultilineEditorFont::label,                ID_MultilineEditorFont,
+     CursorBlinkRate::label,                    ID_CursorBlinkRate,
 
-     "Flash",                                   ID_SilentBeepOn,
      "3-lines",                                 ID_ThreeRowsMenus,
      "1-line",                                  ID_SingleRowMenus,
      "Flat",                                    ID_FlatMenus,
      "Round",                                   ID_RoundedMenus,
-     CursorBlinkRate::label,                    ID_CursorBlinkRate,
+     "Units",                                   ID_ShowBuiltinUnits,
 
      "cmd",                                     ID_LowerCase,
      "CMD",                                     ID_UpperCase,
      "Cmd",                                     ID_Capitalized,
-     "Command",                                 ID_LongForm,
-     "Units",                                   ID_ShowBuiltinUnits);
+     "Command",                                 ID_LongForm);
 
 MENU(MathModesMenu,
 // ----------------------------------------------------------------------------

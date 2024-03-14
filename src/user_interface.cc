@@ -2303,6 +2303,11 @@ bool user_interface::draw_error()
         r.y1 += ErrorFont->height();
         Screen.text(r.x1, r.y1, err, ErrorFont);
         Screen.clip(clip);
+
+        refresh_dirty();
+        if (uint freq = Settings.ErrorBeepFrequency())
+            if (uint dur = Settings.ErrorBeepDuration())
+                beep(freq, dur);
     }
     return true;
 }
