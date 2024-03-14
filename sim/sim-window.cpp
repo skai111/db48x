@@ -51,7 +51,7 @@
 #include <QStandardPaths>
 #include <QtCore>
 #include <QtGui>
-
+#include <QtMath>
 
 RECORDER(sim_keys, 16, "Recorder keys from the simulator");
 RECORDER(sim_audio, 16, "Recorder keys from the simulator");
@@ -68,7 +68,7 @@ MainWindow::MainWindow(QWidget *parent)
 //    The main window of the simulator
 // ----------------------------------------------------------------------------
     : QMainWindow(parent), ui(), rpl(this), tests(this), highlight(),
-      samples(), audiobuf(), audio()
+      devices(new QMediaDevices(this)), generator(), audio()
 {
     mainWindow = this;
 
@@ -103,29 +103,12 @@ MainWindow::MainWindow(QWidget *parent)
     dpratio *= devicePixelRatio;
     resize(210 * dpratio, 370 * dpratio);
 
+    // Audio setup
+    connect(devices, &QMediaDevices::audioOutputsChanged,
+            this, &MainWindow::updateAudioDevices);
+    initializeAudio(devices->defaultAudioOutput(), 0);
+
     rpl.start();
-
-    // Setup audio output
-    QAudioFormat format;
-    format.setSampleRate(SAMPLE_RATE);
-    format.setChannelCount(1);
-    format.setSampleFormat(QAudioFormat::SampleFormat::UInt8);
-
-    QAudioDevice device(QMediaDevices::defaultAudioOutput());
-    if (!device.isFormatSupported(format))
-    {
-        record(sim_audio, "Unsupported audio format, cannot beep");
-    }
-    else
-    {
-        audio = new QAudioSink(device, format, this);
-        connect(audio, SIGNAL(stateChanged(QAudio::State)),
-                this, SLOT(handleAudioStateChanged(QAudio::State)));
-    }
-
-    samples = new QByteArray();
-    samples->resize(SAMPLE_COUNT);
-
     if (run_tests)
         tests.start();
 }
@@ -136,9 +119,7 @@ MainWindow::~MainWindow()
 // ----------------------------------------------------------------------------
 {
     key_push(tests::EXIT_PGM);
-    delete audio;
-    delete audiobuf;
-    delete samples;
+    record(sim_audio, "Deleting audio");
 }
 
 
@@ -408,10 +389,12 @@ void MainWindow::keyPressEvent(QKeyEvent * ev)
     if (k == Qt::Key_F10)
     {
         db48x_keyboard = !db48x_keyboard;
-        if (db48x_keyboard)
-            ui.keyboard->setStyleSheet("border-image: url(:/bitmap/keyboard-db48x.png) 0 0 0 0 stretch stretch;");
-        else
-            ui.keyboard->setStyleSheet("border-image: url(:/bitmap/keyboard.png) 0 0 0 0 stretch stretch;");
+        cstring name = db48x_keyboard
+            ? ("border-image: url(:/bitmap/keyboard-db48x.png) "
+               "0 0 0 0 stretch stretch;")
+            : ("border-image: url(:/bitmap/keyboard.png) "
+               "0 0 0 0 stretch stretch;");
+        ui.keyboard->setStyleSheet(name);
     }
 
     if (k == Qt::Key_F9)
@@ -601,30 +584,216 @@ void MainWindow::screenshot(cstring basename, int x, int y, int w, int h)
 }
 
 
+
+// ============================================================================
+//
+//   AudioGenerator: Generate audio output on demand
+//
+// ============================================================================
+
+AudioGenerator::AudioGenerator(const QAudioFormat &format,
+                               qint64              durationUs,
+                               uint                freq)
+// ----------------------------------------------------------------------------
+//   Constructor for the audio generator
+// ----------------------------------------------------------------------------
+    : freq(freq)
+{
+    if (format.isValid())
+        generateData(format, durationUs, freq);
+}
+
+
+void AudioGenerator::start()
+// ----------------------------------------------------------------------------
+//   Start generating samples
+// ----------------------------------------------------------------------------
+{
+    open(QIODevice::ReadOnly);
+}
+
+
+void AudioGenerator::stop()
+// ----------------------------------------------------------------------------
+//   Stop generating samples
+// ----------------------------------------------------------------------------
+{
+    pos = 0;
+    close();
+}
+
+
+template <typename Data>
+static inline void generate(char  *buffer,
+                            size_t frames,
+                            uint   channels,
+                            uint   freq,
+                            uint   sampleRate,
+                            double scale,
+                            double offset)
+// ----------------------------------------------------------------------------
+//  Generate data to a sample buffer
+// ----------------------------------------------------------------------------
+{
+    Data  *ptr  = (Data *) buffer;
+    double amp = 0.5;
+    double rate = (2 * M_PI / 1000) * freq / sampleRate;
+    scale *= amp;
+    for (size_t f = 0; f < frames; f++)
+    {
+        double x = sin(rate * (f % sampleRate));
+        // x *= sin(0.125 * rate * (f % sampleRate));
+        x = x > 0 ? 1 : -1;
+        x = x * scale + offset;
+        Data sample = Data(x);
+        for (uint c = 0; c < channels; c++)
+            *ptr++ = sample;
+    }
+}
+
+
+void AudioGenerator::generateData(const QAudioFormat &format,
+                                  qint64              durationUs,
+                                  uint                 freq)
+// ----------------------------------------------------------------------------
+//    Generating data for the samples
+// ----------------------------------------------------------------------------
+{
+    uint   frameBytes   = format.bytesPerFrame();
+    uint   channels     = format.channelCount();
+    qint64 frames       = format.framesForDuration(durationUs);
+    size_t bytes        = frames * frameBytes;
+    int    sampleRate   = format.sampleRate();
+    auto   sampleFormat = format.sampleFormat();
+
+    buffer.resize(bytes);
+    char *start = buffer.data();
+
+    switch (sampleFormat)
+    {
+    default:
+    case QAudioFormat::UInt8:
+        generate<quint8>(start, frames, channels, freq, sampleRate, 255./2, 255./2);
+        break;
+    case QAudioFormat::Int16:
+        generate<qint16>(start, frames, channels, freq, sampleRate, 32767, 0);
+        break;
+    case QAudioFormat::Int32:
+        generate<qint32>(start, frames, channels, freq, sampleRate,
+                     std::numeric_limits<qint32>::max(), 0);
+        break;
+    case QAudioFormat::Float:
+        generate<float>(start, frames, channels, freq, sampleRate, 1.0, 0.0);
+        break;
+    }
+}
+
+
+qint64 AudioGenerator::readData(char *data, qint64 len)
+// ----------------------------------------------------------------------------
+//   Read data from the buffer
+// ----------------------------------------------------------------------------
+{
+    qint64 total = 0;
+    if (!buffer.isEmpty())
+    {
+        while (len - total > 0)
+        {
+            qint64 chunk = qMin((buffer.size() - pos), len - total);
+            memcpy(data + total, buffer.constData() + pos, chunk);
+            pos = (pos + chunk) % buffer.size();
+            total += chunk;
+        }
+    }
+    return total;
+}
+
+
+qint64 AudioGenerator::writeData(const char *data, qint64 len)
+// ----------------------------------------------------------------------------
+//   We don't write data in our use case
+// ----------------------------------------------------------------------------
+{
+    Q_UNUSED(data);
+    Q_UNUSED(len);
+
+    return 0;
+}
+
+
+qint64 AudioGenerator::bytesAvailable() const
+// ----------------------------------------------------------------------------
+//   Return number of bytes available in the generator
+// ----------------------------------------------------------------------------
+{
+    return buffer.size() + QIODevice::bytesAvailable();
+}
+
+
+void MainWindow::initializeAudio(const QAudioDevice &deviceInfo, uint freq)
+// ----------------------------------------------------------------------------
+//   Audio setup for the simulator
+// ----------------------------------------------------------------------------
+{
+    if (!generator || freq != generator->frequency())
+    {
+        QAudioFormat format = deviceInfo.preferredFormat();
+        const int    durationUs = 1000000 /* microseconds */;
+
+        if (audio)
+            audio->stop();
+        audio.reset(new QAudioSink(deviceInfo, format));
+        generator.reset(new AudioGenerator(format, durationUs, freq));
+        generator->start();
+        audio->start(generator.data());
+    }
+}
+
+
 void MainWindow::startBuzzer(uint frequency)
 // ----------------------------------------------------------------------------
 //   Start a buzzer
 // ----------------------------------------------------------------------------
 {
-    for (size_t i = 0; i < SAMPLE_COUNT; i++)
-        (*samples)[i] = (i * frequency / (SAMPLE_COUNT * 1000)) & 1 ? 64U : 0;
+    record(sim_audio, "Start buzzer %d.%02d Hz, creating samples",
+           frequency / 100, frequency % 100);
 
-    delete audiobuf;
-    audiobuf = new QBuffer(samples);
-    audiobuf->open(QIODevice::ReadOnly);
-    if (audio)
-        audio->start(audiobuf);
+    initializeAudio(devices->defaultAudioOutput(), frequency);
+
+    switch (audio->state())
+    {
+
+    case QAudio::SuspendedState:
+    case QAudio::StoppedState:
+        audio->resume();
+        break;
+    default:
+    case QAudio::ActiveState:
+    case QAudio::IdleState:
+        // no-op
+        break;
+    }
 }
+
 
 void MainWindow::stopBuzzer()
 // ----------------------------------------------------------------------------
 //   Start a buzzer
 // ----------------------------------------------------------------------------
 {
-    delete audiobuf;
-    audiobuf = nullptr;
-    if (audio)
-        audio->stop();
+    record(sim_audio, "Stop buzzer, audio state is %d", audio->state());
+    switch (audio->state())
+    {
+    default:
+    case QAudio::SuspendedState:
+    case QAudio::StoppedState:
+    case QAudio::IdleState:
+        // No-op
+        break;
+    case QAudio::ActiveState:
+        audio->suspend();
+        break;
+    }
 }
 
 
@@ -633,53 +802,18 @@ bool MainWindow::buzzerPlaying()
 //   Check if the buzzer is actually playing
 // ----------------------------------------------------------------------------
 {
-    return audiobuf && (!audio || audio->state() == QAudio::ActiveState);
+    bool result = audio->state() == QAudio::ActiveState;
+    record(sim_audio, "Buzzer %+s playing", result ? "is" : "is not");
+    return result;
 }
 
 
-void MainWindow::handleAudioStateChanged(QAudio::State newState)
+void MainWindow::updateAudioDevices()
 // ----------------------------------------------------------------------------
-//   Restart audio buffer when it's done
+//   Audio devices changed, restart without changing the frequency
 // ----------------------------------------------------------------------------
 {
-    record(sim_audio, "Audio state %u\n",  newState);
-    switch (newState)
-    {
-    case QAudio::IdleState:
-        // Finished playing (no more data)
-        record(sim_audio, "Idle %u\n",  newState);
-        audio->stop();
-        if (audiobuf)
-        {
-            audiobuf->open(QIODevice::ReadOnly);
-            audio->start(audiobuf);
-        }
-        break;
-
-    case QAudio::StoppedState:
-        record(sim_audio, "Stopped %u\n",  newState);
-        // Stopped for other reasons
-        if (audio->error() != QAudio::NoError)
-            record(sim_audio, "Audio error\n");
-        if (audiobuf)
-        {
-            audiobuf->open(QIODevice::ReadOnly);
-            audio->start(audiobuf);
-        }
-        break;
-
-    case QAudio::ActiveState:
-        record(sim_audio, "Active %u\n",  newState);
-        break;
-
-    case QAudio::SuspendedState:
-        record(sim_audio, "Suspended %u\n",  newState);
-        break;
-
-    default:
-        record(sim_audio, "Ooops %u\n",  newState);
-        break;
-    }
+    initializeAudio(devices->defaultAudioOutput(), generator->frequency());
 }
 
 
