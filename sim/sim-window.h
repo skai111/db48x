@@ -96,8 +96,10 @@ class MainWindow : public QMainWindow
     QAudioSink        *audio;
 
     enum { SAMPLE_RATE = 20000, SAMPLE_COUNT = SAMPLE_RATE };
+public:
+    static qreal       devicePixelRatio;
 
-  public:
+public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 

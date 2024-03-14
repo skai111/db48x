@@ -173,6 +173,13 @@ int main(int argc, char *argv[])
                 else if (a < argc)
                     memory_size = atoi(argv[++a]);
                 break;
+            case 's':
+                if (argv[a][2])
+                    MainWindow::devicePixelRatio = atof(argv[a]+2);
+                else if (a < argc)
+                    MainWindow::devicePixelRatio = atof(argv[++a]);
+                break;
+
             }
         }
     }

@@ -61,6 +61,7 @@ extern bool db48x_keyboard;
 extern bool shift_held;
 extern bool alt_held;
 MainWindow *MainWindow::mainWindow = nullptr;
+qreal MainWindow::devicePixelRatio = 1.0;
 
 MainWindow::MainWindow(QWidget *parent)
 // ----------------------------------------------------------------------------
@@ -99,6 +100,7 @@ MainWindow::MainWindow(QWidget *parent)
                      highlight, SLOT(keyResizeSlot(const QRect &)));
 
     qreal dpratio = qApp->primaryScreen()->devicePixelRatio();
+    dpratio *= devicePixelRatio;
     resize(210 * dpratio, 370 * dpratio);
 
     rpl.start();
