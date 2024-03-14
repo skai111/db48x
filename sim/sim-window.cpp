@@ -735,18 +735,16 @@ void MainWindow::initializeAudio(const QAudioDevice &deviceInfo, uint freq)
 //   Audio setup for the simulator
 // ----------------------------------------------------------------------------
 {
-    if (!generator || freq != generator->frequency())
-    {
-        QAudioFormat format = deviceInfo.preferredFormat();
-        const int    durationUs = 1000000 /* microseconds */;
+    QAudioFormat format = deviceInfo.preferredFormat();
+    const int    durationUs = 1000000 /* microseconds */;
 
-        if (audio)
-            audio->stop();
-        audio.reset(new QAudioSink(deviceInfo, format));
-        generator.reset(new AudioGenerator(format, durationUs, freq));
-        generator->start();
-        audio->start(generator.data());
-    }
+    if (audio)
+        audio->stop();
+    audio.reset(new QAudioSink(deviceInfo, format));
+    generator.reset(new AudioGenerator(format, durationUs, freq));
+    generator->start();
+    audio->setVolume(0);
+    audio->start(generator.data());
 }
 
 
@@ -759,20 +757,21 @@ void MainWindow::startBuzzer(uint frequency)
            frequency / 100, frequency % 100);
 
     initializeAudio(devices->defaultAudioOutput(), frequency);
-
+    audio->setVolume(1);
     switch (audio->state())
     {
 
     case QAudio::SuspendedState:
     case QAudio::StoppedState:
+    case QAudio::IdleState:
         audio->resume();
         break;
     default:
     case QAudio::ActiveState:
-    case QAudio::IdleState:
         // no-op
         break;
     }
+    playing = true;
 }
 
 
@@ -794,17 +793,7 @@ void MainWindow::stopBuzzer()
         audio->suspend();
         break;
     }
-}
-
-
-bool MainWindow::buzzerPlaying()
-// ----------------------------------------------------------------------------
-//   Check if the buzzer is actually playing
-// ----------------------------------------------------------------------------
-{
-    bool result = audio->state() == QAudio::ActiveState;
-    record(sim_audio, "Buzzer %+s playing", result ? "is" : "is not");
-    return result;
+    playing = false;
 }
 
 

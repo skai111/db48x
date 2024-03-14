@@ -136,6 +136,7 @@ class MainWindow : public QMainWindow
     QMediaDevices                 *devices = nullptr;
     QScopedPointer<AudioGenerator> generator;
     QScopedPointer<QAudioSink>     audio;
+    volatile bool                  playing;
 
     enum { SAMPLE_RATE = 20000, SAMPLE_COUNT = SAMPLE_RATE };
 public:
@@ -157,7 +158,7 @@ public:
 
     void                startBuzzer(uint frequency);
     void                stopBuzzer();
-    bool                buzzerPlaying();
+    bool                buzzerPlaying() { return playing; }
 
   protected:
     virtual void keyPressEvent(QKeyEvent *ev);
