@@ -46,6 +46,7 @@ volatile uint keysync_done = 0;
 
 RECORDER_DECLARE(errors);
 
+
 uint tests::default_wait_time  = 500;
 uint tests::image_wait_time = 500;
 uint tests::key_delay_time = 2;
@@ -140,16 +141,16 @@ void tests::run(bool onlyCurrent)
     auto tracing           = RECORDER_TRACE(errors);
     RECORDER_TRACE(errors) = false;
 
-    // Reset to known settings stateg
-    reset_settings();
-
+    // Reset to known settings state
+    Settings = settings();
     if (onlyCurrent)
     {
         // Test the current thing
-        global_variables();
+        arithmetic();
     }
     else
     {
+        reset_settings();
         shift_logic();
         keyboard_entry();
         data_types();
