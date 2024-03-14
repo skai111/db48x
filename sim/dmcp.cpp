@@ -796,12 +796,12 @@ void run_help_file_style(const char * help_file, user_style_fn_t *user_style_fn)
 }
 void start_buzzer_freq(uint32_t freq)
 {
-    record(dmcp_error, "start_buzzer %u.%03uHz", freq / 1000, freq % 1000);
+    record(dmcp, "start_buzzer %u.%03uHz", freq / 1000, freq % 1000);
     ui_start_buzzer(freq);
 }
 void stop_buzzer()
 {
-    record(dmcp_notyet, "stop_buzzer");
+    record(dmcp, "stop_buzzer");
     ui_stop_buzzer();
 }
 
