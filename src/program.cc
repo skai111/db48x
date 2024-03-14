@@ -202,7 +202,13 @@ bool program::interrupted()
         extern int last_key;
 
         record(program, "Runner popped key %d, last=%d", key, last_key);
-        if (key == tests::KEYSYNC)
+        if (key == tests::CLEAR)
+        {
+            rt.clear_error();
+            ui.clear_editor();
+            rt.drop(rt.depth());
+        }
+        else if (key == tests::KEYSYNC)
             keysync_done = keysync_sent;
         else if (key > 0)
             last_key = key;
