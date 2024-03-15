@@ -197,11 +197,12 @@ struct tests
 
         // Special stuff
         CLEAR      = 100,       // Clear the calculator state
-        NOKEYS     = 101,       // Wait until keys buffer is empty
-        REFRESH    = 102,       // Wait until there is a screen refresh
-        KEYSYNC    = 103,       // Wait for other side to process keys
-        LONGPRESS  = 104,       // Force long press
-        EXIT_PGM   = 105,       // Exiting program
+        CLEARERR   = 101,       // Clear errors in a flag-independent way
+        NOKEYS     = 102,       // Wait until keys buffer is empty
+        REFRESH    = 103,       // Wait until there is a screen refresh
+        KEYSYNC    = 104,       // Wait for other side to process keys
+        LONGPRESS  = 105,       // Force long press
+        EXIT_PGM   = 106,       // Exiting program
 
         // Reaching a specific shift state
         NOSHIFT    = 110,       // Clear shifts
@@ -287,6 +288,7 @@ public:
     tests &clear(uint extrawait = 1000);
     tests &nokeys(uint extrawait = 0);
     tests &refreshed(uint extrawait = 0);
+    tests &screen_refreshed(uint extrawait = 0);
     tests &ready(uint extrawait = 0);
     tests &shifts(bool lshift, bool rshift, bool alpha, bool lowercase);
     tests &wait(uint ms);
@@ -318,7 +320,8 @@ public:
     {
         return error(nullptr, extrawait);
     }
-    tests &data_entry_noerror();
+    tests &data_entry_noerror(uint extrawait = 0);
+    tests &clear_error(uint extrawait = 0);
     tests &command(cstring msg, uint extrawait);
     tests &source(cstring msg, uint extrawait);
 

@@ -500,15 +500,26 @@ bool user_interface::key(int key, bool repeating, bool talpha)
 
     if (rt.error())
     {
-        if (key == KEY_EXIT || key == KEY_ENTER || key == KEY_BSP)
+        if (key && Settings.NoNeedToClearErrors())
+        {
+            // Do not return true, handle the key as if there was no error
+            // This is the way the HP48 and HP50 actually behave
             rt.clear_error();
-        else if (key == KEY_SHIFT)
-            handle_shifts(key, talpha);
-        else if (key)
-            beep(2200, 75);
-        dirtyStack = true;
-        dirtyEditor = true;
-        return true;
+            dirtyStack = true;
+            dirtyEditor = true;
+        }
+        else
+        {
+            if (key == KEY_EXIT || key == KEY_ENTER || key == KEY_BSP)
+                rt.clear_error();
+            else if (key == KEY_SHIFT)
+                handle_shifts(key, talpha);
+            else if (key)
+                beep(2200, 75);
+            dirtyStack = true;
+            dirtyEditor = true;
+            return true;
+        }
     }
 
     // Handle keys

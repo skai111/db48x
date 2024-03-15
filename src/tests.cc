@@ -1339,8 +1339,9 @@ void tests::conditionals()
     step("DoErr with custom message");
     test(CLEAR, "\"You lose!\" doerr \"You lose worse!\"", ENTER)
         .error("You lose!");
-    step("errm for custom error message");
-    test(BSP, "errm", ENTER)
+    step("errm for custom error message")
+        .test(CLEARERR).noerror()
+        .test("errm", ENTER)
         .expect("\"You lose!\"");
     step("errn for custom error message");
     test("errn", ENTER)
@@ -5714,7 +5715,7 @@ void tests::overflow_and_underflow()
     step("Test positive numerical underflow as error")
         .test(CLEAR)
         .test("1E-499 10 /", ENTER).error("Positive numerical underflow")
-        .test(BSP).expect("10")
+        .test(CLEARERR).expect("10")
         .test(BSP).expect("1.⁳⁻⁴⁹⁹")
         .test("-23 FS?C", ENTER).expect("False")
         .test("-24 FS?C", ENTER).expect("False")
@@ -5722,7 +5723,7 @@ void tests::overflow_and_underflow()
     step("Test negative numerical underflow as error")
         .test(CLEAR)
         .test("-1E-499 10 /", ENTER).error("Negative numerical underflow")
-        .test(BSP).expect("10")
+        .test(CLEARERR).expect("10")
         .test(BSP).expect("-1.⁳⁻⁴⁹⁹")
         .test("-23 FS?C", ENTER).expect("False")
         .test("-24 FS?C", ENTER).expect("False")
@@ -5735,7 +5736,7 @@ void tests::overflow_and_underflow()
     step("Test numerical overflow as infinity")
         .test(CLEAR)
         .test("1E499 10 *", ENTER).error("Numerical overflow")
-        .test(BSP).expect("10")
+        .test(CLEARERR).expect("10")
         .test(BSP).expect("1.⁳⁴⁹⁹")
         .test("-23 FS?C", ENTER).expect("False")
         .test("-24 FS?C", ENTER).expect("False")
@@ -5743,7 +5744,7 @@ void tests::overflow_and_underflow()
     step("Test positive numerical underflow as error")
         .test(CLEAR)
         .test("1E-499 10 /", ENTER).error("Positive numerical underflow")
-        .test(BSP).expect("10")
+        .test(CLEARERR).expect("10")
         .test(BSP).expect("1.⁳⁻⁴⁹⁹")
         .test("-23 FS?C", ENTER).expect("False")
         .test("-24 FS?C", ENTER).expect("False")
@@ -5751,7 +5752,7 @@ void tests::overflow_and_underflow()
     step("Test negative numerical underflow as error")
         .test(CLEAR)
         .test("-1E-499 10 /", ENTER).error("Negative numerical underflow")
-        .test(BSP).expect("10")
+        .test(CLEARERR).expect("10")
         .test(BSP).expect("-1.⁳⁻⁴⁹⁹")
         .test("-23 FS?C", ENTER).expect("False")
         .test("-24 FS?C", ENTER).expect("False")
@@ -5926,7 +5927,7 @@ void tests::insertion_of_variables_constants_and_units()
         .test(ENTER)
         .expect("« π e ⅈ ⅉ ∞ ? "
                 "3.14159 26535 9 2.71828 18284 6 0+1ⅈ 0+1ⅈ 9.99999⁳⁹⁹⁹⁹⁹⁹ "
-                "Undefined »", 3000);
+                "Undefined »", 300);
 
     step("Select library menu")
         .test(CLEAR, RSHIFT, H).noerror();
@@ -6964,6 +6965,7 @@ tests &tests::itest(tests::key k, bool release)
                       (k-NOSHIFT) & 4, (k-NOSHIFT) & 8);
 
     case CLEAR:         return clear();
+    case CLEARERR:      return clear_error();
     case NOKEYS:        return nokeys();
     case REFRESH:       return refreshed();
     case LONGPRESS:     longpress = true; // Next key will be a long press
@@ -7370,11 +7372,16 @@ tests &tests::nokeys(uint extrawait)
 }
 
 
-tests &tests::data_entry_noerror()
+tests &tests::data_entry_noerror(uint extrawait)
 // ----------------------------------------------------------------------------
 //  During data entry, check that no error message pops up
 // ----------------------------------------------------------------------------
 {
+    uint start = sys_current_ms();
+    uint wait_time = default_wait_time + extrawait;
+    while (sys_current_ms() - start < wait_time && rt.error())
+        sys_delay(refresh_delay_time);
+
     // Check that we are not displaying an error message
     if (rt.error())
     {
@@ -7387,7 +7394,7 @@ tests &tests::data_entry_noerror()
 }
 
 
-tests &tests::refreshed(uint extrawait)
+tests &tests::screen_refreshed(uint extrawait)
 // ----------------------------------------------------------------------------
 //    Wait until the screen was updated by the calculator
 // ----------------------------------------------------------------------------
@@ -7404,14 +7411,24 @@ tests &tests::refreshed(uint extrawait)
     {
         explain("No screen refresh");
         fail();
-        return *this;
     }
+    return *this;
+}
+
+
+tests &tests::refreshed(uint extrawait)
+// ----------------------------------------------------------------------------
+//    Wait until the screen and stack were updated by the calculator
+// ----------------------------------------------------------------------------
+{
+    screen_refreshed(extrawait);
 
     // Wait for a stack update
+    uint start     = sys_current_ms();
+    uint wait_time = default_wait_time + extrawait;
+    bool found     = false;
+    bool updated   = false;
     record(tests, "Waiting for key %d in stack at %u", last_key, start);
-    start = sys_current_ms();
-    bool found = false;
-    bool updated = false;
     while (sys_current_ms() - start < wait_time)
     {
         if (!Stack.available())
@@ -7905,6 +7922,21 @@ tests &tests::error(cstring msg, uint extrawait)
         explain("Expected error message [", msg, "], "
                 "got [", err, "]");
     fail();
+    return *this;
+}
+
+
+tests &tests::clear_error(uint extrawait)
+// ----------------------------------------------------------------------------
+//   Clear errors in a way that does not depend on error settings
+// ----------------------------------------------------------------------------
+//   Two settings can impact how we clear errors:
+//   - The NeedToClearErrors setting impacts which key is actually needed
+//   - Having a beep may delay how long it takes for screen refresh to show up
+//   So for that reason, we send a special key to
+{
+    nokeys(extrawait);
+    rt.clear_error();
     return *this;
 }
 
