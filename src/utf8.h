@@ -334,12 +334,12 @@ inline bool utf8_more(utf8 start, utf8 current, size_t size)
 //
 // ============================================================================
 
-inline bool is_valid_as_name_initial(unicode cp)
+inline bool is_valid_in_name(unicode cp)
 // ----------------------------------------------------------------------------
-//   Check if character is valid as initial of a name
+//   Check if character is valid in a name after the initial character
 // ----------------------------------------------------------------------------
 {
-    if ((cp >= 'A' && cp <= 'Z') || (cp >= 'a' && cp <= 'z'))
+    if (isalnum(cp))
         return true;
     static utf8 valid = utf8("!$%&?");
     for (utf8 p = valid; *p; p = utf8_next(p))
@@ -356,30 +356,36 @@ inline bool is_valid_as_name_initial(unicode cp)
 }
 
 
-inline bool is_valid_as_name_initial(utf8 s)
-// ----------------------------------------------------------------------------
-//   Check if first character in a string is valid in a name
-// ----------------------------------------------------------------------------
-{
-    return is_valid_as_name_initial(utf8_codepoint(s));
-}
-
-
-inline bool is_valid_in_name(unicode cp)
-// ----------------------------------------------------------------------------
-//   Check if character is valid in a name after the initial character
-// ----------------------------------------------------------------------------
-{
-    return ((cp >= '0' && cp <= '9') || is_valid_as_name_initial(cp));
-}
-
-
 inline bool is_valid_in_name(utf8 s)
 // ----------------------------------------------------------------------------
 //   Check if first character in a string is valid in a name
 // ----------------------------------------------------------------------------
 {
     return is_valid_in_name(utf8_codepoint(s));
+}
+
+
+inline bool is_valid_as_name_initial(unicode cp)
+// ----------------------------------------------------------------------------
+//   Check if character is valid as initial of a name
+// ----------------------------------------------------------------------------
+{
+    if (isdigit(cp))
+        return false;
+    static utf8 invalid = utf8("ⒸⒺⓁ");
+    for (utf8 p = invalid; *p; p = utf8_next(p))
+        if (cp == utf8_codepoint(p))
+            return false;
+    return is_valid_in_name(cp);
+}
+
+
+inline bool is_valid_as_name_initial(utf8 s)
+// ----------------------------------------------------------------------------
+//   Check if first character in a string is valid in a name
+// ----------------------------------------------------------------------------
+{
+    return is_valid_as_name_initial(utf8_codepoint(s));
 }
 
 
