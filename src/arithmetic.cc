@@ -433,7 +433,7 @@ algebraic_p arithmetic::non_numeric<mul>(algebraic_r x, algebraic_r y)
             xe = xe * ye;
             return unit::simple(xv, xe);
         }
-        else if (!y->is_symbolic())
+        else if (!y->is_symbolic() || xv->is_one())
         {
             xv = xv * y;
             return unit::simple(xv, xe);
@@ -441,9 +441,9 @@ algebraic_p arithmetic::non_numeric<mul>(algebraic_r x, algebraic_r y)
     }
     else if (unit_p yu = y->as<unit>())
     {
-        if (!x->is_symbolic())
+        algebraic_g yv = yu->value();
+        if (!x->is_symbolic() || yv->is_one())
         {
-            algebraic_g yv = yu->value();
             algebraic_g ye = yu->uexpr();
             yv = x * yv;
             return unit::simple(yv, ye);
