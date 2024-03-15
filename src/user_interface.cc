@@ -356,7 +356,8 @@ bool user_interface::end_edit()
                     select = ~0U;
                 }
                 draw_idle();
-                beep(3300, 100);
+                if (!rt.error())
+                    rt.internal_error();
                 return false;
             }
         }
