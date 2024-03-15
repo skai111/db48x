@@ -544,7 +544,15 @@ PARSE_BODY(complex)
 
     // Check if we need to compute the length of y
     if (!ylen)
+    {
         ylen = last - ybeg;
+        if (!ylen)
+        {
+            rt.syntax_error().source(utf8(ybeg));
+            return ERROR;
+        }
+    }
+
 
     // Compute size that we parsed
     size_t parsed = last - first + 2*paren;
