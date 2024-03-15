@@ -46,7 +46,7 @@ struct tests
 {
     tests()
         : tname(), sname(), tindex(), sindex(), cindex(), count(),
-          ok(), longpress(), failures()
+          ok(), longpress(), failures(), explanation()
     { }
 
     // Run all tests
@@ -381,6 +381,7 @@ public:
     static uint          key_delay_time;
     static uint          refresh_delay_time;
     static uint          image_wait_time;
+    static bool          running;
 };
 
 #define step(...)       position(__FILE__, __LINE__).istep(__VA_ARGS__)

@@ -46,10 +46,10 @@ volatile uint keysync_done = 0;
 
 RECORDER_DECLARE(errors);
 
-
+bool tests::running            = false;
 uint tests::default_wait_time  = 500;
-uint tests::image_wait_time = 500;
-uint tests::key_delay_time = 2;
+uint tests::image_wait_time    = 500;
+uint tests::key_delay_time     = 2;
 uint tests::refresh_delay_time = 50;
 
 #define TEST_CATEGORY(name, enabled, descr)                     \
@@ -135,6 +135,8 @@ void tests::run(bool onlyCurrent)
 //   Run all test categories
 // ----------------------------------------------------------------------------
 {
+    save<bool> markRunning(running, true);
+
     tindex = sindex = cindex = count = 0;
     failures.clear();
 
@@ -142,11 +144,11 @@ void tests::run(bool onlyCurrent)
     RECORDER_TRACE(errors) = false;
 
     // Reset to known settings state
-    Settings = settings();
+    Settings               = settings();
     if (onlyCurrent)
     {
         // Test the current thing
-        arithmetic();
+        insertion_of_variables_constants_and_units();
     }
     else
     {

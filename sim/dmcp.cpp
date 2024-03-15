@@ -33,6 +33,7 @@
 #include "recorder.h"
 #include "sim-dmcp.h"
 #include "target.h"
+#include "tests.h"
 #include "types.h"
 
 #include <iostream>
@@ -61,6 +62,9 @@ RECORDER(lcd_warning,   64, "Warnings from lcd/display functions");
 
 extern volatile uint keysync_sent;
 extern volatile uint keysync_done;
+
+extern bool          run_tests;
+extern bool          noisy_tests;
 
 uint                 lcd_refresh_requested = 0;
 int                  lcd_buf_cleared_result = 0;
@@ -797,12 +801,14 @@ void run_help_file_style(const char * help_file, user_style_fn_t *user_style_fn)
 void start_buzzer_freq(uint32_t freq)
 {
     record(dmcp, "start_buzzer %u.%03uHz", freq / 1000, freq % 1000);
-    ui_start_buzzer(freq);
+    if (!tests::running || noisy_tests)
+        ui_start_buzzer(freq);
 }
 void stop_buzzer()
 {
     record(dmcp, "stop_buzzer");
-    ui_stop_buzzer();
+    if (!tests::running || noisy_tests)
+        ui_stop_buzzer();
 }
 
 int sys_free_mem()

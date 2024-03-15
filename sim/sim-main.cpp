@@ -39,6 +39,7 @@
 RECORDER(options, 32, "Information about command line options");
 
 bool run_tests = false;
+bool noisy_tests = false;
 bool db48x_keyboard = true;
 uint memory_size = 70;           // Memory size in kilobytes
 
@@ -120,6 +121,10 @@ int main(int argc, char *argv[])
             case 't':
                 recorder_trace_set(argv[a]+2);
                 break;
+            case 'n':
+                noisy_tests = true;
+                break;
+
             case 'T':
                 run_tests = true;
                 // fall-through
