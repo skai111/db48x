@@ -210,6 +210,7 @@ int handle_menu(const smenu_t * menu_id, int action, int cur_line)
                 sys_sleep();
 
             int key = key_pop();
+            uint wanted = 0;
             switch (key)
             {
             case KEY_UP:
@@ -226,6 +227,16 @@ int handle_menu(const smenu_t * menu_id, int action, int cur_line)
                     redraw = true;
                 }
                 break;
+            case KEY_1: wanted = 1; break;
+            case KEY_2: wanted = 2; break;
+            case KEY_3: wanted = 3; break;
+            case KEY_4: wanted = 4; break;
+            case KEY_5: wanted = 5; break;
+            case KEY_6: wanted = 6; break;
+            case KEY_7: wanted = 7; break;
+            case KEY_8: wanted = 8; break;
+            case KEY_9: wanted = 9; break;
+
             case -1:
                 // Signals that main application is exiting, leave all dialogs
             case KEY_EXIT:
@@ -238,6 +249,16 @@ int handle_menu(const smenu_t * menu_id, int action, int cur_line)
                 redraw = true;
                 break;
             }
+            if (wanted)
+            {
+                if (wanted <= count)
+                {
+                    menu_line = wanted - 1;
+                    run_menu_item_app(menu_id->items[menu_line]);
+                    redraw = true;
+                }
+            }
+
         }
     }
 
