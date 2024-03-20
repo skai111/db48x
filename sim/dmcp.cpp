@@ -996,9 +996,9 @@ FRESULT f_unlink(const TCHAR *path)
     return FR_NOT_ENABLED;
 }
 
-
 void disp_disk_info(const char *hdr)
 {
+    ui_draw_message(hdr);
 }
 
 void set_reset_state_file(const char * str)

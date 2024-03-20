@@ -143,12 +143,19 @@ void file::open(cstring path)
 #if SIMULATOR
     data = fopen(path, "r");
     if (!data)
+    {
         record(file_error, "Error %s opening %s", strerror(errno), path);
+        rt.error(strerror(errno));
+    }
 #else
     FRESULT ok = f_open(&data, path, FA_READ);
     data.err = ok;
     if (ok != FR_OK)
+    {
         data.flag = 0;
+        rt.error(error(data.err));
+    }
+
 #endif                          // SIMULATOR
 }
 
@@ -164,6 +171,7 @@ void file::open_for_writing(cstring path)
     {
         record(file_error, "Error %s opening %s for writing",
                strerror(errno), path);
+        rt.error(strerror(errno));
         return;
     }
 #else
@@ -174,6 +182,7 @@ void file::open_for_writing(cstring path)
     {
         sys_disk_write_enable(0);
         data.flag = 0;
+        rt.error(error(data.err));
     }
 #endif                          // SIMULATOR
 }

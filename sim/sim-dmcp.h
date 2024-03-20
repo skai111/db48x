@@ -65,7 +65,7 @@ extern bool          alt_held;
 
 // ============================================================================
 //
-//   Quick and dirty interface with iOS
+//   Quick and dirty interface with Qt
 //
 // ============================================================================
 
@@ -90,5 +90,6 @@ bool      ui_charging();        // On USB power
 
 void      ui_start_buzzer(uint frequency);
 void      ui_stop_buzzer();
+void      ui_draw_message(const char *hdr);
 
 #endif // SIM_DMCP
