@@ -37,6 +37,7 @@
 #include "renderer.h"
 #include "runtime.h"
 #include "settings.h"
+#include "sim-dmcp.h"
 #include "target.h"
 #include "types.h"
 #include "user_interface.h"
@@ -528,16 +529,42 @@ cstring state_name()
 }
 
 
-bool load_state_file(cstring path)
+#ifndef SIMULATOR
+int ui_wrap_io(file_sel_fn callback,
+               const char *path,
+               void       *data,
+               bool        writing)
 // ----------------------------------------------------------------------------
-//   Load the state file directly
+//   On hardware, we simply compute the name from the path
 // ----------------------------------------------------------------------------
 {
     cstring name = path;
     for (cstring p = path; *p; p++)
         if (*p == '/' || *p == '\\')
             name = p + 1;
-    return state_load_callback(path, name, (void *) 1) == 0;
+    return callback(path, name, data);
+}
+
+#endif // SIMULATOR
+
+
+
+
+bool load_state_file(cstring path)
+// ----------------------------------------------------------------------------
+//   Load the state file directly
+// ----------------------------------------------------------------------------
+{
+    return ui_wrap_io(state_load_callback, path, (void *) 1, false) == 0;
+}
+
+
+bool save_state_file(cstring path)
+// ----------------------------------------------------------------------------
+//   Save the state file directly
+// ----------------------------------------------------------------------------
+{
+    return ui_wrap_io(state_save_callback, path, (void *) 1, true) == 0;
 }
 
 
@@ -556,19 +583,6 @@ bool load_system_state()
             return load_state_file(state);
     }
     return false;
-}
-
-
-bool save_state_file(cstring path)
-// ----------------------------------------------------------------------------
-//   Save the state file directly
-// ----------------------------------------------------------------------------
-{
-    cstring name = path;
-    for (cstring p = path; *p; p++)
-        if (*p == '/' || *p == '\\')
-            name = p + 1;
-    return state_save_callback(path, name, nullptr) == 0;
 }
 
 

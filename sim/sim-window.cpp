@@ -1005,6 +1005,18 @@ void ui_stop_buzzer()
 }
 
 
+int ui_wrap_io(file_sel_fn callback, const char *path, void *data, bool)
+// ----------------------------------------------------------------------------
+//   Wrap I/Os into thread safety / file sync
+// ----------------------------------------------------------------------------
+{
+    cstring name = path;
+    for (cstring p = path; *p; p++)
+        if (*p == '/' || *p == '\\')
+            name = p + 1;
+    return callback(path, name, data);
+}
+
 
 bool tests::image_match(cstring file, int x, int y, int w, int h, bool force)
 // ----------------------------------------------------------------------------

@@ -92,4 +92,9 @@ void      ui_start_buzzer(uint frequency);
 void      ui_stop_buzzer();
 void      ui_draw_message(const char *hdr);
 
+int       ui_wrap_io(file_sel_fn callback,
+                     const char *path,
+                     void       *data,
+                     bool        writing);
+
 #endif // SIM_DMCP
