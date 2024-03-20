@@ -203,6 +203,7 @@ struct tests
         KEYSYNC    = 104,       // Wait for other side to process keys
         LONGPRESS  = 105,       // Force long press
         EXIT_PGM   = 106,       // Exiting program
+        SAVE_PGM   = 107,       // Save program on the RPL thread
 
         // Reaching a specific shift state
         NOSHIFT    = 110,       // Clear shifts

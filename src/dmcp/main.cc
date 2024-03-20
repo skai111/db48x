@@ -373,13 +373,14 @@ extern "C" void program_main()
             }
 
 #if SIMULATOR
-            if (key == tests::EXIT_PGM)
+            if (key == tests::EXIT_PGM || key == tests::SAVE_PGM)
             {
                 cstring path = get_reset_state_file();
                 printf("Exit: saving state to %s\n", path);
                 if (path && *path)
                     save_state_file(path);
-                break;
+                if (key == tests::EXIT_PGM)
+                    break;
             }
             if (key == tests::KEYSYNC)
             {

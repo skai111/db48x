@@ -405,6 +405,12 @@ void MainWindow::keyPressEvent(QKeyEvent * ev)
         return;
     }
 
+    if (k == Qt::Key_F8)
+    {
+        key_push(tests::SAVE_PGM);
+        return;
+    }
+
     if (k == Qt::Key_Shift)
     {
         shift_held = true;
