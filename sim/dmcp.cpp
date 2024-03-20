@@ -924,9 +924,9 @@ int file_selection_screen(const char   *title,
     if (*base_dir == '/' || *base_dir == '\\')
         base_dir++;
 
-    return ui_file_selector(title, base_dir, ext,
-                            sel_fn, data,
-                            disp_new, overwrite_check);
+    ret = ui_file_selector(title, base_dir, ext,
+                           sel_fn, data,
+                           disp_new, overwrite_check);
 
     return ret;
 }
