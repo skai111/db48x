@@ -147,8 +147,12 @@ void tests::run(bool onlyCurrent)
     Settings               = settings();
     if (onlyCurrent)
     {
-        // Test the current thing
-        insertion_of_variables_constants_and_units();
+        begin("Current");
+        step("Test positive numerical underflow as error")
+            .test(CLEAR)
+            .test("1E-499 0 /", ENTER).error("Divide by zero")
+            .test(CLEARERR).expect("0")
+            .test(BSP).expect("1.⁳⁻⁴⁹⁹");
     }
     else
     {
