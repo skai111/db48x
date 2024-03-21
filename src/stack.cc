@@ -130,6 +130,7 @@ void stack::draw_stack()
             {
                 graph = obj->graph(g);
             } while (!graph && Settings.AutoScaleStack() && g.reduce_font());
+
             if (graph)
             {
                 size gh = graph->height();
@@ -140,15 +141,17 @@ void stack::draw_stack()
 #ifdef SIMULATOR
                 if (level == 0)
                 {
+                    extern int last_key;
                     bool     ml = (level ? Settings.MultiLineStack()
                                    : Settings.MultiLineResult());
                     renderer r(nullptr, ~0U, true, ml);
                     size_t   len = obj->render(r);
                     utf8     out = r.text();
-                    output(last_key, obj->type(), out, len);
+                    int      key = last_key;
+                    output(key, obj->type(), out, len);
                     record(tests,
                            "Key %d X-reg %+s size %u %s",
-                           last_key, object::name(obj->type()), len, out);
+                           key, object::name(obj->type()), len, out);
                 }
 #endif // SIMULATOR
             }
@@ -177,10 +180,12 @@ void stack::draw_stack()
 #ifdef SIMULATOR
             if (level == 0)
             {
-                output(last_key, obj->type(), out, len);
+                extern int last_key;
+                int key = last_key;
+                output(key, obj->type(), out, len);
                 record(tests,
-                       "Key %d X-reg %+s size %u %s",
-                       last_key, object::name(obj->type()), len, out);
+                       "Stack key %d X-reg %+s size %u %s",
+                       key, object::name(obj->type()), len, out);
             }
 #endif
             w = font->width(out, len);
