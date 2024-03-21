@@ -8001,7 +8001,7 @@ tests &tests::source(cstring ref, uint extrawait)
 // ----------------------------------------------------------------------------
 {
     utf8 src = nullptr;
-    nokeys();
+    nokeys(extrawait);
 
     uint start = sys_current_ms();
     uint wait_time = image_wait_time + extrawait;
