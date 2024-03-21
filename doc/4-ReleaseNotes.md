@@ -1,5 +1,76 @@
 # Release notes
 
+## Release 0.7.3 "Perfume" - Mostly bug fixes
+
+This release is mostly about bug fixes, improving the build on simulator, and accelerating the test suite while keeping it stable.
+
+### New features
+
+* simulator: Add F8 key to save state in the simulator
+* errors: Add a beep when an error is shown
+* linux: Add `-s` option for screen scaling (when Qt gets scaling wrong)
+* equations: Get library equation value for plotter, solver and integrator
+* characters: Add constant, equation and lib markers to RPL menu
+* characters: Add music-related characters and character menu
+* commands: Add missing stack commands (nip, pick3, ndupn, unrot, unpick)
+
+
+### Bug fixes
+
+* variables: Clone purged objects on stack after `Purge`
+* units: unit * symbolic is preserved as is (e.g. `'A'_m`)
+* compare: Enforce the `NumericalResults` flag for comparisons
+* constants: Fix parsing of constants, equations and library items
+* sto: Repair `file exists` error storing to a source file
+* simulator: Do not try to create directory if it exists
+* Report file errors, e.g. permissions or I/O errors
+* equations: Mark `c` and `R` as constants in equations
+* simulator: Double clicks are now considered as virtual keyboard touches
+* ui: Emit only one beep, not two, for a syntax error on the command line
+* ui: Avoid rare null-dereference crash when menu label is not set
+* complex: Report a syntax error if the second half is empty
+* utf8: Do not accept constant/equation/library codepoint in names
+* units: Multiplying by `1_m` is OK even with algebraic
+* tests: Avoid case where CLEAR does not clear errors
+* audio: Improve audio reliability on the simulator
+* linux: Rewrite the audio-generation code to avoid crashes
+* linux: Avoid infinite recursion in the tests
+* linux: Fix warnings about unused variables
+* linux: Avoid warnings about null pointer in strcmp
+* linux: Avoid build error due to bad `ularge` overload in settings
+* linux: Fix type issue for the Insert function (reported as a warning)
+* linux: Remove warning about mixing enums and integers
+* linux: Avoid error on printf format
+* linux: Avoid warnings about type qualifiers
+* linux: Remove warnings about incompatible function casts
+* linux: Address warnings about missing initializers
+* linux: Fix warning about prinf formats
+* linux: Address warning about signed vs unsigned
+* linux: Remove warning about fall-through switch statement
+* linux: Remove warnings about unused arguments
+* tests: Repair several tests that were unstable due to scrolling images
+* tests: Increase memory size to avoid occasional out of memory failures
+* object: Make `as_uint32` and `as_uint64` consistent for negative input
+
+
+### Improvements
+
+* ui: Emulate HP48/HP50G behavior for errors (do not require key to continue)
+* simulator: Add I/O wrapper around file state save/restore
+* dmcp: Remove double return in the code
+* simulator: Accept numeric keys in DMCP menus
+* doc: Add Kjell Christenson to list of authors
+* tests: Run command-line tests silently
+* tests: Clear settings the fast way for quick tests
+* dmcp: Do not treat the buzzer as a recorder error (avoid message noise)
+* simulator: Ensure error messages show up in a recorder dump
+* tests: Increase memory size to avoid failing tests
+* tests: Increase delay waiting for function plots to appear
+* tests: Refactor test suite interaction with RPL thread to accelerate it
+* tests: Add a delay before launching the test thread to load initial state
+* tests: Add missing reference picture for `char-menu`
+
+
 ## Release 0.7.2 "Light" - Libraries, Characters menu
 
 This release introduces four relatively significant features:
