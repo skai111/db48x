@@ -7384,7 +7384,7 @@ tests &tests::nokeys(uint extrawait)
     {
         explain("Unable to get an empty keyboard buffer");
         fail();
-        rt.clear_error();
+        clear_error();
     }
     return *this;
 }
@@ -7406,7 +7406,7 @@ tests &tests::data_entry_noerror(uint extrawait)
         explain("Unexpected error message [", rt.error(), "] "
                 "during data entry, cleared");
         fail();
-        rt.clear_error();
+        clear_error();
     }
     return *this;
 }
