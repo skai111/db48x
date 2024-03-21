@@ -286,7 +286,8 @@ public:
         return itest(first).itest(args...);
     }
 
-    tests &clear(uint extrawait = 1000);
+    tests &clear(uint extrawait = 0);
+    tests &keysync(uint extrawait = 0);
     tests &nokeys(uint extrawait = 0);
     tests &refreshed(uint extrawait = 0);
     tests &screen_refreshed(uint extrawait = 0);

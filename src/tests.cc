@@ -6946,6 +6946,27 @@ tests &tests::show(tests::failure &f, cstring &last, uint &line)
 //
 // ============================================================================
 
+tests &tests::keysync(uint extrawait)
+// ----------------------------------------------------------------------------
+//   Wait for keys to sync with the RPL thread
+// ----------------------------------------------------------------------------
+{
+    // Wait for the RPL thread to process the keys
+    keysync_sent++;
+    record(tests, "Key sync sent %u done %u", keysync_sent, keysync_done);
+    key_push(KEYSYNC);
+
+    uint start = sys_current_ms();
+    uint wait_time = default_wait_time + extrawait;
+
+    while (keysync_done != keysync_sent &&
+           sys_current_ms() - start < wait_time)
+        sys_delay(key_delay_time);
+
+    return *this;
+}
+
+
 tests &tests::itest(tests::key k, bool release)
 // ----------------------------------------------------------------------------
 //   Type a given key directly
@@ -7012,14 +7033,7 @@ tests &tests::itest(tests::key k, bool release)
         Stack.catch_up();
         last_key = -k;
         key_push(RELEASE);
-
-        // Wait for the RPL thread to process the keys
-        keysync_sent++;
-        record(tests, "Key sync sent %u done %u", keysync_sent, keysync_done);
-        key_push(KEYSYNC);
-        while (keysync_done != keysync_sent)
-            sys_delay(key_delay_time);
-        record(tests, "Key sync done %u sent %u", keysync_done, keysync_sent);
+        keysync();
     }
 
     return *this;
