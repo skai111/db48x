@@ -54,7 +54,7 @@ stack::stack()
 // ----------------------------------------------------------------------------
 #if SIMULATOR
     : history(), writer(0), reader(0)
-#endif
+#endif  // SIMULATOR
 {
 }
 
@@ -102,13 +102,12 @@ void stack::draw_stack()
         Screen.fill(0, bottom, LCD_W, bottom, pattern::gray50);
     }
 
-    char buf[16];
-    coord y = bottom;
 #ifdef SIMULATOR
     extern int last_key;
-    if (depth == 0)
-        output(last_key, object::ID_object, nullptr, 0);
-#endif
+#endif // SIMULATOR
+
+    char buf[16];
+    coord y = bottom;
     for (uint level = 0; level < depth; level++)
     {
         if (coord(y) <= top)
