@@ -826,7 +826,7 @@ struct runtime
     // ------------------------------------------------------------------------
     {
         if (message)
-            record(errors, "Error [%s]", message);
+            record(errors, "Error [%+s]", message);
         else
             record(runtime, "Clearing error");
         Error = ErrorSave = message;
