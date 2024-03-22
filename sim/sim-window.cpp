@@ -110,7 +110,10 @@ MainWindow::MainWindow(QWidget *parent)
 
     rpl.start();
     if (run_tests)
+    {
+        ui_ms_sleep(1000);      // In case we are loading a file
         tests.start();
+    }
 }
 
 MainWindow::~MainWindow()
