@@ -203,8 +203,10 @@ int handle_menu(const smenu_t * menu_id, int action, int cur_line)
         bool redraw = false;
         while (!redraw)
         {
-            while (key_empty())
+            while (!test_command && key_empty())
                 sys_sleep();
+            if (test_command)
+                return 0;
 
             int key = key_pop();
             uint wanted = 0;
@@ -848,7 +850,7 @@ static struct timer
 
 void sys_sleep()
 {
-    while (key_empty() && !test_command)
+    while (!test_command && key_empty())
     {
         uint32_t now = sys_current_ms();
         for (int i = 0; i < 4; i++)
@@ -896,14 +898,14 @@ int sys_timer_timeout(int timer_ix)
 void wait_for_key_press()
 {
     wait_for_key_release(-1);
-    while (key_empty() || !key_pop())
+    while (!test_command && (key_empty() || !key_pop()))
         sys_sleep();
 }
 
 void wait_for_key_release(int tout)
 {
     record(dmcp_notyet, "wait_for_key_release not implemented");
-    while (!key_empty() && key_pop())
+    while (!test_command && (!key_empty() && key_pop()))
         sys_sleep();
 }
 

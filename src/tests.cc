@@ -6955,13 +6955,19 @@ tests &tests::show(tests::failure &f, cstring &last, uint &line)
 //
 // ============================================================================
 
+RECORDER(timing, 32, "Timing information about tests");
+
 tests &tests::rpl_command(uint command, uint extrawait)
 // ----------------------------------------------------------------------------
 //   Send a command to the RPL thread and wait for it to be picked up
 // ----------------------------------------------------------------------------
 {
+    uint t0 = sys_current_ms();
+
     record(tests, "RPL command %u, current is %u", command, test_command);
-    nokeys(extrawait);
+
+    uint t1 = sys_current_ms();
+    uint d1 = t1 - t0;
 
     if (test_command)
     {
@@ -6980,12 +6986,18 @@ tests &tests::rpl_command(uint command, uint extrawait)
     while (test_command == command && sys_current_ms() - start < wait_time)
         sys_delay(key_delay_time);
 
+    uint t2 = sys_current_ms();
+    uint d2 = t2 - t1;
+
     if (test_command)
     {
         explain("RPL command ", command, " was not processed, "
                 "got ", test_command, " after waiting");
         fail();
     }
+
+    record(timing, "RPL command %u %ums key wait %ums command wait %ums",
+           command, t2 - t0, d1, d2);
     return *this;
 }
 
@@ -6997,7 +7009,16 @@ tests &tests::keysync(uint extrawait)
 {
     // Wait for the RPL thread to process the keys
     record(tests, "Need to send KEYSYNC");
-    return rpl_command(KEYSYNC, extrawait);
+    uint t0 = sys_current_ms();
+    // nokeys(extrawait);
+    uint t1 = sys_current_ms();
+    uint d1 = t1 - t0;
+    rpl_command(KEYSYNC, extrawait);
+    uint t2 = sys_current_ms();
+    uint d2 = t2 - t1;
+    record(timing, "Keysync took %ums wait %ums command %ums",
+           t2 - t0, d1, d2);
+    return *this;
 }
 
 
