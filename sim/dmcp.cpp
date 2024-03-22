@@ -58,6 +58,8 @@ RECORDER(lcd_refresh,   64, "DMCP lcd/display refresh");
 RECORDER(lcd_width,     64, "Width of strings and chars");
 RECORDER(lcd_warning,   64, "Warnings from lcd/display functions");
 
+RECORDER_DECLARE(tests_rpl);
+
 #undef ppgm_fp
 
 extern bool          run_tests;
@@ -898,15 +900,28 @@ int sys_timer_timeout(int timer_ix)
 void wait_for_key_press()
 {
     wait_for_key_release(-1);
-    while (!test_command && (key_empty() || !key_pop()))
+    while (key_empty() || !key_pop())
+    {
+        // Avoid refreshing the screen
+        if (test_command == tests::KEYSYNC)
+        {
+            record(tests_rpl, "Blocking screen refresh from wait_for_keypress");
+            test_command = 0;
+        }
+        else if (test_command)
+        {
+            record(tests_rpl, "Waiting for key interrupted by command %u",
+                   test_command);
+            break;
+        }
         sys_sleep();
+    }
 }
 
 void wait_for_key_release(int tout)
 {
-    record(dmcp_notyet, "wait_for_key_release not implemented");
-    while (!test_command && (!key_empty() && key_pop()))
-        sys_sleep();
+    while (!key_empty() && key_pop())
+       sys_sleep();
 }
 
 int file_selection_screen(const char   *title,

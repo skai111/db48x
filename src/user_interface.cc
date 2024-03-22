@@ -63,10 +63,11 @@ user_interface ui;
 using std::max;
 using std::min;
 
-RECORDER(user_interface, 16, "ui processing");
-RECORDER(text_editor, 16, "Text editor");
-RECORDER(menus, 16, "Menu operations");
-RECORDER(help,  16, "On-line help");
+RECORDER(user_interface,16, "ui processing");
+RECORDER(text_editor,   16, "Text editor");
+RECORDER(menus,         16, "Menu operations");
+RECORDER(help,          16, "On-line help");
+RECORDER(tests_ui,      16, "Test interaction with user interface");
 
 #define NUM_TOPICS      (sizeof(topics) / sizeof(topics[0]))
 
@@ -1818,8 +1819,10 @@ bool user_interface::draw_idle()
 {
     if (graphics)
     {
+        record(tests_ui, "Waiting for key");
         graphics = false;
         wait_for_key_press();
+        record(tests_ui, "Redraw LCD");
         redraw_lcd(true);
     }
     draw_busy(0);

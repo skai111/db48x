@@ -30,6 +30,7 @@
 
 #include "parser.h"
 #include "settings.h"
+#include "sysmenu.h"
 #include "variables.h"
 
 #ifdef SIMULATOR
@@ -37,7 +38,7 @@
 #endif // SIMULATOR
 
 RECORDER(program, 16, "Program evaluation");
-RECORDER_DECLARE(tests);
+RECORDER_DECLARE(tests_rpl);
 
 
 
@@ -202,13 +203,7 @@ bool program::interrupted()
         int key = key_pop();
         extern int last_key;
         record(program, "Runner popped key %d, last=%d", key, last_key);
-        record(tests, "Program runner popped key %d, last=%d", key, last_key);
-        if (key > 0)
-            last_key = key;
-        else if (last_key > 0)
-            last_key = -last_key;
-        record(tests, "Program runner set last_key to %d for key %d",
-               last_key, key);
+        process_test_key(key);
 #else
         key_pop();
 #endif

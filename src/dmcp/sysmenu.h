@@ -80,4 +80,9 @@ void                  system_setup();
 void                  refresh_dirty();
 void                  redraw_lcd(bool force);
 
+#if SIMULATOR
+void                  process_test_key(int key);
+void                  process_test_commands();
+#endif
+
 #endif // SYSMENU_H

@@ -76,7 +76,7 @@ bool    tests::running            = false;
             return;                             \
     } while (0)
 
-TESTS(defaults, "Reset settings to defaults");
+TESTS(defaults,         "Reset settings to defaults");
 TESTS(shifts,           "Shift logic");
 TESTS(keyboard,         "Keyboard entry");
 TESTS(types,            "Data types");
@@ -478,7 +478,7 @@ void tests::data_types()
               ALPHA, H, LOWERCASE, E, L, L, O,
               SHIFT, SHIFT, ENTER, DOWN, ENTER)
         .type(object::ID_text).expect("\"\"\"Hello\"\"\"")
-        .test("1 DISP", ENTER).image("quoted-text");
+        .test("1 DISP", ENTER).image("quoted-text", 25500);
 
     step("List");
     cstring list = "{ A 1 3 }";
@@ -7008,7 +7008,7 @@ tests &tests::keysync(uint extrawait)
 // ----------------------------------------------------------------------------
 {
     // Wait for the RPL thread to process the keys
-    record(tests, "Need to send KEYSYNC");
+    record(tests, "Need to send KEYSYNC with last_key=%d", last_key);
     uint t0 = sys_current_ms();
     // nokeys(extrawait);
     uint t1 = sys_current_ms();
@@ -7066,6 +7066,8 @@ tests &tests::screen_refreshed(uint extrawait)
 //    Wait until the screen was updated by the calculator
 // ----------------------------------------------------------------------------
 {
+    record(tests, "Screen refreshed count=%u ui=%u",
+           refresh_count, ui_refresh_count());
     uint start     = sys_current_ms();
     uint wait_time = default_wait_time + extrawait;
 
@@ -7079,6 +7081,8 @@ tests &tests::screen_refreshed(uint extrawait)
         explain("No screen refresh");
         fail();
     }
+    record(tests, "Done checking if screen refreshed count=%u ui=%u",
+           refresh_count, ui_refresh_count());
     return *this;
 }
 
@@ -7107,25 +7111,22 @@ tests &tests::refreshed(uint extrawait)
         }
         else if (available > 1)
         {
-            record(errors, "Consume extra %u stack", available);
-            record(tests, "Consume extra stack");
+            record(tests, "Consume extra %u stack", available);
             Stack.consume();
             updated = true;
         }
         else
         {
             key = Stack.key();
-            if (key == last_key || key == -last_key)
+            if (key == last_key)
             {
                 found = true;
-                record(errors, "Consume expected stack %d", key);
-                record(tests, "Consume expected stack");
+                record(tests, "Consume expected stack %d", key);
                 break;
             }
             else
             {
-                record(errors, "Wrong key %d, expected %d", key, last_key);
-                record(tests, "Wrong key %d", key);
+                record(tests, "Wrong key %d, expected %d", key, last_key);
                 Stack.consume();
                 updated = true;
             }
@@ -7796,7 +7797,9 @@ tests &tests::image(cstring file, int x, int y, int w, int h, uint extrawait)
 //   Check that the output in the screen matches what is in the file
 // ----------------------------------------------------------------------------
 {
+    record(tests, "Image check for file %+s w=%d h=%d", file, w, h);
     nokeys(extrawait);
+    screen_refreshed(extrawait);
     cindex++;
 
     // If it is not good, keep it on screen a bit longer
@@ -7806,6 +7809,8 @@ tests &tests::image(cstring file, int x, int y, int w, int h, uint extrawait)
     {
         if (image_match(file, x, y, w, h, false))
             return *this;
+        record(tests, "Retry image check for file %+s after %u/%u",
+               file, sys_current_ms() - start, wait_time);
         sys_delay(refresh_delay_time);
     }
 

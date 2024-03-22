@@ -46,7 +46,7 @@ using coord = blitter::coord;
 using size  = blitter::size;
 
 
-RECORDER_DECLARE(tests);
+RECORDER_DECLARE(tests_rpl);
 
 stack::stack()
 // ----------------------------------------------------------------------------
@@ -149,7 +149,7 @@ void stack::draw_stack()
                     utf8     out = r.text();
                     int      key = last_key;
                     output(key, obj->type(), out, len);
-                    record(tests,
+                    record(tests_rpl,
                            "Key %d X-reg %+s size %u %s",
                            key, object::name(obj->type()), len, out);
                 }
@@ -183,7 +183,7 @@ void stack::draw_stack()
                 extern int last_key;
                 int key = last_key;
                 output(key, obj->type(), out, len);
-                record(tests,
+                record(tests_rpl,
                        "Stack key %d X-reg %+s size %u %s",
                        key, object::name(obj->type()), len, out);
             }

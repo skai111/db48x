@@ -63,6 +63,7 @@ int  last_key            = 0;
 
 RECORDER(main,          16, "Main RPL thread");
 RECORDER(main_error,    16, "Errors in the main RPL thread");
+RECORDER(tests_rpl,    256, "Test request processing on RPL");
 
 void refresh_dirty()
 // ----------------------------------------------------------------------------
@@ -347,6 +348,8 @@ extern "C" void program_main()
 
 #if SIMULATOR
             // Process test-harness commands
+            record(tests_rpl, "Processing key %d, last=%d, command=%u",
+                   key, last_key, test_command);
             if (key == tests::EXIT_PGM || key == tests::SAVE_PGM)
             {
                 cstring path = get_reset_state_file();
@@ -397,15 +400,8 @@ extern "C" void program_main()
         if (key >= 0 && hadKey)
         {
 #if SIMULATOR
-            record(tests, "RPL thread got key %d, last was %d",
-                   key, last_key);
-            if (key > 0)
-                last_key = key;
-            else if (last_key > 0)
-                last_key = -last_key;
-            record(tests, "RPL thread set last_key to %d for key %d",
-                   last_key, key);
-#endif
+            process_test_key(key);
+#endif // SIMULATOR
 
             record(main, "Handle key %d last %d", key, last_key);
             handle_key(key, repeating, transalpha);
@@ -425,29 +421,57 @@ extern "C" void program_main()
             if (sys_timer_timeout(TIMER1))
                 redraw_periodics();
         }
-
 #if SIMULATOR
-        if (test_command == tests::CLEARERR)
-        {
-            record(tests, "Clearing errors for tests");
-            rt.clear_error();
-            test_command = 0;
-        }
-        else if (test_command == tests::CLEAR)
-        {
-            record(tests, "Clearing editor and stack for tests");
-            rt.clear_error();
-            ui.clear_editor();
-            rt.drop(rt.depth());
-            test_command = 0;
-        }
-        else if (test_command == tests::KEYSYNC)
-        {
-            record(tests, "Key sync requested");
-            redraw_lcd(true);
-            record(tests, "Done redrawing LCD");
-            test_command = 0;
-        }
+        if (tests::running && test_command && key_empty())
+            process_test_commands();
 #endif // SIMULATOR
     }
 }
+
+
+#if SIMULATOR
+void process_test_key(int key)
+// ----------------------------------------------------------------------------
+//   Process commands from the test harness
+// ----------------------------------------------------------------------------
+{
+    record(tests_rpl, "Process test key %d, last was %d, command %u",
+           key, last_key, test_command);
+    if (key > 0)
+        last_key = key;
+    else if (last_key > 0)
+        last_key = -last_key;
+    record(tests_rpl, "Set last_key to %d for key %d", last_key, key);
+}
+
+
+void process_test_commands()
+// ----------------------------------------------------------------------------
+//   Process commands from the test harness
+// ----------------------------------------------------------------------------
+{
+    record(tests_rpl, "Process test command %u with last key %d",
+           test_command, last_key);
+
+    if (test_command == tests::CLEARERR)
+    {
+        record(tests_rpl, "Clearing errors for tests");
+        rt.clear_error();
+    }
+    else if (test_command == tests::CLEAR)
+    {
+        record(tests_rpl, "Clearing editor and stack for tests");
+        rt.clear_error();
+        ui.clear_editor();
+        rt.drop(rt.depth());
+    }
+    else if (test_command == tests::KEYSYNC)
+    {
+        record(tests_rpl, "Key sync requested");
+    }
+    redraw_lcd(true);
+    record(tests_rpl, "Done redrawing LCD after command %u, last=%d",
+           test_command, last_key);
+    test_command = 0;
+}
+#endif // SIMULATOR

@@ -115,5 +115,6 @@ public:
 extern stack Stack;
 
 RECORDER_DECLARE(tests);
+RECORDER_DECLARE(tests_rpl);
 
 #endif // STACK_H
