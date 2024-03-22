@@ -7093,39 +7093,49 @@ tests &tests::refreshed(uint extrawait)
     // Wait for a stack update
     uint start     = sys_current_ms();
     uint wait_time = default_wait_time + extrawait;
+    int  key       = 0;
     bool found     = false;
     bool updated   = false;
     record(tests, "Waiting for key %d in stack at %u", last_key, start);
     while (sys_current_ms() - start < wait_time)
     {
-        if (!Stack.available())
+        uint available = Stack.available();
+        record(errors, "Stack available = %u", available);
+        if (!available)
         {
             sys_delay(refresh_delay_time);
         }
-        else if (Stack.available() > 1)
+        else if (available > 1)
         {
+            record(errors, "Consume extra %u stack", available);
             record(tests, "Consume extra stack");
             Stack.consume();
             updated = true;
         }
-        else if (Stack.key() == last_key)
-        {
-            found = true;
-            record(tests, "Consume expected stack");
-            break;
-        }
         else
         {
-            record(tests, "Wrong key %d", Stack.key());
-            Stack.consume();
-            updated = true;
+            key = Stack.key();
+            if (key == last_key)
+            {
+                found = true;
+                record(errors, "Consume expected stack %d", key);
+                record(tests, "Consume expected stack");
+                break;
+            }
+            else
+            {
+                record(errors, "Wrong key %d, expected %d", key, last_key);
+                record(tests, "Wrong key %d", key);
+                Stack.consume();
+                updated = true;
+            }
         }
     }
     if (!found)
     {
         if (updated)
-            explain("Stack was updated but for wrong key %d != %d",
-                    Stack.key(), last_key);
+            explain("Stack was updated but for wrong key ",
+                    key, " != ", last_key);
         else
             explain("Stack was not updated in expected delay");
         fail();
