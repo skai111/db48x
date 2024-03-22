@@ -345,6 +345,21 @@ extern "C" void program_main()
             hadKey = true;
             record(main, "Got key %d", key);
 
+#if SIMULATOR
+            // Process test-harness commands
+            if (key == tests::EXIT_PGM || key == tests::SAVE_PGM)
+            {
+                cstring path = get_reset_state_file();
+                printf("Exit: saving state to %s\n", path);
+                if (path && *path)
+                    save_state_file(path);
+                if (key == tests::EXIT_PGM)
+                    break;
+            }
+#else // Real hardware
+#define read_key __sysfn_read_key
+#endif // SIMULATOR
+
             // Check transient alpha mode
             if (key == KEY_UP || key == KEY_DOWN)
             {
@@ -352,9 +367,6 @@ extern "C" void program_main()
             }
             else if (transalpha)
             {
-#ifndef SIMULATOR
-#define read_key __sysfn_read_key
-#endif // SIMULATOR
                 int k1, k2;
                 int r = read_key(&k1, &k2);
                 switch (r)
@@ -372,32 +384,6 @@ extern "C" void program_main()
                 }
             }
 
-#if SIMULATOR
-            if (key == tests::EXIT_PGM || key == tests::SAVE_PGM)
-            {
-                cstring path = get_reset_state_file();
-                printf("Exit: saving state to %s\n", path);
-                if (path && *path)
-                    save_state_file(path);
-                if (key == tests::EXIT_PGM)
-                    break;
-            }
-            if (key == tests::KEYSYNC)
-            {
-                record(main, "Key sync done %u from %u",
-                       keysync_sent, keysync_done);
-                redraw_lcd(true);
-                keysync_done = keysync_sent;
-                key = 0;
-                continue;
-            }
-            if (key == tests::CLEAR)
-            {
-                rt.clear_error();
-                ui.clear_editor();
-                rt.drop(rt.depth());
-            }
-#endif // SIMULATOR
         }
         bool repeating = sys_timer_timeout(TIMER0);
         if (repeating)
@@ -411,10 +397,14 @@ extern "C" void program_main()
         if (key >= 0 && hadKey)
         {
 #if SIMULATOR
+            record(tests, "RPL thread got key %d, last was %d",
+                   key, last_key);
             if (key > 0)
                 last_key = key;
             else if (last_key > 0)
                 last_key = -last_key;
+            record(tests, "RPL thread set last_key to %d for key %d",
+                   last_key, key);
 #endif
 
             record(main, "Handle key %d last %d", key, last_key);
@@ -435,5 +425,29 @@ extern "C" void program_main()
             if (sys_timer_timeout(TIMER1))
                 redraw_periodics();
         }
+
+#if SIMULATOR
+        if (test_command == tests::CLEARERR)
+        {
+            record(tests, "Clearing errors for tests");
+            rt.clear_error();
+            test_command = 0;
+        }
+        else if (test_command == tests::CLEAR)
+        {
+            record(tests, "Clearing editor and stack for tests");
+            rt.clear_error();
+            ui.clear_editor();
+            rt.drop(rt.depth());
+            test_command = 0;
+        }
+        else if (test_command == tests::KEYSYNC)
+        {
+            record(tests, "Key sync requested");
+            redraw_lcd(true);
+            record(tests, "Done redrawing LCD");
+            test_command = 0;
+        }
+#endif // SIMULATOR
     }
 }

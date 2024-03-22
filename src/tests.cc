@@ -41,16 +41,17 @@
 #include <stdio.h>
 
 extern bool run_tests;
-volatile uint keysync_sent = 0;
-volatile uint keysync_done = 0;
+volatile uint test_command = 0;
 
+RECORDER(tests, 256, "Information about tests");
 RECORDER_DECLARE(errors);
 
-bool tests::running            = false;
-uint tests::default_wait_time  = 500;
-uint tests::image_wait_time    = 500;
-uint tests::key_delay_time     = 2;
-uint tests::refresh_delay_time = 50;
+uint    tests::default_wait_time  = 500;
+uint    tests::key_delay_time     = 2;
+uint    tests::refresh_delay_time = 50;
+uint    tests::image_wait_time    = 500;
+cstring tests::dump_on_fail       = nullptr;
+bool    tests::running            = false;
 
 #define TEST_CATEGORY(name, enabled, descr)                     \
     RECORDER_TWEAK_DEFINE(est_##name, enabled, "Test " descr);  \
@@ -67,9 +68,15 @@ uint tests::refresh_delay_time = 50;
 #define TESTS(name, descr)      TEST_CATEGORY(name, true,  descr)
 #define EXTRA(name, descr)      TEST_CATEGORY(name, false, descr)
 
-#define BEGIN(name)     do { if (!check_##name(*this)) return; } while(0)
+#define BEGIN(name)                             \
+    do                                          \
+    {                                           \
+        position(__FILE__, __LINE__);           \
+        if (!check_##name(*this))               \
+            return;                             \
+    } while (0)
 
-TESTS(defaults,         "Reset settings to defaults");
+TESTS(defaults, "Reset settings to defaults");
 TESTS(shifts,           "Shift logic");
 TESTS(keyboard,         "Keyboard entry");
 TESTS(types,            "Data types");
@@ -147,7 +154,7 @@ void tests::run(bool onlyCurrent)
     Settings               = settings();
     if (onlyCurrent)
     {
-        begin("Current");
+        here().begin("Current");
         step("Test positive numerical underflow as error")
             .test(CLEAR)
             .test("1E-499 0 /", ENTER).error("Divide by zero")
@@ -6873,8 +6880,10 @@ tests &tests::fail()
 //   Report that a test failed
 // ----------------------------------------------------------------------------
 {
-    failures.push_back(
-        failure(file, line, tname, sname, explanation, tindex, sindex, cindex));
+    failures.push_back(failure(file, line, tname, sname,
+                               explanation, tindex, sindex, cindex));
+    if (dump_on_fail)
+        recorder_dump_for(dump_on_fail);
     ok = false;
     return *this;
 }
@@ -6946,22 +6955,167 @@ tests &tests::show(tests::failure &f, cstring &last, uint &line)
 //
 // ============================================================================
 
+tests &tests::rpl_command(uint command, uint extrawait)
+// ----------------------------------------------------------------------------
+//   Send a command to the RPL thread and wait for it to be picked up
+// ----------------------------------------------------------------------------
+{
+    record(tests, "RPL command %u, current is %u", command, test_command);
+    nokeys(extrawait);
+
+    if (test_command)
+    {
+        explain("Piling up RPL command ", command,
+                " while command ", test_command, " is running");
+        fail();
+    }
+
+    // Write the command for the RPL thread
+    record(tests, "Sending RPL command %u", command);
+    test_command = command;
+
+    // Wait for the RPL thread to have processed it
+    uint start = sys_current_ms();
+    uint wait_time = default_wait_time + extrawait;
+    while (test_command == command && sys_current_ms() - start < wait_time)
+        sys_delay(key_delay_time);
+
+    if (test_command)
+    {
+        explain("RPL command ", command, " was not processed, "
+                "got ", test_command, " after waiting");
+        fail();
+    }
+    return *this;
+}
+
+
 tests &tests::keysync(uint extrawait)
 // ----------------------------------------------------------------------------
 //   Wait for keys to sync with the RPL thread
 // ----------------------------------------------------------------------------
 {
     // Wait for the RPL thread to process the keys
-    keysync_sent++;
-    record(tests, "Key sync sent %u done %u", keysync_sent, keysync_done);
-    key_push(KEYSYNC);
+    record(tests, "Need to send KEYSYNC");
+    return rpl_command(KEYSYNC, extrawait);
+}
 
-    uint start = sys_current_ms();
+
+tests &tests::clear(uint extrawait)
+// ----------------------------------------------------------------------------
+//   Make sure we are in a clean state
+// ----------------------------------------------------------------------------
+{
+    nokeys(extrawait);
+    rpl_command(CLEAR, extrawait);
+    noerror(extrawait);
+    return *this;
+}
+
+
+tests &tests::clear_error(uint extrawait)
+// ----------------------------------------------------------------------------
+//   Clear errors in a way that does not depend on error settings
+// ----------------------------------------------------------------------------
+//   Two settings can impact how we clear errors:
+//   - The NeedToClearErrors setting impacts which key is actually needed
+//   - Having a beep may delay how long it takes for screen refresh to show up
+//   So for that reason, we send a special key to
+{
+    nokeys(extrawait);
+    rpl_command(CLEARERR, extrawait);
+    noerror(extrawait);
+    return *this;
+}
+
+
+tests &tests::ready(uint extrawait)
+// ----------------------------------------------------------------------------
+//   Check if the calculator is ready and we can look at it
+// ----------------------------------------------------------------------------
+{
+    nokeys(extrawait);
+    refreshed(extrawait);
+    return *this;
+}
+
+
+tests &tests::screen_refreshed(uint extrawait)
+// ----------------------------------------------------------------------------
+//    Wait until the screen was updated by the calculator
+// ----------------------------------------------------------------------------
+{
+    uint start     = sys_current_ms();
     uint wait_time = default_wait_time + extrawait;
 
-    while (keysync_done != keysync_sent &&
-           sys_current_ms() - start < wait_time)
-        sys_delay(key_delay_time);
+    // Wait for a screen redraw
+    record(tests, "Waiting for screen update");
+    while (sys_current_ms() - start < wait_time &&
+           ui_refresh_count() == refresh_count)
+        sys_delay(refresh_delay_time);
+    if (ui_refresh_count() == refresh_count)
+    {
+        explain("No screen refresh");
+        fail();
+    }
+    return *this;
+}
+
+
+tests &tests::refreshed(uint extrawait)
+// ----------------------------------------------------------------------------
+//    Wait until the screen and stack were updated by the calculator
+// ----------------------------------------------------------------------------
+{
+    screen_refreshed(extrawait);
+
+    // Wait for a stack update
+    uint start     = sys_current_ms();
+    uint wait_time = default_wait_time + extrawait;
+    bool found     = false;
+    bool updated   = false;
+    record(tests, "Waiting for key %d in stack at %u", last_key, start);
+    while (sys_current_ms() - start < wait_time)
+    {
+        if (!Stack.available())
+        {
+            sys_delay(refresh_delay_time);
+        }
+        else if (Stack.available() > 1)
+        {
+            record(tests, "Consume extra stack");
+            Stack.consume();
+            updated = true;
+        }
+        else if (Stack.key() == last_key)
+        {
+            found = true;
+            record(tests, "Consume expected stack");
+            break;
+        }
+        else
+        {
+            record(tests, "Wrong key %d", Stack.key());
+            Stack.consume();
+            updated = true;
+        }
+    }
+    if (!found)
+    {
+        if (updated)
+            explain("Stack was updated but for wrong key %d != %d",
+                    Stack.key(), last_key);
+        else
+            explain("Stack was not updated in expected delay");
+        fail();
+    }
+
+    record(tests,
+           "Refreshed, key %d, needs=%u update=%u available=%u",
+           Stack.key(),
+           refresh_count,
+           ui_refresh_count(),
+           Stack.available());
 
     return *this;
 }
@@ -7032,6 +7186,7 @@ tests &tests::itest(tests::key k, bool release)
         refresh_count = lcd_updates;
         Stack.catch_up();
         last_key = -k;
+        record(tests, "Releasing key (sending key 0)");
         key_push(RELEASE);
         keysync();
     }
@@ -7347,30 +7502,6 @@ tests &tests::itest(tests::WAIT delay)
 //
 // ============================================================================
 
-tests &tests::clear(uint extrawait)
-// ----------------------------------------------------------------------------
-//   Make sure we are in a clean state
-// ----------------------------------------------------------------------------
-{
-    nokeys(extrawait);
-    key_push(CLEAR);
-    nokeys(extrawait);
-    noerror(extrawait);
-    return *this;
-}
-
-
-tests &tests::ready(uint extrawait)
-// ----------------------------------------------------------------------------
-//   Check if the calculator is ready and we can look at it
-// ----------------------------------------------------------------------------
-{
-    nokeys(extrawait);
-    refreshed(extrawait);
-    return *this;
-}
-
-
 tests &tests::nokeys(uint extrawait)
 // ----------------------------------------------------------------------------
 //   Check until the key buffer is empty, indicates that calculator is done
@@ -7408,87 +7539,6 @@ tests &tests::data_entry_noerror(uint extrawait)
         fail();
         clear_error();
     }
-    return *this;
-}
-
-
-tests &tests::screen_refreshed(uint extrawait)
-// ----------------------------------------------------------------------------
-//    Wait until the screen was updated by the calculator
-// ----------------------------------------------------------------------------
-{
-    uint start     = sys_current_ms();
-    uint wait_time = default_wait_time + extrawait;
-
-    // Wait for a screen redraw
-    record(tests, "Waiting for screen update");
-    while (sys_current_ms() - start < wait_time &&
-           ui_refresh_count() == refresh_count)
-        sys_delay(refresh_delay_time);
-    if (ui_refresh_count() == refresh_count)
-    {
-        explain("No screen refresh");
-        fail();
-    }
-    return *this;
-}
-
-
-tests &tests::refreshed(uint extrawait)
-// ----------------------------------------------------------------------------
-//    Wait until the screen and stack were updated by the calculator
-// ----------------------------------------------------------------------------
-{
-    screen_refreshed(extrawait);
-
-    // Wait for a stack update
-    uint start     = sys_current_ms();
-    uint wait_time = default_wait_time + extrawait;
-    bool found     = false;
-    bool updated   = false;
-    record(tests, "Waiting for key %d in stack at %u", last_key, start);
-    while (sys_current_ms() - start < wait_time)
-    {
-        if (!Stack.available())
-        {
-            sys_delay(refresh_delay_time);
-        }
-        else if (Stack.available() > 1)
-        {
-            record(tests, "Consume extra stack");
-            Stack.consume();
-            updated = true;
-        }
-        else if (Stack.key() == last_key)
-        {
-            found = true;
-            record(tests, "Consume expected stack");
-            break;
-        }
-        else
-        {
-            record(tests, "Wrong key %d", Stack.key());
-            Stack.consume();
-            updated = true;
-        }
-    }
-    if (!found)
-    {
-        if (updated)
-            explain("Stack was updated but for wrong key %d != %d",
-                    Stack.key(), last_key);
-        else
-            explain("Stack was not updated in expected delay");
-        fail();
-    }
-
-    record(tests,
-           "Refreshed, key %d, needs=%u update=%u available=%u",
-           Stack.key(),
-           refresh_count,
-           ui_refresh_count(),
-           Stack.available());
-
     return *this;
 }
 
@@ -7940,21 +7990,6 @@ tests &tests::error(cstring msg, uint extrawait)
         explain("Expected error message [", msg, "], "
                 "got [", err, "]");
     fail();
-    return *this;
-}
-
-
-tests &tests::clear_error(uint extrawait)
-// ----------------------------------------------------------------------------
-//   Clear errors in a way that does not depend on error settings
-// ----------------------------------------------------------------------------
-//   Two settings can impact how we clear errors:
-//   - The NeedToClearErrors setting impacts which key is actually needed
-//   - Having a beep may delay how long it takes for screen refresh to show up
-//   So for that reason, we send a special key to
-{
-    nokeys(extrawait);
-    rt.clear_error();
     return *this;
 }
 

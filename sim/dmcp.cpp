@@ -60,9 +60,6 @@ RECORDER(lcd_warning,   64, "Warnings from lcd/display functions");
 
 #undef ppgm_fp
 
-extern volatile uint keysync_sent;
-extern volatile uint keysync_done;
-
 extern bool          run_tests;
 extern bool          noisy_tests;
 
@@ -851,14 +848,15 @@ static struct timer
 
 void sys_sleep()
 {
-    while (key_empty())
+    while (key_empty() && !test_command)
     {
         uint32_t now = sys_current_ms();
         for (int i = 0; i < 4; i++)
             if (timers[i].enabled && int(timers[i].deadline - now) < 0)
-                return;
+                goto done;
         ui_ms_sleep(20);
     }
+done:
     CLR_ST(STAT_SUSPENDED | STAT_OFF | STAT_PGM_END);
 }
 
@@ -900,14 +898,13 @@ void wait_for_key_press()
     wait_for_key_release(-1);
     while (key_empty() || !key_pop())
         sys_sleep();
-    keysync_done = keysync_sent;
 }
+
 void wait_for_key_release(int tout)
 {
     record(dmcp_notyet, "wait_for_key_release not implemented");
     while (!key_empty() && key_pop())
         sys_sleep();
-    keysync_done = keysync_sent;
 }
 
 int file_selection_screen(const char   *title,

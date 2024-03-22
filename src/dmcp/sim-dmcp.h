@@ -53,9 +53,6 @@ enum simulated_target
 typedef uint8_t  byte;
 typedef unsigned int uint;
 
-extern volatile uint keysync_sent;
-extern volatile uint keysync_done;
-
 extern volatile int  lcd_updates;
 extern int           lcd_buf_cleared_result;
 extern uint8_t       lcd_buffer[SIM_LCD_SCANLINE * SIM_LCD_H / 8];
@@ -65,7 +62,7 @@ extern bool          alt_held;
 
 // ============================================================================
 //
-//   Quick and dirty interface with Qt
+//   Quick and dirty interface with simulator user interface
 //
 // ============================================================================
 

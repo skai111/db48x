@@ -145,6 +145,13 @@ int main(int argc, char *argv[])
                     recorder_trace_set(tname);
                 }
                 break;
+            case 'D':
+                if (argv[a][2])
+                    tests::dump_on_fail = argv[a]+2;
+                else if (a < argc)
+                    tests::dump_on_fail = argv[++a];
+                break;
+
             case 'k':
                 db48x_keyboard = true;
                 break;

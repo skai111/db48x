@@ -37,6 +37,7 @@
 #endif // SIMULATOR
 
 RECORDER(program, 16, "Program evaluation");
+RECORDER_DECLARE(tests);
 
 
 
@@ -200,20 +201,14 @@ bool program::interrupted()
 #if SIMULATOR
         int key = key_pop();
         extern int last_key;
-
         record(program, "Runner popped key %d, last=%d", key, last_key);
-        if (key == tests::CLEAR)
-        {
-            rt.clear_error();
-            ui.clear_editor();
-            rt.drop(rt.depth());
-        }
-        else if (key == tests::KEYSYNC)
-            keysync_done = keysync_sent;
-        else if (key > 0)
+        record(tests, "Program runner popped key %d, last=%d", key, last_key);
+        if (key > 0)
             last_key = key;
         else if (last_key > 0)
             last_key = -last_key;
+        record(tests, "Program runner set last_key to %d for key %d",
+               last_key, key);
 #else
         key_pop();
 #endif

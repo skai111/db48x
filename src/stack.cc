@@ -46,7 +46,7 @@ using coord = blitter::coord;
 using size  = blitter::size;
 
 
-RECORDER(tests, 16, "Information about tests");
+RECORDER_DECLARE(tests);
 
 stack::stack()
 // ----------------------------------------------------------------------------

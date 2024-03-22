@@ -196,6 +196,8 @@ struct tests
         QUESTION   = KEY_ADD,
 
         // Special stuff
+        TEST_KEYS  = 100,
+
         CLEAR      = 100,       // Clear the calculator state
         CLEARERR   = 101,       // Clear errors in a flag-independent way
         NOKEYS     = 102,       // Wait until keys buffer is empty
@@ -286,6 +288,7 @@ public:
         return itest(first).itest(args...);
     }
 
+    tests &rpl_command(uint command, uint extrawait = 0);
     tests &clear(uint extrawait = 0);
     tests &keysync(uint extrawait = 0);
     tests &nokeys(uint extrawait = 0);
@@ -386,14 +389,15 @@ public:
     static uint          key_delay_time;
     static uint          refresh_delay_time;
     static uint          image_wait_time;
+    static cstring       dump_on_fail;
     static bool          running;
 };
 
+#define here()          position(__FILE__, __LINE__)
 #define step(...)       position(__FILE__, __LINE__).istep(__VA_ARGS__)
 #define test(...)       position(__FILE__, __LINE__).itest(__VA_ARGS__)
 
 // Synchronization between test thread and RPL thread
-extern volatile uint keysync_sent;
-extern volatile uint keysync_done;
+extern volatile uint test_command;
 
 #endif // TESTS_H
