@@ -854,7 +854,7 @@ void sys_sleep()
         for (int i = 0; i < 4; i++)
             if (timers[i].enabled && int(timers[i].deadline - now) < 0)
                 goto done;
-        ui_ms_sleep(20);
+        ui_ms_sleep(tests::running ? 1 : 20);
     }
 done:
     CLR_ST(STAT_SUSPENDED | STAT_OFF | STAT_PGM_END);
