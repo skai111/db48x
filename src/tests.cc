@@ -7115,7 +7115,7 @@ tests &tests::refreshed(uint extrawait)
         else
         {
             key = Stack.key();
-            if (key == last_key)
+            if (key == last_key || key == -last_key)
             {
                 found = true;
                 record(errors, "Consume expected stack %d", key);
