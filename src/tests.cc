@@ -5376,7 +5376,7 @@ void tests::date_operations()
     step("Runing TEVAL to time something")
         .test(CLEAR, LSHIFT, RUNSTOP,
               "0 1 10 FOR i i + 0.01 WAIT NEXT", ENTER,
-              "TEVAL", ENTER, WAIT(200)).noerror()
+              "TEVAL", LENGTHY(500), ENTER).noerror()
         .match("duration:[1-3][0-9][0-9] ms");
 }
 
@@ -6495,9 +6495,9 @@ void tests::plotting_all_functions()
 
     uint dur = 1500;
 
-#define FUNCTION(name)                          \
-    step("Plotting " #name);                    \
-    test(CLEAR, "'" #name "(x)'", F1)           \
+#define FUNCTION(name)                                  \
+    step("Plotting " #name);                            \
+    test(CLEAR, "'" #name "(x)'", LENGTHY(dur), F1)     \
         .image("fnplot-" #name, dur)
 
     FUNCTION(sqrt);
@@ -6954,20 +6954,12 @@ tests &tests::show(tests::failure &f, cstring &last, uint &line)
 //
 // ============================================================================
 
-RECORDER(timing, 32, "Timing information about tests");
-
 tests &tests::rpl_command(uint command, uint extrawait)
 // ----------------------------------------------------------------------------
 //   Send a command to the RPL thread and wait for it to be picked up
 // ----------------------------------------------------------------------------
 {
-    uint t0 = sys_current_ms();
-
     record(tests, "RPL command %u, current is %u", command, test_command);
-
-    uint t1 = sys_current_ms();
-    uint d1 = t1 - t0;
-
     if (test_command)
     {
         explain("Piling up RPL command ", command,
@@ -6985,18 +6977,12 @@ tests &tests::rpl_command(uint command, uint extrawait)
     while (test_command == command && sys_current_ms() - start < wait_time)
         sys_delay(key_delay_time);
 
-    uint t2 = sys_current_ms();
-    uint d2 = t2 - t1;
-
     if (test_command)
     {
         explain("RPL command ", command, " was not processed, "
-                "got ", test_command, " after waiting");
+                "got ", test_command, " after waiting", wait_time, " ms");
         fail();
     }
-
-    record(timing, "RPL command %u %ums key wait %ums command wait %ums",
-           command, t2 - t0, d1, d2);
     return *this;
 }
 
@@ -7008,15 +6994,7 @@ tests &tests::keysync(uint extrawait)
 {
     // Wait for the RPL thread to process the keys
     record(tests, "Need to send KEYSYNC with last_key=%d", last_key);
-    uint t0 = sys_current_ms();
-    // nokeys(extrawait);
-    uint t1 = sys_current_ms();
-    uint d1 = t1 - t0;
     rpl_command(KEYSYNC, extrawait);
-    uint t2 = sys_current_ms();
-    uint d2 = t2 - t1;
-    record(timing, "Keysync took %ums wait %ums command %ums",
-           t2 - t0, d1, d2);
     return *this;
 }
 
@@ -7091,8 +7069,6 @@ tests &tests::refreshed(uint extrawait)
 //    Wait until the screen and stack were updated by the calculator
 // ----------------------------------------------------------------------------
 {
-    screen_refreshed(extrawait);
-
     // Wait for a stack update
     uint start     = sys_current_ms();
     uint wait_time = default_wait_time + extrawait;
@@ -7102,6 +7078,8 @@ tests &tests::refreshed(uint extrawait)
     record(tests, "Waiting for key %d in stack at %u", last_key, start);
     while (sys_current_ms() - start < wait_time)
     {
+        screen_refreshed(extrawait);
+
         uint available = Stack.available();
         record(errors, "Stack available = %u", available);
         if (!available)

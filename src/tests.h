@@ -260,6 +260,12 @@ public:
         uint delay;
     };
 
+    struct LENGTHY
+    {
+        LENGTHY(uint ms): length(ms) {}
+        uint length;
+    };
+
     // Naming / identifying tests
     tests &begin(cstring name, bool disabled = false);
     tests &istep(cstring name);
@@ -281,6 +287,13 @@ public:
     tests &itest(char c);
     tests &itest(cstring alpha);
     tests &itest(WAIT delay);
+
+    template <typename... Args>
+    tests &itest(LENGTHY length, Args... args)
+    {
+        save<uint> save(default_wait_time, default_wait_time + length.length);
+        return itest(args...);
+    }
 
     template <typename First, typename... Args>
     tests &itest(First first, Args... args)
