@@ -58,8 +58,6 @@ RECORDER(lcd_refresh,   64, "DMCP lcd/display refresh");
 RECORDER(lcd_width,     64, "Width of strings and chars");
 RECORDER(lcd_warning,   64, "Warnings from lcd/display functions");
 
-RECORDER_DECLARE(tests_rpl);
-
 #undef ppgm_fp
 
 extern bool          run_tests;
@@ -295,8 +293,10 @@ int key_pop()
 {
     if (keyrd != keywr)
     {
-        record(keys, "Key %d (rd %u wr %u)", keys[keyrd % nkeys], keyrd, keywr);
-        return keys[keyrd++ % nkeys];
+        int key = keys[keyrd++ % nkeys];
+        record(keys, "Key %d (rd %u wr %u)", key, keyrd, keywr);
+        record(tests_rpl, "Key %d (rd %u wr %u)", key, keyrd, keywr);
+        return key;
     }
     return -1;
 }

@@ -155,6 +155,12 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
+
+        step("Runing TEVAL to time something")
+            .test(CLEAR, LSHIFT, RUNSTOP,
+                  "0 1 10 FOR i i + 0.01 WAIT NEXT", ENTER,
+                  "TEVAL", LENGTHY(200), ENTER).noerror()
+            .match("duration:[1-3][0-9][0-9] ms");
         step("Test positive numerical underflow as error")
             .test(CLEAR)
             .test("1E-499 0 /", ENTER).error("Divide by zero")
@@ -5376,7 +5382,7 @@ void tests::date_operations()
     step("Runing TEVAL to time something")
         .test(CLEAR, LSHIFT, RUNSTOP,
               "0 1 10 FOR i i + 0.01 WAIT NEXT", ENTER,
-              "TEVAL", LENGTHY(500), ENTER).noerror()
+              "TEVAL", LENGTHY(1500), ENTER).noerror()
         .match("duration:[1-3][0-9][0-9] ms");
 }
 

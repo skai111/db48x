@@ -38,6 +38,7 @@
 #include "target.h"
 #include "user_interface.h"
 #include "utf8.h"
+#include "tests.h"
 
 
 stack    Stack;
@@ -45,8 +46,6 @@ stack    Stack;
 using coord = blitter::coord;
 using size  = blitter::size;
 
-
-RECORDER_DECLARE(tests_rpl);
 
 stack::stack()
 // ----------------------------------------------------------------------------
@@ -101,10 +100,6 @@ void stack::draw_stack()
         bottom--;
         Screen.fill(0, bottom, LCD_W, bottom, pattern::gray50);
     }
-
-#ifdef SIMULATOR
-    extern int last_key;
-#endif // SIMULATOR
 
     char buf[16];
     coord y = bottom;

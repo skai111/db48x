@@ -29,8 +29,11 @@
 //   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // ****************************************************************************
 
+#if SIMULATOR
+
 #include "dmcp.h"
 #include "object.h"
+#include "recorder.h"
 #include "runtime.h"
 #include "target.h"
 
@@ -409,8 +412,15 @@ public:
 #define here()          position(__FILE__, __LINE__)
 #define step(...)       position(__FILE__, __LINE__).istep(__VA_ARGS__)
 #define test(...)       position(__FILE__, __LINE__).itest(__VA_ARGS__)
+#endif // SIMULATOR
+
+
 
 // Synchronization between test thread and RPL thread
 extern volatile uint test_command;
+extern int           last_key;
+
+RECORDER_DECLARE(tests);
+RECORDER_DECLARE(tests_rpl);
 
 #endif // TESTS_H

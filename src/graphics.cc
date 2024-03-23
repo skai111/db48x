@@ -42,12 +42,14 @@
 #include "target.h"
 #include "user_interface.h"
 #include "util.h"
+#include "tests.h"
 #include "variables.h"
 
 typedef const based_integer *based_integer_p;
 typedef const based_bignum  *based_bignum_p;
 using std::max;
 using std::min;
+
 
 
 
@@ -681,7 +683,15 @@ COMMAND_BODY(Show)
                     continue;
 
                 if (!key_empty())
+                {
                     key = key_pop();
+#if SIMULATOR
+                    extern int last_key;
+                    record(tests_rpl,
+                           "Show cmd popped key %d, last=%d", key, last_key);
+                    process_test_key(key);
+#endif // SIMULATOR
+                }
                 switch(key)
                 {
                 case KEY_EXIT:

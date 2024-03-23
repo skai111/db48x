@@ -43,6 +43,7 @@
 #include "symbol.h"
 #include "sysmenu.h"
 #include "tag.h"
+#include "tests.h"
 #include "unit.h"
 #include "user_interface.h"
 #include "utf8.h"
@@ -459,10 +460,21 @@ COMMAND_BODY(Wait)
                         continue;
 
                     if (!key_empty())
+                    {
 #if SIMULATOR
                         if (key_tail() != KEY_EXIT)
-#endif
+                        {
                             key = key_pop();
+                            record(tests_rpl,
+                                   "Wait cmd processing "
+                                   "key %d, last=%d, command=%u",
+                                   key, last_key, test_command);
+                            process_test_key(key);
+                        }
+#else // SIMULATOR
+                        key = key_pop();
+#endif // SIMULATOR
+                    }
                     if (key == KEY_EXIT)
                     {
                         program::halted = true;
