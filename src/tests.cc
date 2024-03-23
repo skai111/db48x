@@ -6493,13 +6493,12 @@ void tests::plotting_all_functions()
     step("Select plotting menu")
         .test(CLEAR, RSHIFT, O).noerror();
 
-    uint dur = 300;
+    uint dur = 1500;
 
 #define FUNCTION(name)                          \
     step("Plotting " #name);                    \
     test(CLEAR, "'" #name "(x)'", F1)           \
-        .wait(dur).noerror()                      \
-        .image("fnplot-" #name)
+        .image("fnplot-" #name, dur)
 
     FUNCTION(sqrt);
     FUNCTION(cbrt);
