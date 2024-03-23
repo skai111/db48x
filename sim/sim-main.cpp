@@ -41,7 +41,7 @@ RECORDER(options, 32, "Information about command line options");
 bool run_tests = false;
 bool noisy_tests = false;
 bool db48x_keyboard = true;
-uint memory_size = 70;           // Memory size in kilobytes
+uint memory_size = 100;           // Memory size in kilobytes
 
 size_t recorder_render_object(intptr_t tracing,
                               const char *UNUSED /* format */,
