@@ -635,6 +635,7 @@ NAMED(LastArg, "LastArguments")
 CMD(LastX)
 OP(ClearStack, "Clear")
 CMD(Nip)
+CMD(Pick3)
 CMD(Show)
 
 

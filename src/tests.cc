@@ -731,6 +731,14 @@ void tests::stack_operations()
         .test(CLEAR, "13 17 25 Rot / +", ENTER).expect("18 ¹²/₁₃");
     step("Nip")
         .test(CLEAR, "42 13 17 25 Nip / +", ENTER).expect("42 ¹³/₂₅");
+    step("Pick3")
+        .test(CLEAR, "42 13 17 25 Pick3", ENTER).expect("13")
+        .test(BSP).expect("25")
+        .test(BSP).expect("17")
+        .test(BSP).expect("13")
+        .test(BSP).expect("42")
+        .test(BSP).noerror()
+        .test(BSP).error("Too few arguments");
 
     step("Over in stack menu")
         .test(CLEAR, I, "13 25", F2, DIV, ADD).expect("14 ¹²/₁₃");

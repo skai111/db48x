@@ -230,6 +230,19 @@ COMMAND(Nip)
 }
 
 
+COMMAND(Pick3)
+// ----------------------------------------------------------------------------
+//   Implement the RPL "pick3" command, duplicating level 3
+// ----------------------------------------------------------------------------
+{
+    if (rt.args(3))
+        if (object_p x = rt.stack(2))
+            if (rt.push(x))
+                return OK;
+    return ERROR;
+}
+
+
 COMMAND(Depth)
 // ----------------------------------------------------------------------------
 //   Return the depth of the stack
