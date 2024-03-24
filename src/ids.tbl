@@ -636,6 +636,9 @@ CMD(LastX)
 OP(ClearStack, "Clear")
 CMD(Nip)
 CMD(Pick3)
+CMD(UnPick)
+CMD(UnRot)
+NAMED(NDupN, "NDuplicateN")
 CMD(Show)
 
 

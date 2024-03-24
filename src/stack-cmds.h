@@ -64,7 +64,7 @@ COMMAND(Dup2)
 
 COMMAND(DupN)
 // ----------------------------------------------------------------------------
-//   Implement the RPL "dupN" command, duplicate two elements at top of stack
+//   Implement the RPL "DUPN" command, duplicate N elements at top of stack
 // ----------------------------------------------------------------------------
 {
     uint32_t depth = uint32_arg();
@@ -75,6 +75,26 @@ COMMAND(DupN)
                 if (!rt.push(obj))
                     return ERROR;
         return OK;
+    }
+    return ERROR;
+}
+
+
+COMMAND(NDupN)
+// ----------------------------------------------------------------------------
+//   Implement the RPL "NDUPN" command, duplicate two elements at top of stack
+// ----------------------------------------------------------------------------
+{
+    uint32_t depth = uint32_arg();
+    if (!rt.error() && rt.args(depth+1))
+    {
+        object_g count = rt.pop();
+        for (uint i = 0; i < depth; i++)
+            if (object_p obj = rt.stack(depth-1))
+                if (!rt.push(obj))
+                    return ERROR;
+        if (rt.push(count))
+            return OK;
     }
     return ERROR;
 }
@@ -185,12 +205,39 @@ COMMAND(RollD)
 
 COMMAND(Rot)
 // ----------------------------------------------------------------------------
-//   Implement the RollD command, moving objects from first level up
+//   Implement the rot command, rotating first three levels of the stack
 // ----------------------------------------------------------------------------
 {
     if (rt.args(3))
         if (rt.roll(3))
             return OK;
+    return ERROR;
+}
+
+
+COMMAND(UnRot)
+// ----------------------------------------------------------------------------
+//   Implement the unrot command, rotating the first three levels of stack
+// ----------------------------------------------------------------------------
+{
+    if (rt.args(3))
+        if (rt.rolld(3))
+            return OK;
+    return ERROR;
+}
+
+
+COMMAND(UnPick)
+// ----------------------------------------------------------------------------
+//   Unpick command "pokes" into the stack with 2nd level object
+// ----------------------------------------------------------------------------
+{
+    if (rt.args(2))
+        if (uint32_t depth = uint32_arg())
+            if (object_p y = rt.stack(1))
+                if (rt.drop(2))
+                    if (rt.stack(depth, y))
+                        return OK;
     return ERROR;
 }
 
@@ -220,12 +267,11 @@ COMMAND(Nip)
 //   Implement the RPL "nip" command, remove level 2 of the stack
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(2))
-        return ERROR;
-    if (object_p x = rt.stack(0))
-        if (rt.stack(1, x))
-            if (rt.drop())
-                return OK;
+    if (rt.args(2))
+        if (object_p x = rt.stack(0))
+            if (rt.stack(1, x))
+                if (rt.drop())
+                    return OK;
     return ERROR;
 }
 
