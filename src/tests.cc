@@ -6105,7 +6105,7 @@ void tests::character_menu()
               RSHIFT, F1, RSHIFT, F2, RSHIFT, F3,
               RSHIFT, F4, RSHIFT, F5, RSHIFT, F6,
               ENTER)
-        .expect("\"→«»Σ∏∆⇄{}≤≠≥ⅈ∡_∂∫|\"");
+        .expect("\"→⇄Σ∏∆_⁳°′″ⒸⒺⓁ|?\"");
     step("Arith menu")
         .test(CLEAR, RSHIFT, KEY2).noerror()
         .test(F2, RSHIFT, ENTER)
