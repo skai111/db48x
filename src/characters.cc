@@ -191,7 +191,7 @@ static const cstring basic_characters[] =
     "Bullets",  ("·∙►▶→"
                  "■□▪▫▬"
                  "○●◊◘◙"),
-    "Currency", "$€¢£¤¥₣₤₧₫₭₹₺₽ƒ",
+    "Money", "$€¢£¤¥₣₤₧₫₭₹₺₽ƒ",
     "Europe",   ("ÀÁÂÃÄ"
                  "àáâãä"
                  "ÅÆÇ"
@@ -214,13 +214,13 @@ static const cstring basic_characters[] =
     "Fill",    ("▪▫░▒▓"
                 "▀▄█▌▐"
                 "■□"),
-"",
+
     "Picto",    ("⌂№℡™⚙"
                  "☺☻☼♀♂"
                  "♠♣♥♦◊"
                  "♪♫○●▬"),
-    "Boxes",    "",
-    "Num-like", ("⁰¹²³⁴"
+    "Music",    "♩♪♫♭♮♯",
+    "XNum",    ("⁰¹²³⁴"
                  "₀₁₂₃₄"
                  "ⅠⅡⅢⅣⅤ"
                  "⁵⁶⁷⁸⁹"
@@ -229,7 +229,7 @@ static const cstring basic_characters[] =
                  "ⅪⅫⅬⅭⅮ"
                  "Ⅿ⅛⅜⅝⅞"
                  "⁳№"),
-    "Ltr-like", "$&@¢©¥ℂ℅ℊℎℏℓ№ℚℝ℡™Å℮ℼⅈⅉⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩⅪⅫⅬⅭⅮⅯ",
+    "XLttr",    "$&@¢©¥ℂ℅ℊℎℏℓ№ℚℝ℡™Å℮ℼⅈⅉⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩⅪⅫⅬⅭⅮⅯ",
 
     "All",      (" !\"#$%&'()*+,-./0123456789:;<=>?@"
                  "ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"

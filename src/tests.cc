@@ -6233,16 +6233,12 @@ void tests::character_menu()
               RSHIFT, F4, RSHIFT, F5,
               ENTER)
         .expect("\"⌂№℡™⚙☺☻☼♀♂♠♣♥♦◊\"");
-    step("Boxes menu")
+    step("Music menu")
         .test(CLEAR, RSHIFT, KEY2).noerror()
         .test(RSHIFT, F3, RSHIFT, ENTER)
         .test(NOSHIFT, F1, F2, F3, F4, F5, F6,
-              LSHIFT, F1, LSHIFT, F2, LSHIFT, F3,
-              LSHIFT, F4, LSHIFT, F5, LSHIFT, F6,
-              RSHIFT, F1, RSHIFT, F2, RSHIFT, F3,
-              RSHIFT, F4, RSHIFT, F5, RSHIFT, F6,
               ENTER)
-        .expect("\"→«»Σ∏∆⇄{}≤≠≥ⅈ∡_∂∫|\"");
+        .expect("\"♩♪♫♭♮♯\"");
     step("Num-like menu")
         .test(CLEAR, RSHIFT, KEY2).noerror()
         .test(RSHIFT, F4, RSHIFT, ENTER)
