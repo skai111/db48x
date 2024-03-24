@@ -339,10 +339,6 @@ uint32_t object::as_uint32(uint32_t def, bool err) const
     case ID_based_integer:
     case ID_integer:
         return integer_p(this)->value<uint32_t>();
-    case ID_neg_integer:
-        if (err)
-            rt.value_error();
-        return def;
 #if CONFIG_FIXED_BASED_OBJECTS
     case ID_hex_bignum:
     case ID_dec_bignum:
@@ -352,7 +348,11 @@ uint32_t object::as_uint32(uint32_t def, bool err) const
     case ID_based_bignum:
     case ID_bignum:
         return bignum_p(this)->value<uint32_t>();
+    case ID_neg_integer:
+    case ID_neg_decimal:
     case ID_neg_bignum:
+    case ID_neg_fraction:
+    case ID_neg_big_fraction:
         if (err)
             rt.value_error();
         return def;
@@ -361,7 +361,6 @@ uint32_t object::as_uint32(uint32_t def, bool err) const
     case ID_hwdouble:
         return hwdouble_p(this)->as_unsigned();
     case ID_decimal:
-    case ID_neg_decimal:
         return decimal_p(this)->as_unsigned();
 
     case ID_fraction:
@@ -452,10 +451,6 @@ uint64_t object::as_uint64(uint64_t def, bool err) const
     case ID_based_integer:
     case ID_integer:
         return integer_p(this)->value<uint64_t>();
-    case ID_neg_integer:
-        if (err)
-            rt.value_error();
-        return def;
 #if CONFIG_FIXED_BASED_OBJECTS
     case ID_hex_bignum:
     case ID_dec_bignum:
@@ -465,7 +460,11 @@ uint64_t object::as_uint64(uint64_t def, bool err) const
     case ID_based_bignum:
     case ID_bignum:
         return bignum_p(this)->value<uint64_t>();
+    case ID_neg_integer:
+    case ID_neg_decimal:
     case ID_neg_bignum:
+    case ID_neg_fraction:
+    case ID_neg_big_fraction:
         if (err)
             rt.value_error();
         return def;
@@ -474,7 +473,6 @@ uint64_t object::as_uint64(uint64_t def, bool err) const
     case ID_hwdouble:
         return hwdouble_p(this)->as_unsigned();
     case ID_decimal:
-    case ID_neg_decimal:
         return decimal_p(this)->as_unsigned();
 
     case ID_fraction:
