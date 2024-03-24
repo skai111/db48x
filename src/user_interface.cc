@@ -1160,7 +1160,7 @@ symbol_p user_interface::label(uint menu_id)
 // ----------------------------------------------------------------------------
 {
     cstring lbl = label_text(menu_id);
-    if (*lbl == object::ID_symbol)
+    if (lbl && *lbl == object::ID_symbol)
         return (symbol_p) lbl;
     return nullptr;
 }
