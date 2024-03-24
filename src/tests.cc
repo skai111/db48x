@@ -166,6 +166,7 @@ void tests::run(bool onlyCurrent)
             .test("1E-499 0 /", ENTER).error("Divide by zero")
             .test(CLEARERR).expect("0")
             .test(BSP).expect("1.⁳⁻⁴⁹⁹");
+        plotting();
     }
     else
     {
@@ -6370,110 +6371,128 @@ void tests::plotting()
     test(CLEAR, "RAD", ENTER).noerror();
 
     step("Function plot: Sine wave");
-    test(CLEAR, "'3*sin(x)' FunctionPlot", ENTER).noerror()
-        .wait(200).image("plot-sine");
+    test(CLEAR, "'3*sin(x)' FunctionPlot", LENGTHY(200), ENTER)
+        .noerror().image("plot-sine");
     step("Function plot: Sine wave without axes");
-    test(CLEAR, "NoPlotAxes '3*sin(x)' FunctionPlot", ENTER).noerror()
-        .wait(200).image("plot-sine-noaxes");
+    test(CLEAR, "NoPlotAxes '3*sin(x)' FunctionPlot", LENGTHY(200), ENTER)
+        .noerror().image("plot-sine-noaxes");
     step("Function plot: Sine wave not connected no axes");
-    test(CLEAR, "NoCurveFilling '3*sin(x)' FunctionPlot", ENTER).noerror()
-        .wait(200).image("plot-sine-noaxes-nofill");
+    test(CLEAR, "NoCurveFilling '3*sin(x)' FunctionPlot", LENGTHY(200), ENTER)
+        .noerror().image("plot-sine-noaxes-nofill");
     step("Function plot: Sine wave with axes no fill");
-    test(CLEAR, "-29 CF '3*sin(x)' FunctionPlot", ENTER).noerror()
-        .wait(200).image("plot-sine-nofill");
+    test(CLEAR, "-29 CF '3*sin(x)' FunctionPlot", LENGTHY(200), ENTER)
+        .noerror().image("plot-sine-nofill");
     step("Function plot: Sine wave defaults");
-    test(CLEAR, "-31 CF '3*sin(x)' FunctionPlot", ENTER).noerror()
-        .wait(200).image("plot-sine");
+    test(CLEAR, "-31 CF '3*sin(x)' FunctionPlot", LENGTHY(200), ENTER)
+        .noerror().image("plot-sine");
 
     step("Function plot: Equation");
     test(CLEAR,
          ALPHA, X, ENTER, ENTER, J, 3, MUL, M, 21, MUL, COS, 2, MUL, ADD,
-         RSHIFT, O, F1).noerror()
-        .wait(200).image("plot-eq");
+         RSHIFT, O, LENGTHY(200), F1)
+        .noerror().image("plot-eq");
     step("Function plot: Program");
     test(CLEAR, SHIFT, RUNSTOP,
-         I, SHIFT, F1, L, M, 41, MUL, J, MUL, ENTER, ENTER,
-         RSHIFT, O, F1).wait(200).image("plot-pgm").noerror();
+         I, SHIFT, LENGTHY(200), F1, L, M, 41, MUL, J, MUL, ENTER, ENTER,
+         RSHIFT, O, LENGTHY(200), F1)
+        .noerror().image("plot-pgm");
     step("Function plot: Disable curve filling");
     test(CLEAR, RSHIFT, UP, ENTER, "NoCurveFilling", ENTER,
-         RSHIFT, O, F1).wait(200).image("plot-nofill").noerror();
+         RSHIFT, O, LENGTHY(200), F1)
+        .noerror().image("plot-nofill");
+    step("Check that LastArgs gives us the previous plot")
+        .test(CLEAR, LSHIFT, M).expect("« Duplicate tan Swap 41 × sin × »");
     step("Function plot: Disable curve filling with flag -31");
-    test(CLEAR, RSHIFT, UP, ENTER, "-31 CF", ENTER,
-         RSHIFT, O, F1).wait(200).image("plot-pgm").noerror();
+    test("-31 CF", ENTER,
+         RSHIFT, O, LENGTHY(200), F1)
+        .noerror().image("plot-pgm");
 
     step("Polar plot: Program");
     test(CLEAR, SHIFT, RUNSTOP,
          61, MUL, L, SHIFT, C, 2, ADD, ENTER,
-         RSHIFT, O, F2).noerror().wait(200).image("polar-pgm");
+         RSHIFT, O, LENGTHY(200), F2)
+        .noerror().image("polar-pgm");
     step("Polar plot: Program, no fill");
     test(CLEAR, "NoCurveFilling", ENTER,
          SHIFT, RUNSTOP,
          61, MUL, L, SHIFT, C, 2, ADD, ENTER,
-         RSHIFT, O, F2).noerror().wait(200).image("polar-pgm-nofill");
+         RSHIFT, O, LENGTHY(200), F2)
+        .noerror().image("polar-pgm-nofill");
     step("Polar plot: Program, curve filling");
     test(CLEAR, "CurveFilling", ENTER,
          SHIFT, RUNSTOP,
          61, MUL, L, SHIFT, C, 2, ADD, ENTER,
-         RSHIFT, O, F2).noerror().wait(200).image("polar-pgm");
+         RSHIFT, O, LENGTHY(200), F2)
+        .noerror().image("polar-pgm");
     step("Polar plot: Equation");
     test(CLEAR, F, J, 611, MUL, ALPHA, X,
          NOSHIFT, DOWN, MUL, K, 271, MUL,
          ALPHA, X, NOSHIFT, DOWN,
          ADD, KEY2, DOT, KEY5, ENTER,
          RSHIFT, O,
-         ENTER, F2).noerror().wait(200).image("polar-eq");
+         ENTER, LENGTHY(200), F2)
+        .noerror().image("polar-eq");
     step("Polar plot: Zoom in X and Y");
     test(EXIT, "0.5 XSCALE 0.5 YSCALE", ENTER).noerror()
-        .test(ENTER, F2).noerror().wait(200).image("polar-zoomxy");
+        .test(ENTER, LENGTHY(200), F2)
+        .noerror().image("polar-zoomxy");
     step("Polar plot: Zoom out Y");
     test(EXIT, "2 YSCALE", ENTER).noerror()
-        .test(ENTER, F2).noerror().wait(200).image("polar-zoomy");
+        .test(ENTER, LENGTHY(200), F2)
+        .noerror().image("polar-zoomy");
     step("Polar plot: Zoom out X");
     test(EXIT, "2 XSCALE", ENTER).noerror()
-        .test(ENTER, F2).noerror().wait(200).image("polar-zoomx");
+        .test(ENTER, LENGTHY(200), F2)
+        .noerror().image("polar-zoomx");
     step("Saving plot parameters")
         .test("PPAR", ENTER, NOSHIFT, M);
     step("Polar plot: Select min point with PMIN");
     test(EXIT, "-3-4ⅈ PMIN", ENTER).noerror()
-        .test(ENTER, RSHIFT, O, F2).noerror().wait(200).image("polar-pmin");
+        .test(ENTER, RSHIFT, O, LENGTHY(200), F2)
+        .noerror().image("polar-pmin");
 
     step("Polar plot: Select max point with PMAX");
     test(EXIT, "5+6ⅈ pmax", ENTER).noerror()
-        .test(ENTER, RSHIFT, O, F2).noerror().wait(200).image("polar-pmax");
+        .test(ENTER, RSHIFT, O, LENGTHY(200), F2)
+        .noerror().image("polar-pmax");
     step("Polar plot: Select X range with XRNG");
     test(EXIT, "-6 7 xrng", ENTER).noerror()
-        .test(ENTER, F2).noerror().wait(200).image("polar-xrng");
+        .test(ENTER, LENGTHY(200), F2)
+        .noerror().image("polar-xrng");
     step("Polar plot: Select Y range with YRNG");
     test(EXIT, "-3 2.5 yrng", ENTER).noerror()
-        .test(ENTER, F2).noerror().wait(200).image("polar-yrng");
+        .test(ENTER, LENGTHY(200), F2)
+        .noerror().image("polar-yrng");
     step("Restoring plot parameters")
         .test(NOSHIFT, M, "'PPAR'", NOSHIFT, G);
 
     step("Parametric plot: Program");
     test(CLEAR, SHIFT, RUNSTOP,
          "'9.5*sin(31.27*X)' eval '5.5*cos(42.42*X)' eval RealToComplex",
-         ENTER, ENTER, F3)
-        .noerror().wait(200).image("pplot-pgm");
+         ENTER, ENTER, LENGTHY(200), F3)
+        .noerror().image("pplot-pgm");
     step("Parametric plot: Degrees");
-    test("DEG 2 LINEWIDTH", ENTER, F3).noerror().wait(200).image("pplot-deg");
+    test("DEG 2 LINEWIDTH", ENTER, LENGTHY(200), F3)
+        .noerror().image("pplot-deg");
     step("Parametric plot: Equation");
     test(CLEAR,
          "3 LINEWIDTH 0.25 GRAY FOREGROUND "
-         "'exp((0.17ⅈ5.27)*x+(1.5ⅈ8))' ParametricPlot", ENTER)
-        .noerror().wait(200).image("pplot-eq");
+         "'exp((0.17ⅈ5.27)*x+(1.5ⅈ8))' ParametricPlot", LENGTHY(200), ENTER)
+        .noerror().image("pplot-eq");
 
     step("Bar plot");
     test(CLEAR,
-         "[[ 1 -1 ][2 -2][3 -3][4 -4][5 -6][7 -8][9 -10]]", ENTER,
+         "[[ 1 -1 ][2 -2][3 -3][4 -4][5 -6][7 -8][9 -10]]", LENGTHY(200), ENTER,
          33, MUL, K, 2, MUL,
-         RSHIFT, O, F5).noerror().wait(200).image("barplot");
+         RSHIFT, O, LENGTHY(200), F5)
+        .noerror().image("barplot");
 
     step("Scatter plot");
     test(CLEAR,
          "[[ -5 -5][ -3 0][ -5 5][ 0 3][ 5 5][ 3 0][ 5 -5][ 0 -3][-5 -5]]",
          ENTER,
-         "4 LineWidth ScatterPlot", ENTER)
-        .noerror().wait(200).image("scatterplot");
+         "4 LineWidth ScatterPlot", LENGTHY(200), ENTER)
+        .noerror().image("scatterplot");
 
      step("Reset drawing parameters");
      test(CLEAR, "1 LineWidth 0 GRAY Foreground", ENTER).noerror();
