@@ -47,8 +47,8 @@ RECORDER(tests, 256, "Information about tests");
 RECORDER_DECLARE(errors);
 
 uint    tests::default_wait_time  = 500;
-uint    tests::key_delay_time     = 1;
-uint    tests::refresh_delay_time = 50;
+uint    tests::key_delay_time     = 0;
+uint    tests::refresh_delay_time = 20;
 uint    tests::image_wait_time    = 500;
 cstring tests::dump_on_fail       = nullptr;
 bool    tests::running            = false;
@@ -518,7 +518,7 @@ void tests::data_types()
     step("Equation fancy rendering");
     test(CLEAR, XEQ, "X", ENTER, INV,
          XEQ, "Y", ENTER, SHIFT, SQRT, XEQ, "Z", ENTER,
-         "CUBED", ENTER, ADD, ADD, WAIT(100))
+         "CUBED", ENTER, ADD, ADD)
         .type(object::ID_expression)
         .expect("'X⁻¹+(Y²+Z³)'");
     step("Equation fancy parsing from editor");
@@ -956,20 +956,20 @@ void tests::arithmetic()
     step("Manual computation of 100!");
     test(CLEAR, 1, ENTER);
     for (uint i = 1; i <= 100; i++)
-        test(i, MUL, NOKEYS, WAIT(20));
+        test(i, MUL);
     expect( "93 326 215 443 944 152 681 699 238 856 266 700 490 715 968 264 "
             "381 621 468 592 963 895 217 599 993 229 915 608 941 463 976 156 "
             "518 286 253 697 920 827 223 758 251 185 210 916 864 000 000 000 "
             "000 000 000 000 000");
     step("Manual division by all factors of 100!");
     for (uint i = 1; i <= 100; i++)
-        test(i * 997 % 101, DIV, NOKEYS, WAIT(20));
+        test(i * 997 % 101, DIV);
     expect(1);
 
     step("Manual computation of 997/100!");
     test(CLEAR, 997, ENTER);
     for (uint i = 1; i <= 100; i++)
-        test(i * 997 % 101, DIV, NOKEYS, WAIT(20));
+        test(i * 997 % 101, DIV);
     expect("⁹⁹⁷/"
            "₉₃ ₃₂₆ ₂₁₅ ₄₄₃ ₉₄₄ ₁₅₂ ₆₈₁ ₆₉₉ ₂₃₈ ₈₅₆ ₂₆₆ ₇₀₀ ₄₉₀ ₇₁₅ ₉₆₈ "
            "₂₆₄ ₃₈₁ ₆₂₁ ₄₆₈ ₅₉₂ ₉₆₃ ₈₉₅ ₂₁₇ ₅₉₉ ₉₉₃ ₂₂₉ ₉₁₅ ₆₀₈ ₉₄₁ ₄₆₃ "
@@ -2644,7 +2644,9 @@ void tests::high_precision_numerical_functions()
     step("Setting radians mode");
     test(CLEAR, "RAD", ENTER).noerror();
 
-#define TFNA(name, arg)         step(#name).test(CLEAR, #arg " " #name, ENTER)
+    uint dur = 500;
+#define TFNA(name, arg)                                                 \
+    step(#name).test(CLEAR, #arg " " #name, LENGTHY(dur), ENTER)
 #define TFN(name)               TFNA(name, 0.321)
 
     TFN(sqrt).expect("0.56656 86189 68611 77992 54734 04696 76902 95391 98874 84029 02431 74015 07100 23314 25810 89388 23378 74831 09026 25322 95207 15522 13334 6095");
@@ -2671,8 +2673,8 @@ void tests::high_precision_numerical_functions()
     TFN(erf).expect("0.35014 42208 20023 82355 16032 45050 23912 83120 71924 29072 35684 90423 15676 68631 26483 67740 59618 93127 36786 06239 23468 00013 58887 2181");
     TFN(erfc).expect("0.64985 57791 79976 17644 83967 54949 76087 16879 28075 70927 64315 09576 84323 31368 73516 32259 40381 06872 63213 93760 76531 99986 41112 7819");
     TFN(tgamma).expect("2.78663 45408 45472 36795 07642 12781 77275 03497 82995 16602 55760 07828 51424 44941 90542 89306 12905 33223 77665 62678 93736 34160 48127 165", 20000);
-    TFN(lgamma).wait(500).expect("1.02483 46099 57313 19869 10927 53834 88666 18028 66769 43209 08437 87004 46327 04911 25770 09539 00530 12325 23947 42518 21539 89107 12509 699");
-    TFN(gamma).wait(500).expect("2.78663 45408 45472 36795 07642 12781 77275 03497 82995 16602 55760 07828 51424 44941 90542 89306 12905 33223 77665 62678 93736 34160 48127 165");
+    TFN(lgamma).expect("1.02483 46099 57313 19869 10927 53834 88666 18028 66769 43209 08437 87004 46327 04911 25770 09539 00530 12325 23947 42518 21539 89107 12509 699");
+    TFN(gamma).expect("2.78663 45408 45472 36795 07642 12781 77275 03497 82995 16602 55760 07828 51424 44941 90542 89306 12905 33223 77665 62678 93736 34160 48127 165");
     TFN(cbrt).expect("0.68470 21277 57224 16184 09277 32646 81496 28057 14749 53139 45950 35873 52977 73009 35191 71304 84396 28932 73625 07589 02266 77954 73690 2353");
     TFN(norm).expect("0.321");
 #undef TFN
@@ -5396,7 +5398,7 @@ void tests::online_help()
     BEGIN(help);
 
     step("Main menu shows help as F1")
-        .test(CLEAR, EXIT, A, F1).wait(100).noerror()
+        .test(CLEAR, EXIT, A, LENGTHY(100), F1).noerror()
         .image_noheader("help");
     step("Exiting help with EXIT")
         .test(EXIT).noerror()
@@ -5452,12 +5454,12 @@ void tests::online_help()
         .test(F4).noerror()
         .image_noheader("help-page8");
     step("Select topic with ENTER")
-        .test(ENTER).wait(200).noerror()
+        .test(LENGTHY(200), ENTER).noerror()
         .image_noheader("help-design");
     step("Exit to normal command line")
         .test(EXIT, CLEAR, EXIT).noerror();
     step("Invoke help about SIN command with long press")
-        .test(LONGPRESS, J).wait(20)
+        .test(LONGPRESS, J)
         .image_noheader("help-sin");
     step("Invoke help about COS command with long press")
         .test(EXIT, LONGPRESS, K)
@@ -5814,15 +5816,12 @@ void tests::graphic_stack_rendering()
 
     step("Vector")
         .test(CLEAR, LSHIFT, KEY9, "1 2 3", ENTER, EXIT)
-        .wait(100)
         .image_noheader("vector-horizontal");
     step("Vector vertical rendering")
         .test("VerticalVectors", ENTER)
-        .wait(100)
         .image_noheader("vector-vertical");
     step("Vector horizontal rendering")
         .test("HorizontalVectors", ENTER)
-        .wait(100)
         .image_noheader("vector-horizontal");
 
     step("Matrix")
@@ -5831,26 +5830,21 @@ void tests::graphic_stack_rendering()
               LSHIFT, KEY9, "4 5 6 7", DOWN,
               LSHIFT, KEY9, "8 9 10 11", DOWN,
               LSHIFT, KEY9, "12 13 14 18", ENTER, EXIT)
-        .wait(100)
         .image_noheader("matrix");
     step("Matrix with smaller size")
         .test(13, DIV, ENTER, MUL)
-        .wait(100)
         .image_noheader("matrix-smaller");
 
     step("Lists")
         .test(CLEAR, RSHIFT, SPACE, "1 2 \"ABC\"", ENTER, EXIT)
-        .wait(100)
         .image_noheader("list-horizontal");
     step("List vertical")
         .test("VerticalLists", ENTER)
         .test(CLEAR, RSHIFT, SPACE, "1 2 \"ABC\"", ENTER, EXIT)
-        .wait(100)
         .image_noheader("list-vertical");
     step("List horizontal")
         .test("HorizontalLists", ENTER)
         .test(CLEAR, RSHIFT, SPACE, "1 2 \"ABC\"", ENTER, EXIT)
-        .wait(100)
         .image_noheader("list-horizontal");
 
 }
@@ -6589,7 +6583,7 @@ void tests::graphic_commands()
 
     step("Clear LCD");
     test(CLEAR, "ClearLCD", ENTER)
-        .noerror().wait(200).image("cllcd").test(ENTER);
+        .noerror().image("cllcd").test(ENTER);
 
     step("Draw graphic objects")
         .test(CLEAR,
@@ -6607,53 +6601,53 @@ void tests::graphic_commands()
               "4.12 ⅈ * i * exp 4.22 0.08 i * + * Swap "
               "GOr "
               "next", ENTER)
-        .wait(200).noerror().image("walkman").test(EXIT);
+        .noerror().image("walkman").test(EXIT);
 
     step("Displaying text, compatibility mode");
     test(CLEAR,
          "\"Hello World\" 1 DISP "
          "\"Compatibility mode\" 2 DISP", ENTER)
-        .noerror().wait(200).image("text-compat").test(ENTER);
+        .noerror().image("text-compat").test(ENTER);
 
     step("Displaying text, fractional row");
     test(CLEAR,
          "\"Gutentag\" 1.5 DrawText "
          "\"Fractional row\" 3.8 DrawText", ENTER)
-        .noerror().wait(200).image("text-frac").test(ENTER);
+        .noerror().image("text-frac").test(ENTER);
 
     step("Displaying text, pixel row");
     test(CLEAR,
          "\"Bonjour tout le monde\" #5d DISP "
          "\"Pixel row mode\" #125d DISP", ENTER)
-        .noerror().wait(200).image("text-pixrow").test(ENTER);
+        .noerror().image("text-pixrow").test(ENTER);
 
     step("Displaying text, x-y coordinates");
     test(CLEAR, "\"Hello\" { 0 0 } DISP ", ENTER)
-        .noerror().wait(200).image("text-xy").test(ENTER);
+        .noerror().image("text-xy").test(ENTER);
 
     step("Displaying text, x-y pixel coordinates");
     test(CLEAR, "\"Hello\" { #20d #20d } DISP ", ENTER)
-        .noerror().wait(200).image("text-pixxy").test(ENTER);
+        .noerror().image("text-pixxy").test(ENTER);
 
     step("Displaying text, font ID");
     test(CLEAR, "\"Hello\" { 0 0 0 } DISP \"World\" { 0 1 2 } DISP ", ENTER)
-        .noerror().wait(200).image("text-font").test(ENTER);
+        .noerror().image("text-font").test(ENTER);
 
     step("Displaying text, erase and invert");
     test(CLEAR, "\"Inverted\" { 0 0 0 true true } DISP", ENTER)
-        .noerror().wait(200).image("text-invert").test(ENTER);
+        .noerror().image("text-invert").test(ENTER);
 
     step("Displaying text, background and foreground");
     test(CLEAR,
          "0.25 Gray Foreground 0.75 Gray Background "
          "\"Grayed\" { 0 0 } Disp", ENTER)
-        .noerror().wait(200).image("text-gray").test(ENTER);
+        .noerror().image("text-gray").test(ENTER);
 
     step("Displaying text, restore background and foreground");
     test(CLEAR,
          "0 Gray Foreground 1 Gray Background "
          "\"Grayed\" { 0 0 } Disp", ENTER)
-        .noerror().wait(200).image("text-normal").test(ENTER);
+        .noerror().image("text-normal").test(ENTER);
 
     step("Displaying text, type check");
     test(CLEAR, "\"Bad\" \"Hello\" DISP", ENTER)
@@ -6661,7 +6655,7 @@ void tests::graphic_commands()
 
     step("Lines");
     test(CLEAR, "3 50 for i ⅈ i * exp i 2 + ⅈ * exp 5 * Line next", ENTER)
-        .noerror().wait(200).image("lines").test(ENTER);
+        .noerror().image("lines").test(ENTER);
 
     step("Line width");
     test(CLEAR,
@@ -6671,7 +6665,7 @@ void tests::graphic_commands()
          "i LineWidth Line "
          "next "
          "1 LineWidth", ENTER)
-        .noerror().wait(200).image("line-width").test(ENTER);
+        .noerror().image("line-width").test(ENTER);
 
     step("Line width, grayed");
     test(CLEAR,
@@ -6682,7 +6676,7 @@ void tests::graphic_commands()
          "i LineWidth Line "
          "next "
          "1 LineWidth 0 Gray Foreground", ENTER)
-        .noerror().wait(200).image("line-width-gray").test(ENTER);
+        .noerror().image("line-width-gray").test(ENTER);
 
     step("Circles");
     test(CLEAR,
@@ -6690,14 +6684,14 @@ void tests::graphic_commands()
          "{ 0 0 } i Circle "
          "{ 0 1 } i 0.25 * Circle "
          "next ", ENTER)
-        .noerror().wait(200).image("circles").test(ENTER);
+        .noerror().image("circles").test(ENTER);
 
     step("Circles, complex coordinates");
     test(CLEAR,
          "2 150 for i "
          "ⅈ i 0.12 * * exp 0.75 0.05 i * + * 0.4 0.003 i * +  Circle "
          "next ", ENTER)
-        .noerror().wait(200).image("circles-complex").test(ENTER);
+        .noerror().image("circles-complex").test(ENTER);
 
     step("Circles, fill and patterns");
     test(CLEAR,
@@ -6706,7 +6700,7 @@ void tests::graphic_commands()
          "i 0.0053 * gray Foreground "
          "ⅈ i 0.12 * * exp 0.75 0.05 i * + * 0.1 0.008 i * +  Circle "
          "next ", ENTER)
-        .noerror().wait(200).image("circles-fill").test(ENTER);
+        .noerror().image("circles-fill").test(ENTER);
 
     step("Ellipses");
     test(CLEAR,
@@ -6716,7 +6710,7 @@ void tests::graphic_commands()
          "i 0.17 * ⅈ * exp 0.05 i * 0.75 + * "
          " Ellipse "
          "next ", ENTER)
-        .noerror().wait(200).image("ellipses").test(ENTER);
+        .noerror().image("ellipses").test(ENTER);
 
     step("Ellipses, fill and patterns");
     test(CLEAR,
@@ -6727,7 +6721,7 @@ void tests::graphic_commands()
          "1.27 ⅈ * exp 5.45 0.01 i * - * neg "
          " Ellipse "
          "next ", ENTER)
-        .noerror().wait(200).image("ellipses-fill").test(ENTER);
+        .noerror().image("ellipses-fill").test(ENTER);
 
     step("Rectangles");
     test(CLEAR,
@@ -6737,7 +6731,7 @@ void tests::graphic_commands()
          "i 0.17 * ⅈ * exp 0.05 i * 0.75 + * "
          " Rect "
          "next ", ENTER)
-        .noerror().wait(200).image("rectangles").test(ENTER);
+        .noerror().image("rectangles").test(ENTER);
 
     step("Rectangles, fill and patterns");
     test(CLEAR,
@@ -6748,7 +6742,7 @@ void tests::graphic_commands()
          "1.27 ⅈ * exp 5.45 0.01 i * - * neg "
          " Rect "
          "next ", ENTER)
-        .noerror().wait(200).image("rectangle-fill").test(ENTER);
+        .noerror().image("rectangle-fill").test(ENTER);
 
     step("Rounded rectangles");
     test(CLEAR,
@@ -6758,7 +6752,7 @@ void tests::graphic_commands()
          "i 0.17 * ⅈ * exp 0.05 i * 0.75 + * "
          "0.8 RRect "
          "next ", ENTER)
-        .noerror().wait(200).image("rounded-rectangle").test(ENTER);
+        .noerror().image("rounded-rectangle").test(ENTER);
 
     step("Rounded rectangles, fill and patterns");
     test(CLEAR,
@@ -6769,7 +6763,7 @@ void tests::graphic_commands()
          "1.27 ⅈ * exp 5.45 0.01 i * - * neg "
          "0.8 RRect "
          "next ", ENTER)
-        .noerror().wait(200).image("rounded-rectangle-fill").test(ENTER);
+        .noerror().image("rounded-rectangle-fill").test(ENTER);
 
     step("Clipping");
     test(CLEAR,
@@ -6779,13 +6773,13 @@ void tests::graphic_commands()
          "ⅈ i 0.12 * * exp 0.75 0.05 i * + * 0.1 0.008 i * +  Circle "
          "next "
          "{} Clip", ENTER)
-        .wait(200).noerror().image("clip-circles").test(ENTER);
+        .noerror().image("clip-circles").test(ENTER);
 
     step("Cleanup");
     test(CLEAR,
          "1 LineWidth 0 Gray Foreground 1 Gray Background "
          "{ -1 -1 } { 3 2 } rect",
-         ENTER).noerror().wait(200).image("cleanup");
+         ENTER).noerror().image("cleanup");
 }
 
 
