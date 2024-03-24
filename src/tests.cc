@@ -47,7 +47,7 @@ RECORDER(tests, 256, "Information about tests");
 RECORDER_DECLARE(errors);
 
 uint    tests::default_wait_time  = 500;
-uint    tests::key_delay_time     = 2;
+uint    tests::key_delay_time     = 1;
 uint    tests::refresh_delay_time = 50;
 uint    tests::image_wait_time    = 500;
 cstring tests::dump_on_fail       = nullptr;
