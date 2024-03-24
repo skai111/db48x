@@ -37,6 +37,8 @@ COMMAND(Dup)
 //   Implement the RPL "dup" command, duplicate top of stack
 // ----------------------------------------------------------------------------
 {
+    if (!rt.args(1))
+        return ERROR;
     if (object_g top = rt.top())
         if (rt.push(top))
             return OK;
@@ -49,6 +51,8 @@ COMMAND(Dup2)
 //   Implement the RPL "dup2" command, duplicate two elements at top of stack
 // ----------------------------------------------------------------------------
 {
+    if (!rt.args(2))
+        return ERROR;
     if (object_g y = rt.stack(1))
         if (object_g x = rt.stack(0))
             if (rt.push(y))
@@ -64,7 +68,7 @@ COMMAND(DupN)
 // ----------------------------------------------------------------------------
 {
     uint32_t depth = uint32_arg();
-    if (!rt.error() && rt.pop())
+    if (!rt.error() && rt.args(depth+1) && rt.pop())
     {
         for (uint i = 0; i < depth; i++)
             if (object_p obj = rt.stack(depth-1))
@@ -81,7 +85,7 @@ COMMAND(Drop)
 //   Implement the RPL "drop" command, remove top of stack
 // ----------------------------------------------------------------------------
 {
-    if (rt.drop())
+    if (rt.args(1) && rt.drop())
         return OK;
     return ERROR;
 }
@@ -92,7 +96,7 @@ COMMAND(Drop2)
 //   Implement the Drop2 command, remove two elements from the stack
 // ----------------------------------------------------------------------------
 {
-    if (rt.drop(2))
+    if (rt.args(2) && rt.drop(2))
         return OK;
     return ERROR;
 }
@@ -105,9 +109,10 @@ COMMAND(DropN)
 {
     uint32_t depth = uint32_arg();
     if (!rt.error())
-        if (rt.pop())
-            if (rt.drop(depth))
-                return OK;
+        if (rt.args(depth+1))
+            if (rt.pop())
+                if (rt.drop(depth))
+                    return OK;
     return ERROR;
 }
 
@@ -117,9 +122,10 @@ COMMAND(Over)
 //   Implement the Over command, getting object from level 2
 // ----------------------------------------------------------------------------
 {
-    if (object_p o = rt.stack(1))
-        if (rt.push(o))
-            return OK;
+    if (rt.args(2))
+        if (object_p o = rt.stack(1))
+            if (rt.push(o))
+                return OK;
     return ERROR;
 }
 
@@ -128,12 +134,17 @@ COMMAND(Pick)
 // ----------------------------------------------------------------------------
 //   Implement the Pick command, getting from level N
 // ----------------------------------------------------------------------------
+//  Note that both on HP50G and HP48, LastArg after Pick only returns the
+//  pick value, not the picked value (inconsistent with DupN for example)
 {
-    uint32_t depth = uint32_arg();
-    if (!rt.error())
-        if (object_p obj = rt.stack(depth))
-            if (rt.top(obj))
-                return OK;
+    if (rt.args(1))
+    {
+        uint32_t depth = uint32_arg();
+        if (!rt.error())
+            if (object_p obj = rt.stack(depth))
+                if (rt.top(obj))
+                    return OK;
+    }
     return ERROR;
 }
 
@@ -143,11 +154,14 @@ COMMAND(Roll)
 //   Implement the Roll command, moving objects from high stack level down
 // ----------------------------------------------------------------------------
 {
-    uint32_t depth = uint32_arg();
-    if (!rt.error())
-        if (rt.pop())
-            if (rt.roll(depth))
-                return OK;
+    if (rt.args(1))
+    {
+        uint32_t depth = uint32_arg();
+        if (!rt.error())
+            if (rt.pop())
+                if (rt.roll(depth))
+                    return OK;
+    }
     return ERROR;
 }
 
@@ -157,11 +171,14 @@ COMMAND(RollD)
 //   Implement the RollD command, moving objects from first level up
 // ----------------------------------------------------------------------------
 {
-    uint32_t depth = uint32_arg();
-    if (!rt.error())
-        if (rt.pop())
-            if (rt.rolld(depth))
-                return OK;
+    if (rt.args(1))
+    {
+        uint32_t depth = uint32_arg();
+        if (!rt.error())
+            if (rt.pop())
+                if (rt.rolld(depth))
+                    return OK;
+    }
     return ERROR;
 }
 
@@ -171,8 +188,9 @@ COMMAND(Rot)
 //   Implement the RollD command, moving objects from first level up
 // ----------------------------------------------------------------------------
 {
-    if (rt.roll(3))
-        return OK;
+    if (rt.args(3))
+        if (rt.roll(3))
+            return OK;
     return ERROR;
 }
 
@@ -182,13 +200,16 @@ COMMAND(Swap)
 //   Implement the RPL "swap" command, swap the two top elements
 // ----------------------------------------------------------------------------
 {
-    object_p x = rt.stack(0);
-    object_p y = rt.stack(1);
-    if (x && y)
+    if (rt.args(2))
     {
-        rt.stack(0, y);
-        rt.stack(1, x);
-        return OK;
+        object_p x = rt.stack(0);
+        object_p y = rt.stack(1);
+        if (x && y)
+        {
+            rt.stack(0, y);
+            rt.stack(1, x);
+            return OK;
+        }
     }
     return ERROR;
 }
@@ -214,10 +235,13 @@ COMMAND(Depth)
 //   Return the depth of the stack
 // ----------------------------------------------------------------------------
 {
-    uint ticks = rt.depth();
-    if (integer_p ti = rt.make<integer>(ID_integer, ticks))
-        if (rt.push(ti))
-            return OK;
+    if (rt.args(0))
+    {
+        uint depth = rt.depth();
+        if (integer_p ti = rt.make<integer>(ID_integer, depth))
+            if (rt.push(ti))
+                return OK;
+    }
     return ERROR;
 }
 
@@ -227,7 +251,10 @@ COMMAND(ClearStack)
 //   Clear the stack
 // ----------------------------------------------------------------------------
 {
-    return rt.drop(rt.depth()) ? OK : ERROR;
+    if (rt.args(0))
+        if (rt.drop(rt.depth()))
+            return OK;
+    return ERROR;
 }
 
 #endif // STACK_CMDS_H

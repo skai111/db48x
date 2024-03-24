@@ -837,6 +837,37 @@ void tests::stack_operations()
         .test(CLEAR, "1 2 3 4", ENTER)
         .test(RSHIFT, F3).noerror()
         .test(BSP).error("Too few arguments");
+
+    step("LastArg with Dup")
+        .test(CLEAR, "1 2", ENTER, ENTER).expect("2")
+        .test(LSHIFT, M).expect("2")
+        .test(BSP).expect("2")
+        .test(BSP).expect("2")
+        .test(BSP).expect("1")
+        .test(BSP).noerror()
+        .test(BSP).error("Too few arguments");
+    step("LastArg with Drop")
+        .test(CLEAR, "1 2", ENTER, BSP).expect("1")
+        .test(LSHIFT, M).expect("2")
+        .test(BSP).expect("1")
+        .test(BSP).noerror()
+        .test(BSP).error("Too few arguments");
+
+    step("LastArg with DupN")
+        .test(CLEAR, "111 222 333 444 555", ENTER)
+        .test("3", NOSHIFT, I, LSHIFT, F5,
+              LSHIFT, M, NOSHIFT, I, F3, RSHIFT, N, LSHIFT, F1)
+        .expect("{ 111 222 333 444 555 333 444 555 333 444 555 3 }");
+    step("LastArg with DropN")
+        .test(CLEAR, "111 222 333 444 555", ENTER)
+        .test("3", NOSHIFT, I, LSHIFT, F6).expect("222")
+        .test(LSHIFT, M, NOSHIFT, I, F3, RSHIFT, N, LSHIFT, F1)
+        .expect("{ 111 222 333 444 555 3 }");
+    step("LastArg with Pick")
+        .test(CLEAR, "111 222 333 444 555", ENTER)
+        .test("3", NOSHIFT, I, NOSHIFT, F4).expect("333")
+        .test(LSHIFT, M, NOSHIFT, I, F3, RSHIFT, N, LSHIFT, F1)
+        .expect("{ 111 222 333 444 555 333 3 }");
 }
 
 
