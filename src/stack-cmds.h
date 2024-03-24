@@ -193,6 +193,22 @@ COMMAND(Swap)
     return ERROR;
 }
 
+
+COMMAND(Nip)
+// ----------------------------------------------------------------------------
+//   Implement the RPL "nip" command, remove level 2 of the stack
+// ----------------------------------------------------------------------------
+{
+    if (!rt.args(2))
+        return ERROR;
+    if (object_p x = rt.stack(0))
+        if (rt.stack(1, x))
+            if (rt.drop())
+                return OK;
+    return ERROR;
+}
+
+
 COMMAND(Depth)
 // ----------------------------------------------------------------------------
 //   Return the depth of the stack

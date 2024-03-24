@@ -729,6 +729,9 @@ void tests::stack_operations()
         .test(CLEAR, "13 25 Over / +", ENTER).expect("14 ¹²/₁₃");
     step("Rot")
         .test(CLEAR, "13 17 25 Rot / +", ENTER).expect("18 ¹²/₁₃");
+    step("Nip")
+        .test(CLEAR, "42 13 17 25 Nip / +", ENTER).expect("42 ¹³/₂₅");
+
     step("Over in stack menu")
         .test(CLEAR, I, "13 25", F2, DIV, ADD).expect("14 ¹²/₁₃");
     step("Rot in stack menu")
@@ -790,17 +793,23 @@ void tests::stack_operations()
         .test(BSP).expect("13")
         .test(BSP).noerror()
         .test(BSP).error("Too few arguments");
+    step("Nip in stack menu")
+        .test(CLEAR, "13 17 25 42", RSHIFT, F4).expect("42")
+        .test(BSP).expect("17")
+        .test(BSP).expect("13")
+        .test(BSP).noerror()
+        .test(BSP).error("Too few arguments");
     step("Simple stack commands from menu")
         .test(CLEAR, SHIFT, RUNSTOP,
               F1, F2, F3, F4, F5, F6,
               SHIFT, F1, SHIFT, F2, SHIFT, F3,
               SHIFT, F4, SHIFT, F5, SHIFT, F6,
               RSHIFT, F1, RSHIFT, F2, RSHIFT, F3,
-              RSHIFT, F5, RSHIFT, F6,
+              RSHIFT, F4, RSHIFT, F5, RSHIFT, F6,
               ENTER)
         .expect("« Rot Over Depth Pick Roll RollDown "
                 "Duplicate Drop Duplicate2 Drop2 DuplicateN DropN "
-                "Swap LastArguments Clear LastX »").test(BSP).noerror();
+                "Swap LastArguments Clear Nip LastX »").test(BSP).noerror();
 
     step("LastArg")
         .test(CLEAR, "1 2").shifts(false, false, false, false)

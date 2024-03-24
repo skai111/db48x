@@ -634,6 +634,7 @@ CMD(XlibValue)
 NAMED(LastArg, "LastArguments")
 CMD(LastX)
 OP(ClearStack, "Clear")
+CMD(Nip)
 CMD(Show)
 
 

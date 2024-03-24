@@ -1053,7 +1053,7 @@ MENU(StackMenu,
      "Swap",    ID_Swap,
      "LastArg", ID_LastArg,
      "ClearStk",ID_ClearStack,
-     "FillStk", ID_Unimplemented,
+     "Nip",     ID_Nip,
      "LastX",   ID_LastX,
      "LastStk", ID_Undo);
 
