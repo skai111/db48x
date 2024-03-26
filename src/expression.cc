@@ -1546,7 +1546,11 @@ grob_p expression::suscript(grapher &g,
     rs.fill(0, 0, gw, gh, g.background);
     rs.copy(xs, 0,  xt - t);
     rs.copy(ys, xw, yt - t);
-    g.voffset = xt - t + coord(xh)/2 - coord(gh)/2;
+    if (dir >= 0)
+        g.voffset = xt - t + coord(xh)/2 - coord(gh)/2;
+    else
+        g.voffset = yt - t + coord(yh)/2 - coord(gh)/2 + vy;
+
 
     return result;
 }
@@ -1697,7 +1701,7 @@ grob_p expression::graph(grapher &g, uint depth, int &precedence)
                 int    lprec = 0, rprec = 0;
                 id     oid = obj->type();
                 auto   fid  = g.font;
-                if (oid == ID_pow)
+                if (oid == ID_pow || oid == ID_xroot)
                     g.reduce_font();
                 grob_g rg   = graph(g, depth, rprec);
                 coord  rv   = g.voffset;
@@ -1705,7 +1709,7 @@ grob_p expression::graph(grapher &g, uint depth, int &precedence)
                 grob_g lg   = graph(g, depth, lprec);
                 coord  lv   = g.voffset;
                 int    prec = obj->precedence();
-                if (prec == precedence::FUNCTION)
+                if (prec == precedence::FUNCTION && oid != ID_xroot)
                 {
                     grob_g arg = infix(g, lv, lg, 0, ";", rv, rg);
                     coord  av  = g.voffset;
@@ -1717,7 +1721,7 @@ grob_p expression::graph(grapher &g, uint depth, int &precedence)
                     return prefix(g, ov, op, av, arg);
                 }
 
-                if (oid != ID_div)
+                if (oid != ID_div && oid != ID_xroot)
                 {
                     if (lprec < prec)
                         lg = parentheses(g, lg);
@@ -1730,6 +1734,12 @@ grob_p expression::graph(grapher &g, uint depth, int &precedence)
                 case ID_pow: return suscript(g, lv, lg, rv, rg);
                 case ID_div: return ratio(g, lg, rg);
                 case ID_mul: return infix(g, lv, lg, 0, mulsep(), rv, rg);
+                case ID_xroot:
+                {
+                    lg = sqrt(g, lg);
+                    rg = suscript(g, rv, rg, lv, lg, -1);
+                    return rg;
+                }
                 default: break;
                 }
                 g.voffset = 0;
