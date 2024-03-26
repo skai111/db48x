@@ -652,9 +652,9 @@ MENU(ProbabilitiesMenu,
 // ----------------------------------------------------------------------------
 //   Probabilities
 // ----------------------------------------------------------------------------
-     "!",       ID_fact,
-     "Comb",    ID_Unimplemented,
-     "Perm",    ID_Unimplemented,
+     "Comb",    ID_comb,
+     "Perm",    ID_perm,
+     "x!",      ID_fact,
      "",        ID_Unimplemented,
      "Random",  ID_Unimplemented,
 

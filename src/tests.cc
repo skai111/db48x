@@ -130,6 +130,7 @@ TESTS(infinity,         "Infinity and undefined operations");
 TESTS(overflow,         "Overflow and underflow");
 TESTS(insert,           "Insertion of variables, units and constants");
 TESTS(characters,       "Character menu and catalog");
+TESTS(probabilities,    "Probabilities");
 
 EXTRA(plotfns,          "Plot all functions");
 EXTRA(sysflags,         "Enable/disable every RPL flag");
@@ -155,7 +156,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        stack_operations();
+        probabilities();
     }
     else
     {
@@ -216,6 +217,7 @@ void tests::run(bool onlyCurrent)
         graphic_stack_rendering();
         insertion_of_variables_constants_and_units();
         character_menu();
+        probabilities();
         regression_checks();
     }
     summary();
@@ -6346,6 +6348,44 @@ void tests::character_menu()
 }
 
 
+void tests::probabilities()
+// ----------------------------------------------------------------------------
+//   Probabilities functions and probabilities menu
+// ----------------------------------------------------------------------------
+{
+    BEGIN(probabilities);
+
+    step("Factorial in program")
+        .test(CLEAR, "37 FACT", ENTER).expect("13 763 753 091 226 345 046 315 979 581 580 902 400 000 000");
+    step("Factorial in program with x! spelling")
+        .test(CLEAR, "37 x!", ENTER).expect("13 763 753 091 226 345 046 315 979 581 580 902 400 000 000");
+    step("Factorial in program using Gamma")
+        .test(CLEAR, "37.2 FACT", ENTER).expect("2.84300 02599 5⁳⁴³");
+    step("Combinations in program, returning zero")
+        .test(CLEAR, "37 42 COMB", ENTER).expect("0");
+    step("Combinations in program")
+        .test(CLEAR, "42 37 COMB", ENTER).expect("850 668");
+    step("Permutations in program, returning zero")
+        .test(CLEAR, "37 42 PERM", ENTER).expect("0");
+    step("Permutations in program")
+        .test(CLEAR, "42 37 PERM", ENTER).expect("11 708 384 314 607 332 487 859 521 718 704 263 082 803 200 000 000");
+
+    step("Factorial in menu")
+        .test(CLEAR, LSHIFT, W)
+        .test(CLEAR, "37", NOSHIFT, F3).expect("13 763 753 091 226 345 046 315 979 581 580 902 400 000 000");
+    step("Factorial in menu using Gamma")
+        .test(CLEAR, "37.2", NOSHIFT, F3).expect("2.84300 02599 5⁳⁴³");
+    step("Combinations in menu, returning zero")
+        .test(CLEAR, "37 42", NOSHIFT, F1).expect("0");
+    step("Combinations in menu")
+        .test(CLEAR, "42 37", NOSHIFT, F1).expect("850 668");
+    step("Permutations in menu, returning zero")
+        .test(CLEAR, "37 42", NOSHIFT, F2).expect("0");
+    step("Permutations in menu")
+        .test(CLEAR, "42 37", NOSHIFT, F2).expect("11 708 384 314 607 332 487 859 521 718 704 263 082 803 200 000 000");
+}
+
+
 void tests::regression_checks()
 // ----------------------------------------------------------------------------
 //   Checks for specific regressions
@@ -7917,8 +7957,12 @@ tests &tests::type(object::id ty, uint extrawait)
     {
         if (rt.error())
         {
-            explain("Expected type [", object::name(ty), "], "
-                    "got error [", rt.error(), "] instead");
+            explain("Expected type [",
+                    object::name(ty),
+                    "], "
+                    "got error [",
+                    rt.error(),
+                    "] instead");
             return fail();
         }
 
@@ -7927,13 +7971,25 @@ tests &tests::type(object::id ty, uint extrawait)
             object::id tty = Stack.type();
             if (tty == ty)
                 return *this;
-            explain("Expected type ", object::name(ty), " (", int(ty), ")"
-                    " but got ", object::name(tty), " (", int(tty), ")");
+            explain("Expected type ",
+                    object::name(ty),
+                    " (",
+                    int(ty),
+                    ")"
+                    " but got ",
+                    object::name(tty),
+                    " (",
+                    int(tty),
+                    ")");
             return fail();
         }
         sys_delay(refresh_delay_time);
     }
-    explain("Expected type ", object::name(ty), " (", int(ty), ")"
+    explain("Expected type ",
+            object::name(ty),
+            " (",
+            int(ty),
+            ")"
             " but stack not updated");
     return fail();
 }
@@ -8015,14 +8071,18 @@ tests &tests::editor(cstring text, uint extrawait)
 
     nokeys(extrawait);
 
-    uint start = sys_current_ms();
+    uint start     = sys_current_ms();
     uint wait_time = image_wait_time + extrawait;
     while (sys_current_ms() - start < wait_time)
     {
         if (rt.error())
         {
-            explain("Expected editor [", text, "], "
-                    "got error [", rt.error(), "] instead");
+            explain("Expected editor [",
+                    text,
+                    "], "
+                    "got error [",
+                    rt.error(),
+                    "] instead");
             return fail();
         }
 
@@ -8035,16 +8095,30 @@ tests &tests::editor(cstring text, uint extrawait)
     }
 
     if (!ed)
-        explain("Expected editor to contain [", text, "], "
+        explain("Expected editor to contain [",
+                text,
+                "], "
                 "but it's empty");
     if (sz != strlen(text))
-        explain("Expected ", strlen(text), " characters in editor"
-                " [", text, "], "
-                "but got ", sz, " characters "
-                " [", std::string(cstring(ed), sz), "]");
+        explain("Expected ",
+                strlen(text),
+                " characters in editor"
+                " [",
+                text,
+                "], "
+                "but got ",
+                sz,
+                " characters "
+                " [",
+                std::string(cstring(ed), sz),
+                "]");
     if (memcmp(ed, text, sz))
-        explain("Expected editor to contain [", text, "], "
-                       "but it contains [", std::string(cstring(ed), sz), "]");
+        explain("Expected editor to contain [",
+                text,
+                "], "
+                "but it contains [",
+                std::string(cstring(ed), sz),
+                "]");
 
     fail();
     return *this;
@@ -8058,8 +8132,10 @@ tests &tests::cursor(size_t csr, uint extrawait)
 {
     nokeys(extrawait);
     return check(ui.cursor == csr,
-                 "Expected cursor to be at position ", csr,
-                 " but it's at position ", ui.cursor);
+                 "Expected cursor to be at position ",
+                 csr,
+                 " but it's at position ",
+                 ui.cursor);
 }
 
 
@@ -8071,7 +8147,7 @@ tests &tests::error(cstring msg, uint extrawait)
     utf8 err = nullptr;
     nokeys(extrawait);
 
-    uint start = sys_current_ms();
+    uint start     = sys_current_ms();
     uint wait_time = image_wait_time + extrawait;
     while (sys_current_ms() - start < wait_time)
     {
@@ -8085,8 +8161,12 @@ tests &tests::error(cstring msg, uint extrawait)
     if (msg && !err)
         explain("Expected error message [", msg, "], got none");
     if (msg && err && strcmp(cstring(err), msg) != 0)
-        explain("Expected error message [", msg, "], "
-                "got [", err, "]");
+        explain("Expected error message [",
+                msg,
+                "], "
+                "got [",
+                err,
+                "]");
     fail();
     return *this;
 }
@@ -8103,12 +8183,12 @@ tests &tests::command(cstring ref, uint extrawait)
 
     nokeys(extrawait);
 
-    uint start = sys_current_ms();
+    uint start     = sys_current_ms();
     uint wait_time = image_wait_time + extrawait;
     while (sys_current_ms() - start < wait_time)
     {
         cmdo = rt.command();
-        cmd = cmdo->value(&sz);
+        cmd  = cmdo->value(&sz);
         if (!ref == !cmd && (!ref || strcmp(ref, cstring(cmd)) == 0))
             return *this;
 
@@ -8136,7 +8216,7 @@ tests &tests::source(cstring ref, uint extrawait)
     utf8 src = nullptr;
     nokeys(extrawait);
 
-    uint start = sys_current_ms();
+    uint start     = sys_current_ms();
     uint wait_time = image_wait_time + extrawait;
     while (sys_current_ms() - start < wait_time)
     {
@@ -8151,7 +8231,12 @@ tests &tests::source(cstring ref, uint extrawait)
     if (ref && !src)
         explain("Expected source [", ref, "], got none");
     if (ref && src && strcmp(ref, cstring(src)) != 0)
-        explain("Expected source [", ref, "], " "got [", src, "]");
+        explain("Expected source [",
+                ref,
+                "], "
+                "got [",
+                src,
+                "]");
 
     fail();
     return *this;

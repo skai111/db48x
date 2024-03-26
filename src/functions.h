@@ -164,7 +164,7 @@ STANDARD_FUNCTION(tgamma);
 STANDARD_FUNCTION(lgamma);
 
 
-#define FUNCTION_EXT(derived, extra)                                    \
+#define FUNCTION_EXT(derived, arity, extra)                             \
 struct derived : function                                               \
 /* ----------------------------------------------------------------- */ \
 /*  Macro to define a mathematical function not from the library     */ \
@@ -174,7 +174,7 @@ struct derived : function                                               \
                                                                         \
 public:                                                                 \
     OBJECT_DECL(derived);                                               \
-    ARITY_DECL(1);                                                      \
+    ARITY_DECL(arity);                                                  \
     PREC_DECL(FUNCTION);                                                \
     EVAL_DECL(derived)                                                  \
     {                                                                   \
@@ -191,15 +191,15 @@ public:                                                                 \
     static algebraic_p evaluate(algebraic_r x);                         \
 };
 
-#define FUNCTION(derived) FUNCTION_EXT(derived, )
+#define FUNCTION(derived) FUNCTION_EXT(derived, 1, )
 
 #define FUNCTION_FANCY(derived)                                         \
-    FUNCTION_EXT(derived, INSERT_DECL(derived);)
+    FUNCTION_EXT(derived, 1, INSERT_DECL(derived);)
 #define FUNCTION_MAT(derived)                                           \
-    FUNCTION_EXT(derived,                                               \
+    FUNCTION_EXT(derived, 1,                                            \
                  static const bool does_matrices = true;)
 #define FUNCTION_FANCY_MAT(derived)                                     \
-    FUNCTION_EXT(derived,                                               \
+    FUNCTION_EXT(derived, 1,                                            \
                  INSERT_DECL(derived);                                  \
                  static const bool does_matrices = true;)
 
@@ -218,6 +218,8 @@ FUNCTION_FANCY_MAT(sq);
 FUNCTION_FANCY_MAT(cubed);
 COMMAND_DECLARE(xroot);
 FUNCTION_FANCY(fact);
+COMMAND_DECLARE(comb);
+COMMAND_DECLARE(perm);
 
 FUNCTION(re);
 FUNCTION(im);

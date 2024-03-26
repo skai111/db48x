@@ -113,6 +113,7 @@ struct tests
     void graphic_stack_rendering();
     void insertion_of_variables_constants_and_units();
     void character_menu();
+    void probabilities();
     void regression_checks();
 
     enum key

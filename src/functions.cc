@@ -825,6 +825,90 @@ INSERT_BODY(fact)
 }
 
 
+COMMAND_BODY(comb)
+// ----------------------------------------------------------------------------
+//   Compute number of combinations
+// ----------------------------------------------------------------------------
+{
+    if (rt.args(2))
+    {
+        algebraic_g n = rt.stack(1)->as_algebraic();
+        algebraic_g m = rt.stack(0)->as_algebraic();
+        if (n->is_symbolic() || m->is_symbolic())
+        {
+            algebraic_g result =  expression::make(ID_comb, n, m);
+            if (!result || !rt.drop() || !rt.top(result))
+                return ERROR;
+            return OK;
+        }
+
+        if (integer_g nval = n->as<integer>())
+        {
+            if (integer_g mval = m->as<integer>())
+            {
+                ularge ni = nval->value<ularge>();
+                ularge mi = mval->value<ularge>();
+                algebraic_g result = integer::make(ni < mi ? 0 : 1);
+                for (ularge i = ni - mi + 1; i <= ni && result; i++)
+                    result = result * algebraic_g(integer::make(i));
+                for (ularge i = 2; i <= mi; i++)
+                    result = result / algebraic_g(integer::make(i));
+                if (!result || !rt.drop() || !rt.top(result))
+                    return ERROR;
+                return OK;
+            }
+        }
+
+        if (n->is_real() && m->is_real())
+            rt.value_error();
+        else
+            rt.type_error();
+    }
+    return ERROR;
+}
+
+
+COMMAND_BODY(perm)
+// ----------------------------------------------------------------------------
+//  Compute number of permutations (n! / (n - m)!)
+// ----------------------------------------------------------------------------
+{
+    if (rt.args(2))
+    {
+        algebraic_g n = rt.stack(1)->as_algebraic();
+        algebraic_g m = rt.stack(0)->as_algebraic();
+        if (n->is_symbolic() || m->is_symbolic())
+        {
+            algebraic_g result =  expression::make(ID_perm, n, m);
+            if (!result || !rt.drop() || !rt.top(result))
+                return ERROR;
+            return OK;
+        }
+
+        if (integer_g nval = n->as<integer>())
+        {
+            if (integer_g mval = m->as<integer>())
+            {
+                ularge ni = nval->value<ularge>();
+                ularge mi = mval->value<ularge>();
+                algebraic_g result = integer::make(ni < mi ? 0 : 1);
+                for (ularge i = ni - mi + 1; i <= ni && result; i++)
+                    result = result * algebraic_g(integer::make(i));
+                if (!result || !rt.drop() || !rt.top(result))
+                    return ERROR;
+                return OK;
+            }
+        }
+
+        if (n->is_real() && m->is_real())
+            rt.value_error();
+        else
+            rt.type_error();
+    }
+    return ERROR;
+}
+
+
 FUNCTION_BODY(Expand)
 // ----------------------------------------------------------------------------
 //   Expand equations
