@@ -1654,7 +1654,8 @@ grob_p expression::graph(grapher &g, uint depth, int &precedence)
                                               : precedence::SYMBOL;
                 if (argp < maxp &&
                     oid != ID_sqrt && oid != ID_inv &&
-                    oid != ID_exp && oid != ID_exp10 && oid != ID_exp2)
+                    oid != ID_exp && oid != ID_exp10 && oid != ID_exp2 &&
+                    oid != ID_cbrt)
                     arg = parentheses(g, arg, 3);
                 precedence = precedence::FUNCTION;
 
@@ -1687,6 +1688,16 @@ grob_p expression::graph(grapher &g, uint depth, int &precedence)
                 case ID_inv:
                     precedence = precedence::FUNCTION_POWER;
                     return ratio(g, "1", arg);
+                case ID_cbrt:
+                {
+                    auto fid = g.font;
+                    arg = sqrt(g, arg);
+                    g.reduce_font();
+                    arg = suscript(g, 0, "3", va, arg, -1);
+                    g.font = fid;
+                    return arg;
+                }
+
                 default:
                     break;
                 }
