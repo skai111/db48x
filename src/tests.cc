@@ -6383,6 +6383,15 @@ void tests::probabilities()
         .test(CLEAR, "37 42", NOSHIFT, F2).expect("0");
     step("Permutations in menu")
         .test(CLEAR, "42 37", NOSHIFT, F2).expect("11 708 384 314 607 332 487 859 521 718 704 263 082 803 200 000 000");
+
+    step("Symbolic combinations")
+        .test(CLEAR, "n m", NOSHIFT, F1).expect("'Combinations(n;m)'")
+        .test(CLEAR, "n 1", NOSHIFT, F1).expect("'Combinations(n;1)'")
+        .test(CLEAR, "1 z", NOSHIFT, F1).expect("'Combinations(1;z)'");
+    step("Symbolic permutations")
+        .test(CLEAR, "n m", NOSHIFT, F2).expect("'Permutations(n;m)'")
+        .test(CLEAR, "n 1", NOSHIFT, F2).expect("'Permutations(n;1)'")
+        .test(CLEAR, "1 z", NOSHIFT, F2).expect("'Permutations(1;z)'");
 }
 
 

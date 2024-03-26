@@ -60,6 +60,10 @@ struct expression : program
     expression(id type, id op, algebraic_r x, algebraic_r y);
     static size_t required_memory(id i, id op, algebraic_r x, algebraic_r y);
 
+    // Building expressions from an array of arguments
+    expression(id type, id op, algebraic_g arg[], uint arity);
+    static size_t required_memory(id i, id op,  algebraic_g arg[], uint arity);
+
     object_p quoted(id type = ID_object) const;
     static size_t size_in_expression(object_p obj);
 
@@ -85,6 +89,15 @@ struct expression : program
         return rt.make<expression>(type, op, x, y);
     }
 
+    static expression_p make(id op, algebraic_g args[], uint arity,
+                             id type = ID_expression)
+    {
+        for (uint a = 0; a < arity; a++)
+            if (!args[a])
+                return nullptr;
+        return rt.make<expression>(type, op, args, arity);
+    }
+
     expression_p rewrite(expression_r from, expression_r to) const;
     expression_p rewrite(expression_p from, expression_p to) const
     {
@@ -93,7 +106,9 @@ struct expression : program
     expression_p rewrite(size_t size, const byte_p rewrites[]) const;
     expression_p rewrite_all(size_t size, const byte_p rewrites[]) const;
 
-    static expression_p rewrite(expression_r eq, expression_r from, expression_r to)
+    static expression_p rewrite(expression_r eq,
+                                expression_r from,
+                                expression_r to)
     {
         return eq->rewrite(from, to);
     }

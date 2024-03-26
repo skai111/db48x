@@ -153,7 +153,8 @@ symbol_p expression::render(uint depth, int &precedence, bool editing)
                 default:
                     break;
                 }
-                if (argp >= precedence::FUNCTION && argp != precedence::FUNCTION_POWER)
+                if (argp >= precedence::FUNCTION &&
+                    argp != precedence::FUNCTION_POWER)
                     arg = space(arg);
                 return fn + arg;
             }
@@ -431,11 +432,67 @@ size_t expression::required_memory(id type, id op, algebraic_r x, algebraic_r y)
 //   Size of an equation object with one argument
 // ----------------------------------------------------------------------------
 {
-    size_t size = leb128size(op) + size_in_expression(x) + size_in_expression(y);
+    size_t size = leb128size(op)+size_in_expression(x)+size_in_expression(y);
     size += leb128size(size);
     size += leb128size(type);
     return size;
 }
+
+
+expression::expression(id type, id op, algebraic_g args[], uint arity)
+// ----------------------------------------------------------------------------
+//   Build an equation with 'arity' arguments
+// ----------------------------------------------------------------------------
+    : program(type, nullptr, 0)
+{
+    byte *p = (byte *) payload();
+
+    // Compute the size of the program
+    size_t size =  leb128size(op);
+    for (uint a = 0; a < arity; a++)
+        size += size_in_expression(args[a]);
+
+    // Write the size of the program
+    p = leb128(p, size);
+
+    // Write the arguments
+    size_t objsize = 0;
+    byte_p objptr = nullptr;
+    for (uint a = 0; a < arity; a++)
+    {
+        algebraic_p arg = args[arity + ~a];
+        if (expression_p eq = arg->as<expression>())
+        {
+            objptr = eq->value(&objsize);
+        }
+        else
+        {
+            objsize = arg->size();
+            objptr = byte_p(arg);
+        }
+        memmove(p, objptr, objsize);
+        p += objsize;
+    }
+
+    // Write the opcode
+    p = leb128(p, op);
+}
+
+
+size_t expression::required_memory(id type, id op,
+                                   algebraic_g args[], uint arity)
+// ----------------------------------------------------------------------------
+//   Size of an equation object with 'arity' arguments
+// ----------------------------------------------------------------------------
+{
+    size_t size = leb128size(op);
+    for (uint a = 0; a < arity; a++)
+        size += size_in_expression(args[a]);
+    size += leb128size(size);
+    size += leb128size(type);
+    return size;
+}
+
 
 
 // ============================================================================

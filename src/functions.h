@@ -93,6 +93,14 @@ public:
 
     static const bool does_matrices = false;
 
+
+    typedef algebraic_p (*nfunction_fn)(id op, algebraic_g args[], uint arity);
+    static result evaluate(id op, nfunction_fn fn, uint arity);
+    // ------------------------------------------------------------------------
+    //   Evaluate a function with n arguments
+    // ------------------------------------------------------------------------
+
+
 };
 
 
@@ -164,7 +172,7 @@ STANDARD_FUNCTION(tgamma);
 STANDARD_FUNCTION(lgamma);
 
 
-#define FUNCTION_EXT(derived, arity, extra)                             \
+#define FUNCTION_EXT(derived, extra)                                    \
 struct derived : function                                               \
 /* ----------------------------------------------------------------- */ \
 /*  Macro to define a mathematical function not from the library     */ \
@@ -174,7 +182,7 @@ struct derived : function                                               \
                                                                         \
 public:                                                                 \
     OBJECT_DECL(derived);                                               \
-    ARITY_DECL(arity);                                                  \
+    ARITY_DECL(1);                                                      \
     PREC_DECL(FUNCTION);                                                \
     EVAL_DECL(derived)                                                  \
     {                                                                   \
@@ -191,15 +199,15 @@ public:                                                                 \
     static algebraic_p evaluate(algebraic_r x);                         \
 };
 
-#define FUNCTION(derived) FUNCTION_EXT(derived, 1, )
+#define FUNCTION(derived) FUNCTION_EXT(derived, )
 
 #define FUNCTION_FANCY(derived)                                         \
-    FUNCTION_EXT(derived, 1, INSERT_DECL(derived);)
+    FUNCTION_EXT(derived, INSERT_DECL(derived);)
 #define FUNCTION_MAT(derived)                                           \
-    FUNCTION_EXT(derived, 1,                                            \
+    FUNCTION_EXT(derived,                                               \
                  static const bool does_matrices = true;)
 #define FUNCTION_FANCY_MAT(derived)                                     \
-    FUNCTION_EXT(derived, 1,                                            \
+    FUNCTION_EXT(derived,                                               \
                  INSERT_DECL(derived);                                  \
                  static const bool does_matrices = true;)
 
@@ -216,10 +224,7 @@ FUNCTION_FANCY_MAT(inv);
 FUNCTION(neg);
 FUNCTION_FANCY_MAT(sq);
 FUNCTION_FANCY_MAT(cubed);
-COMMAND_DECLARE(xroot);
 FUNCTION_FANCY(fact);
-COMMAND_DECLARE(comb);
-COMMAND_DECLARE(perm);
 
 FUNCTION(re);
 FUNCTION(im);
@@ -234,5 +239,43 @@ FUNCTION(ToDecimal);
 FUNCTION(ToFraction);
 FUNCTION(RadiansToDegrees);
 FUNCTION(DegreesToRadians);
+
+
+
+
+#define NFUNCTION(derived, fnarity, extra)                              \
+struct derived : function                                               \
+/* ----------------------------------------------------------------- */ \
+/*  Macro to define a mathematical function with more than 1 arg     */ \
+/* ----------------------------------------------------------------- */ \
+{                                                                       \
+    derived(id i = ID_##derived) : function(i) {}                       \
+                                                                        \
+public:                                                                 \
+    OBJECT_DECL(derived);                                               \
+    ARITY_DECL(fnarity);                                                \
+    PREC_DECL(FUNCTION);                                                \
+    EVAL_DECL(derived)                                                  \
+    {                                                                   \
+        rt.command(o);                                                  \
+        return evaluate();                                              \
+    }                                                                   \
+    extra                                                               \
+public:                                                                 \
+    static result evaluate()                                            \
+    {                                                                   \
+        return function::evaluate(derived::static_id,                   \
+                                  derived::evaluate, fnarity);            \
+    }                                                                   \
+    static algebraic_p evaluate(id op, algebraic_g args[], uint arity); \
+}
+
+
+#define NFUNCTION_BODY(derived)                                         \
+    algebraic_p derived::evaluate(id op, algebraic_g args[], uint arity)
+
+NFUNCTION(xroot, 2, );
+NFUNCTION(comb, 2, );
+NFUNCTION(perm, 2, );
 
 #endif // FUNCTIONS_H

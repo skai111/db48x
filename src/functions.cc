@@ -274,6 +274,52 @@ object::result function::evaluate(algebraic_fn op, bool mat)
 }
 
 
+object::result function::evaluate(id op, nfunction_fn fn, uint arity)
+// ----------------------------------------------------------------------------
+//   Perform the operation from the stack for n-ary functions
+// ----------------------------------------------------------------------------
+{
+    if (!rt.args(arity))
+        return ERROR;
+
+    bool is_symbolic = false;
+    algebraic_g args[arity];
+    for (uint a = 0; a < arity; a++)
+    {
+        algebraic_p arg = rt.stack(a)->as_algebraic();
+        if (!arg)
+        {
+            rt.type_error();
+            return ERROR;
+        }
+        args[a] = arg;
+        if (arg->is_symbolic())
+            is_symbolic = true;
+
+        // Conversion to numerical if needed (may fail silently)
+        if (Settings.NumericalResults())
+        {
+            (void) to_decimal(args[a], true);
+            if (!args[a])
+                return ERROR;
+        }
+    }
+
+
+    algebraic_g result;
+
+    // Check the symbolic case
+    if (is_symbolic)
+        result = expression::make(op, args, arity);
+    else
+        result = fn(op, args, arity);
+
+    if (result && rt.drop(arity) && rt.push(+result))
+        return OK;
+    return ERROR;
+}
+
+
 FUNCTION_BODY(neg)
 // ----------------------------------------------------------------------------
 //   Implementation of 'neg'
@@ -704,63 +750,49 @@ FUNCTION_BODY(cubed)
 }
 
 
-COMMAND_BODY(xroot)
+NFUNCTION_BODY(xroot)
 // ----------------------------------------------------------------------------
 //   Compute the x-th root
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(2))
+    if (args[0]->is_zero())
     {
-        if (object_p x = rt.stack(0))
+        rt.domain_error();
+    }
+    else
+    {
+        algebraic_g &x = args[0];
+        algebraic_g &y = args[1];
+        bool is_int = x->is_integer();
+        bool is_neg = false;
+        if (!is_int && x->is_decimal())
         {
-            if (object_p y = rt.stack(1))
+            decimal_g ip, fp;
+            decimal_p xd = decimal_p(+x);
+            if (!xd->split(ip, fp))
+                return nullptr;
+            if (fp->is_zero())
+                is_int = true;
+        }
+        if (is_int)
+        {
+            bool is_odd = x->as_int32(0, false) & 1;
+            is_neg = y->is_negative();
+            if (is_neg && !is_odd)
             {
-                algebraic_g xa = x->as_algebraic();
-                algebraic_g ya = y->as_algebraic();
-                if (!xa.Safe() || !ya.Safe())
-                {
-                    rt.type_error();
-                }
-                else if (xa->is_zero())
-                {
-                    rt.domain_error();
-                }
-                else
-                {
-                    bool is_int = xa->is_integer();
-                    bool is_neg = false;
-                    if (!is_int && xa->is_decimal())
-                    {
-                        decimal_g ip, fp;
-                        decimal_p xd = decimal_p(+xa);
-                        if (!xd->split(ip, fp))
-                            return ERROR;
-                        if (fp->is_zero())
-                            is_int = true;
-                    }
-                    if (is_int)
-                    {
-                        bool is_odd = xa->as_int32(0, false) & 1;
-                        is_neg = ya->is_negative();
-                        if (is_neg && !is_odd)
-                        {
-                            // Root of a negative number
-                            rt.domain_error();
-                            return ERROR;
-                        }
-                    }
-
-                    if (is_neg)
-                        xa = -pow(-ya, integer::make(1) / xa);
-                    else
-                        xa = pow(ya, integer::make(1) / xa);
-                    if (+xa && rt.drop() && rt.top(xa))
-                        return OK;
-                }
+                // Root of a negative number
+                rt.domain_error();
+                return nullptr;
             }
         }
+
+        if (is_neg)
+            x = -pow(-y, integer::make(1) / x);
+        else
+            x = pow(y, integer::make(1) / x);
+        return x;
     }
-    return ERROR;
+    return nullptr;
 }
 
 
@@ -825,87 +857,61 @@ INSERT_BODY(fact)
 }
 
 
-COMMAND_BODY(comb)
+NFUNCTION_BODY(comb)
 // ----------------------------------------------------------------------------
 //   Compute number of combinations
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(2))
+    algebraic_g &n = args[1];
+    algebraic_g &m = args[0];
+    if (integer_g nval = n->as<integer>())
     {
-        algebraic_g n = rt.stack(1)->as_algebraic();
-        algebraic_g m = rt.stack(0)->as_algebraic();
-        if (n->is_symbolic() || m->is_symbolic())
+        if (integer_g mval = m->as<integer>())
         {
-            algebraic_g result =  expression::make(ID_comb, n, m);
-            if (!result || !rt.drop() || !rt.top(result))
-                return ERROR;
-            return OK;
+            ularge ni = nval->value<ularge>();
+            ularge mi = mval->value<ularge>();
+            n = integer::make(ni < mi ? 0 : 1);
+            for (ularge i = ni - mi + 1; i <= ni && n; i++)
+                n = n * algebraic_g(integer::make(i));
+            for (ularge i = 2; i <= mi && n; i++)
+                n = n / algebraic_g(integer::make(i));
+            return n;
         }
-
-        if (integer_g nval = n->as<integer>())
-        {
-            if (integer_g mval = m->as<integer>())
-            {
-                ularge ni = nval->value<ularge>();
-                ularge mi = mval->value<ularge>();
-                algebraic_g result = integer::make(ni < mi ? 0 : 1);
-                for (ularge i = ni - mi + 1; i <= ni && result; i++)
-                    result = result * algebraic_g(integer::make(i));
-                for (ularge i = 2; i <= mi; i++)
-                    result = result / algebraic_g(integer::make(i));
-                if (!result || !rt.drop() || !rt.top(result))
-                    return ERROR;
-                return OK;
-            }
-        }
-
-        if (n->is_real() && m->is_real())
-            rt.value_error();
-        else
-            rt.type_error();
     }
-    return ERROR;
+
+    if (n->is_real() && m->is_real())
+        rt.value_error();
+    else
+        rt.type_error();
+    return nullptr;
 }
 
 
-COMMAND_BODY(perm)
+NFUNCTION_BODY(perm)
 // ----------------------------------------------------------------------------
 //  Compute number of permutations (n! / (n - m)!)
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(2))
+    algebraic_g &n = args[1];
+    algebraic_g &m = args[0];
+    if (integer_g nval = n->as<integer>())
     {
-        algebraic_g n = rt.stack(1)->as_algebraic();
-        algebraic_g m = rt.stack(0)->as_algebraic();
-        if (n->is_symbolic() || m->is_symbolic())
+        if (integer_g mval = m->as<integer>())
         {
-            algebraic_g result =  expression::make(ID_perm, n, m);
-            if (!result || !rt.drop() || !rt.top(result))
-                return ERROR;
-            return OK;
+            ularge ni = nval->value<ularge>();
+            ularge mi = mval->value<ularge>();
+            n = integer::make(ni < mi ? 0 : 1);
+            for (ularge i = ni - mi + 1; i <= ni && n; i++)
+                n = n * algebraic_g(integer::make(i));
+            return n;
         }
-
-        if (integer_g nval = n->as<integer>())
-        {
-            if (integer_g mval = m->as<integer>())
-            {
-                ularge ni = nval->value<ularge>();
-                ularge mi = mval->value<ularge>();
-                algebraic_g result = integer::make(ni < mi ? 0 : 1);
-                for (ularge i = ni - mi + 1; i <= ni && result; i++)
-                    result = result * algebraic_g(integer::make(i));
-                if (!result || !rt.drop() || !rt.top(result))
-                    return ERROR;
-                return OK;
-            }
-        }
-
-        if (n->is_real() && m->is_real())
-            rt.value_error();
-        else
-            rt.type_error();
     }
-    return ERROR;
+
+    if (n->is_real() && m->is_real())
+        rt.value_error();
+    else
+        rt.type_error();
+    return nullptr;
 }
 
 
