@@ -785,13 +785,20 @@ MENU(ProgramMenu,
 // ----------------------------------------------------------------------------
 //   Programming menu
 // ----------------------------------------------------------------------------
+     "«»",      ID_SelfInsert,
+     "{}",      ID_SelfInsert,
+     "[]",      ID_SelfInsert,
+     "→ «»",    ID_SelfInsert,
+     "→ ''",    ID_SelfInsert,
+     "Eval",    ID_Eval,
+
      "Tests",   ID_TestsMenu,
      "Compare", ID_CompareMenu,
      "Loops",   ID_LoopsMenu,
      "Bases",   ID_BasesMenu,
      "Stack",   ID_StackMenu,
-     "Debug",   ID_DebugMenu,
 
+     "Debug",   ID_DebugMenu,
      "Objects", ID_ObjectMenu,
      "Lists",   ID_ListMenu,
      "Flags",   ID_FlagsMenu,
@@ -915,47 +922,30 @@ MENU(ListMenu,
      "Size",    ID_Size,
      "Head",    ID_Head,
      "Tail",    ID_Tail,
-     "Get",     ID_Get,
 
-     "Sort",    ID_Sort,
      "QSort",   ID_QuickSort,
-     "Reverse", ID_ReverseList,
-     "GetI",    ID_GetI,
-     "PutI",    ID_PutI,
-     "Put",     ID_Put,
-
-     "RSort",   ID_ReverseSort,
      "RQSort",  ID_ReverseQuickSort,
-     "Objects", ID_ObjectMenu,
-     "Matrix",  ID_MatrixMenu,
-     "Vector",  ID_VectorMenu,
-     "Data",    ID_DataMenu);
+     "∑List",   ID_ListSum,
+     "∏List",   ID_ListProduct,
+     "∆List",   ID_ListDifferences,
 
-
-MENU(DataMenu,
-// ----------------------------------------------------------------------------
-//   Operations on data
-// ----------------------------------------------------------------------------
-     "→List",   ID_ToList,
-     "Obj→",    ID_Explode,
      "Sort",    ID_Sort,
+     "RSort",   ID_ReverseSort,
      "Map",     ID_Map,
      "Reduce",  ID_Reduce,
      "Filter",  ID_Filter,
 
-     "∑",       ID_Sum,
-     "∏",       ID_Product,
-     "∆",       ID_Unimplemented,
      "Get",     ID_Get,
      "Put",     ID_Put,
+     "GetI",    ID_GetI,
+     "PutI",    ID_PutI,
      "Reverse", ID_ReverseList,
 
+     "Obj→",    ID_Explode,
      "Find",    ID_Unimplemented,
-     "QSort",   ID_QuickSort,
-     "RSort",   ID_ReverseSort,
-     "RQSort",  ID_ReverseQuickSort,
      "Objects", ID_ObjectMenu,
-     "Lists",   ID_ListMenu);
+     "Matrix",  ID_MatrixMenu,
+     "Vector",  ID_VectorMenu);
 
 
 MENU(ObjectMenu,
@@ -981,7 +971,7 @@ MENU(ObjectMenu,
      "DTag",    ID_dtag,
      "Matrix",  ID_MatrixMenu,
      "List",    ID_ListMenu,
-     "Data",    ID_DataMenu);
+     "Vector",  ID_VectorMenu);
 
 
 MENU(UnitsConversionsMenu,
