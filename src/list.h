@@ -284,6 +284,9 @@ struct list : text
     // Reduce and filter operations
     object_p reduce(object_p prg) const;
     list_p   filter(object_p prg) const;
+
+    // Build a list by combining two subsequent items
+    list_p   pair_map(object_p prg) const;
     object_p map_as_object(object_p prg) const          { return map(prg);    }
     object_p filter_as_object(object_p prg) const       { return filter(prg); }
 
@@ -319,8 +322,9 @@ COMMAND_DECLARE(Tail);
 COMMAND_DECLARE(Map);
 COMMAND_DECLARE(Reduce);
 COMMAND_DECLARE(Filter);
-COMMAND_DECLARE(Sum);
-COMMAND_DECLARE(Product);
+COMMAND_DECLARE(ListSum);
+COMMAND_DECLARE(ListProduct);
+COMMAND_DECLARE(ListDifferences);
 
 
 

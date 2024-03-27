@@ -1114,7 +1114,7 @@ algebraic_p sum_product(symbol_g  name,
 }
 
 
-static object::result pair_map(object::id cmd)
+static object::result list_reduce(object::id cmd)
 // ----------------------------------------------------------------------------
 //   Shared code for map, reduce and filter
 // ----------------------------------------------------------------------------
@@ -1155,7 +1155,7 @@ static object::result pair_map(object::id cmd)
             }
             else if (init->is_integer() && last->is_integer())
             {
-                bool      prod = cmd == object::ID_Product;
+                bool      prod = cmd == object::ID_mul;
                 program_g prg  = program_p(+expr);
                 large     a    = init->as_int64();
                 large     b    = last->as_int64();
@@ -1180,21 +1180,55 @@ error:
 }
 
 
-COMMAND_BODY(Sum)
+static object::result list_pair_map(object::id cmd)
+// ----------------------------------------------------------------------------
+//   Shared code for map, reduce and filter
+// ----------------------------------------------------------------------------
+{
+    if (rt.args(1))
+    {
+        object_p   obj = rt.stack(0);
+        object::id ty  = obj->type();
+        if (ty == object::ID_list || ty == object::ID_array)
+        {
+            object_p cmdobj = command::static_object(cmd);
+            object_p result = list_p(obj)->pair_map(cmdobj);
+            if (result && rt.top(result))
+                return object::OK;
+        }
+        else
+        {
+            rt.type_error();
+        }
+    }
+    return object::ERROR;
+}
+
+
+COMMAND_BODY(ListSum)
 // ----------------------------------------------------------------------------
 //   Return the sum of a list or array
 // ----------------------------------------------------------------------------
 {
-    return pair_map(ID_add);
+    return list_reduce(ID_add);
 }
 
 
-COMMAND_BODY(Product)
+COMMAND_BODY(ListProduct)
 // ----------------------------------------------------------------------------
 //   Return the product of a list or array
 // ----------------------------------------------------------------------------
 {
-    return pair_map(ID_mul);
+    return list_reduce(ID_mul);
+}
+
+
+COMMAND_BODY(ListDifferences)
+// ----------------------------------------------------------------------------
+//   Return the product of a list or array
+// ----------------------------------------------------------------------------
+{
+    return list_pair_map(ID_sub);
 }
 
 
@@ -1293,7 +1327,7 @@ object_p list::reduce(object_p prgobj) const
         }
         else
         {
-            if (program::run(prg, true)!= OK)
+            if (program::run(prg, true) != OK)
                 goto error;
             if (rt.depth() != depth + 1)
                 rt.misbehaving_program_error();
@@ -1336,7 +1370,7 @@ list_p list::filter(object_p prgobj) const
         {
             if (!rt.push(obj))
                 goto error;
-            if (program::run(prg, true)!= OK)
+            if (program::run(prg, true) != OK)
                 goto error;
             if (rt.depth() != depth + 1)
             {
@@ -1358,6 +1392,47 @@ list_p list::filter(object_p prgobj) const
             if (!rt.append(objsz, objp))
                 goto error;
         }
+    }
+
+    return list::make(ty, scr.scratch(), scr.growth());
+
+error:
+    if (rt.depth() > depth)
+        rt.drop(rt.depth() - depth);
+    return nullptr;
+}
+
+
+list_p list::pair_map(object_p prgobj) const
+// ----------------------------------------------------------------------------
+//   Apply an RPL object (nominally a program) to combine successive elements
+// ----------------------------------------------------------------------------
+{
+    id       ty    = type();
+    object_g prg   = prgobj;
+    size_t   depth = rt.depth();
+    object_g prev;
+    scribble scr;
+    for (object_g obj : *this)
+    {
+        if (prev)
+        {
+            if (!rt.push(obj) || !rt.push(prev))
+                goto error;
+            if (program::run(prg, true) != OK)
+                goto error;
+            if (rt.depth() != depth + 1)
+            {
+                rt.misbehaving_program_error();
+                goto error;
+            }
+            object_g item   = rt.pop();
+            size_t   itemsz = item->size();
+            byte_p   itemp  = byte_p(item);
+            if (!rt.append(itemsz, itemp))
+                goto error;
+        }
+        prev = obj;
     }
 
     return list::make(ty, scr.scratch(), scr.growth());

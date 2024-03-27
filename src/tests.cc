@@ -3758,6 +3758,31 @@ void tests::list_functions()
     step("Applying a function to a  list");
     test(CLEAR, "{ A B C } sin", ENTER)
         .expect("{ 'sin A' 'sin B' 'sin C' }");
+
+    step("List sum in program")
+        .test(CLEAR, "{ 5 8 2 } ΣList", ENTER).expect("15")
+        .test(CLEAR, "{ A B C 1 } ΣList", ENTER).expect("'A+B+C+1'");
+    step("List product in program")
+        .test(CLEAR, "{ 5 8 2 } ∏List", ENTER).expect("80")
+        .test(CLEAR, "{ A B C 1 } ΣList", ENTER).expect("'A+B+C+1'");
+    step("List differences in program")
+        .test(CLEAR, "{ 4 20 1 17 60 91 } ∆List", ENTER)
+        .expect("{ 16 -19 16 43 31 }")
+        .test(CLEAR, "{ A B C 1 2 3 } ∆List", ENTER)
+        .expect("{ 'B-A' 'C-B' '1-C' 1 1 }");
+
+    step("List sum in menu")
+        .test(CLEAR, LSHIFT, SUB)
+        .test(CLEAR, "{ 5 8 2 }", LSHIFT, F3).expect("15")
+        .test(CLEAR, "{ A B C 1 }", LSHIFT, F3).expect("'A+B+C+1'");
+    step("List product in program")
+        .test(CLEAR, "{ 5 8 2 }", LSHIFT, F4).expect("80")
+        .test(CLEAR, "{ A B C 1 }", LSHIFT, F4).expect("'A·B·C'");
+    step("List differences in program")
+        .test(CLEAR, "{ 4 20 1 17 60 91 }", LSHIFT, F5)
+        .expect("{ 16 -19 16 43 31 }")
+        .test(CLEAR, "{ A B C 1 2 3 }",LSHIFT, F5)
+        .expect("{ 'B-A' 'C-B' '1-C' 1 1 }");
 }
 
 

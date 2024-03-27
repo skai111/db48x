@@ -271,8 +271,10 @@ public:                                                                 \
 }
 
 
-#define NFUNCTION_BODY(derived)                                         \
-    algebraic_p derived::evaluate(id op, algebraic_g args[], uint arity)
+#define NFUNCTION_BODY(derived)                              \
+    algebraic_p derived::evaluate(id UNUSED          op,     \
+                                  algebraic_g UNUSED args[], \
+                                  uint UNUSED        arity)
 
 NFUNCTION(xroot, 2, );
 NFUNCTION(comb, 2, );
