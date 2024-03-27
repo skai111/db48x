@@ -165,15 +165,15 @@ public:
     static grob_p   suscript(grapher &g,
                              coord vx, grob_g x,
                              coord vy, grob_g y,
-                             int dir=1);
+                             int dir=1, bool alignleft = true);
     static grob_p   suscript(grapher &g,
                              coord vx, grob_g x,
                              coord vy, cstring exp,
-                             int dir=1);
+                             int dir=1, bool alignleft = true);
     static grob_p   suscript(grapher &g,
                              coord vx, cstring x,
                              coord vy, grob_g y,
-                             int dir=1);
+                             int dir=1, bool alignleft = true);
     static grob_p   prefix(grapher &g,
                            coord vx, grob_g x,
                            coord vy, grob_g y,

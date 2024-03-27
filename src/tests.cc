@@ -5966,6 +5966,10 @@ void tests::graphic_stack_rendering()
     step("N-th root")
         .test(CLEAR, "'1/(1+x)' 'n-1'", RSHIFT, B, 1, ADD)
         .image_noheader("xroot-xgraph");
+
+    step("Combination and permutations")
+        .test(CLEAR, "X Y COMB N M 1 + PERM + 3 +", ENTER)
+        .image_noheader("comb-perm-xgraph");
 }
 
 

@@ -1511,7 +1511,8 @@ grob_p expression::infix(grapher &g,
 
 grob_p expression::suscript(grapher &g,
                             coord vx, grob_g x,
-                            coord vy, grob_g y, int dir)
+                            coord vy, grob_g y,
+                            int dir, bool alignleft)
 // ----------------------------------------------------------------------------
 //  Position grob y on the right of x
 // ----------------------------------------------------------------------------
@@ -1546,7 +1547,7 @@ grob_p expression::suscript(grapher &g,
     rs.fill(0, 0, gw, gh, g.background);
     rs.copy(xs, 0,  xt - t);
     rs.copy(ys, xw, yt - t);
-    if (dir >= 0)
+    if (alignleft)
         g.voffset = xt - t + coord(xh)/2 - coord(gh)/2;
     else
         g.voffset = yt - t + coord(yh)/2 - coord(gh)/2 + vy;
@@ -1558,7 +1559,8 @@ grob_p expression::suscript(grapher &g,
 
 grob_p expression::suscript(grapher &g,
                             coord vx, grob_g x,
-                            coord vy, cstring exp, int dir)
+                            coord vy, cstring exp,
+                            int dir, bool alignleft)
 // ----------------------------------------------------------------------------
 //   Position a superscript
 // ----------------------------------------------------------------------------
@@ -1570,13 +1572,14 @@ grob_p expression::suscript(grapher &g,
     g.reduce_font();
     grob_g y = object::do_graph(yobj, g);
     g.font = savef;
-    return suscript(g, vx, x, vy, y, dir);
+    return suscript(g, vx, x, vy, y, dir, alignleft);
 }
 
 
 grob_p expression::suscript(grapher &g,
                             coord vx, cstring xstr,
-                            coord vy, grob_g y, int dir)
+                            coord vy, grob_g y,
+                            int dir, bool alignleft)
 // ----------------------------------------------------------------------------
 //   Position a superscript
 // ----------------------------------------------------------------------------
@@ -1585,7 +1588,7 @@ grob_p expression::suscript(grapher &g,
     if (!xobj)
         return nullptr;
     grob_g x = object::do_graph(xobj, g);
-    return suscript(g, vx, x, vy, y, dir);
+    return suscript(g, vx, x, vy, y, dir, alignleft);
 }
 
 
@@ -1698,7 +1701,7 @@ grob_p expression::graph(grapher &g, uint depth, int &precedence)
                     auto fid = g.font;
                     arg = sqrt(g, arg);
                     g.reduce_font();
-                    arg = suscript(g, 0, "3", va, arg, -1);
+                    arg = suscript(g, 0, "3", va, arg, -1, false);
                     g.font = fid;
                     return arg;
                 }
@@ -1717,15 +1720,19 @@ grob_p expression::graph(grapher &g, uint depth, int &precedence)
                 int    lprec = 0, rprec = 0;
                 id     oid = obj->type();
                 auto   fid  = g.font;
-                if (oid == ID_pow || oid == ID_xroot)
+                if (oid == ID_pow || oid == ID_xroot ||
+                    oid == ID_comb || oid == ID_perm)
                     g.reduce_font();
                 grob_g rg   = graph(g, depth, rprec);
                 coord  rv   = g.voffset;
-                g.font      = fid;
+                if (oid != ID_comb && oid != ID_perm)
+                    g.font      = fid;
                 grob_g lg   = graph(g, depth, lprec);
                 coord  lv   = g.voffset;
                 int    prec = obj->precedence();
-                if (prec == precedence::FUNCTION && oid != ID_xroot)
+                g.font = fid;
+                if (prec == precedence::FUNCTION &&
+                    oid != ID_xroot && oid != ID_comb && oid != ID_perm)
                 {
                     grob_g arg = infix(g, lv, lg, 0, ";", rv, rg);
                     coord  av  = g.voffset;
@@ -1737,7 +1744,8 @@ grob_p expression::graph(grapher &g, uint depth, int &precedence)
                     return prefix(g, ov, op, av, arg);
                 }
 
-                if (oid != ID_div && oid != ID_xroot)
+                if (oid != ID_div && oid != ID_xroot &&
+                    oid != ID_comb && oid != ID_perm)
                 {
                     if (lprec < prec)
                         lg = parentheses(g, lg);
@@ -1753,9 +1761,16 @@ grob_p expression::graph(grapher &g, uint depth, int &precedence)
                 case ID_xroot:
                 {
                     lg = sqrt(g, lg);
-                    rg = suscript(g, rv, rg, lv, lg, -1);
+                    rg = suscript(g, rv, rg, lv, lg, -1, false);
                     return rg;
                 }
+                case ID_comb:
+                case ID_perm:
+                    rg = infix(g, lv, lg, 0, ",", rv, rg);
+                    rv = g.voffset;
+                    lg = suscript(g, 0, oid == ID_comb ? "C" : "P", rv, rg, -1);
+                    return lg;
+
                 default: break;
                 }
                 g.voffset = 0;
