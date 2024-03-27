@@ -182,6 +182,14 @@ public:
                            coord vx, cstring pfx,
                            coord vy, grob_g y,
                            int dir=0);
+    static grob_p   sumprod(grapher &g, bool product,
+                            coord vi, grob_g index,
+                            coord vf, grob_g first,
+                            coord vl, grob_g last,
+                            coord ve, grob_g expr);
+    static grob_p   sum(grapher &g, blitter::size h);
+    static grob_p   product(grapher &g, blitter::size h);
+
 
 public:
     OBJECT_DECL(expression);

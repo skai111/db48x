@@ -157,7 +157,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        sum_and_product();
+        graphic_stack_rendering();
     }
     else
     {
@@ -5972,6 +5972,13 @@ void tests::graphic_stack_rendering()
     step("Combination and permutations")
         .test(CLEAR, "X Y COMB N M 1 + PERM + 3 +", ENTER)
         .image_noheader("comb-perm-xgraph");
+
+    step("Sum")
+        .test(CLEAR, "I 1 10 N + 'I+1' Σ 3 +", ENTER)
+        .image_noheader("sum-xgraph");
+    step("Product")
+        .test(CLEAR, "2 J 1.2 10.2 K * 'J+4' ∏ *", ENTER)
+        .image_noheader("product-xgraph");
 }
 
 

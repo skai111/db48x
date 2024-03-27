@@ -1618,6 +1618,112 @@ grob_p expression::prefix(grapher &g,
 }
 
 
+grob_p expression::sumprod(grapher &g, bool isprod,
+                           coord vi, grob_g index,
+                           coord vf, grob_g first,
+                           coord vl, grob_g last,
+                           coord ve, grob_g expr)
+// ----------------------------------------------------------------------------
+//  Create a sum or product expression
+// ----------------------------------------------------------------------------
+{
+    using std::max;
+    using size = blitter::size;
+
+
+    if (!index || !first || !last || !expr)
+        return nullptr;
+
+    auto fid = g.font;
+    g.reduce_font();
+    grob_g lower  = infix(g, vi, index, 0, "=", vf, first);
+    g.font = fid;
+    if (!lower)
+        return nullptr;
+
+    surface xs     = expr->pixels();
+    size    xh     = xs.height();
+    size    xw     = xs.width();
+    grob_g  sign   = isprod ? product(g, xh) : sum(g, xh);
+    if (!sign)
+        return nullptr;
+
+    size    lh     = lower->height() + sign->height() + last->height();
+    size    lw     = max(max(lower->width(), sign->width()), last->width());
+    size    gh     = max(lh, xh);
+    size    gw     = lw + xw;
+
+    grob_g  result = g.grob(gw, gh);
+    if (!result)
+        return nullptr;
+    surface rs = result->pixels();
+    rs.fill(0, 0, gw, gh, g.background);
+
+    surface sgs = sign->pixels();
+    rs.copy(sgs, (lw - sgs.width()) / 2, last->height());
+    surface las = last->pixels();
+    rs.copy(las, (lw - las.width()) / 2, 0 + 0 * vl);
+    surface los = lower->pixels();
+    rs.copy(los, (lw - los.width()) / 2, gh - los.height());
+    coord xx = lw;
+    coord xy = las.height() + sgs.height() / 2 - xs.height() / 2 - ve;
+    rs.copy(xs, xx, xy);
+    g.voffset = xy + (coord(xh) - coord(gh)) / 2 + ve;
+
+    return result;
+}
+
+
+grob_p expression::sum(grapher &g, blitter::size h)
+// ----------------------------------------------------------------------------
+//   Create a 'sum' sign of height h
+// ----------------------------------------------------------------------------
+{
+    using size    = blitter::size;
+
+    size   w      = h * 3 / 4;
+    grob_g result = g.grob(w, h);
+    if (!result)
+        return nullptr;
+
+    surface rs = result->pixels();
+    rs.fill(0,          0,      w-1,    h-1,            g.background);
+
+    rs.fill(0,          0,      w-1,    2,              g.foreground);
+    rs.fill(w-2,        0,      w-1,    4,              g.foreground);
+    rs.fill(w-2,        h-5,    w-1,    h-1,            g.foreground);
+    rs.fill(0,          h-3,    w-1,    h-1,            g.foreground);
+    rs.line(0,          0,    w/2-1,    h/2-1,  4,      g.foreground);
+    rs.line(0,          h-3,  w/2-1,    h/2-1,  4,      g.foreground);
+
+    return result;
+}
+
+
+grob_p expression::product(grapher &g, blitter::size h)
+// ----------------------------------------------------------------------------
+//   Create a 'product' sign of height h
+// ----------------------------------------------------------------------------
+{
+    using size    = blitter::size;
+    size   w      = h * 3 / 4;
+    grob_g result = g.grob(w, h);
+    if (!result)
+        return nullptr;
+
+    surface rs = result->pixels();
+    rs.fill(0,          0,      w-1,    h-1,    g.background);
+
+    rs.fill(0,          0,      w-1,    2,      g.foreground);
+    rs.fill(4,          0,      8,      h-1,    g.foreground);
+    rs.fill(w-8,        0,      w-4,    h-1,    g.foreground);
+
+    return result;
+}
+
+
+
+
 static inline cstring mulsep()
 // ----------------------------------------------------------------------------
 //   Return the separator for multiplication
@@ -1779,6 +1885,34 @@ grob_p expression::graph(grapher &g, uint depth, int &precedence)
                 return infix(g, lv, lg, ov, op, rv, rg);
             }
             break;
+
+            case 4:
+            {
+                id oid = obj->type();
+                if (oid == ID_Sum || oid == ID_Product)
+                {
+                    int    eprec = 0;
+                    auto   fid   = g.font;
+                    grob_g expr  = graph(g, depth, eprec);
+                    coord  ve    = g.voffset;
+                    g.reduce_font();
+                    grob_g last  = graph(g, depth, eprec);
+                    coord  vl    = g.voffset;
+                    grob_g first = graph(g, depth, eprec);
+                    coord  vf    = g.voffset;
+                    grob_g index = graph(g, depth, eprec);
+                    coord  vi    = g.voffset;
+                    g.font = fid;
+
+                    return sumprod(g, oid == ID_Product,
+                                   vi, index,
+                                   vf, first,
+                                   vl, last,
+                                   ve, expr);
+                }
+            }
+
+            [[fallthrough]];
             default:
             {
                 grob_g args = nullptr;
