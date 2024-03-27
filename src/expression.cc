@@ -1648,6 +1648,9 @@ grob_p expression::graph(grapher &g, uint depth, int &precedence)
             {
                 int      argp = 0;
                 id       oid  = obj->type();
+                auto     savef = g.font;
+                if (oid == ID_exp || oid == ID_exp10 || oid == ID_exp2)
+                    g.reduce_font();
                 grob_g   arg  = graph(g, depth, argp);
                 coord    va   = g.voffset;
                 int      maxp = oid == ID_neg ? precedence::MULTIPLICATIVE
@@ -1658,6 +1661,8 @@ grob_p expression::graph(grapher &g, uint depth, int &precedence)
                     oid != ID_cbrt)
                     arg = parentheses(g, arg, 3);
                 precedence = precedence::FUNCTION;
+
+                g.font = savef;
 
                 switch(oid)
                 {

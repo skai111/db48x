@@ -156,7 +156,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        probabilities();
+        graphic_stack_rendering();
     }
     else
     {
@@ -5919,6 +5919,28 @@ void tests::graphic_stack_rendering()
         .test(CLEAR, RSHIFT, SPACE, "1 2 \"ABC\"", ENTER, EXIT)
         .image_noheader("list-horizontal");
 
+    step("Power")
+        .test(CLEAR, "'2^x'", ENTER)
+        .image_noheader("power-xgraph")
+        .test(CLEAR, "'(x-1)^(n+3)'", ENTER)
+        .image_noheader("power-expr-xgraph");
+    step("Exponentials")
+        .test(CLEAR, "'exp(y+1)'", ENTER)
+        .image_noheader("exp-xgraph")
+        .test(CLEAR, "'alog(1/(x+1))'", ENTER)
+        .image_noheader("alog-xgraph")
+        .test(CLEAR, "'exp2(3/(x-1))'", ENTER)
+        .image_noheader("alog2-xgraph");
+
+    step("Square root")
+        .test(CLEAR, "'sqrt(1/(1+x))+1'", ENTER)
+        .image_noheader("sqrt-xgraph");
+    step("Cube root")
+        .test(CLEAR, "'cbrt(1/(1+x))+1'", ENTER)
+        .image_noheader("cbrt-xgraph");
+    step("N-th root")
+        .test(CLEAR, "'1/(1+x)' 'n-1'", RSHIFT, B, 1, ADD)
+        .image_noheader("xroot-xgraph");
 }
 
 
