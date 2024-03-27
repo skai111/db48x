@@ -361,6 +361,8 @@ NAMED(lgamma, "LogGamma")
 NAMED(fact, "x!")               ALIAS(fact, "factorial") ALIAS(fact, "!")
 NAMED(comb, "Combinations")
 NAMED(perm, "Permutations")
+NAMED(Sum, "Σ")
+NAMED(Product, "∏")
 
 NAMED(cbrt, "∛")        ALIAS(cbrt, "CubeRoot")
 OP(hypot, "⊿")          ALIAS(hypot, "Hypothenuse")

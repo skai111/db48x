@@ -131,6 +131,7 @@ TESTS(overflow,         "Overflow and underflow");
 TESTS(insert,           "Insertion of variables, units and constants");
 TESTS(characters,       "Character menu and catalog");
 TESTS(probabilities,    "Probabilities");
+TESTS(sumprod,          "Sums and products");
 
 EXTRA(plotfns,          "Plot all functions");
 EXTRA(sysflags,         "Enable/disable every RPL flag");
@@ -156,7 +157,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        graphic_stack_rendering();
+        sum_and_product();
     }
     else
     {
@@ -218,6 +219,7 @@ void tests::run(bool onlyCurrent)
         insertion_of_variables_constants_and_units();
         character_menu();
         probabilities();
+        sum_and_product();
         regression_checks();
     }
     summary();
@@ -6443,6 +6445,75 @@ void tests::probabilities()
         .test(CLEAR, "n m", NOSHIFT, F2).expect("'Permutations(n;m)'")
         .test(CLEAR, "n 1", NOSHIFT, F2).expect("'Permutations(n;1)'")
         .test(CLEAR, "1 z", NOSHIFT, F2).expect("'Permutations(1;z)'");
+}
+
+
+void tests::sum_and_product()
+// ----------------------------------------------------------------------------
+//   Sum and product operations
+// ----------------------------------------------------------------------------
+{
+    BEGIN(sumprod);
+
+    step("Sum of integers")
+        .test(CLEAR, "I 1 10 'I^3' Σ", ENTER)
+        .expect("3 025");
+    step("Product of integers")
+        .test(CLEAR, "I 1 10 'I^3' ∏", ENTER)
+        .expect("47 784 725 839 872 000 000");
+    step("Sum of decimal")
+        .test(CLEAR, "I 1.2 10.2 'I^3' Σ", ENTER)
+        .expect("3 262.68");
+    step("Product of decimal")
+        .test(CLEAR, "I 1.2 10.2 'I^3' ∏", ENTER)
+        .expect("2.54564 43577 3⁳²⁰");
+    step("Sum of fraction")
+        .test(CLEAR, "I 1/3 10/3 'I^3' Σ", ENTER)
+        .expect("52 ⁴/₂₇");
+    step("Product of fraction")
+        .test(CLEAR, "I 1/3 10/3 'I^3' ∏", ENTER)
+        .expect("41 ¹⁶² ⁹¹⁹/₅₃₁ ₄₄₁");
+
+    step("Symbolic sum of integers")
+        .test(CLEAR, "I 1 10 '(A+I)^3' Σ", ENTER)
+        .expect("'(A+1)↑3+(A+2)↑3+(A+3)↑3+(A+4)↑3+(A+5)↑3"
+                "+(A+6)↑3+(A+7)↑3+(A+8)↑3+(A+9)↑3+(A+10)↑3'");
+    step("Symbolic product of integers")
+        .test(CLEAR, "I 1 10 '(A+I)^3' ∏", ENTER)
+        .expect("'(A+1)↑3·(A+2)↑3·(A+3)↑3·(A+4)↑3·(A+5)↑3"
+                "·(A+6)↑3·(A+7)↑3·(A+8)↑3·(A+9)↑3·(A+10)↑3'");
+    step("Symbolic sum of decimal")
+        .test(CLEAR, "I 1.2 10.2 '(A+I)^3' Σ", ENTER)
+        .expect("'(A+1.2)↑3+(A+2.2)↑3+(A+3.2)↑3+(A+4.2)↑3+(A+5.2)↑3"
+                "+(A+6.2)↑3+(A+7.2)↑3+(A+8.2)↑3+(A+9.2)↑3+(A+10.2)↑3'");
+    step("Symbolic product of decimal")
+        .test(CLEAR, "I 1.2 10.2 '(A+I)^3' ∏", ENTER)
+        .expect("'(A+1.2)↑3·(A+2.2)↑3·(A+3.2)↑3·(A+4.2)↑3·(A+5.2)↑3"
+                "·(A+6.2)↑3·(A+7.2)↑3·(A+8.2)↑3·(A+9.2)↑3·(A+10.2)↑3'");
+    step("Symbolic sum of fraction")
+        .test(CLEAR, "I 1/3 10/3 '(A+I)^3' Σ", ENTER)
+        .expect("'(A+¹/₃)↑3+(A+⁴/₃)↑3+(A+⁷/₃)↑3+(A+¹⁰/₃)↑3'");
+    step("Symbolic product of fraction")
+        .test(CLEAR, "I 1/3 10/3 '(A+I)^3' ∏", ENTER)
+        .expect("'(A+¹/₃)↑3·(A+⁴/₃)↑3·(A+⁷/₃)↑3·(A+¹⁰/₃)↑3'");
+
+    step("Empty sum")
+        .test(CLEAR, "I 10 1 'I^3' Σ", ENTER)
+        .expect("0");
+    step("Empty product")
+        .test(CLEAR, "I 10 1 'I^3' ∏", ENTER)
+        .expect("1");
+
+    step("Symbolic sum expression")
+        .test(CLEAR, "I 1 N '(A+I)^3' Σ", ENTER)
+        .expect("'Σ(I;1;N;(A+I)↑3)'")
+        .test(CLEAR, "I N 1 '(A+I)^3' Σ", ENTER)
+        .expect("'Σ(I;N;1;(A+I)↑3)'");
+    step("Symbolic product expression")
+        .test(CLEAR, "I 1 N '(A+I)^3' ∏", ENTER)
+        .expect("'∏(I;1;N;(A+I)↑3)'")
+        .test(CLEAR, "I N 1 '(A+I)^3' ∏", ENTER)
+        .expect("'∏(I;N;1;(A+I)↑3)'");
 }
 
 

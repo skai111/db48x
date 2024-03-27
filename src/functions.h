@@ -95,12 +95,14 @@ public:
 
 
     typedef algebraic_p (*nfunction_fn)(id op, algebraic_g args[], uint arity);
-    static result evaluate(id op, nfunction_fn fn, uint arity);
+    static result evaluate(id op, nfunction_fn fn, uint arity,
+                           bool (*can_be_symbolic)(uint arg));
     // ------------------------------------------------------------------------
     //   Evaluate a function with n arguments
     // ------------------------------------------------------------------------
 
-
+    // For functions with N arguments, check if arg can be symbolic
+    static bool can_be_symbolic(uint /* argument */) { return false; }
 };
 
 
@@ -265,7 +267,8 @@ public:                                                                 \
     static result evaluate()                                            \
     {                                                                   \
         return function::evaluate(derived::static_id,                   \
-                                  derived::evaluate, fnarity);            \
+                                  derived::evaluate, fnarity,           \
+                                  derived::can_be_symbolic);            \
     }                                                                   \
     static algebraic_p evaluate(id op, algebraic_g args[], uint arity); \
 }
@@ -279,5 +282,17 @@ public:                                                                 \
 NFUNCTION(xroot, 2, );
 NFUNCTION(comb, 2, );
 NFUNCTION(perm, 2, );
+NFUNCTION(Sum, 4,
+          static bool can_be_symbolic(uint a)
+          {
+              return a == 0 || a == 3;
+          }
+    );
+NFUNCTION(Product, 4,
+          static bool can_be_symbolic(uint a)
+          {
+              return a == 0 || a == 3;
+          }
+    );
 
 #endif // FUNCTIONS_H

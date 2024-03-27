@@ -422,6 +422,10 @@ MENU(NumbersMenu,
 // ----------------------------------------------------------------------------
 //   Number operations
 // ----------------------------------------------------------------------------
+
+     "Σ",       ID_Sum,
+     "∏",       ID_Product,
+
      "IsPrime", ID_Unimplemented,
      "NextPr",  ID_Unimplemented,
      "PrevPr",  ID_Unimplemented,
@@ -1078,9 +1082,11 @@ MENU(IntegrationMenu,
      "Num ∫",   ID_Integrate,
      "Symb ∫",  ID_Unimplemented,
      "Prim",    ID_Unimplemented,
-
      "Eq",      ID_Equation,
-     "Indep",   ID_Unimplemented);
+     "Indep",   ID_Unimplemented,
+
+     "Σ",       ID_Sum,
+     "∏",       ID_Product);
 
 MENU(DifferentiationMenu,
 // ----------------------------------------------------------------------------

@@ -32,6 +32,7 @@
 #include "arithmetic.h"
 #include "array.h"
 #include "bignum.h"
+#include "compare.h"
 #include "decimal.h"
 #include "expression.h"
 #include "fraction.h"
@@ -274,7 +275,8 @@ object::result function::evaluate(algebraic_fn op, bool mat)
 }
 
 
-object::result function::evaluate(id op, nfunction_fn fn, uint arity)
+object::result function::evaluate(id op, nfunction_fn fn, uint arity,
+                                  bool (*can_be_symbolic)(uint arg))
 // ----------------------------------------------------------------------------
 //   Perform the operation from the stack for n-ary functions
 // ----------------------------------------------------------------------------
@@ -286,14 +288,17 @@ object::result function::evaluate(id op, nfunction_fn fn, uint arity)
     algebraic_g args[arity];
     for (uint a = 0; a < arity; a++)
     {
-        algebraic_p arg = rt.stack(a)->as_algebraic();
+        object_g oarg = rt.stack(a);
+        while (tag_p tagged = oarg->as<tag>())
+            oarg = tagged->tagged_object();
+        algebraic_p arg = oarg->as_algebraic();
         if (!arg)
         {
             rt.type_error();
             return ERROR;
         }
         args[a] = arg;
-        if (arg->is_symbolic())
+        if (!can_be_symbolic(a) && arg->is_symbolic())
             is_symbolic = true;
 
         // Conversion to numerical if needed (may fail silently)
@@ -304,7 +309,6 @@ object::result function::evaluate(id op, nfunction_fn fn, uint arity)
                 return ERROR;
         }
     }
-
 
     algebraic_g result;
 
@@ -912,6 +916,114 @@ NFUNCTION_BODY(perm)
     else
         rt.type_error();
     return nullptr;
+}
+
+
+static algebraic_p sum_product(object::id op,
+                               algebraic_g args[], uint arity)
+// ----------------------------------------------------------------------------
+//   Perform a sum or product on the operations
+// ----------------------------------------------------------------------------
+{
+    if (arity != 4)
+    {
+        rt.internal_error();
+        return nullptr;
+    }
+    symbol_g name = args[3]->as_quoted<symbol>();
+    if (!name)
+    {
+        rt.type_error();
+        return nullptr;
+    }
+
+    algebraic_g &init = args[2];
+    algebraic_g &last = args[1];
+    algebraic_g &expr = args[0];
+
+    if (!expr->is_program())
+    {
+        rt.type_error();
+        return nullptr;
+    }
+
+    if (init->is_integer() && last->is_integer())
+    {
+        program_g        prg  = program_p(+expr);
+        large            a    = init->as_int64();
+        large            b    = last->as_int64();
+        save<symbol_g *> iref(expression::independent, &name);
+
+        if (op == object::ID_mul)
+        {
+            init = integer::make(1);
+            for (large i = a; i <= b && init; i++)
+            {
+                last = integer::make(i);
+                last = algebraic::evaluate_function(prg, last);
+                if (!last)
+                    return nullptr;
+                init = init * last;
+            }
+        }
+        else
+        {
+            init = integer::make(0);
+            for (large i = a; i <= b && init; i++)
+            {
+                last = integer::make(i);
+                last = algebraic::evaluate_function(prg, last);
+                if (!last)
+                    return nullptr;
+                init = init + last;
+            }
+        }
+        return init;
+    }
+    else if (init->is_real() && last->is_real())
+    {
+        program_g        prg  = program_p(+expr);
+        save<symbol_g *> iref(expression::independent, &name);
+        bool             product = op == object::ID_mul;
+        algebraic_g      result  = integer::make(product ? 1 : 0);
+        algebraic_g      one     = integer::make(1);
+        while (true)
+        {
+            algebraic_g tmp = (init > last);
+            if (!tmp || tmp->as_truth(false))
+                break;
+
+            tmp = algebraic::evaluate_function(prg, init);
+            if (!tmp)
+                return nullptr;
+            result = product ? result * tmp : result + tmp;
+            init = init + one;
+        }
+        return result;
+    }
+    else
+    {
+        rt.type_error();
+    }
+    return nullptr;
+}
+
+
+NFUNCTION_BODY(Sum)
+// ----------------------------------------------------------------------------
+//   Sum operation
+// ----------------------------------------------------------------------------
+{
+    return sum_product(ID_add, args, arity);
+}
+
+
+NFUNCTION_BODY(Product)
+// ----------------------------------------------------------------------------
+//   Product operation
+// ----------------------------------------------------------------------------
+{
+    return sum_product(ID_mul, args, arity);
 }
 
 

@@ -114,6 +114,7 @@ struct tests
     void insertion_of_variables_constants_and_units();
     void character_menu();
     void probabilities();
+    void sum_and_product();
     void regression_checks();
 
     enum key

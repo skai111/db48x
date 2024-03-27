@@ -546,6 +546,16 @@ operate on these items when it makes sense. Therefore:
   be undocumented).
 
 
+### Mathematics
+
+* The `Σ` operation behaves differently between the HP48 and the HP50. On the
+  HP48, `I A B 'I^3' Σ` gives an expression, `Σ(I=A;B;I^3)`, and an empty range
+  like `I 10 1 'I^3' Σ` gives `0` as a value. On the HP50, this sum is
+  simplified as a polynomial expression, so that you get a negative value if
+  `A>B`. The HP50G behaviour seems surprising and undesirable. DB50X follows the
+  HP48 approach.
+
+
 ### Unicode support
 
 DB50X has almost complete support for Unicode, and stores text internally using
