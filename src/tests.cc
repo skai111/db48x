@@ -157,7 +157,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        graphic_stack_rendering();
+        editor_operations();
     }
     else
     {
@@ -680,6 +680,20 @@ void tests::editor_operations()
         .test(RSHIFT, UP).editor("ABCD");
     step("End of editor")
         .test(CLEAR);
+
+    step("Entering n-ary expressions")
+        .test(CLEAR, "'Σ(i;1;10;i^3)'", ENTER).expect("'Σ(i;1;10;i↑3)'")
+        .test(CLEAR, "'sum(i;1;10;i^3)'", ENTER).expect("'Σ(i;1;10;i↑3)'")
+        .test(CLEAR, "'∏(j;a;b;2^j)'", ENTER).expect("'∏(j;a;b;2↑j)'")
+        .test(CLEAR, "'product(j;a;b;2^j)'", ENTER).expect("'∏(j;a;b;2↑j)'")
+        .test(CLEAR, "'xroot(x+1;5)'", ENTER).expect("'xroot(x+1;5)'");
+
+    step("Error parsing n-ary expressions")
+        .test(CLEAR, "'Σ(i;1)'", ENTER).error("Expected argument")
+        .test(CLEAR, "'sum(i;1;10;i^3;42)'", ENTER).error("Unterminated")
+        .test(CLEAR, "'xroot(x+1*5)'", ENTER).error("Expected argument")
+        .test(CLEAR, "'xroot()'", ENTER).error("Syntax error")
+        .test(CLEAR, "'xroot 42'", ENTER).error("Syntax error");
 }
 
 

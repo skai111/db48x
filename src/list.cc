@@ -51,8 +51,8 @@ RECORDER(list, 16, "Lists");
 RECORDER(list_parse, 16, "List parsing");
 RECORDER(list_error, 16, "Errors processing lists");
 
-object::result list::list_parse(id type,
-                                parser  &p,
+object::result list::list_parse(id      type,
+                                parser &p,
                                 unicode open,
                                 unicode close)
 // ----------------------------------------------------------------------------
@@ -73,6 +73,8 @@ object::result list::list_parse(id type,
     bool     negate     = false;
     int      precedence = p.precedence;
     int      lowest     = precedence;
+    uint     arity      = 0;
+    uint     arg        = 0;
     size_t   objcount   = 0;
     size_t   non_alg    = 0;
     size_t   non_alg_len= 0;
@@ -101,7 +103,7 @@ object::result list::list_parse(id type,
             s = utf8_next(s);
             break;
         }
-        if (precedence && (cp == '\'' || cp == ')'))
+        if (precedence && (cp == '\'' || cp == ')' || cp == ';'))
             break;
         if (utf8_whitespace(cp))
         {
@@ -129,7 +131,7 @@ object::result list::list_parse(id type,
                 }
 
                 // Check if we see parentheses, or if we have `sin sin X`
-                bool parenthese = cp == '(' && !infix;
+                bool parenthese = (cp == '(' || arity > 1) && !infix;
                 if (parenthese  || infix || prefix)
                 {
                     int     childp = infix      ? int(infix->precedence() + 1)
@@ -140,13 +142,23 @@ object::result list::list_parse(id type,
                     unicode iclose = parenthese ? ')' : 0;
                     id ctype = type == ID_unit ? ID_expression : type;
 
+                    if (!infix && arity > 1)
+                    {
+                        if (arg)
+                            iopen = 0;
+                        arg++;
+                        if (arg < arity)
+                            iclose = ';';
+                    }
+
                     record(list_parse, "%+s starting at offset %u '%s'",
                            parenthese ? "Parenthese" : "Child",
                            utf8(s) - utf8(p.source),
                            utf8(s));
-                    auto result = list_parse(ctype, child, iopen, iclose);
-                    if (result != OK)
-                        return result;
+
+                    auto rc = list_parse(ctype, child, iopen, iclose);
+                    if (rc != OK)
+                        return rc;
                     obj = child.out;
                     if (!obj)
                         return ERROR;
@@ -196,7 +208,8 @@ object::result list::list_parse(id type,
         {
             obj = object::parse(s, length, precedence);
             record(list_parse,
-                   "Item parsed as %t length %u", object_p(obj), length);
+                   "Item parsed as %t length %u arity %u",
+                   object_p(obj), length, arity);
         }
         if (!obj)
             return ERROR;
@@ -216,7 +229,7 @@ object::result list::list_parse(id type,
                         rt.prefix_expected_error().source(s, length);
                         return ERROR;
                     }
-                    non_alg = +s- +p.source;
+                    non_alg = +s - +p.source;
                     non_alg_len = length;
                 }
 
@@ -224,6 +237,11 @@ object::result list::list_parse(id type,
                 if (is_algebraic_fn(type))
                 {
                     prefix = obj;
+                    if (prefix)
+                    {
+                        arity = prefix->arity();
+                        arg = 0;
+                    }
                     obj = nullptr;
                     precedence = -SYMBOL;
                 }
@@ -269,6 +287,11 @@ object::result list::list_parse(id type,
 
                 if (prefix)
                 {
+                    if (arity > 1 && arg < arity)
+                    {
+                        precedence = -precedence;
+                        break;
+                    }
                     obj = prefix;
                     prefix = nullptr;
                 }
@@ -321,8 +344,10 @@ object::result list::list_parse(id type,
     // Check that we have a matching closing character
     if (close && cp != close && !p.child)
     {
-        record(list_error, "Missing terminator, got %u (%c) not %u (%c) at %s",
-               cp, cp, close, close, utf8(s));
+        if (cp != ';')
+            record(list_error,
+                   "Missing terminator, got %u (%c) not %u (%c) at %s",
+                   cp, cp, close, close, utf8(s));
         rt.unterminated_error().source(p.source, +s - +p.source);
         return ERROR;
     }

@@ -359,6 +359,14 @@ unintentional differences, since the implementation is completely new.
   whereas on DB50X with the default settings, it returns the arguments to
   `ROOT`.
 
+* When parsing the `Σ` (`sum`) function (as well as the `∏` (`product`)
+  function which the HP calculators do not have), all arguments are separated by
+  semi-colons like for all other functions. HP calculators have a special syntax
+  in that case, where an `=` sign separates the index and its initial value. In
+  other words, where an HP calculator would show `Σ(i=1;10;i^2)`, which
+  corresponds to the 4-argument sequence `i 1 10 'i^2' Σ`, the DB50X
+  implementation shows and requires the `Σ(i;1;10;i^2)` syntax. Note that an `=`
+  sign may appear inside an expression, but it always denotes equality.
 
 ### Numbers
 
