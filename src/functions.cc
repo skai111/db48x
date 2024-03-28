@@ -961,7 +961,7 @@ static algebraic_p sum_product(object::id op,
             {
                 last = integer::make(i);
                 last = algebraic::evaluate_function(prg, last);
-                if (!last)
+                if (!last || program::interrupted())
                     return nullptr;
                 init = init * last;
             }
@@ -973,7 +973,7 @@ static algebraic_p sum_product(object::id op,
             {
                 last = integer::make(i);
                 last = algebraic::evaluate_function(prg, last);
-                if (!last)
+                if (!last || program::interrupted())
                     return nullptr;
                 init = init + last;
             }
@@ -987,7 +987,7 @@ static algebraic_p sum_product(object::id op,
         bool             product = op == object::ID_mul;
         algebraic_g      result  = integer::make(product ? 1 : 0);
         algebraic_g      one     = integer::make(1);
-        while (true)
+        while (!program::interrupted())
         {
             algebraic_g tmp = (init > last);
             if (!tmp || tmp->as_truth(false))
