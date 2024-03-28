@@ -342,7 +342,7 @@ object::result list::list_parse(id      type,
     }
 
     // Check that we have a matching closing character
-    if (close && cp != close && !p.child)
+    if (close && cp != close)
     {
         if (cp != ';')
             record(list_error,

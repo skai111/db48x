@@ -689,10 +689,10 @@ void tests::editor_operations()
         .test(CLEAR, "'xroot(x+1;5)'", ENTER).expect("'xroot(x+1;5)'");
 
     step("Error parsing n-ary expressions")
-        .test(CLEAR, "'Σ(i;1)'", ENTER).error("Expected argument")
+        .test(CLEAR, "'Σ(i;1)'", ENTER).error("Unterminated")
         .test(CLEAR, "'sum(i;1;10;i^3;42)'", ENTER).error("Unterminated")
-        .test(CLEAR, "'xroot(x+1*5)'", ENTER).error("Expected argument")
-        .test(CLEAR, "'xroot()'", ENTER).error("Syntax error")
+        .test(CLEAR, "'xroot(x+1*5)'", ENTER).error("Unterminated")
+        .test(CLEAR, "'xroot()'", ENTER).error("Unterminated")
         .test(CLEAR, "'xroot 42'", ENTER).error("Syntax error");
 }
 
