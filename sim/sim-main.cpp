@@ -59,6 +59,8 @@ size_t recorder_render_object(intptr_t tracing,
         {
             char tmp[80];
             size_t sz =  value->render(tmp, sizeof(tmp)-1);
+            if (sz >= sizeof(tmp))
+                sz = sizeof(tmp)-1;
             tmp[sz] = 0;
             result = snprintf(buffer, size, "%p[%lu] %s[%s]",
                               (void *) value,
