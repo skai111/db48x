@@ -245,11 +245,6 @@ CMD(False)
 OP(And,         "and")
 OP(Or,          "or")
 OP(Xor,         "xor")
-OP(NAnd,        "nand")
-OP(NOr,         "nor")
-OP(Implies,     "implies")
-OP(Equiv,       "equiv")
-OP(Excludes,    "excludes")
 OP(Not,         "not")
 
 // Tests
@@ -592,6 +587,13 @@ NAMED(RRC, "RotateRightCount")
 NAMED(SLC, "ShiftLeftCount")
 NAMED(SRC, "ShiftRightCount")
 NAMED(ASRC, "ArithmeticShiftRightCount")
+
+// Binary operations
+OP(NAnd,        "nand")
+OP(NOr,         "nor")
+OP(Implies,     "implies")
+OP(Equiv,       "equiv")
+OP(Excludes,    "excludes")
 
 // Characters
 NAMED(CharToUnicode, "Char→Code")       ALIAS(CharToUnicode, "Codepoint")
