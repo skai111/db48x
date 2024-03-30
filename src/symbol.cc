@@ -83,7 +83,7 @@ PARSE_BODY(symbol)
     while (parsed < max && is_valid_in_name(source + parsed))
         parsed = utf8_next(source, parsed, max);
 
-    // Check if we have a known constant
+    // Build the resulting symbol
     gcutf8 text   = source;
     p.end         = parsed;
     p.out = rt.make<symbol>(ID_symbol, text, parsed);

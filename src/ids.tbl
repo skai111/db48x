@@ -129,7 +129,7 @@ ID_RANGE(is_algebraic_fn,  add,            ToFraction,    asinh, det)
 ID_RANGE(is_immediate,     MainMenu,       SelfInsert)
 ID_RANGE(is_unit,          unit,           unit)
 ID_RANGE(is_plot,          Function,       Parametric)
-ID_RANGE(is_program,       program,        expression)
+ID_RANGE(is_program,       program,        funcall)
 
 
 
@@ -148,7 +148,8 @@ ID(list)
 ID(program)
 ID(block)                       // Blocks, e.g. inside loops
 ID(locals)                      // Block with locals
-ID(expression)
+ID(expression)                  // Algebraic expressions
+ID(funcall)                     // Function call (in algebraics)
 ID(local)
 ID(symbol)
 ID(constant)
@@ -1141,6 +1142,7 @@ CMD(IfErrThenElse)              // Last programmable command
 
 CMD(ReplaceChar)
 CMD(SelfInsert)                 // Last immediate command
+
 
 
 // ============================================================================

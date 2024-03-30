@@ -207,6 +207,28 @@ public:
 };
 
 
+struct funcall : expression
+// ----------------------------------------------------------------------------
+//   Function call, indicating how many arguments we take from the stack
+// ----------------------------------------------------------------------------
+//   A function call F(1;2;3;4) is encoded as program `1 2 3 4 F`.
+{
+    funcall(id type, gcbytes bytes, size_t len)
+        : expression(type, bytes, len) {}
+
+    // Building expressions from an array of arguments
+    funcall(id type, id op, algebraic_g args[], uint arity)
+        : expression(type, op, args, arity) {}
+
+    static grob_p   graph(grapher &g, uint depth, int &precedence);
+    static symbol_p render(uint depth, int &precedence, bool edit);
+
+public:
+    OBJECT_DECL(funcall);
+    PARSE_DECL(funcall);
+};
+
+
 
 // ============================================================================
 //

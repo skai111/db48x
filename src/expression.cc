@@ -37,6 +37,7 @@
 #include "precedence.h"
 #include "renderer.h"
 #include "unit.h"
+#include "utf8.h"
 
 RECORDER(equation, 16, "Processing of equations and algebraic objects");
 RECORDER(equation_error, 16, "Errors with equations");
@@ -106,102 +107,99 @@ symbol_p expression::render(uint depth, int &precedence, bool editing)
 //   Render an object as a symbol at a given precedence
 // ----------------------------------------------------------------------------
 {
-    while (rt.depth() > depth)
+    if (object_g obj = rt.pop())
     {
-        if (object_g obj = rt.pop())
+        int arity = obj->arity();
+        switch(arity)
         {
-            int arity = obj->arity();
-            switch(arity)
-            {
-            case 0:
-                // Symbols and other non-algebraics, e.g. numbers
-                precedence = obj->precedence();
-                if (precedence == precedence::NONE)
-                    precedence = precedence::SYMBOL;
-                if (obj->type() == ID_symbol)
-                    return symbol_p(object_p(obj));
-                return obj->as_symbol(editing);
+        case 0:
+            // Symbols and other non-algebraics, e.g. numbers
+            precedence = obj->precedence();
+            if (precedence == precedence::NONE)
+                precedence = precedence::SYMBOL;
+            if (obj->type() == ID_symbol)
+                return symbol_p(object_p(obj));
+            return obj->as_symbol(editing);
 
-            case 1:
+        case 1:
+        {
+            int      argp = 0;
+            id       oid  = obj->type();
+            symbol_g fn   = obj->as_symbol(editing);
+            symbol_g arg  = render(depth, argp, editing);
+            int      maxp =
+                oid == ID_neg ? precedence::FUNCTION : precedence::SYMBOL;
+            if (argp < maxp)
+                arg = parentheses(arg);
+            precedence = precedence::FUNCTION;
+            switch(oid)
             {
-                int      argp = 0;
-                id       oid  = obj->type();
-                symbol_g fn   = obj->as_symbol(editing);
-                symbol_g arg  = render(depth, argp, editing);
-                int      maxp =
-                    oid == ID_neg ? precedence::FUNCTION : precedence::SYMBOL;
-                if (argp < maxp)
-                    arg = parentheses(arg);
-                precedence = precedence::FUNCTION;
-                switch(oid)
-                {
-                case ID_sq:
-                    precedence = precedence::FUNCTION_POWER;
-                    return arg + symbol::make("²");
-                case ID_cubed:
-                    precedence = precedence::FUNCTION_POWER;
-                    return arg + symbol::make("³");
-                case ID_neg:
-                    precedence = precedence::ADDITIVE;
-                    return symbol::make('-') + arg;
-                case ID_fact:
-                    precedence = precedence::SYMBOL;
-                    return arg + symbol::make("!");
-                case ID_inv:
-                    precedence = precedence::FUNCTION_POWER;
-                    return arg + symbol::make("⁻¹");
-                default:
-                    break;
-                }
-                if (argp >= precedence::FUNCTION &&
-                    argp != precedence::FUNCTION_POWER)
-                    arg = space(arg);
-                return fn + arg;
-            }
-            break;
-            case 2:
-            {
-                int lprec = 0, rprec = 0;
-                symbol_g op = obj->as_symbol(editing);
-                symbol_g rtxt = render(depth, rprec, editing);
-                symbol_g ltxt = render(depth, lprec, editing);
-                int prec = obj->precedence();
-                if (prec != precedence::FUNCTION)
-                {
-                    if (lprec < prec)
-                        ltxt = parentheses(ltxt);
-                    if (rprec <= prec)
-                        rtxt = parentheses(rtxt);
-                    precedence = prec;
-                    return ltxt + op + rtxt;
-                }
-                else
-                {
-                    symbol_g arg = ltxt + symbol::make(';') + rtxt;
-                    arg = parentheses(arg);
-                    precedence = precedence::FUNCTION;
-                    return op + arg;
-                }
-            }
-            break;
+            case ID_sq:
+                precedence = precedence::FUNCTION_POWER;
+                return arg + symbol::make("²");
+            case ID_cubed:
+                precedence = precedence::FUNCTION_POWER;
+                return arg + symbol::make("³");
+            case ID_neg:
+                precedence = precedence::ADDITIVE;
+                return symbol::make('-') + arg;
+            case ID_fact:
+                precedence = precedence::SYMBOL;
+                return arg + symbol::make("!");
+            case ID_inv:
+                precedence = precedence::FUNCTION_POWER;
+                return arg + symbol::make("⁻¹");
             default:
+                break;
+            }
+            if (argp >= precedence::FUNCTION &&
+                argp != precedence::FUNCTION_POWER)
+                arg = space(arg);
+            return fn + arg;
+        }
+        break;
+        case 2:
+        {
+            int lprec = 0, rprec = 0;
+            symbol_g op = obj->as_symbol(editing);
+            symbol_g rtxt = render(depth, rprec, editing);
+            symbol_g ltxt = render(depth, lprec, editing);
+            int prec = obj->precedence();
+            if (prec != precedence::FUNCTION)
             {
-                symbol_g op = obj->as_symbol(editing);
-                symbol_g args = nullptr;
-                for (int a = 0; a < arity; a++)
-                {
-                    int prec = 0;
-                    symbol_g arg = render(depth, prec, editing);
-                    if (a)
-                        args = arg + symbol::make(';') + args;
-                    else
-                        args = arg;
-                }
-                args = parentheses(args);
+                if (lprec < prec)
+                    ltxt = parentheses(ltxt);
+                if (rprec <= prec)
+                    rtxt = parentheses(rtxt);
+                precedence = prec;
+                return ltxt + op + rtxt;
+            }
+            else
+            {
+                symbol_g arg = ltxt + symbol::make(';') + rtxt;
+                arg = parentheses(arg);
                 precedence = precedence::FUNCTION;
-                return op + args;
+                return op + arg;
             }
+        }
+        break;
+        default:
+        {
+            symbol_g op = obj->as_symbol(editing);
+            symbol_g args = nullptr;
+            for (int a = 0; a < arity; a++)
+            {
+                int prec = 0;
+                symbol_g arg = render(depth, prec, editing);
+                if (a)
+                    args = arg + symbol::make(';') + args;
+                else
+                    args = arg;
             }
+            args = parentheses(args);
+            precedence = precedence::FUNCTION;
+            return op + args;
+        }
         }
     }
 
@@ -220,12 +218,13 @@ RENDER_BODY(expression)
 
 size_t expression::render(const expression *o, renderer &r, bool quoted)
 // ----------------------------------------------------------------------------
-//   Render the program into the given program buffer
+//  Internal rendering code
 // ----------------------------------------------------------------------------
 //   1 2 3 5 * + - 2 3 * +
 {
     size_t depth   = rt.depth();
     bool   ok      = true;
+    bool   funcall = o->type() == ID_funcall;
 
     // First push all things so that we have the outermost operators first
     for (object_p obj : *o)
@@ -244,21 +243,48 @@ size_t expression::render(const expression *o, renderer &r, bool quoted)
         return 0;
     }
 
-    int precedence = 0;
-    symbol_g result = render(depth, precedence, r.editing());
-    if (size_t remove = rt.depth() - depth)
-    {
-        record(equation_error, "Malformed equation, %u removed", remove);
-        rt.drop(remove);
-    }
+    int      prec   = 0;
+    symbol_g result = render(depth, prec, r.editing());
     if (!result)
         return 0;
-
-    size_t len = 0;
-    utf8 txt = result->value(&len);
     if (quoted)
         r.put('\'');
+
+    size_t len = 0;
+    utf8   txt = result->value(&len);
     r.put(txt, len);
+    bool more = rt.depth() > depth;
+    if (more)
+    {
+        if (funcall)
+        {
+            symbol_g args = nullptr;
+            symbol_g sep  = symbol::make(";");
+            while (more)
+            {
+                int aprec = 0;
+                symbol_g arg = render(depth, aprec, r.editing());
+                if (!arg)
+                    return 0;
+                more = rt.depth() > depth;
+                if (args)
+                    args = arg + sep + args;
+                else
+                    args = arg;
+            }
+
+            r.put('(');
+            txt = args->value(&len);
+            r.put(txt, len);
+            r.put(')');
+        }
+        else
+        {
+            size_t remove = rt.depth() - depth;
+            record(equation_error, "Malformed equation, %u removed", remove);
+            rt.drop(remove);
+        }
+    }
     if (quoted)
         r.put('\'');
     return r.size();
@@ -1735,207 +1761,204 @@ static inline cstring mulsep()
 
 grob_p expression::graph(grapher &g, uint depth, int &precedence)
 // ----------------------------------------------------------------------------
-//   Render an object as a graphical equation
+//   Render a single object as a graphical object
 // ----------------------------------------------------------------------------
 {
-    while (rt.depth() > depth)
+    if (object_g obj = rt.pop())
     {
-        if (object_g obj = rt.pop())
+        int arity = obj->arity();
+        switch(arity)
         {
-            int arity = obj->arity();
-            switch(arity)
+        case 0:
+            // Symbols and other non-algebraics, e.g. numbers
+            precedence = obj->precedence();
+            if (precedence == precedence::NONE)
+                precedence = precedence::SYMBOL;
+            g.voffset = 0;
+            return obj->graph(g);
+
+        case 1:
+        {
+            int      argp = 0;
+            id       oid  = obj->type();
+            auto     savef = g.font;
+            if (oid == ID_exp || oid == ID_exp10 || oid == ID_exp2)
+                g.reduce_font();
+            grob_g   arg  = graph(g, depth, argp);
+            coord    va   = g.voffset;
+            int      maxp = oid == ID_neg ? precedence::MULTIPLICATIVE
+                : precedence::SYMBOL;
+            if (argp < maxp &&
+                oid != ID_sqrt && oid != ID_inv &&
+                oid != ID_exp && oid != ID_exp10 && oid != ID_exp2 &&
+                oid != ID_cbrt)
+                arg = parentheses(g, arg, 3);
+            precedence = precedence::FUNCTION;
+
+            g.font = savef;
+
+            switch(oid)
             {
-            case 0:
-                // Symbols and other non-algebraics, e.g. numbers
-                precedence = obj->precedence();
-                if (precedence == precedence::NONE)
-                    precedence = precedence::SYMBOL;
-                g.voffset = 0;
-                return obj->graph(g);
-
-            case 1:
+            case ID_sq:
+                precedence = precedence::FUNCTION_POWER;
+                return suscript(g, va, arg, 0, "2");
+            case ID_cubed:
+                precedence = precedence::FUNCTION_POWER;
+                return suscript(g, va, arg, 0, "3");
+            case ID_exp:
+                precedence = precedence::FUNCTION_POWER;
+                return suscript(g, 0, "e", va, arg);
+            case ID_exp10:
+                precedence = precedence::FUNCTION_POWER;
+                return suscript(g, 0, "10", va, arg);
+            case ID_exp2:
+                precedence = precedence::FUNCTION_POWER;
+                return suscript(g, 0, "2", va, arg);
+            case ID_neg:
+                precedence = precedence::ADDITIVE;
+                return prefix(g, 0, "-", va, arg);
+            case ID_fact:
+                precedence = precedence::SYMBOL;
+                return suscript(g, va, arg, 0, "!", 0);
+            case ID_sqrt:
+                precedence = precedence::FUNCTION_POWER;
+                return sqrt(g, arg);
+            case ID_inv:
+                precedence = precedence::FUNCTION_POWER;
+                return ratio(g, "1", arg);
+            case ID_cbrt:
             {
-                int      argp = 0;
-                id       oid  = obj->type();
-                auto     savef = g.font;
-                if (oid == ID_exp || oid == ID_exp10 || oid == ID_exp2)
-                    g.reduce_font();
-                grob_g   arg  = graph(g, depth, argp);
-                coord    va   = g.voffset;
-                int      maxp = oid == ID_neg ? precedence::MULTIPLICATIVE
-                                              : precedence::SYMBOL;
-                if (argp < maxp &&
-                    oid != ID_sqrt && oid != ID_inv &&
-                    oid != ID_exp && oid != ID_exp10 && oid != ID_exp2 &&
-                    oid != ID_cbrt)
-                    arg = parentheses(g, arg, 3);
-                precedence = precedence::FUNCTION;
-
-                g.font = savef;
-
-                switch(oid)
-                {
-                case ID_sq:
-                    precedence = precedence::FUNCTION_POWER;
-                    return suscript(g, va, arg, 0, "2");
-                case ID_cubed:
-                    precedence = precedence::FUNCTION_POWER;
-                    return suscript(g, va, arg, 0, "3");
-                case ID_exp:
-                    precedence = precedence::FUNCTION_POWER;
-                    return suscript(g, 0, "e", va, arg);
-                case ID_exp10:
-                    precedence = precedence::FUNCTION_POWER;
-                    return suscript(g, 0, "10", va, arg);
-                case ID_exp2:
-                    precedence = precedence::FUNCTION_POWER;
-                    return suscript(g, 0, "2", va, arg);
-                case ID_neg:
-                    precedence = precedence::ADDITIVE;
-                    return prefix(g, 0, "-", va, arg);
-                case ID_fact:
-                    precedence = precedence::SYMBOL;
-                    return suscript(g, va, arg, 0, "!", 0);
-                case ID_sqrt:
-                    precedence = precedence::FUNCTION_POWER;
-                    return sqrt(g, arg);
-                case ID_inv:
-                    precedence = precedence::FUNCTION_POWER;
-                    return ratio(g, "1", arg);
-                case ID_cbrt:
-                {
-                    auto fid = g.font;
-                    arg = sqrt(g, arg);
-                    g.reduce_font();
-                    arg = suscript(g, 0, "3", va, arg, -1, false);
-                    g.font = fid;
-                    return arg;
-                }
-
-                default:
-                    break;
-                }
-                g.voffset = 0;
-                grob_g fn = obj->graph(g);
-                coord  vf = g.voffset;
-                return prefix(g, vf, fn, va, arg);
-            }
-            break;
-            case 2:
-            {
-                int    lprec = 0, rprec = 0;
-                id     oid = obj->type();
-                auto   fid  = g.font;
-                if (oid == ID_pow || oid == ID_xroot ||
-                    oid == ID_comb || oid == ID_perm)
-                    g.reduce_font();
-                grob_g rg   = graph(g, depth, rprec);
-                coord  rv   = g.voffset;
-                if (oid != ID_comb && oid != ID_perm)
-                    g.font      = fid;
-                grob_g lg   = graph(g, depth, lprec);
-                coord  lv   = g.voffset;
-                int    prec = obj->precedence();
+                auto fid = g.font;
+                arg = sqrt(g, arg);
+                g.reduce_font();
+                arg = suscript(g, 0, "3", va, arg, -1, false);
                 g.font = fid;
-                if (prec == precedence::FUNCTION &&
-                    oid != ID_xroot && oid != ID_comb && oid != ID_perm)
-                {
-                    grob_g arg = infix(g, lv, lg, 0, ";", rv, rg);
-                    coord  av  = g.voffset;
-                    arg = parentheses(g, arg);
-                    precedence = precedence::FUNCTION;
-                    g.voffset = 0;
-                    grob_g op  = obj->graph(g);
-                    coord  ov  = g.voffset;
-                    return prefix(g, ov, op, av, arg);
-                }
-
-                if (oid != ID_div && oid != ID_xroot &&
-                    oid != ID_comb && oid != ID_perm)
-                {
-                    if (lprec < prec)
-                        lg = parentheses(g, lg);
-                    if (rprec <= prec && oid != ID_pow)
-                        rg = parentheses(g, rg);
-                }
-                precedence = prec;
-                switch (oid)
-                {
-                case ID_pow: return suscript(g, lv, lg, rv, rg);
-                case ID_div: return ratio(g, lg, rg);
-                case ID_mul: return infix(g, lv, lg, 0, mulsep(), rv, rg);
-                case ID_xroot:
-                {
-                    lg = sqrt(g, lg);
-                    rg = suscript(g, rv, rg, lv, lg, -1, false);
-                    return rg;
-                }
-                case ID_comb:
-                case ID_perm:
-                    rg = infix(g, lv, lg, 0, ",", rv, rg);
-                    rv = g.voffset;
-                    lg = suscript(g, 0, oid == ID_comb ? "C" : "P", rv, rg, -1);
-                    return lg;
-
-                default: break;
-                }
-                g.voffset = 0;
-                grob_g op = obj->graph(g);
-                coord ov = g.voffset;
-                return infix(g, lv, lg, ov, op, rv, rg);
-            }
-            break;
-
-            case 4:
-            {
-                id oid = obj->type();
-                if (oid == ID_Sum || oid == ID_Product)
-                {
-                    int    eprec = 0;
-                    auto   fid   = g.font;
-                    grob_g expr  = graph(g, depth, eprec);
-                    coord  ve    = g.voffset;
-                    g.reduce_font();
-                    grob_g last  = graph(g, depth, eprec);
-                    coord  vl    = g.voffset;
-                    grob_g first = graph(g, depth, eprec);
-                    coord  vf    = g.voffset;
-                    grob_g index = graph(g, depth, eprec);
-                    coord  vi    = g.voffset;
-                    g.font = fid;
-
-                    return sumprod(g, oid == ID_Product,
-                                   vi, index,
-                                   vf, first,
-                                   vl, last,
-                                   ve, expr);
-                }
+                return arg;
             }
 
-            [[fallthrough]];
             default:
+                break;
+            }
+            g.voffset = 0;
+            grob_g fn = obj->graph(g);
+            coord  vf = g.voffset;
+            return prefix(g, vf, fn, va, arg);
+        }
+        break;
+        case 2:
+        {
+            int    lprec = 0, rprec = 0;
+            id     oid = obj->type();
+            auto   fid  = g.font;
+            if (oid == ID_pow || oid == ID_xroot ||
+                oid == ID_comb || oid == ID_perm)
+                g.reduce_font();
+            grob_g rg   = graph(g, depth, rprec);
+            coord  rv   = g.voffset;
+            if (oid != ID_comb && oid != ID_perm)
+                g.font      = fid;
+            grob_g lg   = graph(g, depth, lprec);
+            coord  lv   = g.voffset;
+            int    prec = obj->precedence();
+            g.font = fid;
+            if (prec == precedence::FUNCTION &&
+                oid != ID_xroot && oid != ID_comb && oid != ID_perm)
             {
-                grob_g args = nullptr;
-                coord argsv = 0;
-                for (int a = 0; a < arity; a++)
-                {
-                    int    prec = 0;
-                    grob_g arg  = graph(g, depth, prec);
-                    coord  argv = g.voffset;
-                    if (a)
-                        args = infix(g, argv, arg, 0, ";", argsv, args);
-                    else
-                        args = arg;
-                    argsv = g.voffset;
-                }
-                args = parentheses(g, args);
+                grob_g arg = infix(g, lv, lg, 0, ";", rv, rg);
+                coord  av  = g.voffset;
+                arg = parentheses(g, arg);
                 precedence = precedence::FUNCTION;
                 g.voffset = 0;
-                grob_g op = obj->graph(g);
-                coord ov = g.voffset;
-                return prefix(g, ov, op, argsv, args);
+                grob_g op  = obj->graph(g);
+                coord  ov  = g.voffset;
+                return prefix(g, ov, op, av, arg);
             }
+
+            if (oid != ID_div && oid != ID_xroot &&
+                oid != ID_comb && oid != ID_perm)
+            {
+                if (lprec < prec)
+                    lg = parentheses(g, lg);
+                if (rprec <= prec && oid != ID_pow)
+                    rg = parentheses(g, rg);
             }
+            precedence = prec;
+            switch (oid)
+            {
+            case ID_pow: return suscript(g, lv, lg, rv, rg);
+            case ID_div: return ratio(g, lg, rg);
+            case ID_mul: return infix(g, lv, lg, 0, mulsep(), rv, rg);
+            case ID_xroot:
+            {
+                lg = sqrt(g, lg);
+                rg = suscript(g, rv, rg, lv, lg, -1, false);
+                return rg;
+            }
+            case ID_comb:
+            case ID_perm:
+                rg = infix(g, lv, lg, 0, ",", rv, rg);
+                rv = g.voffset;
+                lg = suscript(g, 0, oid == ID_comb ? "C" : "P", rv, rg, -1);
+                return lg;
+
+            default: break;
+            }
+            g.voffset = 0;
+            grob_g op = obj->graph(g);
+            coord ov = g.voffset;
+            return infix(g, lv, lg, ov, op, rv, rg);
+        }
+        break;
+
+        case 4:
+        {
+            id oid = obj->type();
+            if (oid == ID_Sum || oid == ID_Product)
+            {
+                int    eprec = 0;
+                auto   fid   = g.font;
+                grob_g expr  = graph(g, depth, eprec);
+                coord  ve    = g.voffset;
+                g.reduce_font();
+                grob_g last  = graph(g, depth, eprec);
+                coord  vl    = g.voffset;
+                grob_g first = graph(g, depth, eprec);
+                coord  vf    = g.voffset;
+                grob_g index = graph(g, depth, eprec);
+                coord  vi    = g.voffset;
+                g.font = fid;
+
+                return sumprod(g, oid == ID_Product,
+                               vi, index,
+                               vf, first,
+                               vl, last,
+                               ve, expr);
+            }
+        }
+
+        [[fallthrough]];
+        default:
+        {
+            grob_g args = nullptr;
+            coord argsv = 0;
+            for (int a = 0; a < arity; a++)
+            {
+                int    prec = 0;
+                grob_g arg  = graph(g, depth, prec);
+                coord  argv = g.voffset;
+                if (a)
+                    args = infix(g, argv, arg, 0, ";", argsv, args);
+                else
+                    args = arg;
+                argsv = g.voffset;
+            }
+            args = parentheses(g, args);
+            precedence = precedence::FUNCTION;
+            g.voffset = 0;
+            grob_g op = obj->graph(g);
+            coord ov = g.voffset;
+            return prefix(g, ov, op, argsv, args);
+        }
         }
     }
 
@@ -1951,6 +1974,7 @@ GRAPH_BODY(expression)
     expression_g expr  = o;
     size_t       depth = rt.depth();
     bool         ok    = true;
+    bool         funcall = o->type() == ID_funcall;
 
     // First push all things so that we have the outermost operators first
     for (object_p obj : *expr)
@@ -1969,12 +1993,151 @@ GRAPH_BODY(expression)
         return nullptr;
     }
 
-    int precedence = 0;
-    grob_g result = graph(g, depth, precedence);
-    if (size_t remove = rt.depth() - depth)
+    int    prec   = 0;
+    grob_g result = graph(g, depth, prec);
+    bool   more   = rt.depth() > depth;
+    if (more)
     {
-        record(equation_error, "Malformed equation, %u removed", remove);
-        rt.drop(remove);
+        if (funcall)
+        {
+            grob_g args  = nullptr;
+            coord  vr    = g.voffset;
+            coord  voffs = 0;
+            while (more)
+            {
+                int    aprec = 0;
+                grob_p argg  = graph(g, depth, aprec);
+                if (!argg)
+                    return nullptr;
+                int va = g.voffset;
+                more = rt.depth() > depth;
+                if (args)
+                {
+                    args = infix(g, va, argg, 0, ";", voffs, args);
+                    voffs = g.voffset;
+                    if (!args)
+                        return nullptr;
+                }
+                else
+                {
+                    args = argg;
+                    voffs = va;
+                }
+            }
+            args = parentheses(g, args);
+            if (!args)
+                return nullptr;
+            voffs = g.voffset;
+            result = prefix(g, vr, result, voffs, args);
+        }
+        else
+        {
+            size_t remove = rt.depth() - depth;
+            record(equation_error, "Malformed equation, %u removed", remove);
+            rt.drop(remove);
+        }
     }
     return result;
+}
+
+
+
+// ============================================================================
+//
+//   User-defined function calls
+//
+// ============================================================================
+
+PARSE_BODY(funcall)
+// ----------------------------------------------------------------------------
+//    Parse a function call within an expression
+// ----------------------------------------------------------------------------
+{
+    // If not inside an expression, we can't have a function call
+    if (!p.precedence)
+        return SKIP;
+
+    // We need to have a name followed by parentheses and comma-separated args
+    utf8    source = p.source;
+    size_t  max    = p.length;
+    size_t  parsed = 0;
+
+    // First character must be alphabetic
+    unicode cp = utf8_codepoint(source);
+    if (!is_valid_as_name_initial(cp))
+        return SKIP;
+    parsed = utf8_next(source, parsed, max);
+
+    // Other characters must be alphabetic
+    while (parsed < max && is_valid_in_name(source + parsed))
+        parsed = utf8_next(source, parsed, max);
+    size_t namelen = parsed;
+
+    // Skip whitespace
+    while (parsed < max && utf8_whitespace(utf8_codepoint(source + parsed)))
+        parsed = utf8_next(source, parsed, max);
+
+    // Skip if this is not a function call
+    if (parsed >= max || utf8_codepoint(source + parsed) != '(')
+        return SKIP;
+
+    // Record the name
+    symbol_g name = rt.make<symbol>(ID_symbol, source, namelen);
+    source = p.source;          // In case of GC
+
+    // Skip the opening parenthese
+    parsed = utf8_next(source, parsed, max);
+
+    scribble scr;
+    cp = utf8_codepoint(source + parsed);
+    while (parsed < max && cp != ')')
+    {
+        parser  child(p, source + parsed, LOWEST);
+        result rc = list_parse(ID_expression, child, 0, 0);
+        if (rc != OK)
+            return rc;
+        object_g obj = child.out;
+        if (!obj)
+            return ERROR;
+        parsed += child.end;
+
+        size_t objsize = obj->size();
+        if (expression_p eq = obj->as<expression>())
+            obj = eq->objects(&objsize);
+
+        byte *objcopy = rt.allocate(objsize);
+        if (!objcopy)
+            return ERROR;
+        memmove(objcopy, (byte *) obj, objsize);
+
+        source = p.source;      // In case of GC
+        cp = utf8_codepoint(source + parsed);
+        if (cp != ')' && cp != ';')
+        {
+            rt.syntax_error().source(source + parsed);
+            return ERROR;
+        }
+        parsed = utf8_next(source, parsed, max);
+    }
+
+    if (cp != ')')
+    {
+        rt.unterminated_error().source(p.source, parsed);
+        return ERROR;
+    }
+
+    // Copy the name last
+    size_t namesize = name->size();
+    byte *namecopy = rt.allocate(namesize);
+    if (!namecopy)
+        return ERROR;
+    memmove(namecopy, (byte *) name, namesize);
+
+
+    // Create the function call object
+    gcbytes scratch = scr.scratch();
+    size_t  alloc   = scr.growth();
+    p.end           = parsed;
+    p.out           = rt.make<funcall>(ID_funcall, scratch, alloc);
+    return p.out ? OK : ERROR;
 }

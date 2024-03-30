@@ -694,6 +694,10 @@ void tests::editor_operations()
         .test(CLEAR, "'xroot(x+1*5)'", ENTER).error("Unterminated")
         .test(CLEAR, "'xroot()'", ENTER).error("Unterminated")
         .test(CLEAR, "'xroot 42'", ENTER).error("Syntax error");
+
+    step("User-defined function call")
+        .test(CLEAR, "'F(1;2+3;4^5;G(x;y;z))'", ENTER)
+        .expect("'F(1;2+3;4↑5;G(x;y;z))'");
 }
 
 

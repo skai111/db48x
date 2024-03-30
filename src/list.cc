@@ -372,7 +372,7 @@ object::result list::list_parse(id      type,
     record(list_parse, "Parsed as %t length %u", object_p(p.out), parsed);
 
     // Return success
-    return OK;
+    return p.out ? OK : ERROR;
 }
 
 
