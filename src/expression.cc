@@ -2141,3 +2141,12 @@ PARSE_BODY(funcall)
     p.out           = rt.make<funcall>(ID_funcall, scratch, alloc);
     return p.out ? OK : ERROR;
 }
+
+
+EVAL_BODY(funcall)
+// ----------------------------------------------------------------------------
+//   Function calls get evaluated immediately
+// ----------------------------------------------------------------------------
+{
+    return o->run(true);
+}

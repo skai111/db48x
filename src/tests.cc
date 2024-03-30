@@ -698,6 +698,10 @@ void tests::editor_operations()
     step("User-defined function call")
         .test(CLEAR, "'F(1;2+3;4^5;G(x;y;z))'", ENTER)
         .expect("'F(1;2+3;4↑5;G(x;y;z))'");
+    step("Evaluating user-defined function call")
+        .test(RUNSTOP).expect("'F'")
+        .test("DEPTH TOLIST", ENTER)
+        .expect("{ 1 5 1 024 'x' 'y' 'z' 'G' 'F' }");
 }
 
 

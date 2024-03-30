@@ -226,6 +226,7 @@ struct funcall : expression
 public:
     OBJECT_DECL(funcall);
     PARSE_DECL(funcall);
+    EVAL_DECL(funcall);
 };
 
 
