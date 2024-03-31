@@ -927,8 +927,6 @@ COMMAND_BODY(Rewrite)
 //   Rewrite (From, To, Value): Apply rewrites
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(3))
-        return ERROR;
     object_p x = rt.stack(0);
     object_p y = rt.stack(1);
     object_p z = rt.stack(2);

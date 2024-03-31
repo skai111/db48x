@@ -193,9 +193,8 @@ COMMAND_BODY(Eval)
 //   Evaluate an object
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
-        if (object_p x = rt.pop())
-            return program::run(x);
+    if (object_p x = rt.pop())
+        return program::run(x);
     return ERROR;
 }
 
@@ -205,11 +204,10 @@ COMMAND_BODY(ToText)
 //   Convert an object to text
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
-        if (object_g obj = rt.top())
-            if (object_g txt = obj->as_text(false, false))
-                if (rt.top(txt))
-                    return OK;
+    if (object_g obj = rt.top())
+        if (object_g txt = obj->as_text(false, false))
+            if (rt.top(txt))
+                return OK;
     return ERROR;
 }
 
@@ -219,19 +217,16 @@ COMMAND_BODY(Compile)
 //   Interpret the object as a command line and evaluate it
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
+    if (object_p obj = rt.top())
     {
-        if (object_p obj = rt.top())
+        if (text_p tobj = obj->as<text>())
         {
-            if (text_p tobj = obj->as<text>())
-            {
-                if (tobj->compile_and_run())
-                    return OK;
-            }
-            else
-            {
-                rt.type_error();
-            }
+            if (tobj->compile_and_run())
+                return OK;
+        }
+        else
+        {
+            rt.type_error();
         }
     }
     return ERROR;
@@ -243,75 +238,72 @@ COMMAND_BODY(Explode)
 //  Implement the Obj→ command
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
+    object_p obj = rt.top();
+    id       oty = obj->type();
+    switch (oty)
     {
-        object_p obj = rt.top();
-        id       oty = obj->type();
-        switch (oty)
+    case ID_rectangular:
+    case ID_polar:
+    case ID_unit:
+    {
+        complex_p cplx = complex_p(obj);
+        if (rt.top(cplx->x()) && rt.push(+cplx->y()))
+            return OK;
+        break;
+    }
+    case ID_program:
+    case ID_expression:
+    case ID_list:
+        if (rt.drop())
         {
-        case ID_rectangular:
-        case ID_polar:
-        case ID_unit:
-        {
-            complex_p cplx = complex_p(obj);
-            if (rt.top(cplx->x()) && rt.push(+cplx->y()))
+            if (list_p(obj)->expand())
                 return OK;
-            break;
+            rt.push(obj);
         }
-        case ID_program:
-        case ID_expression:
-        case ID_list:
-            if (rt.drop())
-            {
-                if (list_p(obj)->expand())
-                    return OK;
-                rt.push(obj);
-            }
-            break;
-        case ID_array:
-            if (rt.drop())
-            {
-                if (array_p(obj)->expand())
-                    return OK;
-                rt.dimension_error();
-                rt.push(obj);
-            }
-            break;
-        case ID_text:
-            if (rt.drop())
-            {
-                size_t depth = rt.depth();
-                if (text_p(obj)->compile_and_run())
-                    return OK;
-                // Try to undo the damage - Won't always work
-                if (rt.depth() > depth)
-                    rt.drop(rt.depth() - depth);
-                rt.push(obj);
-            }
-            break;
-        case ID_fraction:
-        case ID_neg_fraction:
-        case ID_big_fraction:
-        case ID_neg_big_fraction:
+        break;
+    case ID_array:
+        if (rt.drop())
         {
-            fraction_p frac = fraction_p(obj);
-            bignum_g num = frac->numerator();
-            bignum_g den = frac->denominator();
-            if (num && den && rt.top(num) && rt.push(+den))
+            if (array_p(obj)->expand())
                 return OK;
-            break;
+            rt.dimension_error();
+            rt.push(obj);
         }
-        case ID_tag:
+        break;
+    case ID_text:
+        if (rt.drop())
         {
-            tag_p tobj = tag_p(obj);
-            if (rt.top(tobj->tagged_object()) && rt.push(tobj->label()))
+            size_t depth = rt.depth();
+            if (text_p(obj)->compile_and_run())
                 return OK;
-            break;
+            // Try to undo the damage - Won't always work
+            if (rt.depth() > depth)
+                rt.drop(rt.depth() - depth);
+            rt.push(obj);
         }
-        default:
-            rt.type_error();
-            break;
-        }
+        break;
+    case ID_fraction:
+    case ID_neg_fraction:
+    case ID_big_fraction:
+    case ID_neg_big_fraction:
+    {
+        fraction_p frac = fraction_p(obj);
+        bignum_g num = frac->numerator();
+        bignum_g den = frac->denominator();
+        if (num && den && rt.top(num) && rt.push(+den))
+            return OK;
+        break;
+    }
+    case ID_tag:
+    {
+        tag_p tobj = tag_p(obj);
+        if (rt.top(tobj->tagged_object()) && rt.push(tobj->label()))
+            return OK;
+        break;
+    }
+    default:
+        rt.type_error();
+        break;
     }
     return ERROR;
 }
@@ -403,13 +395,10 @@ COMMAND_BODY(Ticks)
 //   Return number of ticks
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(0))
-    {
-        uint ticks = sys_current_ms();
-        if (integer_p ti = rt.make<integer>(ID_integer, ticks))
-            if (rt.push(ti))
-                return OK;
-    }
+    uint ticks = sys_current_ms();
+    if (integer_p ti = rt.make<integer>(ID_integer, ticks))
+        if (rt.push(ti))
+            return OK;
     return ERROR;
 }
 
@@ -419,8 +408,6 @@ COMMAND_BODY(Wait)
 //   Wait the specified amount of seconds
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return ERROR;
     if (object_p obj = rt.top())
     {
         if (algebraic_g wtime = obj->as_algebraic())
@@ -506,26 +493,23 @@ COMMAND_BODY(Bytes)
 //   Return the bytes and a binary represenetation of the object
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
+    if (object_p top = rt.top())
     {
-        if (object_p top = rt.top())
-        {
-            size_t size = top->size();
-            size_t maxsize = (Settings.WordSize() + 7) / 8;
-            size_t hashsize = size > maxsize ? maxsize : size;
-            gcbytes bytes = byte_p(top);
+        size_t size = top->size();
+        size_t maxsize = (Settings.WordSize() + 7) / 8;
+        size_t hashsize = size > maxsize ? maxsize : size;
+        gcbytes bytes = byte_p(top);
 #if CONFIG_FIXED_BASED_OBJECTS
-            // Force base 16 if we have that option
-            const id type = ID_hex_bignum;
+        // Force base 16 if we have that option
+        const id type = ID_hex_bignum;
 #else // !CONFIG_FIXED_BASED_OBJECTS
-            const id type = ID_based_bignum;
+        const id type = ID_based_bignum;
 #endif // CONFIG_FIXED_BASED_OBJECTS
-            if (bignum_p bin = rt.make<bignum>(type, bytes, hashsize))
-                if (rt.top(bin))
-                    if (rt.push(integer::make(size)))
-                        return OK;
+        if (bignum_p bin = rt.make<bignum>(type, bytes, hashsize))
+            if (rt.top(bin))
+                if (rt.push(integer::make(size)))
+                    return OK;
 
-        }
     }
     return ERROR;
 }
@@ -605,11 +589,10 @@ COMMAND_BODY(Type)
 //   Return the type of the top of stack as a numerical value
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
-        if (object_p top = rt.top())
-            if (integer_p type = type_value(top))
-                if (rt.top(type))
-                    return OK;
+    if (object_p top = rt.top())
+        if (integer_p type = type_value(top))
+            if (rt.top(type))
+                return OK;
     return ERROR;
 }
 
@@ -619,11 +602,10 @@ COMMAND_BODY(TypeName)
 //   Return the type of the top of stack as text
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
-        if (object_p top = rt.top())
-            if (text_p type = text::make(top->fancy()))
-                if (rt.top(type))
-                    return OK;
+    if (object_p top = rt.top())
+        if (text_p type = text::make(top->fancy()))
+            if (rt.top(type))
+                return OK;
     return ERROR;
 }
 
@@ -633,8 +615,6 @@ COMMAND_BODY(Off)
 //   Switch the calculator off
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(0))
-        return ERROR;
     power_off();
     return OK;
 }
@@ -645,8 +625,6 @@ COMMAND_BODY(SaveState)
 //   Save the system state to disk
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(0))
-        return ERROR;
     save_system_state();
     return OK;
 }
@@ -657,8 +635,6 @@ COMMAND_BODY(SystemSetup)
 //   Select the system menu
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(0))
-        return ERROR;
     system_setup();
     return OK;
 }
@@ -682,32 +658,29 @@ COMMAND_BODY(Beep)
 //   Emit a sound
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(2))
+    algebraic_g duration  = rt.stack(0)->as_real();
+    if (!duration)
     {
-        algebraic_g duration  = rt.stack(0)->as_real();
-        if (!duration)
-        {
-            rt.type_error();
-            return ERROR;
-        }
-        uint frequency = rt.stack(1)->as_uint32(4400, true);
-        if (frequency < 1 || frequency > 18000)
+        rt.type_error();
+        return ERROR;
+    }
+    uint frequency = rt.stack(1)->as_uint32(4400, true);
+    if (frequency < 1 || frequency > 18000)
+    {
+        rt.drop(2);
+        return OK;
+    }
+    duration = duration * integer::make(1000);
+    if (duration)
+    {
+        uint ms = duration->as_uint32(10, true);
+        if (ms > 10000)
+            ms = 10000;
+        if (!rt.error())
         {
             rt.drop(2);
+            beep(frequency, ms);
             return OK;
-        }
-        duration = duration * integer::make(1000);
-        if (duration)
-        {
-            uint ms = duration->as_uint32(10, true);
-            if (ms > 10000)
-                ms = 10000;
-            if (!rt.error())
-            {
-                rt.drop(2);
-                beep(frequency, ms);
-                return OK;
-            }
         }
     }
     return ERROR;
@@ -726,10 +699,9 @@ COMMAND_BODY(Version)
         "and a tribute to\n"
         "Bill Hewlett and Dave Packard\n"
         "© 2024 Christophe de Dinechin";
-    if (rt.args(0))
-        if (text_g version = text::make(version_text))
-            if (rt.push(object_p(version)))
-                return OK;
+    if (text_g version = text::make(version_text))
+        if (rt.push(object_p(version)))
+            return OK;
     return ERROR;
 }
 
@@ -744,8 +716,6 @@ COMMAND_BODY(Help)
 
     if (rt.depth())
     {
-        if (!rt.args(1))
-            return ERROR;
         if (object_p top = rt.top())
         {
             if (text_p index = top->as<text>())
@@ -764,11 +734,6 @@ COMMAND_BODY(Help)
             }
         }
     }
-    else
-    {
-        if (!rt.args(0))
-            return ERROR;
-    }
 
     ui.load_help(topic, length);
     return OK;
@@ -780,8 +745,6 @@ COMMAND_BODY(Cycle)
 //  Cycle object across multiple representations
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return ERROR;
     if (object_p top = rt.top())
     {
         id     cmd   = ID_object;
@@ -881,8 +844,6 @@ COMMAND_BODY(BinaryToReal)
 //    Convert binary values to real (really integer)
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return ERROR;
     if (object_p top = rt.top())
     {
         id type = top->type();
@@ -935,8 +896,6 @@ COMMAND_BODY(RealToBinary)
 //    Convert real and integer values to binary
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return ERROR;
     if (object_p top = rt.top())
     {
         id   type = top->type();

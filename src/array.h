@@ -104,6 +104,6 @@ array_g operator-(array_r x, array_r y);
 array_g operator*(array_r x, array_r y);
 array_g operator/(array_r x, array_r y);
 
-COMMAND_DECLARE(det);
+COMMAND_DECLARE(det,1);
 
 #endif // ARRAY_H

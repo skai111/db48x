@@ -243,8 +243,6 @@ object::result function::evaluate(algebraic_fn op, bool mat)
 //   Perform the operation from the stack, using a C++ operation
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return ERROR;
     if (object_p top = rt.top())
     {
         id topty = top->type();

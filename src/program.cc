@@ -271,21 +271,18 @@ COMMAND_BODY(Debug)
 //   Take a program and evaluate it in halted mode
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
+    if (object_p obj = rt.top())
     {
-        if (object_p obj = rt.top())
+        if (program_p prog = obj->as_program())
         {
-            if (program_p prog = obj->as_program())
-            {
-                rt.pop();
-                program::halted = true;
-                prog->run_program();
-                return OK;
-            }
-            else
-            {
-                rt.type_error();
-            }
+            rt.pop();
+            program::halted = true;
+            prog->run_program();
+            return OK;
+        }
+        else
+        {
+            rt.type_error();
         }
     }
     return ERROR;
@@ -340,17 +337,14 @@ COMMAND_BODY(MultipleSteps)
 //   Step multiple instructions
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
+    if (object_p obj = rt.top())
     {
-        if (object_p obj = rt.top())
+        if (uint steps = obj->as_uint32())
         {
-            if (uint steps = obj->as_uint32())
-            {
-                rt.pop();
-                program::stepping = steps;
-                program::halted = false;
-                return program::run_loop(0);
-            }
+            rt.pop();
+            program::stepping = steps;
+            program::halted = false;
+            return program::run_loop(0);
         }
     }
     return ERROR;

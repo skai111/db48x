@@ -374,9 +374,6 @@ COMMAND_BODY(DateTime)
 //   Return current date and time
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(0))
-        return ERROR;
-
     dt_t dt;
     tm_t tm;
     rtc_wakeup_delay();
@@ -398,9 +395,6 @@ COMMAND_BODY(Date)
 //   Return current date
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(0))
-        return ERROR;
-
     dt_t dt;
     tm_t tm;
     rtc_wakeup_delay();
@@ -436,11 +430,10 @@ COMMAND_BODY(SetDate)
 //   Set the current date
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
-        if (object_p d = rt.top())
-            if (setDate(d))
-                if (rt.drop())
-                    return OK;
+    if (object_p d = rt.top())
+        if (setDate(d))
+            if (rt.drop())
+                return OK;
 
     return ERROR;
 }
@@ -451,9 +444,6 @@ COMMAND_BODY(Time)
 //   Return the current time
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(0))
-        return ERROR;
-
     dt_t dt;
     tm_t tm;
     rtc_wakeup_delay();
@@ -476,9 +466,6 @@ COMMAND_BODY(ChronoTime)
 //   Return the current time with a precision of 1/100th of a second
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(0))
-        return ERROR;
-
     dt_t dt;
     tm_t tm;
     rtc_wakeup_delay();
@@ -520,11 +507,10 @@ COMMAND_BODY(SetTime)
 //   Set the current time
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
-        if (object_p t = rt.top())
-            if (setTime(t))
-                if (rt.drop())
-                    return OK;
+    if (object_p t = rt.top())
+        if (setTime(t))
+            if (rt.drop())
+                return OK;
     return ERROR;
 }
 
@@ -708,8 +694,6 @@ object::result to_hms_dms(cstring name)
 //   Convert the top of stack to HMS or DMS unit
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return object::ERROR;
     algebraic_g x = algebraic_p(tag::strip(rt.top()));
     algebraic_g xc = to_hms_dms(x);
     if (!xc)
@@ -778,8 +762,6 @@ object::result from_hms_dms(cstring name)
 //   Convert the top of stack from HMS or DMS unit
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return object::ERROR;
     algebraic_g x = algebraic_p(tag::strip(rt.top()));
     x = from_hms_dms(x, name);
     if (x && rt.top(x))
@@ -829,9 +811,6 @@ static object::result hms_dms_add_sub(cstring name, bool sub)
 //   Addition or subtraction of DMS/HMS values
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(2))
-        return object::ERROR;
-
     algebraic_g x = algebraic_p(rt.stack(0));
     algebraic_g y = algebraic_p(rt.stack(1));
 
@@ -894,9 +873,6 @@ COMMAND_BODY(DateAdd)
 //   Add a date to a number of days
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(2))
-        return ERROR;
-
     if (object_p d1 = rt.stack(1))
     {
         if (object_p d2 = rt.stack(0))
@@ -919,9 +895,6 @@ COMMAND_BODY(DateSub)
 //   Compute the number of days between two dates
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(2))
-        return ERROR;
-
     if (object_p d1 = rt.stack(1))
         if (object_p d2 = rt.stack(0))
             if (algebraic_p dd = days_between_dates(d1, d2))
@@ -936,8 +909,6 @@ COMMAND_BODY(JulianDayNumber)
 //   Return the Julian day number for current date and time
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return ERROR;
     dt_t dt;
     tm_t tm{};
     if (object_p d = rt.top())
@@ -954,9 +925,6 @@ COMMAND_BODY(DateFromJulianDayNumber)
 //   Return the date for a given Julian day number
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return ERROR;
-
     if (object_p jdn = rt.top())
         if (algebraic_p date = date_from_julian_day(jdn))
             if (rt.top(date))
@@ -970,8 +938,6 @@ COMMAND_BODY(TimedEval)
 //   Evaluate and return the time it took
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return ERROR;
     uint start = sys_current_ms();
     if (result err = Eval::do_evaluate())
         return err;

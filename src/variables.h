@@ -181,22 +181,22 @@ private:
 };
 
 
-COMMAND_DECLARE(Sto);
-COMMAND_DECLARE(Rcl);
-COMMAND_DECLARE(Purge);
-COMMAND_DECLARE(PurgeAll);
+COMMAND_DECLARE(Sto,2);
+COMMAND_DECLARE(Rcl,1);
+COMMAND_DECLARE(Purge,1);
+COMMAND_DECLARE(PurgeAll,1);
 
-COMMAND_DECLARE(Mem);
-COMMAND_DECLARE(FreeMemory);
-COMMAND_DECLARE(SystemMemory);
-COMMAND_DECLARE(GarbageCollect);
+COMMAND_DECLARE(Mem,0);
+COMMAND_DECLARE(FreeMemory,0);
+COMMAND_DECLARE(SystemMemory,0);
+COMMAND_DECLARE(GarbageCollect,0);
 
-COMMAND_DECLARE(home);             // Return to home directory
-COMMAND_DECLARE(CurrentDirectory); // Return the current directory object
-COMMAND_DECLARE(path);             // Return a list describing current path
-COMMAND_DECLARE(crdir);            // Create a directory in current directly
-COMMAND_DECLARE(updir);            // Move one directory up
-COMMAND_DECLARE(pgdir);            // Purge directory
+COMMAND_DECLARE(home,0);                // Return to home directory
+COMMAND_DECLARE(CurrentDirectory,0);    // Return the current directory
+COMMAND_DECLARE(path,0);                // Return a list describing current path
+COMMAND_DECLARE(crdir,1);               // Create a directory
+COMMAND_DECLARE(updir,0);               // Move one directory up
+COMMAND_DECLARE(pgdir,1);               // Purge directory
 
 
 struct VariablesMenu : menu
@@ -218,9 +218,9 @@ public:
     MENU_DECL(VariablesMenu);
 };
 
-COMMAND_DECLARE_INSERT(VariablesMenuExecute);
-COMMAND_DECLARE_INSERT(VariablesMenuRecall);
-COMMAND_DECLARE_INSERT(VariablesMenuStore);
+COMMAND_DECLARE_INSERT(VariablesMenuExecute,-1);
+COMMAND_DECLARE_INSERT(VariablesMenuRecall,0);
+COMMAND_DECLARE_INSERT(VariablesMenuStore,1);
 
 
 
@@ -230,16 +230,16 @@ COMMAND_DECLARE_INSERT(VariablesMenuStore);
 //
 // ============================================================================
 
-COMMAND_DECLARE(SetFlag);
-COMMAND_DECLARE(ClearFlag);
-COMMAND_DECLARE(FlipFlag);
-COMMAND_DECLARE(TestFlagSet);
-COMMAND_DECLARE(TestFlagClear);
-COMMAND_DECLARE(TestFlagClearThenClear);
-COMMAND_DECLARE(TestFlagClearThenSet);
-COMMAND_DECLARE(TestFlagSetThenClear);
-COMMAND_DECLARE(TestFlagSetThenSet);
-COMMAND_DECLARE(FlagsToBinary);
-COMMAND_DECLARE(BinaryToFlags);
+COMMAND_DECLARE(SetFlag,1);
+COMMAND_DECLARE(ClearFlag,1);
+COMMAND_DECLARE(FlipFlag,1);
+COMMAND_DECLARE(TestFlagSet,1);
+COMMAND_DECLARE(TestFlagClear,1);
+COMMAND_DECLARE(TestFlagClearThenClear,1);
+COMMAND_DECLARE(TestFlagClearThenSet,1);
+COMMAND_DECLARE(TestFlagSetThenClear,1);
+COMMAND_DECLARE(TestFlagSetThenSet,1);
+COMMAND_DECLARE(FlagsToBinary,0);
+COMMAND_DECLARE(BinaryToFlags,1);
 
 #endif // VARIABLES_H

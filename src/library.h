@@ -103,9 +103,7 @@ struct library_menu : constant_menu
 #define LIBRARY_MENU(LibMenu)           struct LibMenu : library_menu {};
 #include "ids.tbl"
 
-COMMAND_DECLARE_INSERT_HELP(XlibName);
-COMMAND_DECLARE_INSERT_HELP(XlibValue);
-
-
+COMMAND_DECLARE_INSERT_HELP(XlibName,-1);
+COMMAND_DECLARE_INSERT_HELP(XlibValue,-1);
 
 #endif // LIBRARY_H

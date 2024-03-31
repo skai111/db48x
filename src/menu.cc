@@ -226,8 +226,6 @@ COMMAND_BODY(ToolsMenu)
     }
     else if (rt.depth())
     {
-        if (!rt.args(1))
-            return ERROR;
         if (object_p top = rt.top())
         {
             switch(top->type())
@@ -269,10 +267,6 @@ COMMAND_BODY(ToolsMenu)
             }
         }
     }
-    else if (!rt.args(0))
-    {
-        return ERROR;
-    }
 
     object_p obj = command::static_object(menu);
     return obj->evaluate();
@@ -284,8 +278,6 @@ COMMAND_BODY(LastMenu)
 //   Go back one entry in the menu history
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(0))
-        return ERROR;
     ui.menu_pop();
     return OK;
 }

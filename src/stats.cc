@@ -400,36 +400,33 @@ COMMAND_BODY(StoreData)
 //   Store stats data
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
+    if (object_p obj = rt.top())
     {
-        if (object_p obj = rt.top())
+        id ty = obj->type();
+        if (ty == ID_array)
         {
-            id ty = obj->type();
-            if (ty == ID_array)
+            StatsData::Access stats;
+            if (stats.parse(array_p(obj)))
             {
-                StatsData::Access stats;
-                if (stats.parse(array_p(obj)))
+                rt.clear_error();
+                rt.drop();
+                return OK;
+            }
+        }
+        else if (ty == ID_text || ty == ID_symbol)
+        {
+            if (directory *dir = rt.variables(0))
+            {
+                if (dir->store(command::static_object(ID_StatsData), obj))
                 {
-                    rt.clear_error();
                     rt.drop();
                     return OK;
                 }
             }
-            else if (ty == ID_text || ty == ID_symbol)
-            {
-                if (directory *dir = rt.variables(0))
-                {
-                    if (dir->store(command::static_object(ID_StatsData), obj))
-                    {
-                        rt.drop();
-                        return OK;
-                    }
-                }
-            }
-            else
-            {
-                rt.type_error();
-            }
+        }
+        else
+        {
+            rt.type_error();
         }
     }
     return ERROR;
@@ -1311,32 +1308,28 @@ static object::result set_columns(bool setx, bool sety)
 //   Set a default column from the stack
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(setx + sety))
+    StatsParameters::Access stats;
+    if (!stats)
+        return object::ERROR;
+    if (setx)
     {
-        StatsParameters::Access stats;
-        if (!stats)
-            return object::ERROR;
-        if (setx)
+        if (object_p arg = rt.stack(sety))
         {
-            if (object_p arg = rt.stack(sety))
-            {
-                stats.xcol = arg->as_uint32(1, true);
-                if (rt.error())
-                    return object::ERROR;
-            }
+            stats.xcol = arg->as_uint32(1, true);
+            if (rt.error())
+                return object::ERROR;
         }
-        if (sety)
-        {
-            if (object_p arg = rt.stack(0))
-            {
-                stats.ycol = arg->as_uint32(2, true);
-                if (rt.error())
-                    return object::ERROR;
-            }
-        }
-        return object::OK;
     }
-    return object::ERROR;
+    if (sety)
+    {
+        if (object_p arg = rt.stack(0))
+        {
+            stats.ycol = arg->as_uint32(2, true);
+            if (rt.error())
+                return object::ERROR;
+        }
+    }
+    return object::OK;
 }
 
 

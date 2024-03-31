@@ -126,6 +126,8 @@ public:                                                                 \
     EVAL_DECL(derived)                                                  \
     {                                                                   \
         rt.command(o);                                                  \
+        if (!rt.args(ARITY))                                            \
+            return ERROR;                                               \
         return evaluate();                                              \
     }                                                                   \
     static result evaluate()                                            \
@@ -189,6 +191,8 @@ public:                                                                 \
     EVAL_DECL(derived)                                                  \
     {                                                                   \
         rt.command(o);                                                  \
+        if (!rt.args(ARITY))                                            \
+            return ERROR;                                               \
         return evaluate();                                              \
     }                                                                   \
     extra                                                               \

@@ -76,26 +76,26 @@ algebraic_p days_before(object_p date1, object_p days, bool error = true);
 
 
 // System date and time
-COMMAND_DECLARE(Date);          // Return current date
-COMMAND_DECLARE(SetDate);       // Set current date
-COMMAND_DECLARE(Time);          // Return current time
-COMMAND_DECLARE(SetTime);       // Set current time
-COMMAND_DECLARE(DateTime);      // Return current date and time
-COMMAND_DECLARE(ChronoTime);    // Return current date and time
-COMMAND_DECLARE(TimedEval);     // Timed evaluation
+COMMAND_DECLARE(Date,0);        // Return current date
+COMMAND_DECLARE(SetDate,1);     // Set current date
+COMMAND_DECLARE(Time,0);        // Return current time
+COMMAND_DECLARE(SetTime,1);     // Set current time
+COMMAND_DECLARE(DateTime,0);    // Return current date and time
+COMMAND_DECLARE(ChronoTime,0);  // Return current date and time
+COMMAND_DECLARE(TimedEval,1);   // Timed evaluation
 
 // HMS and DMS operations
-COMMAND_DECLARE(ToHMS);         // Convert from decimal to H:MM:SS format
-COMMAND_DECLARE(FromHMS);       // Convert from H:MM:SS format to decimal
-COMMAND_DECLARE(ToDMS);         // Convert from decimal to H:MM:SS format
-COMMAND_DECLARE(FromDMS);       // Convert from H:MM:SS format to decimal
-COMMAND_DECLARE(HMSAdd);        // Add numbers in HMS format
-COMMAND_DECLARE(HMSSub);        // Subtract numbers in HMS format
-COMMAND_DECLARE(DMSAdd);        // Add numbers in HMS format
-COMMAND_DECLARE(DMSSub);        // Subtract numbers in HMS format
-COMMAND_DECLARE(DateAdd);       // Add a date and a number of days
-COMMAND_DECLARE(DateSub);       // Count days between two dates
-COMMAND_DECLARE(JulianDayNumber);// Return JDN for given date
-COMMAND_DECLARE(DateFromJulianDayNumber); // Date from JDN
+COMMAND_DECLARE(ToHMS,1);       // Convert from decimal to H:MM:SS format
+COMMAND_DECLARE(FromHMS,1);     // Convert from H:MM:SS format to decimal
+COMMAND_DECLARE(ToDMS,1);       // Convert from decimal to H:MM:SS format
+COMMAND_DECLARE(FromDMS,1);     // Convert from H:MM:SS format to decimal
+COMMAND_DECLARE(HMSAdd,2);      // Add numbers in HMS format
+COMMAND_DECLARE(HMSSub,2);      // Subtract numbers in HMS format
+COMMAND_DECLARE(DMSAdd,2);      // Add numbers in HMS format
+COMMAND_DECLARE(DMSSub,2);      // Subtract numbers in HMS format
+COMMAND_DECLARE(DateAdd,2);     // Add a date and a number of days
+COMMAND_DECLARE(DateSub,2);     // Count days between two dates
+COMMAND_DECLARE(JulianDayNumber,1);// Return JDN for given date
+COMMAND_DECLARE(DateFromJulianDayNumber,1); // Date from JDN
 
 #endif // DATETIME_H

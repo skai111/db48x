@@ -38,6 +38,6 @@ algebraic_p integrate(program_g    eq,
                       algebraic_g low,
                       algebraic_g high);
 
-COMMAND_DECLARE(Integrate);
+COMMAND_DECLARE(Integrate,4);
 
 #endif // INTEGRATE_H

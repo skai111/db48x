@@ -443,6 +443,6 @@ struct eq_neg_integer : eq<object::ID_neg_integer, byte(-c)> {};
 //
 // ============================================================================
 
-COMMAND_DECLARE(Rewrite);
+COMMAND_DECLARE(Rewrite,3);
 
 #endif // EXPRESSION_H

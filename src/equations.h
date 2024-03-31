@@ -104,7 +104,7 @@ struct equation_menu : constant_menu
 #define EQUATION_MENU(EquationMenu)     struct EquationMenu : equation_menu {};
 #include "ids.tbl"
 
-COMMAND_DECLARE_INSERT_HELP(EquationName);
-COMMAND_DECLARE_INSERT_HELP(EquationValue);
+COMMAND_DECLARE_INSERT_HELP(EquationName,-1);
+COMMAND_DECLARE_INSERT_HELP(EquationValue,-1);
 
 #endif // EQUATIONS_H

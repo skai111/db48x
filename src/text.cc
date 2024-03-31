@@ -266,17 +266,14 @@ static object::result to_unicode(bool (*body)(text_r tobj))
 //   Convert a top-level text to a single character code or to a list
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
+    if (text_g tobj = rt.top()->as<text>())
     {
-        if (text_g tobj = rt.top()->as<text>())
-        {
-            if (body(tobj))
-                return object::OK;
-        }
-        else
-        {
-            rt.type_error();
-        }
+        if (body(tobj))
+            return object::OK;
+    }
+    else
+    {
+        rt.type_error();
     }
     return object::ERROR;
 }
@@ -357,28 +354,25 @@ COMMAND_BODY(UnicodeToText)
 //   Convert a single integer to a one-character text, or a list to a text
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
+    object_p obj = rt.top();
+    if (list_g lobj = obj->as<list>())
     {
-        object_p obj = rt.top();
-        if (list_g lobj = obj->as<list>())
+        text_g result = text::make("", 0);
+        for (object_p iobj : *lobj)
         {
-            text_g result = text::make("", 0);
-            for (object_p iobj : *lobj)
-            {
-                text_g chr = unicode_to_text(iobj);
-                if (!chr)
-                    return ERROR;
-                result = result + chr;
-            }
-            if (result && rt.top(result))
-                return OK;
+            text_g chr = unicode_to_text(iobj);
+            if (!chr)
+                return ERROR;
+            result = result + chr;
         }
-        else
-        {
-            text_p chr = unicode_to_text(obj);
-            if (chr && rt.top(chr))
-                return OK;
-        }
+        if (result && rt.top(result))
+            return OK;
+    }
+    else
+    {
+        text_p chr = unicode_to_text(obj);
+        if (chr && rt.top(chr))
+            return OK;
     }
     return ERROR;
 }

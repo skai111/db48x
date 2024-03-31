@@ -50,9 +50,6 @@ COMMAND_BODY(Root)
 //   Numerical solver
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(3))
-        return ERROR;
-
     object_g eqobj    = rt.stack(2);
     object_g variable = rt.stack(1);
     object_g guess    = rt.stack(0);

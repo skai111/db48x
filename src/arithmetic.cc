@@ -1329,9 +1329,6 @@ object::result arithmetic::evaluate(id op, ops_t ops)
 //   Shared code for all forms of evaluation using the RPL stack
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(2))
-        return ERROR;
-
     // Fetch arguments from the stack
     // Possibly wrong type, i.e. it migth not be an algebraic on the stack,
     // but since we tend to do extensive type checking later, don't overdo it

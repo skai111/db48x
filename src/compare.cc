@@ -232,9 +232,6 @@ object::result comparison::compare(comparison_fn comparator, id op)
 //   Compare items from the stack
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(2))
-        return  ERROR;
-
     object_p x = rt.stack(1);
     object_p y = rt.stack(0);
     if (!x || !y)

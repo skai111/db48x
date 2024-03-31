@@ -684,9 +684,6 @@ COMMAND_BODY(Sto)
 //   Store a global variable into current directory
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(2))
-        return ERROR;
-
     directory *dir = rt.variables(0);
     if (!dir)
     {
@@ -713,9 +710,6 @@ COMMAND_BODY(Rcl)
 //   Recall a global variable from current directory
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return ERROR;
-
     object_p name = rt.stack(0);
     if (!name)
         return ERROR;
@@ -734,8 +728,6 @@ COMMAND_BODY(Purge)
 //   Purge a global variable from current directory
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return ERROR;
     object_p name = rt.stack(0);
     if (!name)
         return ERROR;
@@ -755,8 +747,6 @@ COMMAND_BODY(PurgeAll)
 //   Purge a global variable from current directory and enclosing directories
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return ERROR;
     object_p x = rt.stack(0);
     if (!x)
         return ERROR;
@@ -783,8 +773,6 @@ COMMAND_BODY(Mem)
 // ----------------------------------------------------------------------------
 //    The HP48 manual specifies that mem performs garbage collection
 {
-    if (!rt.args(0))
-        return ERROR;
     rt.gc();
     run<FreeMemory>();
     return OK;
@@ -796,13 +784,10 @@ COMMAND_BODY(GarbageCollect)
 //   Run the garbage collector
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(0))
-    {
-        size_t saved = rt.gc();
-        integer_p result = rt.make<integer>(ID_integer, saved);
-        if (rt.push(result))
-            return OK;
-    }
+    size_t saved = rt.gc();
+    integer_p result = rt.make<integer>(ID_integer, saved);
+    if (rt.push(result))
+        return OK;
     return  ERROR;
 }
 
@@ -812,13 +797,10 @@ COMMAND_BODY(FreeMemory)
 //   Return amount of free memory (available without garbage collection)
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(0))
-    {
-        size_t available = rt.available();
-        integer_p result = rt.make<integer>(ID_integer, available);
-        if (rt.push(result))
-            return OK;
-    }
+    size_t available = rt.available();
+    integer_p result = rt.make<integer>(ID_integer, available);
+    if (rt.push(result))
+        return OK;
     return ERROR;
 }
 
@@ -828,13 +810,10 @@ COMMAND_BODY(SystemMemory)
 //   Return the amount of memory that is seen as free by the system
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(0))
-    {
-        size_t mem = sys_free_mem();
-        integer_p result = rt.make<integer>(ID_integer, mem);
-        if (rt.push(result))
-            return OK;
-    }
+    size_t mem = sys_free_mem();
+    integer_p result = rt.make<integer>(ID_integer, mem);
+    if (rt.push(result))
+        return OK;
     return ERROR;
 }
 
@@ -844,8 +823,6 @@ COMMAND_BODY(home)
 //   Return the home directory
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(0))
-        return ERROR;
     rt.updir(~0U);
     ui.menu_refresh(ID_VariablesMenu);
     return OK;
@@ -857,12 +834,10 @@ COMMAND_BODY(CurrentDirectory)
 //   Return the current directory as an object
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(0))
-    {
-        directory_p dir = rt.variables(0);
-        if (rt.push(dir))
-            return OK;
-    }
+    directory_p dir = rt.variables(0);
+    if (rt.push(dir))
+        return OK;
+
     return ERROR;
 }
 
@@ -916,11 +891,9 @@ COMMAND_BODY(path)
 //   Build a path with the list of paths
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(0))
-        if (list_p list = directory::path())
-            if (rt.push(list))
-                return OK;
-
+    if (list_p list = directory::path())
+        if (rt.push(list))
+            return OK;
     return ERROR;
 }
 
@@ -930,9 +903,6 @@ COMMAND_BODY(crdir)
 //   Create a directory
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return ERROR;
-
     directory *dir = rt.variables(0);
     if (!dir)
     {
@@ -967,8 +937,6 @@ COMMAND_BODY(updir)
 //   Go up one directory
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(0))
-        return ERROR;
     rt.updir();
     ui.menu_refresh(ID_VariablesMenu);
     return OK;
@@ -1285,92 +1253,45 @@ static object::result do_flag(bool read, bool test, bool write, bool set)
 //   RPL command for changing flag
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
+    object_p   arg     = rt.top();
+    object::id aty     = arg->type();
+    bool       value   = false;
+    bool       builtin = false;
+    bool       flip    = !read && !write;
+
+    // Check built-in flags
+    if (object_p quoted = arg->as_quoted(object::ID_object))
     {
-        object_p   arg     = rt.top();
-        object::id aty     = arg->type();
-        bool       value   = false;
-        bool       builtin = false;
-        bool       flip    = !read && !write;
-
-        // Check built-in flags
-        if (object_p quoted = arg->as_quoted(object::ID_object))
-        {
-            arg = quoted;
-            aty = arg->type();
-        }
-        if (int32_t index = arg->as_int32(0, false))
-        {
-            if (index < 0)
-            {
-                if (index < -128)
-                {
-                    rt.domain_error();
-                    return object::ERROR;
-                }
-                uint max = sizeof(flag_conversions) / sizeof(*flag_conversions);
-                for (uint i = 0; i < max; i++)
-                {
-                    if (flag_conversions[i].index == index)
-                    {
-                        aty = flag_conversions[i].setting;
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (read && Settings.flag(aty, &value))
-            builtin = true;
-        if (write && Settings.flag(aty, set))
-            builtin = true;
-        if (builtin)
-        {
-            rt.drop();
-            if (read)
-            {
-                if (!test)
-                    value = !value;
-                object::id rty = value ? object::ID_True : object::ID_False;
-                object_p value = command::static_object(rty);
-                if (!rt.push(value))
-                    return object::ERROR;
-            }
-            return object::OK;
-        }
-
-        // Normal numeric flags
-        int32_t index = arg->as_int32(0, true);
-        if (rt.error())
-            return object::ERROR;
-
-        // System flags that were not recognized
+        arg = quoted;
+        aty = arg->type();
+    }
+    if (int32_t index = arg->as_int32(0, false))
+    {
         if (index < 0)
         {
-            rt.unsupported_flag_error();
-            return object::ERROR;
+            if (index < -128)
+            {
+                rt.domain_error();
+                return object::ERROR;
+            }
+            uint max = sizeof(flag_conversions) / sizeof(*flag_conversions);
+            for (uint i = 0; i < max; i++)
+            {
+                if (flag_conversions[i].index == index)
+                {
+                    aty = flag_conversions[i].setting;
+                    break;
+                }
+            }
         }
+    }
 
-        size_t maxflags = Settings.MaxFlags();
-        if (size_t(index) > maxflags)
-        {
-            rt.index_error();
-            return object::ERROR;
-        }
-
-        // Allocate memory for the flags if necessary
-        if (!init_flags())
-            return object::ERROR;
-        byte *fp = flags + index / 8;
-        byte bits = 1 << (index % 8);
-        value = *fp & bits;
-        if (flip)
-        {
-            set = !value;
-            write = true;
-        }
-        if (write)
-            *fp = (*fp & ~bits) | (set ? bits : 0);
+    if (read && Settings.flag(aty, &value))
+        builtin = true;
+    if (write && Settings.flag(aty, set))
+        builtin = true;
+    if (builtin)
+    {
         rt.drop();
         if (read)
         {
@@ -1384,7 +1305,49 @@ static object::result do_flag(bool read, bool test, bool write, bool set)
         return object::OK;
     }
 
-    return object::ERROR;
+    // Normal numeric flags
+    int32_t index = arg->as_int32(0, true);
+    if (rt.error())
+        return object::ERROR;
+
+    // System flags that were not recognized
+    if (index < 0)
+    {
+        rt.unsupported_flag_error();
+        return object::ERROR;
+    }
+
+    size_t maxflags = Settings.MaxFlags();
+    if (size_t(index) > maxflags)
+    {
+        rt.index_error();
+        return object::ERROR;
+    }
+
+    // Allocate memory for the flags if necessary
+    if (!init_flags())
+        return object::ERROR;
+    byte *fp = flags + index / 8;
+    byte bits = 1 << (index % 8);
+    value = *fp & bits;
+    if (flip)
+    {
+        set = !value;
+        write = true;
+    }
+    if (write)
+        *fp = (*fp & ~bits) | (set ? bits : 0);
+    rt.drop();
+    if (read)
+    {
+        if (!test)
+            value = !value;
+        object::id rty = value ? object::ID_True : object::ID_False;
+        object_p value = command::static_object(rty);
+        if (!rt.push(value))
+            return object::ERROR;
+    }
+    return object::OK;
 }
 
 
@@ -1397,7 +1360,6 @@ COMMAND_BODY(TestFlagClearThenClear)    { return do_flag(true,  false, true,  fa
 COMMAND_BODY(TestFlagClearThenSet)      { return do_flag(true,  false, true,  true); }
 COMMAND_BODY(TestFlagSetThenClear)      { return do_flag(true,  true,  true,  false); }
 COMMAND_BODY(TestFlagSetThenSet)        { return do_flag(true,  true,  true,  true); }
-
 
 COMMAND_BODY(FlagsToBinary)
 // ----------------------------------------------------------------------------

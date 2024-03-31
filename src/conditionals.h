@@ -211,14 +211,14 @@ struct case_skip_conditional : conditional
 
 
 // The stack-based forms
-COMMAND_DECLARE(IFT);
-COMMAND_DECLARE(IFTE);
+COMMAND_DECLARE(IFT,2);
+COMMAND_DECLARE(IFTE,3);
 
 // Saved error message
-COMMAND_DECLARE(errm);
-COMMAND_DECLARE(errn);
-COMMAND_DECLARE(err0);
-COMMAND_DECLARE(doerr);
+COMMAND_DECLARE(errm,0);
+COMMAND_DECLARE(errn,0);
+COMMAND_DECLARE(err0,0);
+COMMAND_DECLARE(doerr,1);
 
 
 #endif // CONDITIONALS_H

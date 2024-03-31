@@ -486,9 +486,6 @@ COMMAND_BODY(Disp)
 //   - A list { x y } with the same meaning as for a complex
 //   - A list { #x #y } to give pixel-precise coordinates
 {
-    if (!rt.args(2))
-        return ERROR;
-
     if (object_g pos = rt.pop())
     {
         if (object_g todisp = rt.pop())
@@ -775,8 +772,6 @@ COMMAND_BODY(Line)
 //   Draw a line between the coordinates
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(2))
-        return ERROR;
     object_g p1 = rt.stack(1);
     object_g p2 = rt.stack(0);
     if (p1 && p2)
@@ -805,8 +800,6 @@ COMMAND_BODY(Ellipse)
 //   Draw an ellipse between the given coordinates
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(2))
-        return ERROR;
     object_g p1 = rt.stack(1);
     object_g p2 = rt.stack(0);
     if (p1 && p2)
@@ -835,8 +828,6 @@ COMMAND_BODY(Circle)
 //   Draw a circle between the given coordinates
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(2))
-        return ERROR;
     object_g co = rt.stack(1);
     object_g ro = rt.stack(0);
     if (co && ro)
@@ -873,8 +864,6 @@ COMMAND_BODY(Rect)
 //   Draw a rectangle between the given coordinates
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(2))
-        return ERROR;
     object_g p1 = rt.stack(1);
     object_g p2 = rt.stack(0);
     if (p1 && p2)
@@ -904,8 +893,6 @@ COMMAND_BODY(RRect)
 //   Draw a rounded rectangle between the given coordinates
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(3))
-        return ERROR;
     object_g p1 = rt.stack(2);
     object_g p2 = rt.stack(1);
     object_g ro = rt.stack(0);
@@ -937,8 +924,6 @@ COMMAND_BODY(ClLCD)
 //   Clear the LCD screen before drawing stuff on it
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(0))
-        return ERROR;
     ui.draw_graphics();
     Screen.fill(0, 0, LCD_W, LCD_H, pattern::white);
     graphics_dirty(0, 0, LCD_W-1, LCD_H-1, 0);
@@ -951,8 +936,6 @@ COMMAND_BODY(Clip)
 //   Set the clipping rectangle
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return ERROR;
     if (object_p top = rt.pop())
     {
         if (list_p parms = top->as<list>())
@@ -990,8 +973,6 @@ COMMAND_BODY(CurrentClip)
 //   Retuyrn the current clipping rectangle
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(0))
-        return ERROR;
     rect clip(Screen.clip());
     integer_g x1 = integer::make(clip.x1);
     integer_g y1 = integer::make(clip.y1);
@@ -1046,8 +1027,6 @@ COMMAND_BODY(Pict)
 //   Reference to the graphic display
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(0))
-        return ERROR;
     rt.push(static_object(ID_Pict));
     return OK;
 }
@@ -1058,26 +1037,23 @@ static object::result set_ppar_corner(bool max)
 //   Shared code for PMin and PMax
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
+    object_p corner = rt.top();
+    if (corner->is_complex())
     {
-        object_p corner = rt.top();
-        if (corner->is_complex())
+        if (rectangular_g pos = complex_p(corner)->as_rectangular())
         {
-            if (rectangular_g pos = complex_p(corner)->as_rectangular())
+            PlotParametersAccess ppar;
+            (max ? ppar.xmax : ppar.xmin) = pos->re();
+            (max ? ppar.ymax : ppar.ymin) = pos->im();
+            if (ppar.write())
             {
-                PlotParametersAccess ppar;
-                (max ? ppar.xmax : ppar.xmin) = pos->re();
-                (max ? ppar.ymax : ppar.ymin) = pos->im();
-                if (ppar.write())
-                {
-                    rt.drop();
-                    return object::OK;
-                }
+                rt.drop();
+                return object::OK;
             }
-            else
-            {
-                rt.type_error();
-            }
+        }
+        else
+        {
+            rt.type_error();
         }
     }
     return object::ERROR;
@@ -1086,7 +1062,7 @@ static object::result set_ppar_corner(bool max)
 
 COMMAND_BODY(PlotMin)
 // ----------------------------------------------------------------------------
-//   Set the XMin factor in the plot parameters
+//   Set the plot min factor in the plot parameters
 // ----------------------------------------------------------------------------
 {
     return set_ppar_corner(false);
@@ -1094,6 +1070,9 @@ COMMAND_BODY(PlotMin)
 
 
 COMMAND_BODY(PlotMax)
+// ----------------------------------------------------------------------------
+//  Set the plot max factor int he lot parameters
+// ----------------------------------------------------------------------------
 {
     return set_ppar_corner(true);
 }
@@ -1104,25 +1083,22 @@ static object::result set_ppar_range(bool y)
 //   Shared code for XRange and YRange
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(2))
+    object_p min = rt.stack(1);
+    object_p max = rt.stack(0);
+    if (min->is_real() && max->is_real())
     {
-        object_p min = rt.stack(1);
-        object_p max = rt.stack(0);
-        if (min->is_real() && max->is_real())
+        PlotParametersAccess ppar;
+        (y ? ppar.ymin : ppar.xmin) = algebraic_p(min);
+        (y ? ppar.ymax : ppar.xmax) = algebraic_p(max);
+        if (ppar.write())
         {
-            PlotParametersAccess ppar;
-            (y ? ppar.ymin : ppar.xmin) = algebraic_p(min);
-            (y ? ppar.ymax : ppar.xmax) = algebraic_p(max);
-            if (ppar.write())
-            {
-                rt.drop(2);
-                return object::OK;
-            }
+            rt.drop(2);
+            return object::OK;
         }
-        else
-        {
-            rt.type_error();
-        }
+    }
+    else
+    {
+        rt.type_error();
     }
     return object::ERROR;
 }
@@ -1151,30 +1127,27 @@ static object::result set_ppar_scale(bool y)
 //   Shared code for XScale and YScale
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
+    object_p scale = rt.top();
+    if (scale->is_real())
     {
-        object_p scale = rt.top();
-        if (scale->is_real())
+        PlotParametersAccess ppar;
+        algebraic_g s = algebraic_p(scale);
+        algebraic_g &min = y ? ppar.ymin : ppar.xmin;
+        algebraic_g &max = y ? ppar.ymax : ppar.xmax;
+        algebraic_g two = integer::make(2);
+        algebraic_g center = (min + max) / two;
+        algebraic_g width = (max - min) / two;
+        min = center - width * s;
+        max = center + width * s;
+        if (ppar.write())
         {
-            PlotParametersAccess ppar;
-            algebraic_g s = algebraic_p(scale);
-            algebraic_g &min = y ? ppar.ymin : ppar.xmin;
-            algebraic_g &max = y ? ppar.ymax : ppar.xmax;
-            algebraic_g two = integer::make(2);
-            algebraic_g center = (min + max) / two;
-            algebraic_g width = (max - min) / two;
-            min = center - width * s;
-            max = center + width * s;
-            if (ppar.write())
-            {
-                rt.drop();
-                return object::OK;
-            }
+            rt.drop();
+            return object::OK;
         }
-        else
-        {
-            rt.type_error();
-        }
+    }
+    else
+    {
+        rt.type_error();
     }
     return object::ERROR;
 }
@@ -1203,15 +1176,11 @@ COMMAND_BODY(Scale)
 //  Adjust both horizontal and vertical scale
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(2))
-    {
-        if (object::result err = set_ppar_scale(true))
-            return err;
-        if (object::result err = set_ppar_scale(false))
-            return err;
-        return OK;
-    }
-    return ERROR;
+    if (object::result err = set_ppar_scale(true))
+        return err;
+    if (object::result err = set_ppar_scale(false))
+        return err;
+    return OK;
 }
 
 
@@ -1220,33 +1189,30 @@ COMMAND_BODY(Center)
 //   Center around the given coordinate
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
+    object_p center = rt.top();
+    if (center->is_complex())
     {
-        object_p center = rt.top();
-        if (center->is_complex())
+        if (rectangular_g pos = complex_p(center)->as_rectangular())
         {
-            if (rectangular_g pos = complex_p(center)->as_rectangular())
+            PlotParametersAccess ppar;
+            algebraic_g          two = integer::make(2);
+            algebraic_g          w   = (ppar.xmax - ppar.xmin) / two;
+            algebraic_g          h   = (ppar.ymax - ppar.ymin) / two;
+            algebraic_g          cx  = pos->re();
+            algebraic_g          cy  = pos->im();
+            ppar.xmin = cx - w;
+            ppar.xmax = cx + w;
+            ppar.ymin = cy - h;
+            ppar.ymax = cy + h;
+            if (ppar.write())
             {
-                PlotParametersAccess ppar;
-                algebraic_g          two = integer::make(2);
-                algebraic_g          w   = (ppar.xmax - ppar.xmin) / two;
-                algebraic_g          h   = (ppar.ymax - ppar.ymin) / two;
-                algebraic_g          cx  = pos->re();
-                algebraic_g          cy  = pos->im();
-                ppar.xmin = cx - w;
-                ppar.xmax = cx + w;
-                ppar.ymin = cy - h;
-                ppar.ymax = cy + h;
-                if (ppar.write())
-                {
-                    rt.drop();
-                    return object::OK;
-                }
+                rt.drop();
+                return object::OK;
             }
-            else
-            {
-                rt.type_error();
-            }
+        }
+        else
+        {
+            rt.type_error();
         }
     }
     return object::ERROR;
@@ -1258,28 +1224,25 @@ COMMAND_BODY(Gray)
 //   Create a pattern from a gray level
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
+    algebraic_g gray = algebraic_p(rt.top());
+    if (gray->is_real())
     {
-        algebraic_g gray = algebraic_p(rt.top());
-        if (gray->is_real())
-        {
-            gray = gray * integer::make(255);
-            uint level = gray->as_uint32(0, true);
-            if (level > 255)
-                level = 255;
-            pattern pat = pattern(level, level, level);
+        gray = gray * integer::make(255);
+        uint level = gray->as_uint32(0, true);
+        if (level > 255)
+            level = 255;
+        pattern pat = pattern(level, level, level);
 #if CONFIG_FIXED_BASED_OBJECTS
-            integer_p bits = rt.make<hex_integer>(pat.bits);
+        integer_p bits = rt.make<hex_integer>(pat.bits);
 #else
-            integer_p bits = rt.make<based_integer>(pat.bits);
+        integer_p bits = rt.make<based_integer>(pat.bits);
 #endif
-            if (bits && rt.top(bits))
-                return OK;
-        }
-        else
-        {
-            rt.type_error();
-        }
+        if (bits && rt.top(bits))
+            return OK;
+    }
+    else
+    {
+        rt.type_error();
     }
     return ERROR;
 }
@@ -1290,39 +1253,36 @@ COMMAND_BODY(RGB)
 //   Create a pattern from RGB levels
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(3))
+    algebraic_g red   = algebraic_p(rt.stack(2));
+    algebraic_g green = algebraic_p(rt.stack(1));
+    algebraic_g blue  = algebraic_p(rt.stack(0));
+    if (red->is_real() && green->is_real() && blue->is_real())
     {
-        algebraic_g red   = algebraic_p(rt.stack(2));
-        algebraic_g green = algebraic_p(rt.stack(1));
-        algebraic_g blue  = algebraic_p(rt.stack(0));
-        if (red->is_real() && green->is_real() && blue->is_real())
-        {
-            algebraic_g scale = integer::make(255);
-            red = red * scale;
-            green = green * scale;
-            blue = blue * scale;
-            uint rl = red->as_uint32(0, true);
-            uint gl = green->as_uint32(0, true);
-            uint bl = blue->as_uint32(0, true);
-            if (rl > 255)
-                rl = 255;
-            if (gl > 255)
-                gl = 255;
-            if (bl > 255)
-                bl = 255;
-            pattern pat = pattern(rl, gl, bl);
+        algebraic_g scale = integer::make(255);
+        red = red * scale;
+        green = green * scale;
+        blue = blue * scale;
+        uint rl = red->as_uint32(0, true);
+        uint gl = green->as_uint32(0, true);
+        uint bl = blue->as_uint32(0, true);
+        if (rl > 255)
+            rl = 255;
+        if (gl > 255)
+            gl = 255;
+        if (bl > 255)
+            bl = 255;
+        pattern pat = pattern(rl, gl, bl);
 #if CONFIG_FIXED_BASED_OBJECTS
-            integer_p bits = rt.make<hex_integer>(pat.bits);
+        integer_p bits = rt.make<hex_integer>(pat.bits);
 #else
-            integer_p bits = rt.make<based_integer>(pat.bits);
+        integer_p bits = rt.make<based_integer>(pat.bits);
 #endif
-            if (bits && rt.drop(2) && rt.top(bits))
-                return OK;
-        }
-        else
-        {
-            rt.type_error();
-        }
+        if (bits && rt.drop(2) && rt.top(bits))
+            return OK;
+    }
+    else
+    {
+        rt.type_error();
     }
     return ERROR;
 }

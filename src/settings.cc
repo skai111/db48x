@@ -179,19 +179,16 @@ COMMAND_BODY(Modes)
 //   Return a program that restores the current modes
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(0))
-    {
-        renderer modes;
-        modes.put("«");
-        Settings.save(modes);
-        modes.put("»");
+    renderer modes;
+    modes.put("«");
+    Settings.save(modes);
+    modes.put("»");
 
-        size_t size = modes.size();
-        gcutf8 code = modes.text();
-        if (object_g program = object::parse(code, size))
-            if (rt.push(program))
-                return OK;
-    }
+    size_t size = modes.size();
+    gcutf8 code = modes.text();
+    if (object_g program = object::parse(code, size))
+        if (rt.push(program))
+            return OK;
     return ERROR;
 }
 
@@ -201,8 +198,6 @@ COMMAND_BODY(ResetModes)
 //   Reset the default modes
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(0))
-        return ERROR;
     Settings = settings();
     return OK;
 }

@@ -1503,9 +1503,6 @@ COMMAND_BODY(Convert)
 //   Convert level 2 into unit of level 1
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(2))
-        return ERROR;
-
     unit_p y = rt.stack(1)->as<unit>();
     unit_p x = rt.stack(0)->as<unit>();
     if (!y || !x)
@@ -1527,9 +1524,6 @@ COMMAND_BODY(UBase)
 //   Convert level 1 to the base SI units
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return ERROR;
-
     unit_p x = rt.stack(0)->as<unit>();
     if (!x)
     {
@@ -1550,9 +1544,6 @@ COMMAND_BODY(UFact)
 //   Factor level 1 unit out of level 2 unit
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(2))
-        return ERROR;
-
     unit_p x = rt.stack(0)->as<unit>();
     unit_p y = rt.stack(1)->as<unit>();
     if (!x || !y)
@@ -1598,9 +1589,6 @@ COMMAND_BODY(ToUnit)
 //   Combine a value and a unit object to build a new unit object
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(2))
-        return ERROR;
-
     object_p y = rt.stack(1);
     unit_p x = rt.stack(0)->as<unit>();
     if (!x || !y || !y->is_algebraic())
@@ -1663,9 +1651,6 @@ COMMAND_BODY(ApplyUnit)
 //   Apply a unit from a unit menu
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return ERROR;
-
     int key = ui.evaluating;
     if (algebraic_g uname = key_unit(key, true))
         if (object_p value = rt.top())
@@ -1698,9 +1683,6 @@ COMMAND_BODY(ApplyInverseUnit)
 // ----------------------------------------------------------------------------
 {
     int key = ui.evaluating;
-    if (!rt.args(1))
-        return ERROR;
-
     if (algebraic_g uname = key_unit(key, true))
         if (object_p value = rt.top())
             if (algebraic_g alg = value->as_algebraic())
@@ -1732,9 +1714,6 @@ COMMAND_BODY(ConvertToUnit)
 // ----------------------------------------------------------------------------
 {
     int key = ui.evaluating;
-    if (!rt.args(1))
-        return ERROR;
-
     if (algebraic_g uname = key_unit(key, false))
         if (object_p value = rt.top())
             if (algebraic_g alg = value->as_algebraic())
@@ -1788,9 +1767,6 @@ COMMAND_BODY(ConvertToUnitPrefix)
     int key = ui.evaluating;
     if (key < KEY_F1 || key > KEY_F6)
         return object::OK;
-
-    if (!rt.args(1))
-        return ERROR;
 
     // Read the prefix (e.g. "c") from the softkey label,
     uint index = key - KEY_F1 + ui.NUM_SOFTKEYS * ui.shift_plane();
@@ -1879,8 +1855,6 @@ static object::result toAngleUnit(cstring angleUnit)
 //   Convert the value x to the given angle unit
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return object::ERROR;
     object_g x = rt.top();
     unit_g uobj = x->as<unit>();
     if (uobj)

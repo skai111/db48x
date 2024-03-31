@@ -721,17 +721,14 @@ COMMAND_BODY(IFT)
 //   Evaluate the 'IFT' command
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(2))
+    if (object_p toexec = rt.pop())
     {
-        if (object_p toexec = rt.pop())
+        if (object_g condition = rt.pop())
         {
-            if (object_g condition = rt.pop())
-            {
-                if (rt.run_conditionals(toexec, nullptr, true)  &&
-                    defer(ID_conditional)                       &&
-                    program::run_program(condition) == OK)
-                    return OK;
-            }
+            if (rt.run_conditionals(toexec, nullptr, true)  &&
+                defer(ID_conditional)                       &&
+                program::run_program(condition) == OK)
+                return OK;
         }
     }
     return ERROR;
@@ -743,19 +740,16 @@ COMMAND_BODY(IFTE)
 //   Evaluate the 'IFTE' command
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(3))
+    if (object_p iff = rt.pop())
     {
-        if (object_p iff = rt.pop())
+        if (object_p ift = rt.pop())
         {
-            if (object_p ift = rt.pop())
+            if (object_g condition = rt.pop())
             {
-                if (object_g condition = rt.pop())
-                {
-                    if (rt.run_conditionals(ift, iff, true) &&
-                        defer(ID_conditional)               &&
-                        program::run_program(condition) == OK)
-                        return OK;
-                }
+                if (rt.run_conditionals(ift, iff, true) &&
+                    defer(ID_conditional)               &&
+                    program::run_program(condition) == OK)
+                    return OK;
             }
         }
     }
@@ -775,18 +769,15 @@ COMMAND_BODY(errm)
 //   Return the current error message
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(0))
+    if (utf8 msg = rt.error_message())
     {
-        if (utf8 msg = rt.error_message())
-        {
-            if (rt.push(text::make(msg)))
-                return OK;
-        }
-        else
-        {
-            if (rt.push(text::make(utf8(""), 0)))
-                return OK;
-        }
+        if (rt.push(text::make(msg)))
+            return OK;
+    }
+    else
+    {
+        if (rt.push(text::make(utf8(""), 0)))
+            return OK;
     }
     return ERROR;
 }
@@ -822,9 +813,8 @@ COMMAND_BODY(errn)
             }
         }
     }
-    if (rt.args(0))
-        if (rt.push(rt.make<based_integer>(result)))
-            return OK;
+    if (rt.push(rt.make<based_integer>(result)))
+        return OK;
     return ERROR;
 }
 
@@ -834,8 +824,6 @@ COMMAND_BODY(err0)
 //   Clear the error message
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(0))
-        return ERROR;
     rt.error(utf8(nullptr));          // Not clear_error, need to zero ErrorSave
     return OK;
 }
@@ -847,32 +835,29 @@ COMMAND_BODY(doerr)
 // ----------------------------------------------------------------------------
 {
     rt.source(utf8(nullptr));
-    if (rt.args(1))
+    if (object_p obj = rt.pop())
     {
-        if (object_p obj = rt.pop())
+        if (text_p tval = obj->as<text>())
         {
-            if (text_p tval = obj->as<text>())
+            // Need to null-terminate the text
+            size_t size = 0;
+            utf8   str  = tval->value(&size);
+            text_g zt = text::make(str, size + 1);
+            byte * payload = (byte *) zt->value();
+            payload[size] = 0;
+            rt.error(utf8(payload));
+        }
+        else
+        {
+            uint32_t ival = obj->as_uint32();
+            if (ival || !rt.error())
             {
-                // Need to null-terminate the text
-                size_t size = 0;
-                utf8   str  = tval->value(&size);
-                text_g zt = text::make(str, size + 1);
-                byte * payload = (byte *) zt->value();
-                payload[size] = 0;
-                rt.error(utf8(payload));
-            }
-            else
-            {
-                uint32_t ival = obj->as_uint32();
-                if (ival || !rt.error())
-                {
-                    if (!ival)
-                        rt.interrupted_error();
-                    else if (ival - 1 < sizeof(messages) / sizeof(*messages))
-                        rt.error(messages[ival-1]);
-                    else
-                        rt.domain_error();
-                }
+                if (!ival)
+                    rt.interrupted_error();
+                else if (ival - 1 < sizeof(messages) / sizeof(*messages))
+                    rt.error(messages[ival-1]);
+                else
+                    rt.domain_error();
             }
         }
     }

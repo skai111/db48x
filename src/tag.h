@@ -114,8 +114,8 @@ public:
     RENDER_DECL(tag);
 };
 
-COMMAND_DECLARE(dtag);
-COMMAND_DECLARE(ToTag);
-COMMAND_DECLARE(FromTag);
+COMMAND_DECLARE(dtag,1);
+COMMAND_DECLARE(ToTag,2);
+COMMAND_DECLARE(FromTag,1);
 
 #endif // TAG_H

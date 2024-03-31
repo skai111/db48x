@@ -369,8 +369,6 @@ static object::result draw_plot(object::id type)
 //   Draw the various kinds of plot
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return object::ERROR;
     if (object_g eq = rt.pop())
     {
         PlotParametersAccess ppar;
@@ -430,8 +428,6 @@ COMMAND_BODY(Draw)
 //   Draw plot in EQ according to PPAR
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(0))
-        return ERROR;
     PlotParametersAccess ppar;
     switch(ppar.type)
     {
@@ -451,8 +447,6 @@ COMMAND_BODY(Drax)
 //   Draw plot axes
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(0))
-        return ERROR;
     ui.draw_graphics();
 
     PlotParametersAccess ppar;

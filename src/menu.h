@@ -168,7 +168,7 @@ void menu::items(info &mi, id type, Args... args)
 //
 // ============================================================================
 
-COMMAND(MenuNextPage)
+COMMAND(MenuNextPage,-1)
 // ----------------------------------------------------------------------------
 //   Select the next page in the menu
 // ----------------------------------------------------------------------------
@@ -178,7 +178,7 @@ COMMAND(MenuNextPage)
 }
 
 
-COMMAND(MenuPreviousPage)
+COMMAND(MenuPreviousPage,-1)
 // ----------------------------------------------------------------------------
 //   Select the previous page in the menu
 // ----------------------------------------------------------------------------
@@ -188,7 +188,7 @@ COMMAND(MenuPreviousPage)
 }
 
 
-COMMAND(MenuFirstPage)
+COMMAND(MenuFirstPage,-1)
 // ----------------------------------------------------------------------------
 //   Select the previous page in the menu
 // ----------------------------------------------------------------------------
@@ -218,8 +218,8 @@ struct SysMenu : menu                                                   \
 //
 // ============================================================================
 
-COMMAND_DECLARE(LastMenu);      // Return to previous menu
-COMMAND_DECLARE(ToolsMenu);     // Automatic selection of the right menu
+COMMAND_DECLARE(LastMenu,-1);   // Return to previous menu
+COMMAND_DECLARE(ToolsMenu,-1);  // Automatic selection of the right menu
 
 
 #endif // MENU_H

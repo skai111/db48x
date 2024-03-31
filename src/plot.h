@@ -32,13 +32,13 @@
 #include "command.h"
 #include "graphics.h"
 
-COMMAND_DECLARE(Function);
-COMMAND_DECLARE(Polar);
-COMMAND_DECLARE(Parametric);
-COMMAND_DECLARE(Scatter);
-COMMAND_DECLARE(Bar);
-COMMAND_DECLARE(Draw);
-COMMAND_DECLARE(Drax);
+COMMAND_DECLARE(Function,1);
+COMMAND_DECLARE(Polar,1);
+COMMAND_DECLARE(Parametric,1);
+COMMAND_DECLARE(Scatter,1);
+COMMAND_DECLARE(Bar,1);
+COMMAND_DECLARE(Draw,0);
+COMMAND_DECLARE(Drax,0);
 
 struct Equation : command
 // ----------------------------------------------------------------------------

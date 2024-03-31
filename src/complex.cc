@@ -881,8 +881,6 @@ COMMAND_BODY(RealToRectangular)
 //   Take two values in x and y and turn them into a rectangular complex
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(2))
-        return ERROR;
     object_g re = tag::strip(rt.stack(1));
     object_g im = tag::strip(rt.stack(0));
     if (!re || !im)
@@ -908,8 +906,6 @@ COMMAND_BODY(RealToPolar)
 //   Take two values in x and y and turn them into a polar complex
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(2))
-        return ERROR;
     object_g mod = tag::strip(rt.stack(1));
     object_g arg = tag::strip(rt.stack(0));
     if (!mod || !arg)
@@ -945,8 +941,6 @@ COMMAND_BODY(RectangularToReal)
 //   Take a complex value and convert it into two real values
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return ERROR;
     object_g z = tag::strip(rt.top());
     if (!z)
         return ERROR;
@@ -973,8 +967,6 @@ COMMAND_BODY(PolarToReal)
 //   Take a complex value in polar form and convert it into two real values
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return ERROR;
     object_g z = tag::strip(rt.top());
     if (!z)
         return ERROR;
@@ -1003,8 +995,6 @@ COMMAND_BODY(ToRectangular)
 //  Convert the top-level complex to rectangular form
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return ERROR;
     object_g x = tag::strip(rt.top());
     if (!x)
         return ERROR;
@@ -1028,8 +1018,6 @@ COMMAND_BODY(ToPolar)
 //  Convert the top-level complex to polar form
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return ERROR;
     object_g x = tag::strip(rt.top());
     if (!x)
         return ERROR;

@@ -88,6 +88,8 @@ struct derived : logical                                                \
     EVAL_DECL(derived)                                                  \
     {                                                                   \
         rt.command(o);                                                  \
+        if (!rt.args(2))                                                \
+            return ERROR;                                               \
         return evaluate<derived>();                                     \
     }                                                                   \
                                                                         \
@@ -115,6 +117,8 @@ struct derived : logical                                                \
     EVAL_DECL(derived)                                                  \
     {                                                                   \
         rt.command(o);                                                  \
+        if (!rt.args(1))                                                \
+            return ERROR;                                               \
         return evaluate<derived>();                                     \
     }                                                                   \
     enum { numerical = num };                                           \

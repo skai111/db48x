@@ -555,9 +555,6 @@ static object::result counted_loop(object::id type, object_p o)
 {
     byte    *p    = (byte *) object::payload(o);
 
-    if (!rt.args(2))
-        return object::ERROR;
-
     // Fetch loop initial and last steps
     object_g last  = rt.pop();
     object_g first = rt.pop();

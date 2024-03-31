@@ -320,6 +320,7 @@ struct setting : command
     template<typename T>
     static bool validate(id type, T &valref, T low, T high)
     {
+        rt.command(static_object(type));
         if (rt.args(1))
         {
             if (object_p obj = rt.top())
@@ -337,7 +338,6 @@ struct setting : command
                 }
             }
         }
-        rt.command(static_object(type));
         return false;
     }
 
@@ -429,8 +429,8 @@ struct Name : setting                                                   \
 #include "ids.tbl"
 
 
-COMMAND_DECLARE(Modes);
-COMMAND_DECLARE(ResetModes);
-COMMAND_DECLARE(RecallWordSize);
+COMMAND_DECLARE(Modes,0);
+COMMAND_DECLARE(ResetModes,0);
+COMMAND_DECLARE(RecallWordSize,0);
 
 #endif // SETTINGS_H

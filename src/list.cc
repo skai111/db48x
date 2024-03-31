@@ -789,19 +789,16 @@ COMMAND_BODY(FromList)
 //   Convert elements to a list
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
+    object_p obj = rt.top();
+    if (list_p li = obj->as<list>())
     {
-        object_p obj = rt.top();
-        if (list_p li = obj->as<list>())
-        {
-            rt.drop();
-            if (li->expand())
-                return OK;
-        }
-        else
-        {
-            rt.type_error();
-        }
+        rt.drop();
+        if (li->expand())
+            return OK;
+    }
+    else
+    {
+        rt.type_error();
     }
     return ERROR;
 }
@@ -814,45 +811,42 @@ COMMAND_BODY(Size)
 //   Behaves differently from standard RPL for integers, equations and units
 //   where it returns 1 and not some weirdo internal count
 {
-    if (rt.args(1))
+    object_p obj    = rt.top();
+    id       oty    = obj->type();
+    size_t   size   = 1;
+
+    switch (oty)
     {
-        object_p obj    = rt.top();
-        id       oty    = obj->type();
-        size_t   size   = 1;
-
-        switch (oty)
+    case ID_list:
+        size = list_p(obj)->items(); break;
+    case ID_array:
+        if (object_p result = array_p(obj)->dimensions())
+            if (rt.top(result))
+                return OK;
+        break;
+    case ID_text:
+        size = text_p(obj)->utf8_characters(); break;
+    case ID_grob:
+    case ID_bitmap:
+        if (grob_p gr = grob_p(obj))
         {
-        case ID_list:
-            size = list_p(obj)->items(); break;
-        case ID_array:
-            if (object_p result = array_p(obj)->dimensions())
-                if (rt.top(result))
-                    return OK;
-            break;
-        case ID_text:
-            size = text_p(obj)->utf8_characters(); break;
-        case ID_grob:
-        case ID_bitmap:
-            if (grob_p gr = grob_p(obj))
+            grob::pixsize w = 0, h = 0;
+            if (gr->pixels(&w, &h))
             {
-                grob::pixsize w = 0, h = 0;
-                if (gr->pixels(&w, &h))
-                {
-                    integer_g wo = rt.make<based_integer>(w);
-                    integer_g ho = rt.make<based_integer>(h);
-                    if (wo && ho && rt.top(+wo) && rt.push(+ho))
-                        return OK;
-                }
+                integer_g wo = rt.make<based_integer>(w);
+                integer_g ho = rt.make<based_integer>(h);
+                if (wo && ho && rt.top(+wo) && rt.push(+ho))
+                    return OK;
             }
-            return ERROR;
-        default:
-            break;
         }
-
-        integer_p szo = integer::make(size);
-        if (szo && rt.top(szo))
-            return OK;
+        return ERROR;
+    default:
+        break;
     }
+
+    integer_p szo = integer::make(size);
+    if (szo && rt.top(szo))
+        return OK;
     return ERROR;
 }
 
@@ -862,9 +856,6 @@ static object::result get(bool increment)
 //   Get element from structure, incrementing index or not
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(2))
-        return object::ERROR;
-
     // Check we have an object at level 2
     if (object_p items = rt.stack(1))
     {
@@ -925,9 +916,6 @@ static object::result put(bool increment)
 //   Put element in structure, incrementing index or not
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(3))
-        return object::ERROR;
-
     // Check that we have an object at level 2
     if (object_p items = rt.stack(2))
     {
@@ -998,26 +986,23 @@ COMMAND_BODY(Head)
 //   Return first element in a list
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
+    object_p obj = rt.top();
+    id ty = obj->type();
+    if (ty == ID_list || ty == ID_array)
     {
-        object_p obj = rt.top();
-        id ty = obj->type();
-        if (ty == ID_list || ty == ID_array)
+        if (object_p hd = list_p(obj)->head())
         {
-            if (object_p hd = list_p(obj)->head())
-            {
-                if (rt.top(hd))
-                    return OK;
-            }
-            else
-            {
-                rt.dimension_error();
-            }
+            if (rt.top(hd))
+                return OK;
         }
         else
         {
-            rt.type_error();
+            rt.dimension_error();
         }
+    }
+    else
+    {
+        rt.type_error();
     }
     return ERROR;
 }
@@ -1028,28 +1013,25 @@ COMMAND_BODY(Tail)
 //   Return all but first element in a list
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
+    object_p obj = rt.top();
+    id ty = obj->type();
+    if (ty == ID_list || ty == ID_array)
     {
-        object_p obj = rt.top();
-        id ty = obj->type();
-        if (ty == ID_list || ty == ID_array)
+        if (object_p tl = list_p(obj)->tail())
         {
-            if (object_p tl = list_p(obj)->tail())
-            {
-                if (rt.top(tl))
-                    return OK;
-            }
-            else
-            {
-                // On HP50, HEAD returns an error, but TAIL returns an empty list
-                // rt.dimension_error();
+            if (rt.top(tl))
                 return OK;
-            }
         }
         else
         {
-            rt.type_error();
+            // On HP50, HEAD returns an error, but TAIL returns an empty list
+            // rt.dimension_error();
+            return OK;
         }
+    }
+    else
+    {
+        rt.type_error();
     }
     return ERROR;
 }
@@ -1061,23 +1043,20 @@ static object::result map_reduce_filter(object_p (list::*cmd)(object_p) const)
 // ----------------------------------------------------------------------------
 {
     size_t depth = rt.depth();
-    if (rt.args(2))
+    object_p   obj = rt.stack(1);
+    object_g   prg = rt.top();
+    object::id ty  = obj->type();
+    if (ty == object::ID_list || ty == object::ID_array)
     {
-        object_p   obj = rt.stack(1);
-        object_g   prg = rt.top();
-        object::id ty  = obj->type();
-        if (ty == object::ID_list || ty == object::ID_array)
-        {
-            object_p result = (list_p(obj)->*cmd)(prg);
-            if (!result)
-                goto error;
-            if (rt.drop() && rt.top(result))
-                return object::OK;
-        }
-        else
-        {
-            rt.type_error();
-        }
+        object_p result = (list_p(obj)->*cmd)(prg);
+        if (!result)
+            goto error;
+        if (rt.drop() && rt.top(result))
+            return object::OK;
+    }
+    else
+    {
+        rt.type_error();
     }
 error:
     if (rt.depth() > depth)
@@ -1118,20 +1097,17 @@ static object::result list_reduce(object::id cmd)
 //   Shared code for map, reduce and filter
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
+    object_p   obj = rt.stack(0);
+    object::id ty  = obj->type();
+    if (ty == object::ID_list || ty == object::ID_array)
     {
-        object_p   obj = rt.stack(0);
-        object::id ty  = obj->type();
-        if (ty == object::ID_list || ty == object::ID_array)
-        {
-            object_p result = list_p(obj)->reduce(command::static_object(cmd));
-            if (result && rt.top(result))
-                return object::OK;
-        }
-        else
-        {
-            rt.type_error();
-        }
+        object_p result = list_p(obj)->reduce(command::static_object(cmd));
+        if (result && rt.top(result))
+            return object::OK;
+    }
+    else
+    {
+        rt.type_error();
     }
     return object::ERROR;
 }
@@ -1142,21 +1118,18 @@ static object::result list_pair_map(object::id cmd)
 //   Shared code for map, reduce and filter
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
+    object_p   obj = rt.stack(0);
+    object::id ty  = obj->type();
+    if (ty == object::ID_list || ty == object::ID_array)
     {
-        object_p   obj = rt.stack(0);
-        object::id ty  = obj->type();
-        if (ty == object::ID_list || ty == object::ID_array)
-        {
-            object_p cmdobj = command::static_object(cmd);
-            object_p result = list_p(obj)->pair_map(cmdobj);
-            if (result && rt.top(result))
-                return object::OK;
-        }
-        else
-        {
-            rt.type_error();
-        }
+        object_p cmdobj = command::static_object(cmd);
+        object_p result = list_p(obj)->pair_map(cmdobj);
+        if (result && rt.top(result))
+            return object::OK;
+    }
+    else
+    {
+        rt.type_error();
     }
     return object::ERROR;
 }
@@ -1593,51 +1566,47 @@ static object::result do_sort(int (*compare)(object_p *x, object_p *y))
 {
     typedef int (*qsort_fn)(const void *, const void*);
 
-    if (rt.args(1))
+    if  (object_p obj = rt.stack(0))
     {
-        if  (object_p obj = rt.stack(0))
+        object::id oty = obj->type();
+        if (oty == object::ID_list || oty == object::ID_array)
         {
-            object::id oty = obj->type();
-            if (oty == object::ID_list || oty == object::ID_array)
+            size_t   depth = rt.depth();
+            list_g   items = list_p(obj);
+            size_t   count;
+            scribble scr;
+            qsort_fn cmp = qsort_fn(compare);
+
+            for (object_p item : *items)
+                if (!rt.push(item))
+                    goto err;
+            count = rt.depth() - depth;
+            if (cmp)
+                qsort(rt.stack_base(), count, sizeof(object_p), cmp);
+
+            for (uint i = 0; i < count; i++)
             {
-                size_t   depth = rt.depth();
-                list_g   items = list_p(obj);
-                size_t   count;
-                scribble scr;
-                qsort_fn cmp = qsort_fn(compare);
-
-                for (object_p item : *items)
-                    if (!rt.push(item))
-                        goto err;
-                count = rt.depth() - depth;
-                if (cmp)
-                    qsort(rt.stack_base(), count, sizeof(object_p), cmp);
-
-                for (uint i = 0; i < count; i++)
+                if (object_g obj = rt.stack(i))
                 {
-                    if (object_g obj = rt.stack(i))
-                    {
-                        size_t objsz = obj->size();
-                        byte_p objp = byte_p(obj);
-                        if (!rt.append(objsz, objp))
-                            goto err;
-                    }
+                    size_t objsz = obj->size();
+                    byte_p objp = byte_p(obj);
+                    if (!rt.append(objsz, objp))
+                        goto err;
                 }
-                rt.drop(count);
-                items = list::make(oty, scr.scratch(), scr.growth());
-                if (items && rt.top(+items))
-                    return object::OK;
+            }
+            rt.drop(count);
+            items = list::make(oty, scr.scratch(), scr.growth());
+            if (items && rt.top(+items))
+                return object::OK;
 
-            err:
-                rt.drop(rt.depth() - depth);
-                return object::ERROR;
-            }
-            else
-            {
-                rt.type_error();
-            }
+        err:
+            rt.drop(rt.depth() - depth);
+            return object::ERROR;
         }
-
+        else
+        {
+            rt.type_error();
+        }
     }
     return object::ERROR;
 }

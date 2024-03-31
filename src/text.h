@@ -243,8 +243,8 @@ public:
 text_g operator+(text_r x, text_r y);
 text_g operator*(text_r x, uint y);
 
-COMMAND_DECLARE(CharToUnicode);
-COMMAND_DECLARE(TextToUnicode);
-COMMAND_DECLARE(UnicodeToText);
+COMMAND_DECLARE(CharToUnicode,1);
+COMMAND_DECLARE(TextToUnicode,1);
+COMMAND_DECLARE(UnicodeToText,1);
 
 #endif // TEXT_H

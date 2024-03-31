@@ -50,9 +50,6 @@ COMMAND_BODY(Integrate)
 //   Numerical integration
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(4))
-        return ERROR;
-
     object_g variable = rt.stack(0);
     object_g eqobj    = rt.stack(1);
     object_g high     = rt.stack(2);

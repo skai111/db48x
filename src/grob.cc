@@ -277,8 +277,6 @@ object::result grob::command(grob::blitop op)
 //   The shared code for GXor, GOr and GAnd
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(3))
-        return ERROR;
     if (object_p coords = rt.stack(1))
     {
         PlotParametersAccess ppar;
