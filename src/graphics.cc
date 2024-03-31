@@ -759,11 +759,116 @@ static void graphics_dirty(coord x1, coord y1, coord x2, coord y2, size lw)
         std::swap(x1, x2);
     if (y1 > y2)
         std::swap(y1, y2);
-    if (lw)
-        ui.draw_dirty(x1 - lw/2, y1 - lw/2, x2 + (lw-1)/2, y2 + (lw-1)/2);
-    else
-        ui.draw_dirty(x1, y1, x2, y2);
+    size a = lw/2;
+    size b = (lw+1)/2 - 1;
+    ui.draw_dirty(x1 - a, y1 - a, x2 + b, y2 + b);
     refresh_dirty();
+}
+
+
+static object::result draw_pixel(pattern color)
+// ----------------------------------------------------------------------------
+//   Draw a pixel on or off
+// ----------------------------------------------------------------------------
+{
+    if (object_g p = rt.stack(0))
+    {
+        PlotParametersAccess ppar;
+        coord x = ppar.pair_pixel_x(p);
+        coord y = ppar.pair_pixel_y(p);
+        if (!rt.error())
+        {
+            rt.drop();
+
+            blitter::size lw = Settings.LineWidth();
+            if (!lw)
+                lw = 1;
+            blitter::size a = lw/2;
+            blitter::size b = (lw + 1) / 2 - 1;
+            rect r(x-a, y-a, x+b, y+b);
+            ui.draw_graphics();
+            Screen.fill(r, color);
+            ui.draw_dirty(r);
+            refresh_dirty();
+            return object::OK;
+        }
+    }
+    return object::ERROR;
+}
+
+
+COMMAND_BODY(PixOn)
+// ----------------------------------------------------------------------------
+//   Draw a pixel at the given coordinates
+// ----------------------------------------------------------------------------
+{
+    return draw_pixel(Settings.Foreground());
+}
+
+
+COMMAND_BODY(PixOff)
+// ----------------------------------------------------------------------------
+//   Clear a pixel at the given coordinates
+// ----------------------------------------------------------------------------
+{
+    return draw_pixel(Settings.Background());
+}
+
+
+static bool pixel_color(color &c)
+// ----------------------------------------------------------------------------
+//   Return the color at given coordinates
+// ----------------------------------------------------------------------------
+{
+    if (object_g p = rt.stack(0))
+    {
+        PlotParametersAccess ppar;
+        coord x = ppar.pair_pixel_x(p);
+        coord y = ppar.pair_pixel_y(p);
+        if (!rt.error())
+        {
+            c = Screen.pixel_color(x, y);
+            return true;
+        }
+    }
+    return false;
+}
+
+
+COMMAND_BODY(PixTest)
+// ----------------------------------------------------------------------------
+//   Check if a pixel is on or off
+// ----------------------------------------------------------------------------
+{
+    color c(0);
+    if (pixel_color(c))
+    {
+        algebraic_g level = integer::make(c.red() + c.green() + c.blue());
+        algebraic_g scale = integer::make(3 * 255);
+        scale = level / scale;
+        if (scale && rt.top(scale))
+            return object::OK;
+    }
+    return object::ERROR;
+}
+
+
+COMMAND_BODY(PixColor)
+// ----------------------------------------------------------------------------
+//   Check the RGB components of a pixel
+// ----------------------------------------------------------------------------
+{
+    color c(0);
+    if (pixel_color(c))
+    {
+        algebraic_g scale = integer::make(255);
+        algebraic_g red = algebraic_g(integer::make(c.red())) / scale;
+        algebraic_g green = algebraic_g(integer::make(c.green())) / scale;
+        algebraic_g blue = algebraic_g(integer::make(c.blue())) / scale;
+        if (scale && rt.top(+red) && rt.push(+green) && rt.push(+blue))
+            return object::OK;
+    }
+    return object::ERROR;
 }
 
 

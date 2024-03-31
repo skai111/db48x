@@ -94,6 +94,9 @@ struct blitter
         // The constructor takes red/green/blue values
         color(uint8_t red, uint8_t green, uint8_t blue);
 
+        // The constructor from a bit pattern
+        color(pixword bits);
+
         // Return the components
         uint8_t red();
         uint8_t green();
@@ -319,6 +322,15 @@ struct blitter
             return y2 - y1 + 1;
         }
 
+        bool contains(point p) const
+        // --------------------------------------------------------------------
+        //   Return true if point is inside the rectangle
+        // --------------------------------------------------------------------
+        {
+            return p.x >= x1 && p.x <= x2 && p.y >= y1 && p.y <= y2;
+        }
+
+
       public:
         coord x1, y1, x2, y2;
     };
@@ -450,6 +462,27 @@ struct blitter
         {
             return h;
         }
+
+
+        color pixel_color(coord x, coord y) const
+        // --------------------------------------------------------------------
+        //   Return the color for the given pixel
+        // --------------------------------------------------------------------
+        {
+            if (drawable.contains(point(x,y)))
+            {
+                horizontal_adjust(x,x);
+                vertical_adjust(y,y);
+                offset   po = pixel_offset(x, y);
+                pixword *pa = pixel_address(po);
+                offset   ps = pixel_shift(po);
+                pixword  pw = *pa;
+                pixword  pc = (pw >> ps) & ~(~0U << BPP);
+                return color(pc);
+            }
+            return color(0);
+        }
+
 
         template <clipping Clip = FILL_SAFE>
         void fill(const rect &r, pattern colors = pattern::black)
@@ -673,10 +706,10 @@ struct blitter
 
 
 
-      protected:
+    protected:
         offset pixel_offset(coord x, coord y) const
         // ---------------------------------------------------------------------
-        //   Offset in words in a given surface for the given coordinates
+        //   Offset in bits in a given surface for the given coordinates
         // ---------------------------------------------------------------------
         {
             return ((offset) scanline * y + x) * (offset) BPP;
@@ -700,11 +733,11 @@ struct blitter
 
     protected:
         friend struct blitter;
-        pixword *pixels;   // Word-aligned address of surface buffer
-        size     w;    // Pixel width of buffer
-        size     h;   // Pixel height of buffer
-        size     scanline; // Scanline for the buffer (can be > width)
-        rect     drawable; // Draw area (clipping outside)
+        pixword *pixels;        // Word-aligned address of surface buffer
+        size     w;             // Pixel width of buffer
+        size     h;             // Pixel height of buffer
+        size     scanline;      // Scanline for the buffer (can be > width)
+        rect     drawable;      // Draw area (clipping outside)
     };
 
 
@@ -865,8 +898,8 @@ union blitter::color<blitter::mode::MONOCHROME>
 {
     color(uint8_t red, uint8_t green, uint8_t blue)
         : value((red + green + green + blue) / 4 >= 128)
-    {
-    }
+    { }
+    color(pixword pix): value(pix != 0) {}
 
     uint8_t red()
     {
@@ -902,6 +935,7 @@ union blitter::color<blitter::mode::MONOCHROME_REVERSE>
         : value((red + green + green + blue) / 4 < 128)
     {
     }
+    color(pixword pix): value(pix == 0) {}
 
     uint8_t red()
     {
@@ -935,8 +969,8 @@ union blitter::color<blitter::mode::GRAY_4BPP>
 {
     color(uint8_t red, uint8_t green, uint8_t blue)
         : value(0xF - (red + green + green + blue) / 64)
-    {
-    }
+    {}
+    color(pixword pix): value(pix & 15) {}
 
     uint8_t red()
     {
@@ -990,8 +1024,8 @@ union blitter::color<blitter::mode::RGB_16BPP>
     // Build a color from normalized RGB values
     color(uint8_t red, uint8_t green, uint8_t blue)
         : rgb16(red >> 3, green >> 2, blue >> 3)
-    {
-    }
+    {}
+    color(pixword pix): value(pix & 0xFFFF) {}
 
     uint8_t red()
     {

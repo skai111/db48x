@@ -157,7 +157,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        editor_operations();
+        graphic_commands();
     }
     else
     {
@@ -7050,6 +7050,47 @@ void tests::graphic_commands()
          "1 LineWidth 0 Gray Foreground 1 Gray Background "
          "{ -1 -1 } { 3 2 } rect",
          ENTER).noerror().image("cleanup");
+
+    step("PixOn")
+        .test(CLEAR,
+              "0 "
+              "0 5000 for i"
+              " 0.005 i * i 1.5 * R→P pixon "
+              " 0.005 i * i 1.5 * R→P pix? 1 - neg + "
+              "next",
+              LENGTHY(5000), ENTER)
+        .image("pixon")
+        .test(ENTER).expect("5 001");
+    step("PixOff")
+        .test(CLEAR,
+              "0 LINEWIDTH { #0 #0 } { 10#400 10#240 } rect 3 LINEWIDTH "
+              "0 "
+              "0 5000 for i"
+              " 0.002 i * i 1.5 * R→P pixoff "
+              " 0.002 i * i 1.5 * R→P pixelcolor + + + "
+              "next "
+              "1 LINEWIDTH",
+              LENGTHY(5000), ENTER)
+        .image("pixoff")
+        .test(ENTER)
+        .expect("12 429");
+
+    step("PixTest")
+        .test(CLEAR,
+              "CLLCD "
+              "0 399 for i "
+              "{ } 10#0 i + + 10#100 + "
+              "if i 997.42 * sin 0 > then pixon else pixoff end "
+              "next "
+              "0 "
+              "0 399 for i "
+              "{ } 10#0 i + + 10#100 + "
+              "pix? i 997.42 * sin 0 > 0 1 IFTE - 1 + +  "
+              "next",
+              LENGTHY(5000), ENTER)
+        .image("pixtest")
+        .test(ENTER).expect("400");
+
 }
 
 
