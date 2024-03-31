@@ -18,7 +18,7 @@ OPT=release
 # OPT=faster	-O3
 # OPT=fastest	-O4 -Ofast
 # Experimentally, O2 performs best on DM42
-# (see https://github.com/c3d/DB48X-on-DM42/issues/66)
+# (see https://github.com/c3d/db48x/issues/66)
 
 # Warning: macOSX only
 MOUNTPOINT=/Volumes/$(VARIANT)/

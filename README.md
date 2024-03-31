@@ -1,4 +1,4 @@
-# DB48X on DM42
+# DB48X: A modern implementation of RPL
 
 The DB48X project intends to rebuild and improve the user experience of the
 HP48 family of calculators, notably their "Reverse Polish Lisp" (RPL)

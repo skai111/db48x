@@ -36,10 +36,10 @@ At this point in time, you should only installing this if you are interested in
 contributing to the project, whether it is in the form of code, feedback or
 documentation changes. Please refer to the web site of the project on GitHub or
 GitLab for details and updates. The best way to
-[report an issue](https://github.com/c3d/DB48X-on-DM42/issues),
-[request an improvement](https://github.com/c3d/DB48X-on-DM42/issues/new)
-or [submit a proposed change](https://github.com/c3d/DB48X-on-DM42/pulls) is
-on the project's [GitHub page](https://github.com/c3d/DB48X-on-DM42).
+[report an issue](https://github.com/c3d/db48x/issues),
+[request an improvement](https://github.com/c3d/db48x/issues/new)
+or [submit a proposed change](https://github.com/c3d/db48x/pulls) is
+on the project's [GitHub page](https://github.com/c3d/db48x).
 
 The [implementation status](#implementation-status) section categorizes all the
 RPL commands in the HP50G and in DB48X into "implemented", "not implemented" and
@@ -52,7 +52,7 @@ existing DM42 physical hardware.
 <!--- DM42 --->
 Ideally, DB48X should be fully usable without a
 keyboard overlay. though one is
-[being worked on](https://github.com/c3d/DB48X-on-DM42/blob/stable/Keyboard-Layout.png).
+[being worked on](https://github.com/c3d/db48x/blob/stable/Keyboard-Layout.png).
 
 Compared to the original HP48, the DM42 has a much larger screen, but no
 annunciators (it is a fully bitmap screen). It has a keyboard with dedicated
@@ -65,7 +65,7 @@ The DM32 keyboard layout is really different compared to the DB48X expected
 layout. For example, the DM32 does not have unshifted arrow keys, and has two
 shift keys. For that reason, when running DB48X on a DM32, it is highly
 recommended to use a
-[keyboard overlay](https://github.com/c3d/DB48X-on-DM42/blob/stable/Keyboard-Layout.png).
+[keyboard overlay](https://github.com/c3d/db48x/blob/stable/Keyboard-Layout.png).
 
 Compared to the original HP48, the DM32 has a much larger screen, but no
 annunciators (it is a fully bitmap screen). It has a keyboard with dedicated
@@ -681,7 +681,7 @@ To navigate the help on the calculator, use the following keys:
 
 DB48X is Free Software, see the LICENSE file for details.
 You can obtain the source code for this software at the following URL:
-https://github.com/c3d/DB48X-on-DM42.
+https://github.com/c3d/db48x.
 
 
 ### Authors

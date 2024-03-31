@@ -41,7 +41,7 @@ _._, _5_, _ENTER_, _2_, _._, _8_, _×_, _+_. The result, `59.6`, shows on the
 stack. Prior to pressing the _+_ key, the intermediate results for the two
 multiplications, `49.8` and `9.8`, could be seen on the stack.
 
-<video src="https://github.com/c3d/DB48X-on-DM42/assets/1695924/e185f3e8-dd36-4beb-a6c5-03bf489d91a7"></video>
+<video src="https://github.com/c3d/db48x/assets/1695924/e185f3e8-dd36-4beb-a6c5-03bf489d91a7"></video>
 
 RPL also supports the standard algebraic notation. Begin the computation with
 the _'()_ key. The editor contains quotes, `''` with the cursor between
@@ -52,7 +52,7 @@ or `'6×8.3+3.5×2.8'`. Press `ENTER` and the expression shows up on the
 stack. Hitting the _=_ / _EVAL_ / _SPC_ key (located between the _._ and _+_
 keys) evaluates the expression, to get the result `59.6`.
 
-<video src="https://github.com/c3d/DB48X-on-DM42/assets/1695924/ba81f9f0-ec4d-4619-bf95-c56c14210fc3"></video>
+<video src="https://github.com/c3d/db48x/assets/1695924/ba81f9f0-ec4d-4619-bf95-c56c14210fc3"></video>
 
 Algebraic and reverse-polish computations are equivalent, and can be mixed and
 matched during computations. Using one or the other is stricly a matter of
@@ -67,7 +67,7 @@ in 8 slices. Using the RPL approach, we would type _2_, _2_, _ENTER_, _8_,
 _÷_. Using the algebraic notation, we would type _'()_, _2_, _2_, _÷_, _8_,
 _ENTER_ and then use the _=_ to perform the computation.
 
-<video src="https://github.com/c3d/DB48X-on-DM42/assets/1695924/89ebbf7a-f331-4729-a1b9-1527287daa3e"></video>
+<video src="https://github.com/c3d/db48x/assets/1695924/89ebbf7a-f331-4729-a1b9-1527287daa3e"></video>
 
 With the default settings, you should see a mixed fraction, `2 ³/₄`. Unlike many
 calculators, DB48X by default perform exact computations on fractions instead of
@@ -86,7 +86,7 @@ directly available on the keyboard.
 We can compute the length of the diagonal of a rectangle with sides 2m and 3m
 using the Pythagorean theorem, and display it in millimeters.
 
-<video src="https://github.com/c3d/DB48X-on-DM42/assets/1695924/899ad5f3-fd0b-4695-86bb-0b682a191422"></video>
+<video src="https://github.com/c3d/db48x/assets/1695924/899ad5f3-fd0b-4695-86bb-0b682a191422"></video>
 
 In RPL, we can type the following sequence: _2_, _x²_ (🟨 _C_), _3_, _x²_,
 _+_, _√x_ (_C_), _1_, _0_, _0_, _0_, _×_. The decimal result,
@@ -107,7 +107,7 @@ In the algebraic expression, we have multiplied by 1000 first, whereas in the
 RPL case, we multiplied by 1000 last. We can also multiply by 1000 last in
 algebraic mode. There are at least two ways to do it.
 
-<video src="https://github.com/c3d/DB48X-on-DM42/assets/1695924/88cb7865-87cb-427e-b18b-33086bcbabd5"></video>
+<video src="https://github.com/c3d/db48x/assets/1695924/88cb7865-87cb-427e-b18b-33086bcbabd5"></video>
 
 A first method is to use the arrow key to exit the parentheses around the
 argument of the square root function, as follows: _'()_, _√x_,
@@ -133,7 +133,7 @@ like:
 
 * If we need to reach 60 cm above ground, what is the required slope?
 
-<video src="https://github.com/c3d/DB48X-on-DM42/assets/1695924/a90b32c4-a903-4421-a768-c6b6b2afddec"></video>
+<video src="https://github.com/c3d/db48x/assets/1695924/a90b32c4-a903-4421-a768-c6b6b2afddec"></video>
 
 In RPL, can answer the first question by typing _1_, _0_, _SIN_, _5_,
 _×_. The result is shown in scientific format as `8.68240 88833 5×₁₀⁻¹`.
@@ -160,7 +160,7 @@ The scientific notation may not be the most readable in that case. How do we
 display this result with three digits? We will use a *menu* for that. Menus are
 an essential component of the DB48X user interface.
 
-<video src="https://github.com/c3d/DB48X-on-DM42/assets/1695924/be997041-74f9-489b-9583-b94036b9dc33"></video>
+<video src="https://github.com/c3d/db48x/assets/1695924/be997041-74f9-489b-9583-b94036b9dc33"></video>
 
 Let us type 🟨 _O_ (_Disp_). This shows the `DisplayModesMenu`. The menu
 occupies three rows at the bottom of the screen, with six columns. Menus can
@@ -190,7 +190,7 @@ hold the corresponding key until the help shows up. For instance, to get
 This also works for normal keyboard operations. For instance, if you hold the
 _SIN_ key, you will get the [help about the sine command](#sin).
 
-<video src="https://github.com/c3d/DB48X-on-DM42/assets/1695924/55d312a4-3977-421e-9cdf-65d8b5ff5036"></video>
+<video src="https://github.com/c3d/db48x/assets/1695924/55d312a4-3977-421e-9cdf-65d8b5ff5036"></video>
 
 You should refer to the on-line help whenever you have a question about a
 specific command.
@@ -203,7 +203,7 @@ degrees, the default angle mode for DB48X. When applied to angles, the `Cycle`
 command on the _EEX_ key cycles between various angle units: degrees, radians,
 grads and pi-radians, i.e. a number of radians shown as a multiple of π.
 
-<video src="https://github.com/c3d/DB48X-on-DM42/assets/1695924/5d23f388-b034-45cd-9d4d-7685b7f211f0"></video>
+<video src="https://github.com/c3d/db48x/assets/1695924/5d23f388-b034-45cd-9d4d-7685b7f211f0"></video>
 
 The function also alternates between decimal and fractional representations of
 angles.
@@ -242,7 +242,7 @@ For example, in our effort to build a plank ramp, we may need more than one
 plank. How far and how high can you reach if you have a 5 meter plank with a
 slope of 10 degrees, followed by a 3 meters plank with a slope of 30 degrees?
 
-<video src="https://github.com/c3d/DB48X-on-DM42/assets/1695924/a17d5404-ad05-4a4d-8c62-069f327b3428"></video>
+<video src="https://github.com/c3d/db48x/assets/1695924/a17d5404-ad05-4a4d-8c62-069f327b3428"></video>
 
 We can add two complex numbers in phasor form to answer that question.
 In order to enter the complex number representing the first plank, we need the
@@ -264,7 +264,7 @@ If you are living in the United States, having the results in meters might not
 be convenient. You can use the DB48X built-in units in order to convert the
 result above into feet, yards or inches.
 
-<video src="https://github.com/c3d/DB48X-on-DM42/assets/1695924/1fd54b22-5d1e-42bc-ac3a-2be5770422cf"></video>
+<video src="https://github.com/c3d/db48x/assets/1695924/1fd54b22-5d1e-42bc-ac3a-2be5770422cf"></video>
 
 Select the `UnitMenu` with 🟨 _5_. This shows a catalog of unit categories. We
 can select the `Length` category using the _F4_ key. In order to indicate that
@@ -890,7 +890,7 @@ does not have a `NXT` key unlike HP calculators. Instead, when necessary, the
 ### Downloading the software
 
 You can download pre-built versions of the firmware from the releases page of
-the project (https://github.com/c3d/DB48X-on-DM42/releases), or alternatively,
+the project (https://github.com/c3d/db48x/releases), or alternatively,
 you can download the source code and build it yourself.
 
 <!--- DM42 --->
