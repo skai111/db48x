@@ -631,14 +631,12 @@ MENU(BasesMenu,
      Base::label, ID_Base,
      WordSize::label,  ID_WordSize,
 
-     ID_And,
-     ID_Or,
-     ID_Xor,
-     ID_Not,
-     "neg",     ID_neg,
-
+     "SetBit",  ID_SetBit,
+     "ClrBit",  ID_ClearBit,
+     "FlipBit", ID_FlipBit,
      "FstSet",  ID_Unimplemented,
      "LstSet",  ID_Unimplemented,
+
      "PopCnt",  ID_Unimplemented,
      "1-comp",  ID_OnesComplement,
      "2-comp",  ID_TwosComplement);

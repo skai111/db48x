@@ -67,6 +67,8 @@ struct logical : arithmetic
     static ularge       asr(ularge X, ularge Y = 1);
     static bignum_p     asr(bignum_r X, bignum_r Y);
     static bignum_p     asr(bignum_r X, uint Y = 1);
+    static ularge       bit(ularge X);
+    static bignum_g     bit(bignum_r X);
 };
 
 
@@ -153,5 +155,8 @@ BINARY_LOGICAL_NUM(SRC,     LOGICAL,    Y >> X);
 BINARY_LOGICAL_NUM(ASRC,    LOGICAL,    asr(Y, X));
 BINARY_LOGICAL_NUM(RLC,     LOGICAL,    rol(Y, X));
 BINARY_LOGICAL_NUM(RRC,     LOGICAL,    ror(Y, X));
+BINARY_LOGICAL_NUM(SetBit,  LOGICAL,    Y |  bit(X));
+BINARY_LOGICAL_NUM(ClearBit,LOGICAL,    Y & ~bit(X));
+BINARY_LOGICAL_NUM(FlipBit, LOGICAL,    Y ^  bit(X));
 
 #endif // LOGICAL_H

@@ -593,6 +593,10 @@ NAMED(SLC, "ShiftLeftCount")
 NAMED(SRC, "ShiftRightCount")
 NAMED(ASRC, "ArithmeticShiftRightCount")
 
+CMD(SetBit)
+CMD(ClearBit)
+CMD(FlipBit)
+
 // Binary operations
 OP(NAnd,        "nand")
 OP(NOr,         "nor")

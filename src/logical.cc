@@ -360,3 +360,29 @@ bignum_p logical::asr(bignum_r x, bignum_r y)
         return nullptr;
     return bignum::shift(x, -int(shift), false, true);
 }
+
+
+ularge logical::bit(ularge X)
+// ----------------------------------------------------------------------------
+//   Return the bit for the given bit index
+// ----------------------------------------------------------------------------
+{
+    uint ws = Settings.WordSize();
+    if (X > ws)
+        return 0;
+    return 1ULL << X;
+}
+
+
+bignum_g logical::bit(bignum_r X)
+// ----------------------------------------------------------------------------
+//   Return the bit for the given bit index
+// ----------------------------------------------------------------------------
+{
+    bignum_g one = bignum::make(1);
+    uint ws = Settings.WordSize();
+    uint shift = X->as_uint32();
+    if (shift > ws)
+        return bignum::make(0);
+    return bignum::shift(one, shift, false, false);
+}
