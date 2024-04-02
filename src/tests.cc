@@ -8164,7 +8164,7 @@ tests &tests::image_noheader(cstring name, uint ignoremenus, uint extrawait)
 //   Image, skipping the header area
 // ----------------------------------------------------------------------------
 {
-    const int header_h = 20;
+    const int header_h = 23;
     const int menu_h = 22 * ignoremenus;
     return image(name, 0, header_h, LCD_W, LCD_H - header_h - menu_h, extrawait);
 }
