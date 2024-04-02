@@ -701,32 +701,43 @@ COMMAND_BODY(Show)
                     delta = delta == 1 ? 8 : delta == 8 ? 32 : 1;
                     break;
                 case KEY_DOWN:
+                    if (width <= LCD_W)
+                    {
                 case KEY_2:
-                    if (y + delta + LCD_H < coord(height))
-                        y += delta;
-                    else if (height > LCD_H)
-                        y = height - LCD_H;
+                        if (y + delta + LCD_H < coord(height))
+                            y += delta;
+                        else if (height > LCD_H)
+                            y = height - LCD_H;
+                        else
+                            y = 0;
+                        update = true;
+                        break;
+                    }
                     else
-                        y = 0;
-                    update = true;
-                    break;
-                case KEY_UP:
-                case KEY_8:
-                    if (y > delta)
-                        y -= delta;
-                    else
-                        y = 0;
-                    update = true;
-                    break;
+                    {
                 case KEY_6:
-                    if (x + delta + LCD_W < coord(width))
-                        x += delta;
-                    else if (width > LCD_W)
-                        x = width - LCD_W;
+                        if (x + delta + LCD_W < coord(width))
+                            x += delta;
+                        else if (width > LCD_W)
+                            x = width - LCD_W;
+                        else
+                            x = 0;
+                        update = true;
+                        break;
+                    }
+                case KEY_UP:
+                    if (width <= LCD_W)
+                    {
+                case KEY_8:
+                        if (y > delta)
+                            y -= delta;
+                        else
+                            y = 0;
+                        update = true;
+                        break;
+                    }
                     else
-                        x = 0;
-                    update = true;
-                    break;
+                    {
                 case KEY_4:
                     if (x > delta)
                         x -= delta;
@@ -734,6 +745,7 @@ COMMAND_BODY(Show)
                         x = 0;
                     update = true;
                     break;
+                    }
                 case 0:
                     break;
 

@@ -5600,7 +5600,8 @@ erasing the background (the first `true`), in reverse colors (the second
 Display the first level of the stack using the entire screen, with a possible
 scroll using the 4, 8, 6 and 2 keys if the object is larger than fits on screen.
 This makes it possible to comfortably examine very large objects, like `300!`, a
-large program or a complicated equation.
+large program or a complicated equation. Arrow keys can also be used for
+horizonal or vertical scrolling.
 
 The maximum size of the graphic object is defined by the
 [MaximumShowWidth](#maximumshowwidth) and
