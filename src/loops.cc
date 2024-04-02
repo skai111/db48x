@@ -380,7 +380,10 @@ intptr_t loop::object_renderer(renderer &r,
 
     // Emit closing separator
     r.unindent();
-    r.wantSpace();
+    if (r.editing() && Settings.VerticalProgramRendering())
+        r.wantCR();
+    else
+        r.wantSpace();
     r.put(format, utf8(close));
     r.wantCR();
 

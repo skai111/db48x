@@ -450,6 +450,10 @@ intptr_t list::list_render(renderer &r, unicode open, unicode close) const
         // Render the object in what remains (may GC)
         if (oty != ID_array)
             r.wantSpace();
+        if ((lty == ID_program || lty == ID_block) &&
+            r.editing() &&
+            Settings.VerticalProgramRendering())
+            r.wantCR();
         obj->render(r);
         if (!unnest && oty != ID_array)
             r.wantSpace();

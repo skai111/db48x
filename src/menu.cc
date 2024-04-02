@@ -1353,7 +1353,8 @@ MENU(UserInterfaceModesMenu,
      "cmd",                                     ID_LowerCase,
      "CMD",                                     ID_UpperCase,
      "Cmd",                                     ID_Capitalized,
-     "Command",                                 ID_LongForm);
+     "Command",                                 ID_LongForm,
+     "VProg",                                   ID_VerticalProgramRendering);
 
 MENU(MathModesMenu,
 // ----------------------------------------------------------------------------

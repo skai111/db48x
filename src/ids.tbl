@@ -781,6 +781,7 @@ FLAG(NoAngleUnits,              SetAngleUnits)
 FLAG(VerticalLists,             HorizontalLists)
 FLAG(VerticalVectors,           HorizontalVectors)
 FLAG(NeedToClearErrors,         NoNeedToClearErrors)
+FLAG(VerticalProgramRendering,  HorizontalProgramRendering)
 
 
 ALIAS(HardwareFloatingPoint,    "HFP")
