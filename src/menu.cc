@@ -1354,7 +1354,12 @@ MENU(UserInterfaceModesMenu,
      "CMD",                                     ID_UpperCase,
      "Cmd",                                     ID_Capitalized,
      "Command",                                 ID_LongForm,
-     "VProg",                                   ID_VerticalProgramRendering);
+     "VProg",                                   ID_VerticalProgramRendering,
+
+     EditorWrapColumn::label,                   ID_EditorWrapColumn,
+     TabWidth::label,                           ID_TabWidth,
+     MaximumShowWidth::label,                   ID_MaximumShowWidth,
+     MaximumShowHeight::label,                  ID_MaximumShowHeight);
 
 MENU(MathModesMenu,
 // ----------------------------------------------------------------------------

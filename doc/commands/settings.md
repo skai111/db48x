@@ -483,6 +483,15 @@ Maximum number of horizontal pixels used to display an object with
 
 Maximum number of vertical pixels used to display an object with [Show](#show).
 
+## EditorWrapColumn
+
+Column at which the editor will start wrapping long lines of code.
+Wrapping occurs at the end of an object, not in the middle of it.
+
+## TabWidth
+
+Width of a tab in the editor, in pixels.
+
 # Compatibility
 
 Various settings control the compatibility of DB48X with various classes of HP calculators.

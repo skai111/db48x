@@ -133,7 +133,7 @@ RENDER_BODY(IfThenElse)
     // Write the header
     r.wantCR();
     r.put(format, utf8(o->type() == ID_IfErrThenElse ? "iferr" : "if"));
-    r.wantSpace();
+    r.wantCR();
 
     // Render condition
     r.indent();
@@ -141,23 +141,23 @@ RENDER_BODY(IfThenElse)
     r.unindent();
 
     // Render 'if-true' part
-    r.wantSpace();
+    r.wantCR();
     r.put(format, utf8("then"));
-    r.wantSpace();
+    r.wantCR();
     r.indent();
     ift->render(r);
     r.unindent();
 
     // Render 'if-false' part
-    r.wantSpace();
+    r.wantCR();
     r.put(format, utf8("else"));
-    r.wantSpace();
+    r.wantCR();
     r.indent();
     iff->render(r);
     r.unindent();
 
     // Render the 'end'
-    r.wantSpace();
+    r.wantCR();
     r.put(format, utf8("end"));
 
     return r.size();
@@ -475,13 +475,13 @@ static size_t render_case(renderer &r, cstring first, object_p o)
     auto     format = Settings.CommandDisplayMode();
 
     cond->render(r);
-    r.wantSpace();
+    r.wantCR();
     r.put(format, utf8(first));
-    r.wantSpace();
+    r.wantCR();
     r.indent();
     body->render(r);
     r.unindent();
-    r.wantSpace();
+    r.wantCR();
     r.put(format, utf8("end"));
     r.wantCR();
     return r.size();

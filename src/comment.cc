@@ -69,6 +69,7 @@ RENDER_BODY(comment)
     size_t  len = 0;
     utf8 txt = o->value(&len);
     r.wantCR();
+    settings::SaveEditorWrapColumn sew(0);
     r.put('@');
     r.put(txt, len);
     r.wantCR();

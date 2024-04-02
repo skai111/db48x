@@ -229,7 +229,7 @@ bool font::glyph(unicode codepoint, glyph_info &g) const
     if (codepoint == '\t')
     {
         bool result = glyph(' ', g);
-        g.advance *= 4;
+        g.advance = Settings.TabWidth();
         return result;
     }
 

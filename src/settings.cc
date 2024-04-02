@@ -606,11 +606,18 @@ cstring setting::label(object::id ty)
         return printf("Bits %u", s.MaxNumberBits());
     case ID_MaxRewrites:
         return printf("Rwr %u", s.MaxRewrites());
+    case ID_MaximumShowHeight:
+        return printf("ShowH %u", s.MaximumShowHeight());
+    case ID_MaximumShowWidth:
+        return printf("ShowW %u", s.MaximumShowWidth());
+    case ID_EditorWrapColumn:
+        return printf("EdWrap %u", s.EditorWrapColumn());
+    case ID_TabWidth:
+        return printf("Tab %u", s.TabWidth());
     case ID_ErrorBeepFrequency:
         return printf("Freq %u", s.ErrorBeepFrequency());
     case ID_ErrorBeepDuration:
         return printf("Dur %u", s.ErrorBeepDuration());
-
     default:
         break;
     }

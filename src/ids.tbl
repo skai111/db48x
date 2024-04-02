@@ -881,6 +881,9 @@ SETTING(MaximumShowHeight,      LCD_W, 16384U,   2048U)
 ALIAS(MaximumShowWidth,  "MaxW")
 ALIAS(MaximumShowHeight, "MaxH")
 
+SETTING(EditorWrapColumn,       0U, 1000000U, 20U)
+SETTING(TabWidth,               1U, 200U, 30U)
+
 SETTING(ErrorBeepFrequency,     0, 25000,       1400)
 SETTING(ErrorBeepDuration,      0, 500,         50)
 

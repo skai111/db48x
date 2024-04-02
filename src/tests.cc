@@ -245,7 +245,7 @@ void tests::reset_settings()
         .test("ModesMenu", ENTER).noerror();
     step("Checking output modes")
         .test("Modes", ENTER)
-        .expect("« ModesMenu »");
+        .want("« ModesMenu »");
 
     // Check that we can change a setting
     step("Selecting FIX 3")
@@ -253,12 +253,12 @@ void tests::reset_settings()
         .expect("1.235");
     step("Checking Modes for FIX")
         .test("Modes", ENTER)
-        .expect("« 3 FixedDisplay 3 DisplayDigits DisplayModesMenu »");
+        .want("« 3 FixedDisplay 3 DisplayDigits DisplayModesMenu »");
     step("Reseting with command")
         .test("ResetModes", ENTER)
         .noerror()
         .test("Modes", ENTER)
-        .expect("« DisplayModesMenu »");
+        .want("« DisplayModesMenu »");
 }
 
 
@@ -381,7 +381,7 @@ void tests::keyboard_entry()
               NOSHIFT, ADD, ADD)
         .editor("«7 A B + + »");
     step("Space key in immediate mode evaluates")
-        .test(ENTER).expect("« 7 A B + + »")
+        .test(ENTER).want("« 7 A B + + »")
         .test(SPACE).expect("'7+(A+B)'");
     step("F key inserts equation")
         .test(CLEAR, F).editor("''")
@@ -488,7 +488,7 @@ void tests::data_types()
     cstring prgm = "« 1 + sin »";
     test(CLEAR, SHIFT, RUNSTOP, 1, ADD, "sin", ENTER)
         .type(object::ID_program)
-        .expect(prgm);
+        .want(prgm);
 
     step("Equation");
     cstring eqn = "'X+1'";
@@ -861,11 +861,11 @@ void tests::stack_operations()
               F1, F2, F3, F4, F5,
               LSHIFT, F1,
               F6, ENTER)
-        .expect("« Rot Roll Over Pick Depth"
-                " UnRot RollDown Duplicate2 Drop2 LastArguments"
-                " Clear Nip DuplicateN DropN LastX"
-                " Duplicate Drop Pick3 Swap"
-                " NDuplicateN »")
+        .want("« Rot Roll Over Pick Depth"
+              " UnRot RollDown Duplicate2 Drop2 LastArguments"
+              " Clear Nip DuplicateN DropN LastX"
+              " Duplicate Drop Pick3 Swap"
+              " NDuplicateN »")
         .test(BSP).noerror()
         .test(BSP).error("Too few arguments");
 
@@ -4546,7 +4546,7 @@ void tests::cycle_test()
         .test(CLEAR, "{ 1 2 3 }", ENTER).expect("{ 1 2 3 }")
         .test(O).expect("[ 1 2 3 ]");
     step("Convert array to program")
-        .test(O).expect("« 1 2 3 »");
+        .test(O).want("« 1 2 3 »");
     step("Convert program to list")
         .test(O).expect("{ 1 2 3 }");
     step("Delete tag")
@@ -6091,9 +6091,9 @@ void tests::insertion_of_variables_constants_and_units()
 
     step("Test that constants parse")
         .test(ENTER)
-        .expect("« π e ⅈ ⅉ ∞ ? "
-                "3.14159 26535 9 2.71828 18284 6 0+1ⅈ 0+1ⅈ 9.99999⁳⁹⁹⁹⁹⁹⁹ "
-                "Undefined »", 300);
+        .want("« π e ⅈ ⅉ ∞ ? "
+              "3.14159 26535 9 2.71828 18284 6 0+1ⅈ 0+1ⅈ 9.99999⁳⁹⁹⁹⁹⁹⁹ "
+              "Undefined »", 300);
 
     step("Select library menu")
         .test(CLEAR, RSHIFT, H).noerror();
@@ -6117,18 +6117,18 @@ void tests::insertion_of_variables_constants_and_units()
 
     step("Test that xlibs parse")
         .test(ENTER)
-        .expect("« Dedicace LibraryHelp »");
+        .want("« Dedicace LibraryHelp »");
     step("Test that xlib can be edited")
         .test(DOWN)
-        .editor("« ⓁDedicace ⓁLibraryHelp »");
+        .editor("«\n\tⓁDedicace ⓁLibraryHelp\n»");
     step("Test that xlib edit can be entered")
         .test(ENTER)
-        .expect("« Dedicace LibraryHelp »");
+        .want("« Dedicace LibraryHelp »");
     step("Test that xlib name can be edited")
         .test(DOWN)
-        .editor("« ⓁDedicace ⓁLibraryHelp »")
+        .editor("«\n\tⓁDedicace ⓁLibraryHelp\n»")
         .test(DOWN, DOWN, DOWN, DOWN, "ee")
-        .editor("« ⓁDeeedicace ⓁLibraryHelp »");
+        .editor("«\n\tⓁeeDedicace ⓁLibraryHelp\n»");
     step("Test that bad xlib name is detected")
         .test(ENTER)
         .error("Invalid or unknown library entry")
@@ -6153,39 +6153,39 @@ void tests::insertion_of_variables_constants_and_units()
     step("Enter 27_m in program and evaluate it")
         .test(CLEAR, LSHIFT, RUNSTOP).editor("«»")
         .test("27", NOSHIFT, F1).editor("«27_m »")
-        .test(ENTER).expect("« 27 m »")
+        .test(ENTER).want("« 27 m »")
         .test(RUNSTOP).expect("27 m");
     step("Enter 27_yd in program and evaluate it")
         .test(CLEAR, LSHIFT, RUNSTOP).editor("«»")
         .test("27", NOSHIFT, F2).editor("«27_yd »")
-        .test(ENTER).expect("« 27 yd »")
+        .test(ENTER).want("« 27 yd »")
         .test(RUNSTOP).expect("27 yd");
     step("Enter 27_ft in program and evaluate it")
         .test(CLEAR, LSHIFT, RUNSTOP).editor("«»")
         .test("27", NOSHIFT, F3).editor("«27_ft »")
-        .test(ENTER).expect("« 27 ft »")
+        .test(ENTER).want("« 27 ft »")
         .test(RUNSTOP).expect("27 ft");
 
     step("Enter A with unit _m in program and evaluate it")
         .test(CLEAR, LSHIFT, RUNSTOP).editor("«»")
         .test("A", NOSHIFT, F1).editor("«A 1_m * »")
-        .test(ENTER).expect("« A 1 m × »")
+        .test(ENTER).want("« A 1 m × »")
         .test(RUNSTOP).expect("'A' m");
 
     step("Enter 27_m⁻¹ in program and evaluate it")
         .test(CLEAR, LSHIFT, RUNSTOP).editor("«»")
         .test("27", RSHIFT, F1).editor("«27_(m)⁻¹ »")
-        .test(ENTER).expect("« 27 m⁻¹ »")
+        .test(ENTER).want("« 27 m⁻¹ »")
         .test(RUNSTOP).expect("27 m⁻¹");
     step("Enter 27_yd⁻¹ in program and evaluate it")
         .test(CLEAR, LSHIFT, RUNSTOP).editor("«»")
         .test("27", RSHIFT, F2).editor("«27_(yd)⁻¹ »")
-        .test(ENTER).expect("« 27 yd⁻¹ »")
+        .test(ENTER).want("« 27 yd⁻¹ »")
         .test(RUNSTOP).expect("27 yd⁻¹");
     step("Enter 27_ft⁻¹ in program and evaluate it")
         .test(CLEAR, LSHIFT, RUNSTOP).editor("«»")
         .test("27", RSHIFT, F3).editor("«27_(ft)⁻¹ »")
-        .test(ENTER).expect("« 27 ft⁻¹ »")
+        .test(ENTER).want("« 27 ft⁻¹ »")
         .test(RUNSTOP).expect("27 ft⁻¹");
 
     step("Select variables menu")
@@ -6205,7 +6205,7 @@ void tests::insertion_of_variables_constants_and_units()
     step("Check position of insertion point")
         .test("ABC").editor("« Baz  Foo ABC»");
     step("Check we can parse resulting program")
-        .test(ENTER).expect("« Baz Foo ABC »");
+        .test(ENTER).want("« Baz Foo ABC »");
     step("Check evaluation of program")
         .test(RUNSTOP).expect("'ABC'")
         .test(BSP).expect("1 968")
@@ -6222,8 +6222,8 @@ void tests::insertion_of_variables_constants_and_units()
         .test(RSHIFT, F2).editor("« 'Baz' Recall  'Foo' Recall  "
                                  "'Baz' Store  'Foo' Store »");
     step("Check that it parses")
-        .test(ENTER).expect("« 'Baz' Recall 'Foo' Recall "
-                            "'Baz' Store 'Foo' Store »");
+        .test(ENTER).want("« 'Baz' Recall 'Foo' Recall "
+                          "'Baz' Store 'Foo' Store »");
     step("Check evaluation")
         .test(RUNSTOP)
         .test(CLEAR, F1).expect("1 968")
@@ -6605,7 +6605,7 @@ void tests::regression_checks()
          ENTER)
         .noerror().type(object::ID_program)
         .test(RUNSTOP)
-        .noerror().type(object::ID_program).expect("« N »")
+        .noerror().type(object::ID_program).want("« N »")
         .test(BSP)
         .noerror().type(object::ID_expression).expect("'→N'");
 
@@ -6661,7 +6661,7 @@ void tests::plotting()
          RSHIFT, O, LENGTHY(200), F1)
         .noerror().image("plot-nofill");
     step("Check that LastArgs gives us the previous plot")
-        .test(CLEAR, LSHIFT, M).expect("« Duplicate tan Swap 41 × sin × »");
+        .test(CLEAR, LSHIFT, M).want("« Duplicate tan Swap 41 × sin × »");
     step("Function plot: Disable curve filling with flag -31");
     test("-31 CF", ENTER,
          RSHIFT, O, LENGTHY(200), F1)

@@ -43,19 +43,19 @@ struct renderer
 {
     renderer(char *buf = nullptr, size_t len = ~0U,
              bool stk = false, bool ml = false)
-        : target(buf), length(len), written(0), saving(), tabs(0),
+        : target(buf), length(len), written(0), saving(), tabs(0), column(0),
           edit(!stk && buf == nullptr),
           expr(false), stk(stk), mlstk(ml), txt(false),
           needSpace(false), gotSpace(false),
           needCR(false), gotCR(false) {}
     renderer(bool equation, bool edit = false, bool stk = false, bool ml = false)
-        : target(nullptr), length(~0U), written(0), saving(), tabs(0),
+        : target(), length(~0U), written(0), saving(), tabs(0), column(0),
           edit(edit),
           expr(equation), stk(stk), mlstk(ml), txt(false),
           needSpace(false), gotSpace(false),
           needCR(false), gotCR(false) {}
     renderer(file &f)
-        : target(), length(~0U), written(0), saving(&f), tabs(0),
+        : target(), length(~0U), written(0), saving(&f), tabs(0), column(0),
           edit(true),
           expr(false), stk(false), mlstk(false), txt(false),
           needSpace(false), gotSpace(false),
@@ -134,6 +134,7 @@ protected:
     size_t written;       // Number of bytes written
     file  *saving;        // Save area for a program or object
     uint   tabs;          // Amount of indent
+    uint   column;        // Current column
     bool   edit      : 1; // For editor (e.g. render all digits)
     bool   expr      : 1; // As equation
     bool   stk       : 1; // Format for stack rendering

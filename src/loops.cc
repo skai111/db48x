@@ -359,31 +359,28 @@ intptr_t loop::object_renderer(renderer &r,
 
     // Ident condition or first body
     r.indent();
-    r.wantSpace();
+    r.wantCR();
 
     // Emit the first object (e.g. condition in do-until)
     first->render(r);
-    r.wantSpace();
+    r.wantCR();
 
     // Emit the second object if there is one
     if (middle)
     {
         // Emit separator after condition
         r.unindent();
-        r.wantSpace();
+        r.wantCR();
         r.put(format, utf8(middle));
         r.indent();
-        r.wantSpace();
+        r.wantCR();
         second->render(r);
-        r.wantSpace();
+        r.wantCR();
     }
 
     // Emit closing separator
     r.unindent();
-    if (r.editing() && Settings.VerticalProgramRendering())
-        r.wantCR();
-    else
-        r.wantSpace();
+    r.wantCR();
     r.put(format, utf8(close));
     r.wantCR();
 

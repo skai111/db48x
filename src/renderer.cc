@@ -111,6 +111,11 @@ bool renderer::put(char c)
             gotSpace = spc;
         }
 
+        if (spc && !cr && edit)
+            if (uint maxcol = Settings.EditorWrapColumn())
+                if (column > maxcol)
+                    needCR = true;;
+
         // Check if we need ot emit a CR
         if (needCR)
         {
@@ -158,12 +163,17 @@ bool renderer::put(char c)
     {
         needCR = false;
         needSpace = false;
+        column = 0;
         if (!txt)
         {
             for (uint i = 0; i < tabs; i++)
                 if (!put('\t'))
                     return false;
         }
+    }
+    else
+    {
+        column++;
     }
     gotCR = cr;
     gotSpace = spc;

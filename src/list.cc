@@ -382,11 +382,11 @@ intptr_t list::list_render(renderer &r, unicode open, unicode close) const
 // ----------------------------------------------------------------------------
 {
     // Check if we need an indent in the body
-    bool   need_indent = false;
     bool   unnest      = false;
     bool   first       = true;
     list_g list        = this;
     id     lty         = type();
+    bool   need_indent = lty == ID_program;
 
     for (object_p obj : *list)
     {
