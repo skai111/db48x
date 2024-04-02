@@ -157,7 +157,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        graphic_commands();
+        global_variables();
     }
     else
     {
@@ -405,7 +405,7 @@ void tests::keyboard_entry()
         .test(CLEAR, EXIT, KEY1, KEY2, F,
               ALPHA, A, B, C, NOSHIFT, G).noerror()
         .test(F, ALPHA, A, B, C, ENTER, SPACE).expect("12")
-        .test("'ABC'", ENTER, RSHIFT, G, F6).noerror();
+        .test("'ABC'", ENTER, RSHIFT, G, F3).noerror();
 
     step("Inserting a colon in text editor inserts tag delimiters")
         .test(CLEAR, ALPHA, KEY0).editor("::");
@@ -1139,6 +1139,42 @@ void tests::global_variables()
     test(CLEAR, 1, ENTER, XEQ, "A", ENTER).expect("'A'");
     test("RCL", ENTER).noerror().expect("12 345");
 
+    step("Store with arithmetic")
+        .test(CLEAR, "12 'A' STO+ A", ENTER).expect("12 357")
+        .test(CLEAR, "13 'A' STO- A", ENTER).expect("12 344")
+        .test(CLEAR, "5 'A' STO* A", ENTER).expect("61 720")
+        .test(CLEAR, "2 'A' STO/ A", ENTER).expect("30 860");
+
+    step("Recall with arithmetic")
+        .test(CLEAR, "12 'A' RCL+", ENTER).expect("30 872")
+        .test(CLEAR, "13 'A' RCL-", ENTER).expect("-30 847")
+        .test(CLEAR, "2 'A' RCL*", ENTER).expect("61 720")
+        .test(CLEAR, "2 'A' RCL/", ENTER).expect("¹/₁₅ ₄₃₀");
+
+    step("Memory menu")
+        .test(CLEAR, RSHIFT, G, RSHIFT, RUNSTOP,
+              F1, F2, F3, F4, F5,
+              ENTER)
+        .expect("{ Store Recall Purge CreateDirectory UpDirectory }")
+        .test(RSHIFT, RUNSTOP,
+              LSHIFT, F1, LSHIFT, F2, LSHIFT, F3, LSHIFT, F4, LSHIFT, F5,
+              ENTER)
+        .expect("{ HomeDirectory DirectoryPath CurrentDirectory"
+                " GarbageCollect AvailableMemory }")
+        .test(RSHIFT, RUNSTOP,
+              RSHIFT, F1, RSHIFT, F2, RSHIFT, F3, RSHIFT, F4, RSHIFT, F5,
+              ENTER)
+        .expect("{ FreeMemory SystemMemory PurgeAll Bytes Unimplemented }")
+        .test(F6,
+              RSHIFT, RUNSTOP,
+              F1, F2, F3, F4, F5,
+              ENTER)
+        .expect("{ Store Store+ Store- Store× Store÷ }")
+        .test(RSHIFT, RUNSTOP,
+              LSHIFT, F1, LSHIFT, F2, LSHIFT, F3, LSHIFT, F4, LSHIFT, F5,
+              ENTER)
+        .expect("{ Recall Recall+ Recall- Recall× Recall÷ }");
+
     step("Store in long-name global variable");
     test(CLEAR, "\"Hello World\"", ENTER, XEQ, "SomeLongVariable", ENTER, STO)
         .noerror();
@@ -1200,9 +1236,9 @@ void tests::global_variables()
     test(CLEAR, 1234, ENTER, "Purge", ENTER).error("Invalid name");
 
     step("Store program in global variable");
-    test(CLEAR, "« 1 + »", ENTER, XEQ, "INCR", ENTER, STO).noerror();
+    test(CLEAR, "« 1 + »", ENTER, XEQ, "MyINCR", ENTER, STO).noerror();
     step("Evaluate global variable");
-    test(CLEAR, "A INCR", ENTER).expect("12 346");
+    test(CLEAR, "A MyINCR", ENTER).expect("30 861");
 
     step("Purge global variable");
     test(CLEAR, XEQ, "A", ENTER, "PURGE", ENTER).noerror();
@@ -8432,12 +8468,8 @@ tests &tests::source(cstring ref, uint extrawait)
     if (ref && !src)
         explain("Expected source [", ref, "], got none");
     if (ref && src && strcmp(ref, cstring(src)) != 0)
-        explain("Expected source [",
-                ref,
-                "], "
-                "got [",
-                src,
-                "]");
+        explain("Expected source [", ref, "], "
+                "got [", src, "]");
 
     fail();
     return *this;

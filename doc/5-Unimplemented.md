@@ -902,7 +902,7 @@ Hewlett-Packard RPL implementation.
 * [MatrixMenu](#matrixmenu)
 * [MaxNumberBits](#maxnumberbits): Maximum number of bits used by a number
 * [MaxRewrites](#maxrewrites): Maximum number of equation rewrites
-* [MemMenu](#memmenu)
+* [MemoryMenu](#memorymenu)
 * [MenuFirstPage](#menufirstpage)
 * [MenuNextPage](#menunextpage)
 * [MenuPreviousPage](#menupreviouspage)

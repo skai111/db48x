@@ -4108,7 +4108,7 @@ Hewlett-Packard RPL implementation.
 * [MatrixMenu](#matrixmenu)
 * [MaxNumberBits](#maxnumberbits): Maximum number of bits used by a number
 * [MaxRewrites](#maxrewrites): Maximum number of equation rewrites
-* [MemMenu](#memmenu)
+* [MemoryMenu](#memorymenu)
 * [MenuFirstPage](#menufirstpage)
 * [MenuNextPage](#menunextpage)
 * [MenuPreviousPage](#menupreviouspage)
@@ -5053,19 +5053,35 @@ The format of the file depends on how the name ends:
 
 
 ## StoreAdd (STO+)
-Add to the content of a variable
+Add a value to the content of a variable
 
 
-## StoreSubtract (STO-)
-Subtract from the contents of a variable
+## StoreSub (STO-)
+Subtract a value from the contents of a variable
 
 
-## StoreMultiply (STO×)
-Multiply contents of a variable
+## StoreMul (STO×)
+Multiply the contents of a variable by a value
 
 
-## StoreDivide (STO÷)
-Divide the content of a variable
+## StoreDiv (STO÷)
+Divide the contents of a variable by a value
+
+
+## RecallAdd (RCL+)
+Add the content of a variable to a value on the stack
+
+
+## RecallSub (RCL-)
+Subtract the contents of a variable from a value on a stack
+
+
+## RecallMul (RCL×)
+Multiply a value on the stack by the contents of a variable
+
+
+## RecallDiv (RCL÷)
+Divide a value on the stack by the contents of a variable
 
 
 ## Increment (INCR)

@@ -723,6 +723,72 @@ COMMAND_BODY(Rcl)
 }
 
 
+static object::result store_op(object::id op)
+// ----------------------------------------------------------------------------
+//   Store with a given operation
+// ----------------------------------------------------------------------------
+{
+    directory *dir = rt.variables(0);
+    if (!dir)
+    {
+        rt.no_directory_error();
+        return object::ERROR;
+    }
+
+    object_g name = rt.stack(0);
+    object_g value = rt.stack(1);
+    if (!name || !value)
+        return object::ERROR;
+    object_g existing = directory::recall_all(name, true);
+    if (!existing)
+        return object::ERROR;
+    rt.stack(1, existing);
+    rt.stack(0, value);
+    object_p cmd = object::static_object(op);
+    if (object::result res = cmd->evaluate())
+        return res;
+    value = rt.pop();
+    if (value && dir->store(name, value))
+        return object::OK;
+    return object::ERROR;
+}
+
+
+COMMAND_BODY(StoreAdd)          { return store_op(ID_add); }
+COMMAND_BODY(StoreSub)          { return store_op(ID_sub); }
+COMMAND_BODY(StoreMul)          { return store_op(ID_mul); }
+COMMAND_BODY(StoreDiv)          { return store_op(ID_div); }
+
+
+static object::result recall_op(object::id op)
+// ----------------------------------------------------------------------------
+//   Store with a given operation
+// ----------------------------------------------------------------------------
+{
+    directory *dir = rt.variables(0);
+    if (!dir)
+    {
+        rt.no_directory_error();
+        return object::ERROR;
+    }
+
+    object_g name = rt.stack(0);
+    if (!name)
+        return object::ERROR;
+    object_g existing = directory::recall_all(name, true);
+    if (!existing || !rt.top(existing))
+        return object::ERROR;
+    object_p cmd = object::static_object(op);
+    return cmd->evaluate();
+}
+
+
+COMMAND_BODY(RecallAdd)         { return recall_op(ID_add); }
+COMMAND_BODY(RecallSub)         { return recall_op(ID_sub); }
+COMMAND_BODY(RecallMul)         { return recall_op(ID_mul); }
+COMMAND_BODY(RecallDiv)         { return recall_op(ID_div); }
+
+
 COMMAND_BODY(Purge)
 // ----------------------------------------------------------------------------
 //   Purge a global variable from current directory

@@ -575,6 +575,20 @@ OP(ListDifferences, "∆List")
 NAMED(GetI, "GetIteration")
 NAMED(PutI, "PutIteration")
 
+// Arithmetic store and recall operations
+OP(StoreAdd,    "Store+")               ALIAS(StoreAdd,  "Sto+")
+OP(StoreSub,    "Store-")               ALIAS(StoreSub,  "Sto-")
+OP(StoreMul,    "Store×")               ALIAS(StoreMul,  "Store*")
+ALIAS(StoreMul, "Sto*")                 ALIAS(StoreMul,  "Sto×")
+OP(StoreDiv,    "Store÷")               ALIAS(StoreDiv,  "Store/")
+ALIAS(StoreDiv, "Sto/")                 ALIAS(StoreDiv,  "Sto÷")
+OP(RecallAdd,   "Recall+")              ALIAS(RecallAdd, "Rcl+")
+OP(RecallSub,   "Recall-")              ALIAS(RecallSub, "Rcl-")
+OP(RecallMul,   "Recall×")              ALIAS(RecallMul, "Recall*")
+ALIAS(RecallMul,"Rcl*")                 ALIAS(RecallMul, "Rcl×")
+OP(RecallDiv,   "Recall÷")              ALIAS(RecallDiv, "Recall/")
+ALIAS(RecallDiv,"Rcl/")                 ALIAS(RecallDiv, "Rcl÷")
+
 // Bitwise operations
 NAMED(RL, "RotateLeft")
 NAMED(RR, "RotateRight")
@@ -977,7 +991,7 @@ MENU(DateMenu)
 MENU(AlarmMenu)
 MENU(PlotMenu)
 MENU(GraphicsMenu)
-MENU(MemMenu)
+MENU(MemoryMenu)
 MENU(TextMenu)
 
 // Special menus

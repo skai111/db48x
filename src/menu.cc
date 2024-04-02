@@ -786,6 +786,7 @@ MENU(ProgramMenu,
      "→ ''",    ID_SelfInsert,
      "Eval",    ID_Eval,
 
+     "Memory",  ID_MemoryMenu,
      "Tests",   ID_TestsMenu,
      "Compare", ID_CompareMenu,
      "Loops",   ID_LoopsMenu,
@@ -1438,23 +1439,39 @@ MENU(GraphicsMenu,
      "Clip",    ID_Clip,
      "Current", ID_CurrentClip);
 
-MENU(MemMenu,
+MENU(MemoryMenu,
 // ----------------------------------------------------------------------------
 //   Memory operations
 // ----------------------------------------------------------------------------
-     "Home",    ID_home,
-     "Path",    ID_path,
+     "Store",   ID_Sto,
+     "Recall",  ID_Rcl,
+     "Purge",   ID_Purge,
      "CrDir",   ID_crdir,
      "UpDir",   ID_updir,
-     "Current", ID_CurrentDirectory,
-     "Purge",   ID_Purge,
 
+     "Home",    ID_home,
+     "Path",    ID_path,
+     "Current", ID_CurrentDirectory,
      "GC",      ID_GarbageCollect,
      "Avail",   ID_Mem,
+
      "Free",    ID_FreeMemory,
      "System",  ID_SystemMemory,
+     "PgAll",   ID_PurgeAll,
+     "Bytes",   ID_Bytes,
+     "Clone",   ID_Unimplemented,
+
+     "Store",   ID_Sto,
+     "Store+",  ID_StoreAdd,
+     "Store-",  ID_StoreSub,
+     "Store×",  ID_StoreMul,
+     "Store÷",  ID_StoreDiv,
+
      "Recall",  ID_Rcl,
-     "PgAll",   ID_PurgeAll);
+     "Recall+", ID_RecallAdd,
+     "Recall-", ID_RecallSub,
+     "Recall×", ID_RecallMul,
+     "Recall÷", ID_RecallDiv);
 
 
 MENU(TimeMenu,

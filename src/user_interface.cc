@@ -4161,7 +4161,7 @@ static const byte defaultSecondShiftedCommand[2*user_interface::NUM_KEYS] =
     OP2BYTES(KEY_LOG,   menu::ID_ExpLogMenu),
     OP2BYTES(KEY_LN,    menu::ID_PartsMenu),
     OP2BYTES(KEY_XEQ,   menu::ID_EquationsMenu),
-    OP2BYTES(KEY_STO,   menu::ID_MemMenu),
+    OP2BYTES(KEY_STO,   menu::ID_MemoryMenu),
     OP2BYTES(KEY_RCL,   menu::ID_Library),
     OP2BYTES(KEY_RDN,   menu::ID_MathMenu),
     OP2BYTES(KEY_SIN,   menu::ID_HyperbolicMenu),
