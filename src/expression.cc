@@ -1351,13 +1351,13 @@ grob_p expression::parentheses(grapher &g, grob_g what, uint padding)
             pw = 4;
         coord x1 = x + padding;
         coord x2 = x1 + pw;
-        rs.fill(x1, hh+y, x2, hh+y);
-        rs.fill(x1, hh-y, x2, hh-y);
+        rs.fill(x1, hh+y, x2, hh+y, g.foreground);
+        rs.fill(x1, hh-y, x2, hh-y, g.foreground);
         x = rw - 2 - x;
         x2 = x;
         x1 = x2 - pw;
-        rs.fill(x1, hh+y, x2, hh+y);
-        rs.fill(x1, hh-y, x2, hh-y);
+        rs.fill(x1, hh+y, x2, hh+y, g.foreground);
+        rs.fill(x1, hh-y, x2, hh-y, g.foreground);
     }
 
     return result;
@@ -1428,7 +1428,7 @@ grob_p expression::ratio(grapher &g, grob_g num, grob_g den)
     rs.fill(0, 0, gw, gh, g.background);
     rs.copy(ns, (gw - nw) / 2, 0);
     rs.copy(ds, (gw - dw) / 2, nh + 2 + lh);
-    rs.fill(0, nh, gw, nh + lh);
+    rs.fill(0, nh, gw, nh + lh, g.foreground);
 
     g.voffset = 1 + coord(nh) + coord(lh) / 2 - coord(gh) / 2;
 
