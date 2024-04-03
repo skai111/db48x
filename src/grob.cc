@@ -203,7 +203,7 @@ GRAPH_BODY(grob)
          return o;
 
      using pixsize  = blitter::size;
-     grob_g gobj = o;
+     grob_g  gobj   = o;
      pixsize width = o->width() + 4;
      pixsize height = o->height() + 4;
      grob_g  result = g.grob(width, height);

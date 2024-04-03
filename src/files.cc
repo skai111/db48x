@@ -32,6 +32,7 @@
 #include "array.h"
 #include "dmcp.h"
 #include "file.h"
+#include "grob.h"
 #include "list.h"
 #include "program.h"
 #include "runtime.h"
@@ -49,6 +50,8 @@ bool files::store(text_p name, object_p value, cstring defext) const
 //   Check if the name ends in 'B' for binary, otherwise use source format
 // ----------------------------------------------------------------------------
 {
+    files_g fs = this;
+
     size_t len  = 0;
     utf8   path = name->value(&len);
     if (!len || !path)
@@ -65,7 +68,7 @@ bool files::store(text_p name, object_p value, cstring defext) const
     {
         text_g nmg = text_g(name)
             + text_g(text::make(".")) + text_g(text::make(defext));
-        return store(nmg, value, "48s");
+        return fs->store(nmg, value, "48s");
     }
 
     // Check how to save
@@ -73,14 +76,14 @@ bool files::store(text_p name, object_p value, cstring defext) const
 
     // Save as binary?
     if (strncasecmp(ext, "48b", 3) == 0)
-        return store_binary(name, value);
+        return fs->store_binary(name, value);
 
     // Save as text?
     if (strncasecmp(ext, "txt", 3) == 0)
     {
         if (text_p txt = value->as<text>())
-            return store_text(name, txt);
-        return store_text(name, value->as_text(true, false));
+            return fs->store_text(name, txt);
+        return fs->store_text(name, value->as_text(true, false));
     }
 
     // Save as comma-separated value
@@ -88,11 +91,21 @@ bool files::store(text_p name, object_p value, cstring defext) const
     {
         id ty = value->type();
         if (ty == ID_array || ty == ID_list)
-            return store_list(name, list_p(value));
+            return fs->store_list(name, list_p(value));
+    }
+
+    // Save as BMP
+    if (strncasecmp(ext, "bmp", 3) == 0)
+    {
+        if (value->is_graph())
+            return fs->store_grob(name, grob_p(value));
+        text_g fname = name;
+        if (grob_p grob = value->graph())
+            return fs->store_grob(fname, grob);
     }
 
     // Default to saving as source
-    return store_source(name, value);
+    return fs->store_source(name, value);
 }
 
 
@@ -237,6 +250,8 @@ object_p files::recall(text_p name, cstring defext) const
 //    Recall an object from disk
 // ----------------------------------------------------------------------------
 {
+    files_g fs = this;
+
     size_t len  = 0;
     utf8   path = name->value(&len);
     if (!len || !path)
@@ -253,7 +268,7 @@ object_p files::recall(text_p name, cstring defext) const
     {
         text_g nmg = text_g(name)
             + text_g(text::make(".")) + text_g(text::make(defext));
-        return recall(nmg, "48s");
+        return fs->recall(nmg, "48s");
     }
 
     // Check the format of the file
@@ -261,18 +276,22 @@ object_p files::recall(text_p name, cstring defext) const
 
     // Load from binary?
     if (strncasecmp(ext, "48b", 3) == 0)
-        return recall_binary(name);
+        return fs->recall_binary(name);
 
     // Load from text?
     if (strncasecmp(ext, "txt", 3) == 0)
-        return recall_text(name);
+        return fs->recall_text(name);
 
     // Load from comma-separated value
     if (strncasecmp(ext, "csv", 3) == 0)
-        return recall_list(name, true);
+        return fs->recall_list(name, true);
+
+    // Load from BMP
+    if (strncasecmp(ext, "bmp", 3) == 0)
+        return fs->recall_grob(name);
 
     // Default to loading from source
-    return recall_source(name);
+    return fs->recall_source(name);
 }
 
 
@@ -676,79 +695,239 @@ text_p files::filename(text_p fname, bool writing) const
 }
 
 
-#if 0
-// mimeType = "image/bmp";
 
-unsigned char file[14] = {
-    'B','M', // magic
-    0,0,0,0, // size in bytes
-    0,0, // app data
-    0,0, // app data
-    40+14,0,0,0 // start of data offset
-};
-unsigned char info[40] = {
-    40,0,0,0, // info hd size
-    0,0,0,0, // width
-    0,0,0,0, // heigth
-    1,0, // number color planes
-    24,0, // bits per pixel
-    0,0,0,0, // compression is none
-    0,0,0,0, // image bits size
-    0x13,0x0B,0,0, // horz resoluition in pixel / m
-    0x13,0x0B,0,0, // vert resolutions (0x03C3 = 96 dpi, 0x0B13 = 72 dpi)
-    0,0,0,0, // #colors in pallete
-    0,0,0,0, // #important colors
-    };
+// ============================================================================
+//
+//    BMP file management
+//
+// ============================================================================
 
-int w=waterfallWidth;
-int h=waterfallHeight;
-
-int padSize  = (4-(w*3)%4)%4;
-int sizeData = w*h*3 + h*padSize;
-int sizeAll  = sizeData + sizeof(file) + sizeof(info);
-
-file[ 2] = (unsigned char)( sizeAll    );
-file[ 3] = (unsigned char)( sizeAll>> 8);
-file[ 4] = (unsigned char)( sizeAll>>16);
-file[ 5] = (unsigned char)( sizeAll>>24);
-
-info[ 4] = (unsigned char)( w   );
-info[ 5] = (unsigned char)( w>> 8);
-info[ 6] = (unsigned char)( w>>16);
-info[ 7] = (unsigned char)( w>>24);
-
-info[ 8] = (unsigned char)( h    );
-info[ 9] = (unsigned char)( h>> 8);
-info[10] = (unsigned char)( h>>16);
-info[11] = (unsigned char)( h>>24);
-
-info[20] = (unsigned char)( sizeData    );
-info[21] = (unsigned char)( sizeData>> 8);
-info[22] = (unsigned char)( sizeData>>16);
-info[23] = (unsigned char)( sizeData>>24);
-
-stream.write( (char*)file, sizeof(file) );
-stream.write( (char*)info, sizeof(info) );
-
-unsigned char pad[3] = {0,0,0};
-
-for ( int y=0; y<h; y++ )
+template <typename Int>
+struct le
+// ----------------------------------------------------------------------------
+//   Little endian representation for a type
+// ----------------------------------------------------------------------------
 {
-    for ( int x=0; x<w; x++ )
+    static constexpr union bytes
     {
-        long red = lround( 255.0 * waterfall[x][y] );
-        if ( red < 0 ) red=0;
-        if ( red > 255 ) red=255;
-        long green = red;
-        long blue = red;
+        byte bytes[sizeof(Int)];
+        Int  value;
+    } byte_order = { .value = Int(0x0706050403020100ULL) };
 
-        unsigned char pixel[3];
-        pixel[0] = blue;
-        pixel[1] = green;
-        pixel[2] = red;
-
-        stream.write( (char*)pixel, 3 );
+    le() : value(0)
+    {
     }
-    stream.write( (char*)pad, padSize );
+
+    le(Int v) : value(swap(v))
+    {
+    }
+
+    operator Int()
+    {
+        return swap(value);
+    }
+
+    le &operator=(Int x)
+    {
+        value = swap(x);
+        return *this;
+    }
+
+    Int swap(Int x)
+    {
+        bytes b = { .value = x };
+        for (uint i = 0; i < sizeof(Int); i++)
+            std::swap(b.bytes[i], b.bytes[byte_order.bytes[i]]);
+        return b.value;
+    }
+
+    Int value;
+} PACKED;
+
+// Shortcut for the commonly used types in Windows BMP files
+using u32 = le<uint32_t>;
+using u16 = le<uint16_t>;
+using s32 = le<int32_t>;
+using s16 = le<int16_t>;
+using bmsize = blitter::size;
+
+
+struct bmp_core_hdr
+// ----------------------------------------------------------------------------
+//   Initial bitmap header for Windows 2.0 (12 bytes)
+// ----------------------------------------------------------------------------
+{
+    u32 hdrSize;                // Header size, must be 12
+    u16 width;                  // Bitmap width
+    u16 height;                 // Bitmap height
+    u16 planes;                 // Color planes (must be 1)
+    u16 bitsPerPixel;           // Number of bits per pixel
+} PACKED;
+
+
+struct bmp_info_hdr
+// ----------------------------------------------------------------------------
+//   Windows NT, 3.1 info header, most common
+// ----------------------------------------------------------------------------
+{
+    u32 hdrSize;                // Header size, must be 40
+    s32 width;                  // Width of the bitmap
+    s32 height;                 // Height of the bitmap
+    u16 planes;                 // Color planes (must be 1)
+    u16 bitsPerPixel;           // Bits per pixel (1 for DB48X)
+    u32 compression;            // Compression method (must be zero for DB48X)
+    u32 imageSize;              // Size of image data (DM32 sts 12480, 416x240)
+    s32 hResolution;            // Horizontal resolution (2835 pix/m = 72ppp)
+    s32 vResolution;            // Vertical resolution (2835 pix/m = 72ppp)
+    u32 numColors;              // Number of colors in palette (2 for DB48X)
+    u32 impColors;              // Important colors, whatever that means
+} PACKED;
+
+
+struct bmp
+// ----------------------------------------------------------------------------
+//   Structure of a BMP file header
+// ----------------------------------------------------------------------------
+{
+    char sig[2];                // 'B', 'M'
+    u32  size;                  // File size
+    char reserved[4];           // Reserved
+    u32  pixOffset;             // Offset to pixel array
+    union
+    {
+        u32  hdrSize;           // Header size
+        bmp_core_hdr core;      // Old-style
+        bmp_info_hdr info;      // More modern style
+    } PACKED;
+} PACKED;
+
+
+
+bool files::store_grob(text_p name, grob_p value) const
+// ----------------------------------------------------------------------------
+//   Store a graphic object as a BMP
+// ----------------------------------------------------------------------------
+{
+    if (value)
+    {
+        file f(filename(name, true), true);
+        if (f.valid())
+        {
+            bmsize  width      = 0;
+            bmsize  height     = 0;
+            size_t  datalen    = 0;
+            byte_p  pixels     = value->pixels(&width, &height, &datalen);
+            size_t  sstride    = datalen / height;
+            size_t  dstride    = (width + 31) / 32 * 4;
+            size_t  pixsize    = dstride * height;
+            byte    palette[8] = { 0, 0, 0, 0, 0xFF, 0xFF, 0xFF, 0x00 };
+            size_t  fsize      = sizeof(bmp) + sizeof(palette) + pixsize;
+
+            bmp     b
+            {
+                .sig       = { 'B', 'M' },
+                .size      = fsize,
+                .reserved  = { 0, 0, 0, 0 },
+                .pixOffset = sizeof(bmp),
+                .info      =
+                {
+                    .hdrSize      = sizeof(bmp_info_hdr),
+                    .width        = width,
+                    .height       = height,
+                    .planes       = 1,
+                    .bitsPerPixel = 1,
+                    .compression  = 0,
+                    .imageSize    = pixsize,
+                    .hResolution  = 2835,
+                    .vResolution  = 2835,
+                    .numColors    = 2,
+                    .impColors    = 2
+                }
+            };
+
+            bool ok = true;
+            if (ok)
+                ok = f.write((const char *) &b, sizeof(b));
+            if (ok)
+                ok = f.write((const char *) palette, sizeof(palette));
+
+            char zero = 0;
+            for (uint r = height; r --> 0 && ok; )
+            {
+                byte_p scan = pixels + sstride * r;
+                char *src = (char *) scan + sstride;
+                for (uint c = 0; c < sstride && ok; c++)
+                    ok = f.write(--src, 1);
+                for (uint c = sstride; c < dstride; c++)
+                    ok = f.write(&zero, 1);
+            }
+
+            if (ok)
+                return true;
+        }
+        rt.error(f.error());
+    }
+    return false;
 }
-#endif
+
+
+grob_p files::recall_grob(text_p name) const
+// ----------------------------------------------------------------------------
+//  Recall graphic object from a BMP file
+// ----------------------------------------------------------------------------
+{
+    file f(filename(name), false);
+    bool ok = f.valid();
+    bmp b{};
+
+    if (ok)
+        ok = f.read((char *) &b, sizeof(b));
+    if (ok)
+        ok = (b.sig[0] == 'B' && b.sig[1] == 'M' &&
+              b.hdrSize == sizeof(bmp_info_hdr) &&
+              b.info.planes == 1 &&
+              b.info.bitsPerPixel == 1 &&
+              b.info.compression == 0 &&
+              b.info.numColors == 2);
+
+    char palette[8] = { 0 };
+    if (ok)
+        ok = f.read(palette, sizeof(palette));
+
+    if (ok)
+    {
+        grob_p g = grob::make(b.info.width, b.info.height);
+        ok = g != nullptr;
+
+        bmsize     width   = 0;
+        bmsize     height  = 0;
+        size_t     datalen = 0;
+        byte_p     pixels  = g->pixels(&width, &height, &datalen);
+        size_t     dstride = datalen / height;
+        size_t     sstride = b.info.imageSize / height;
+
+        ok = int(width) == b.info.width && int(height) == b.info.height;
+        char ignore;
+        for (uint r = height; r --> 0 && ok; )
+        {
+            byte *scan = (byte *) pixels + dstride * r;
+            char *dst = (char *) scan + dstride;
+            for (uint c = 0; c < dstride && ok; c++)
+                ok = f.read(--dst, 1);
+            for (uint c = dstride; c < sstride; c++)
+                ok = f.read(&ignore, 1);
+        }
+
+        if (ok)
+            return g;
+    }
+
+    if (!rt.error())
+    {
+        if (!f.valid())
+            rt.error(f.error());
+        if (!rt.error())
+            rt.invalid_bitmap_file_error();
+    }
+    return nullptr;
+}

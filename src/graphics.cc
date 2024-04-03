@@ -601,51 +601,22 @@ COMMAND_BODY(Show)
 {
     if (object_g obj = rt.top())
     {
-        uint digits = Settings.DisplayDigits();
-        if (obj->is_decimal())
-            digits = decimal_p(+obj)->kigits() * 3;
-        else if (obj->is_complex())
-            digits = Settings.Precision();
-        settings::SaveDisplayDigits sdd(digits);
-
-        using size = grob::pixsize;
-        grob_g graph = nullptr;
-        size    width  = LCD_W;
-        size    height = LCD_H;
-        grapher g(width, height, settings::EDITOR,
-                  pattern::black, pattern::white, true);
-        while (!graph)
+        grob_g graph = obj->graph();
+        if (!graph)
         {
-            graph = obj->graph(g);
-            if (graph)
-                break;
-
-            if (g.reduce_font())
-                continue;
-            if (g.maxh < Settings.MaximumShowHeight())
-            {
-                g.maxh = Settings.MaximumShowHeight();
-                g.font = settings::EDITOR;
-                continue;
-            }
-            if (g.maxw < Settings.MaximumShowWidth())
-            {
-                g.maxw = Settings.MaximumShowWidth();
-                g.font = settings::EDITOR;
-                continue;
-            }
-
             if (!rt.error())
                 rt.graph_does_not_fit_error();
             return ERROR;
         }
 
         ui.draw_graphics();
-        width           = graph->width();
-        height          = graph->height();
 
-        coord   scrx    = width  < LCD_W ? (LCD_W - width) / 2 : 0;
-        coord   scry    = height < LCD_H ? (LCD_H - height) / 2 : 00;
+        using size     = grob::pixsize;
+        size    width  = graph->width();
+        size    height = graph->height();
+
+        coord   scrx   = width < LCD_W ? (LCD_W - width) / 2 : 0;
+        coord   scry   = height < LCD_H ? (LCD_H - height) / 2 : 0;
         rect    r(scrx, scry, scrx + width - 1, scry + height - 1);
 
         coord   x       = 0;

@@ -1344,6 +1344,12 @@ void tests::global_variables()
         .test(CLEAR, "1.42 \"Hello.48b\"", NOSHIFT, G).noerror();
     step("Restore from file as text")
         .test(CLEAR, "\"Hello.48b\" RCL", ENTER).noerror().expect("1.42");
+    step("Save to file as BMP")
+        .test(CLEAR, "'X' cbrt inv 1 + sqrt dup 1 + /", ENTER)
+        .test("\"Hello.bmp\" STO", ENTER).noerror();
+    step("Recall from file as BMP")
+        .test(CLEAR, EXIT, "\"Hello.bmp\" RCL", ENTER).noerror()
+        .image_noheader("rcl-bmp");
 }
 
 

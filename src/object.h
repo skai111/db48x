@@ -348,6 +348,11 @@ struct object
         return ops().graph(this, g);
     }
 
+    grob_p graph() const;
+    // ------------------------------------------------------------------------
+    //   Render like for the `Show` command
+    // ------------------------------------------------------------------------
+
 #ifdef DM42
 #  pragma GCC pop_options
 #endif

@@ -34,6 +34,7 @@
 #include "text.h"
 
 GCP(files);
+GCP(grob);
 
 struct files : text
 // ----------------------------------------------------------------------------
@@ -69,6 +70,7 @@ struct files : text
     bool     store_source(text_p name, object_p value) const;
     bool     store_text(text_p name, text_p value) const;
     bool     store_list(text_p name, list_p value) const;
+    bool     store_grob(text_p name, grob_p value) const;
 
     // Recall an object from disk
     object_p recall(text_p name, cstring ext = "48s") const;
@@ -76,6 +78,7 @@ struct files : text
     object_p recall_source(text_p name) const;
     text_p   recall_text(text_p name) const;
     list_p   recall_list(text_p name, bool as_array = false) const;
+    grob_p   recall_grob(text_p name) const;
 
     // Purge (unlink) a file
     bool     purge(text_p name) const;
