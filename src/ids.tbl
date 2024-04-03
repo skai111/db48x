@@ -588,6 +588,8 @@ OP(RecallMul,   "Recall×")              ALIAS(RecallMul, "Recall*")
 ALIAS(RecallMul,"Rcl*")                 ALIAS(RecallMul, "Rcl×")
 OP(RecallDiv,   "Recall÷")              ALIAS(RecallDiv, "Recall/")
 ALIAS(RecallDiv,"Rcl/")                 ALIAS(RecallDiv, "Rcl÷")
+CMD(Increment)                          ALIAS(Increment, "Incr")
+CMD(Decrement)                          ALIAS(Decrement, "Decr")
 
 // Bitwise operations
 NAMED(RL, "RotateLeft")

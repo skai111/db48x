@@ -1151,6 +1151,14 @@ void tests::global_variables()
         .test(CLEAR, "2 'A' RCL*", ENTER).expect("61 720")
         .test(CLEAR, "2 'A' RCL/", ENTER).expect("¹/₁₅ ₄₃₀");
 
+    step("Increment")
+        .test(CLEAR, "'A' INCR", ENTER).expect("30 861")
+        .test(CLEAR, "'A' Increment", ENTER).expect("30 862");
+
+    step("Decrement")
+        .test(CLEAR, "'A' DECR", ENTER).expect("30 861")
+        .test(CLEAR, "'A' Decrement", ENTER).expect("30 860");
+
     step("Memory menu")
         .test(CLEAR, RSHIFT, G, RSHIFT, RUNSTOP,
               F1, F2, F3, F4, F5,
@@ -1173,7 +1181,11 @@ void tests::global_variables()
         .test(RSHIFT, RUNSTOP,
               LSHIFT, F1, LSHIFT, F2, LSHIFT, F3, LSHIFT, F4, LSHIFT, F5,
               ENTER)
-        .expect("{ Recall Recall+ Recall- Recall× Recall÷ }");
+        .expect("{ Recall Recall+ Recall- Recall× Recall÷ }")
+        .test(RSHIFT, RUNSTOP,
+              RSHIFT, F1, RSHIFT, F2,
+              ENTER)
+        .expect("{ Increment Decrement }");
 
     step("Store in long-name global variable");
     test(CLEAR, "\"Hello World\"", ENTER, XEQ, "SomeLongVariable", ENTER, STO)
@@ -1242,11 +1254,11 @@ void tests::global_variables()
 
     step("Purge global variable");
     test(CLEAR, XEQ, "A", ENTER, "PURGE", ENTER).noerror();
-    test(CLEAR, XEQ, "INCR", ENTER, "PURGE", ENTER).noerror();
+    test(CLEAR, XEQ, "MyINCR", ENTER, "PURGE", ENTER).noerror();
     test(CLEAR, XEQ, "SomeLongVariable", ENTER, "PURGE", ENTER).noerror();
 
     test(CLEAR, XEQ, "A", ENTER, "RCL", ENTER).error("Undefined name").clear();
-    test(CLEAR, XEQ, "INCR", ENTER, "RCL", ENTER)
+    test(CLEAR, XEQ, "MyINCR", ENTER, "RCL", ENTER)
         .error("Undefined name")
         .clear();
     test(CLEAR, XEQ, "SomeLongVariable", ENTER, "RCL", ENTER)

@@ -760,6 +760,56 @@ COMMAND_BODY(StoreMul)          { return store_op(ID_mul); }
 COMMAND_BODY(StoreDiv)          { return store_op(ID_div); }
 
 
+static object::result store_op(object::id op, object_p cstval)
+// ----------------------------------------------------------------------------
+//   Store with a given operation
+// ----------------------------------------------------------------------------
+{
+    directory *dir = rt.variables(0);
+    if (!dir)
+    {
+        rt.no_directory_error();
+        return object::ERROR;
+    }
+
+    object_g name = rt.stack(0);
+    object_g value = cstval;
+    if (!name || !value)
+        return object::ERROR;
+    object_g existing = directory::recall_all(name, true);
+
+    if (!existing)
+        return object::ERROR;
+    rt.stack(0, existing);
+    rt.push(value);
+    object_p cmd = object::static_object(op);
+    if (object::result res = cmd->evaluate())
+        return res;
+    value = rt.top();
+    if (value && dir->store(name, value))
+        return object::OK;
+    return object::ERROR;
+}
+
+
+COMMAND_BODY(Increment)
+// ----------------------------------------------------------------------------
+//   Increment the given variable
+// ----------------------------------------------------------------------------
+{
+    return store_op(ID_add, integer::make(1));
+}
+
+
+COMMAND_BODY(Decrement)
+// ----------------------------------------------------------------------------
+//   Decrement the given variable
+// ----------------------------------------------------------------------------
+{
+    return store_op(ID_sub, integer::make(1));
+}
+
+
 static object::result recall_op(object::id op)
 // ----------------------------------------------------------------------------
 //   Store with a given operation
