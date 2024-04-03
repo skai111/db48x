@@ -290,4 +290,17 @@ COMMAND(ClearStack,0)
     return ERROR;
 }
 
+
+COMMAND(Clone, 1)
+// ----------------------------------------------------------------------------
+//   Create a new object of the object on the stack
+// ----------------------------------------------------------------------------
+{
+    if (object_p obj = rt.top())
+        if (object_p clone = rt.clone(obj))
+            if (rt.top(clone))
+                return OK;
+    return ERROR;
+}
+
 #endif // STACK_CMDS_H

@@ -449,6 +449,9 @@ NAMED(Mem, "AvailableMemory")
 CMD(FreeMemory)
 CMD(SystemMemory)
 CMD(GarbageCollect)             ALIAS(GarbageCollect, "GC")
+CMD(Clone)                      ALIAS(Clone, "NewObject")
+                                ALIAS(Clone, "NewObj")
+                                ALIAS(Clone, "NewOb")
 
 // Object commands
 NAMED(Compile, "Text→")         ALIAS(Compile, "Str→")

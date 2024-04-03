@@ -1159,6 +1159,15 @@ void tests::global_variables()
         .test(CLEAR, "'A' DECR", ENTER).expect("30 861")
         .test(CLEAR, "'A' Decrement", ENTER).expect("30 860");
 
+    step("Clone")
+        .test(CLEAR,
+              "Mem Drop Mem "
+              "{ 1 2 3 4 5 6 } 75 * 3 Get "
+              "Mem Swap Clone Mem Nip "
+              "→ A B C « A B - A C - »", ENTER)
+        .expect("34")
+        .test(BSP).expect("923");
+
     step("Memory menu")
         .test(CLEAR, RSHIFT, G, RSHIFT, RUNSTOP,
               F1, F2, F3, F4, F5,
@@ -1172,7 +1181,7 @@ void tests::global_variables()
         .test(RSHIFT, RUNSTOP,
               RSHIFT, F1, RSHIFT, F2, RSHIFT, F3, RSHIFT, F4, RSHIFT, F5,
               ENTER)
-        .expect("{ FreeMemory SystemMemory PurgeAll Bytes Unimplemented }")
+        .expect("{ FreeMemory SystemMemory PurgeAll Bytes Clone }")
         .test(F6,
               RSHIFT, RUNSTOP,
               F1, F2, F3, F4, F5,
