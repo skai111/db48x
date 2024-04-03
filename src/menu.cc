@@ -1419,25 +1419,32 @@ MENU(GraphicsMenu,
 // ----------------------------------------------------------------------------
 //   Graphics operations
 // ----------------------------------------------------------------------------
-     "Disp",    ID_Disp,
      "Line",    ID_Line,
      "Rect",    ID_Rect,
      "Rounded", ID_RRect,
      "Ellipse", ID_Ellipse,
      "Circle",  ID_Circle,
 
-     "DispXY",  ID_DispXY,
-     "Pict",    ID_Pict,
+     "→Grob",   ID_ToGrob,
+     "ClLCD",   ID_ClLCD,
      "GOr",     ID_GOr,
      "GXor",    ID_GXor,
-     "GXor",    ID_And,
-     "ClLCD",   ID_ClLCD,
+     "GAnd",    ID_And,
 
+     "RGB",     ID_RGB,
      "LnWidth", ID_LineWidth,
+     "Pict",    ID_Pict,
+     "Clip",    ID_Clip,
+     "Current", ID_CurrentClip,
+
+     "Gray",    ID_Gray,
      "Foregnd", ID_Foreground,
      "Bckgnd",  ID_Background,
-     "Clip",    ID_Clip,
-     "Current", ID_CurrentClip);
+     "Disp",    ID_Disp,
+     "DispXY",  ID_DispXY,
+
+     "Show",    ID_Show,
+     "Plot",    ID_PlotMenu);
 
 MENU(MemoryMenu,
 // ----------------------------------------------------------------------------

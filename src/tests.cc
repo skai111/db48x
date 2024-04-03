@@ -157,7 +157,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        global_variables();
+        graphic_commands();
     }
     else
     {
@@ -7154,6 +7154,27 @@ void tests::graphic_commands()
         .image("pixtest")
         .test(ENTER).expect("400");
 
+    step("Convert to graph")
+        .test(CLEAR, "'X+Y' cbrt inv 1 + sqrt dup 1 + 2 * /", ENTER, EXIT)
+        .image_noheader("eq-xgraph")
+        .test("→Grob", ENTER)
+        .image_noheader("eq-graph")
+        .test("→Grob", ENTER)
+        .image_noheader("eq-graph");
+
+    step("Pattern in graph conversion")
+        .test(CLEAR, "0.85 GRAY FOREGROUND 0.15 GRAY BACKGROUND", ENTER)
+        .noerror()
+        .test(CLEAR, "'X+Y' cbrt inv 1 + sqrt dup 1 + 2 * /", ENTER, EXIT)
+        .image_noheader("pat-eq-xgraph")
+        .test("→Grob", ENTER)
+        .image_noheader("pat-eq-graph")
+        .test("→Grob", ENTER)
+        .image_noheader("pat-eq-graph");
+
+    step("Reset pattern")
+        .test(CLEAR, "0 GRAY FOREGROUND 1 GRAY BACKGROUND", ENTER)
+        .noerror();
 }
 
 

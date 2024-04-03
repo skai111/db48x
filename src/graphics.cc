@@ -733,6 +733,19 @@ COMMAND_BODY(Show)
 }
 
 
+COMMAND_BODY(ToGrob)
+// ----------------------------------------------------------------------------
+//   Convert an object to graphical form
+// ----------------------------------------------------------------------------
+{
+    if (object_p obj = rt.top())
+        if (grob_p gr = obj->graph())
+            if (rt.top(gr))
+                return OK;
+    return ERROR;
+}
+
+
 static void graphics_dirty(coord x1, coord y1, coord x2, coord y2, size lw)
 // ----------------------------------------------------------------------------
 //   Mark region as dirty with extra size

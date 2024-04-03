@@ -420,6 +420,7 @@ NAMED(Gray,             "GrayPattern")          ALIAS(Gray,     "GreyPattern")
                                                 ALIAS(Gray,     "Grey")
 NAMED(RGB,              "RGBPattern")
 
+NAMED(ToGrob,           "→Graphic")             ALIAS(ToGrob, "→Grob")
 NAMED(GXor,             "GraphicXor")
 NAMED(GOr,              "GraphicOr")
 NAMED(GAnd,             "GraphicAnd")
