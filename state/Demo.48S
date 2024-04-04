@@ -303,7 +303,7 @@
 	for i
 		"Complex positioning " { 10#55 10#100 0 true true } Disp
 		" Angle " i + " " +
-		i 180 / pi * ImaginaryUnit * exp 4.5 * ToDecimal 2.5 -
+		i 180 / Ⓒπ * Ⓒⅈ * exp 4.5 * ToDecimal 2.5 -
 		Disp
 		0.01 Wait
 	next
