@@ -658,7 +658,7 @@ grob_p list::graph(grapher &g, size_t rows, size_t cols, bool mat) const
         rt.drop(nitems);
         return nullptr;
     }
-    surface rs = result->pixels();
+    grob::surface rs = result->pixels();
     rs.fill(0, 0, gw, gh, g.background);
 
     // Position of items in enclosing border and adjust
@@ -676,7 +676,7 @@ grob_p list::graph(grapher &g, size_t rows, size_t cols, bool mat) const
             pixsize cw      = col_width(c, rows, cols);
             size_t  i       = r * cols + c;
             grob_p  colitem = grob_p(rt.stack(nitems + ~i));
-            surface is      = colitem->pixels();
+            grob::surface is      = colitem->pixels();
             pixsize iw      = is.width();
             pixsize ih      = is.height();
             rs.copy(is, xi + (cw - iw)/2, yi + (rh - ih)/2);
@@ -706,9 +706,9 @@ GRAPH_BODY(list)
             grob_g result = list->graph(g, rows, cols, true);
             if (!result)
                 return nullptr;
-            surface rs = result->pixels();
-            pixsize gw = rs.width();
-            pixsize gh = rs.height();
+            grob::surface rs = result->pixels();
+            pixsize       gw = rs.width();
+            pixsize       gh = rs.height();
 
             // Dimensions of border and adjust
             coord   xl = 0;

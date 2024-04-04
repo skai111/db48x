@@ -41,7 +41,7 @@
 SimScreen *SimScreen::theScreen = nullptr;
 
 // A copy of the LCD buffer
-uint8_t lcd_copy[LCD_SCANLINE * LCD_H / 8];
+pixword lcd_copy[sizeof(lcd_buffer) / sizeof(*lcd_buffer)];
 
 
 SimScreen::SimScreen(QWidget *parent)
@@ -52,7 +52,11 @@ SimScreen::SimScreen(QWidget *parent)
       screen_width(SIM_LCD_W),
       screen_height(SIM_LCD_H),
       scale(1),
+#ifndef CONFIG_COLOR
       bgColor(230, 230, 230),
+#else // CONFIG_COLOR
+      bgColor(255, 255, 255),
+#endif // CONFIG_COLOR
       fgColor(0, 0, 0),
       bgPen(bgColor),
       fgPen(fgColor),
@@ -72,7 +76,7 @@ SimScreen::SimScreen(QWidget *parent)
     scale = 1.0;
     setScale(4.0);
 
-    for (size_t i = 0; i < sizeof(lcd_copy); i++)
+    for (size_t i = 0; i < sizeof(lcd_copy) / sizeof(*lcd_copy); i++)
         lcd_copy[i] = ~lcd_buffer[i];
 
     show();
@@ -112,23 +116,36 @@ void SimScreen::updatePixmap()
 {
     // Monochrome screen
     QPainter pt(&mainPixmap);
+    pixword mask = ~(~0U << color::BPP);
+    surface s(lcd_buffer, LCD_W, LCD_H, LCD_SCANLINE);
     for (int y = 0; y < SIM_LCD_H; y++)
     {
-        for (int xb = 0; xb < SIM_LCD_W/8; xb++)
+        for (int xw = 0; xw < SIM_LCD_SCANLINE*color::BPP/32; xw++)
         {
-            unsigned byteoffs = y * (SIM_LCD_SCANLINE/8) + xb;
-            if (uint8_t diffs = lcd_copy[byteoffs] ^ lcd_buffer[byteoffs])
+            unsigned woffs = y * (SIM_LCD_SCANLINE*color::BPP/32) + xw;
+            if (uint32_t diffs = lcd_copy[woffs] ^ lcd_buffer[woffs])
             {
-                for (int bit = 0; bit < 8; bit++)
+                for (int bit = 0; bit < 32; bit += color::BPP)
                 {
-                    if ((diffs >> bit) & 1)
+                    if ((diffs >> bit) & mask)
                     {
-                        int on = (lcd_buffer[byteoffs] >> bit) & 1;
-                        pt.setPen(on ? bgPen : fgPen);
-                        pt.drawPoint(SIM_LCD_W - (8*xb + bit), y);
+                        pixword bits = (lcd_buffer[woffs] >> bit) & mask;
+                        color col(bits);
+#ifdef CONFIG_COLOR
+                        QColor qcol(col.red(), col.green(), col.blue());
+#else
+                        QColor &qcol = bits ? bgColor : fgColor;
+#endif
+                        pt.setPen(qcol);
+
+                        coord xx = (xw * 32 + bit) / color::BPP;
+                        coord yy = y;
+                        s.horizontal_adjust(xx, xx);
+                        s.vertical_adjust(yy, yy);
+                        pt.drawPoint(xx, yy);
                     }
                 }
-                lcd_copy[byteoffs] = lcd_buffer[byteoffs];
+                lcd_copy[woffs] = lcd_buffer[woffs];
             }
         }
     }

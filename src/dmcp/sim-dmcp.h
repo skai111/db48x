@@ -44,10 +44,17 @@ enum simulated_target
 //   Constants for a given target
 // ----------------------------------------------------------------------------
 {
+#ifndef CONFIG_COLOR
     SIM_BITS_PER_PIXEL = 1,
+    SIM_LCD_SCANLINE   = 416,
+#else
+    SIM_BITS_PER_PIXEL = 16,
+    SIM_LCD_SCANLINE   = 400,
+#endif // CONFIG_COLOR
     SIM_LCD_W          = 400,
     SIM_LCD_H          = 240,
-    SIM_LCD_SCANLINE   = 416,
+
+    SIM_LCD_BUFSIZE    = SIM_LCD_SCANLINE * SIM_LCD_H * SIM_BITS_PER_PIXEL / 32,
 };
 
 typedef uint8_t  byte;
@@ -55,7 +62,7 @@ typedef unsigned int uint;
 
 extern volatile int  lcd_updates;
 extern int           lcd_buf_cleared_result;
-extern uint8_t       lcd_buffer[SIM_LCD_SCANLINE * SIM_LCD_H / 8];
+extern uint32_t      lcd_buffer[SIM_LCD_BUFSIZE];
 extern bool          shift_held;
 extern bool          alt_held;
 

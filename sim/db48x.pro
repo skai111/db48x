@@ -1,5 +1,5 @@
 #******************************************************************************
-# simulator.pri                                                   DB48X project
+#  db48x.pro                                                      DB48X project
 #******************************************************************************
 #
 #  File Description:
@@ -116,7 +116,7 @@ DEFINES += 	DECIMAL_CALL_BY_REFERENCE                       \
 		DECIMAL_GLOBAL_ROUNDING_ACCESS_FUNCTIONS        \
 		DECIMAL_GLOBAL_EXCEPTION_FLAGS                  \
 		DECIMAL_GLOBAL_EXCEPTION_FLAGS_ACCESS_FUNCTIONS \
-                HELPFILE_NAME=\\\"help/DB48X.md\\\"
+                HELPFILE_NAME=\\\"help/db48x.md\\\"
 
 # Additional external library HIDAPI linked statically into the code
 INCLUDEPATH += ../src/dm42 ../src/dmcp ../src ../inc

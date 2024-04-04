@@ -86,7 +86,7 @@ install-config:
 	$(COPY) config/*.csv $(MOUNTPOINT)config/
 
 sim: sim/$(TARGET).mak
-	cd sim; make -f $(<F)
+	cd sim; $(MAKE) -f $(<F) TARGET=$(shell awk '/^TARGET/ { print $$3; }' sim/$(TARGET).mak)
 sim/$(TARGET).mak: sim/$(TARGET).pro Makefile $(VERSION_H)
 	cd sim; qmake $(<F) -o $(@F) CONFIG+=$(QMAKE_$(OPT))
 
@@ -305,7 +305,7 @@ LIBS += lib/gcc111libbid_hard.a
 
 # Recorder and dependencies
 recorder/config.h: recorder/recorder.h recorder/Makefile
-	cd recorder && $(MAKE)
+	cd recorder && $(MAKE) TARGET=
 $(BUILD)/recorder.o $(BUILD)/recorder_ring.o: recorder/config.h
 
 # ---

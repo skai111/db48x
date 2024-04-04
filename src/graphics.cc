@@ -52,7 +52,6 @@ using std::min;
 
 
 
-
 // ============================================================================
 //
 //   Plot parameters
@@ -619,16 +618,16 @@ COMMAND_BODY(Show)
         coord   scry   = height < LCD_H ? (LCD_H - height) / 2 : 0;
         rect    r(scrx, scry, scrx + width - 1, scry + height - 1);
 
-        coord   x       = 0;
-        coord   y       = 0;
-        surface s       = graph->pixels();
-        int     delta   = 8;
-        bool    running = true;
-        int     key     = 0;
+        coord         x       = 0;
+        coord         y       = 0;
+        grob::surface s       = graph->pixels();
+        int           delta   = 8;
+        bool          running = true;
+        int           key     = 0;
         while (running)
         {
             Screen.fill(pattern::gray50);
-            Screen.copy(s, r, point(x,y));
+            Screen.copy_mono(s, r, point(x,y));
             ui.draw_dirty(0, 0, LCD_W-1, LCD_H-1);
             refresh_dirty();
 

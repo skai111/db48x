@@ -209,9 +209,9 @@ GRAPH_BODY(grob)
      grob_g  result = g.grob(width, height);
      if (!result)
          return nullptr;
-     surface dst    = result->pixels();
-     surface src    = gobj->pixels();
-     rect    inside = dst.area();
+     grob::surface dst    = result->pixels();
+     grob::surface src    = gobj->pixels();
+     rect          inside = dst.area();
      inside.inset(2, 2);
      dst.fill(pattern::gray50);
      dst.fill(inside, g.background);
@@ -291,18 +291,29 @@ object::result grob::command(grob::blitop op)
             {
                 ui.draw_graphics();
                 surface srcs = sg->pixels();
-                grob_p dg = dst->as<grob>();
-                if (dg || dst->type() == ID_Pict)
+                bool drawn = false;
+                point p(0,0);
+                rect drect = srcs.area();
+                drect.offset(x,y);
+                if (grob_p dg = dst->as<grob>())
                 {
-                    surface dsts = dg ? dg->pixels() : Screen;
-                    point p(0,0);
-                    rect drect = srcs.area();
-                    drect.offset(x,y);
-
-                    rt.drop(2 + (dg == nullptr));
+                    grob::surface dsts = dg->pixels();
+                    rt.drop(2);
                     blitter::blit<blitter::CLIP_ALL>(dsts, srcs,
                                                      drect, p,
                                                      op, pattern::white);
+                    drawn = true;
+                }
+                else if (dst->type() == ID_Pict)
+                {
+                    rt.drop(3);
+                    blitter::blit<blitter::CLIP_ALL>(Screen, srcs,
+                                                     drect, p,
+                                                     op, pattern::white);
+                    drawn = true;
+                }
+                if (drawn)
+                {
                     ui.draw_dirty(drect);
                     refresh_dirty();
                     return OK;
@@ -313,3 +324,23 @@ object::result grob::command(grob::blitop op)
     }
     return ERROR;
 }
+
+
+
+// ============================================================================
+//
+//   Black and white patterns
+//
+// ============================================================================
+
+#ifdef CONFIG_COLOR
+// Pre-built grob::patterns for shades of grey
+const grob::pattern grob::pattern::black  = grob::pattern(0,     0,   0);
+const grob::pattern grob::pattern::gray10 = grob::pattern(32,   32,  32);
+const grob::pattern grob::pattern::gray25 = grob::pattern(64,   64,  64);
+const grob::pattern grob::pattern::gray50 = grob::pattern(128, 128, 128);
+const grob::pattern grob::pattern::gray75 = grob::pattern(192, 192, 192);
+const grob::pattern grob::pattern::gray90 = grob::pattern(224, 224, 224);
+const grob::pattern grob::pattern::white  = grob::pattern(255, 255, 255);
+const grob::pattern grob::pattern::invert = grob::pattern();
+#endif

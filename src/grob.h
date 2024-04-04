@@ -45,6 +45,9 @@ struct grob : object
 // ----------------------------------------------------------------------------
 {
     using pixsize = blitter::size;
+    using surface = blitter::surface<blitter::mode::MONOCHROME_REVERSE>;
+    using pattern = blitter::pattern<blitter::mode::MONOCHROME_REVERSE>;
+
 
     grob(id type, pixsize w, pixsize h, gcbytes bits): object(type)
     // ------------------------------------------------------------------------
@@ -255,8 +258,8 @@ struct grapher
           maxh(h),
           voffset(0),
           font(f),
-          foreground(fg),
-          background(bg),
+          foreground(fg.bits),
+          background(bg.bits),
           stack(stack)
     {}
     grapher(const grapher &other) = default;
@@ -277,13 +280,13 @@ struct grapher
         return true;
     }
 
-    size    maxw;
-    size    maxh;
-    coord   voffset;
-    font_id font;
-    pattern foreground;
-    pattern background;
-    bool    stack;
+    size          maxw;
+    size          maxh;
+    coord         voffset;
+    font_id       font;
+    grob::pattern foreground;
+    grob::pattern background;
+    bool          stack;
 };
 
 #endif // GROB_H

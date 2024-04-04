@@ -813,9 +813,10 @@ grob_p object::as_grob() const
 }
 
 
-static inline coord flatten_text(surface &s, coord x, coord y,
+static inline coord flatten_text(grob::surface &s, coord x, coord y,
                                  utf8 start, utf8 end,
-                                 font_p font, pattern fg, pattern bg)
+                                 font_p font,
+                                 grob::pattern fg, grob::pattern bg)
 // ----------------------------------------------------------------------------
 //   Flatten a text
 // ----------------------------------------------------------------------------
@@ -936,9 +937,9 @@ GRAPH_BODY(object)
     grob_g  result = g.grob(width, height);
     if (!result)
         return result;
-    surface s      = result->pixels();
-    coord   x      = 0;
-    coord   y      = 0;
+    grob::surface s = result->pixels();
+    coord         x = 0;
+    coord         y = 0;
     s.fill(g.background);
 
     // Reset end pointer in case grob allocation caused a GC

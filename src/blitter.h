@@ -37,6 +37,10 @@
 #include "types.h"
 #include "utf8.h"
 
+#include "recorder.h"
+
+RECORDER_DECLARE(debug);
+
 #define PACKED __attribute__((packed))
 
 
@@ -148,7 +152,7 @@ struct blitter
         }; // Bit per pixels for pattern
         using color = blitter::color<Mode>;
 
-      public:
+    public:
         // Build a solid pattern from a single color
         pattern(color c);
 
@@ -167,14 +171,14 @@ struct blitter
         pattern(uint64_t bits = ~0ULL): bits(bits) {}
 
         // Some pre-defined shades of gray
-        static const pattern black;
-        static const pattern gray10;
-        static const pattern gray25;
-        static const pattern gray50;
-        static const pattern gray75;
-        static const pattern gray90;
-        static const pattern white;
-        static const pattern invert;
+        static const pattern black  = pattern(0,     0,   0);
+        static const pattern gray10 = pattern(32,   32,  32);
+        static const pattern gray25 = pattern(64,   64,  64);
+        static const pattern gray50 = pattern(128, 128, 128);
+        static const pattern gray75 = pattern(192, 192, 192);
+        static const pattern gray90 = pattern(224, 224, 224);
+        static const pattern white  = pattern(255, 255, 255);
+        static const pattern invert = pattern();
     };
 
 
@@ -559,6 +563,18 @@ struct blitter
         }
 
         template <clipping Clip = COPY>
+        void copy_mono(surface<MONOCHROME_REVERSE> &src,
+                       const rect                  &r,
+                       const point                 &spos  = point(0, 0),
+                       pattern                      clear = pattern::black)
+        // --------------------------------------------------------------------
+        //   Copy a monochrome rectangular area from the source
+        // --------------------------------------------------------------------
+        {
+            blit<Clip>(*this, src, r, spos, blitop_mono_bg<Mode>, clear);
+        }
+
+        template <clipping Clip = COPY>
         void copy(surface     &src,
                   const point &pos   = point(0, 0),
                   pattern      clear = pattern::black)
@@ -800,6 +816,21 @@ struct blitter
     }
 
 
+    static inline pixword bitswap(pixword bits)
+    // ------------------------------------------------------------------------
+    //  Flip left and right in the input bits
+    // ------------------------------------------------------------------------
+    {
+        pixword result = 0;
+        for (uint bit = 0; bit < 32; bit++)
+            if ((bits >> bit) & 1)
+                result |= 1U << bit;
+        return result;
+    }
+
+
+
+
     // =========================================================================
     //
     //   Operators for blit
@@ -1029,15 +1060,15 @@ union blitter::color<blitter::mode::RGB_16BPP>
 
     uint8_t red()
     {
-        return rgb16.blue << 3;
+        return (rgb16.red << 3) | (rgb16.red & 0x7);
     }
     uint8_t green()
     {
-        return rgb16.red << 2;
+        return (rgb16.green << 2) | (rgb16.green & 0x3);
     }
     uint8_t blue()
     {
-        return rgb16.green << 3;
+        return (rgb16.blue << 3) | (rgb16.blue & 0x7);
     }
 } PACKED;
 
@@ -1086,22 +1117,6 @@ inline blitter::pattern<Mode>::pattern(color a, color b, color c, color d)
     color colors[4] = { a, b, c, d };
     *this           = pattern(colors);
 }
-
-// Pre-built patterns for five shades of grey
-#define GPAT blitter::pattern<Mode>
-#define TGPAT                     \
-    template <blitter::mode Mode> \
-    const GPAT
-TGPAT GPAT::black  = GPAT(0,     0,    0);
-TGPAT GPAT::gray10 = GPAT(32,   32,   32);
-TGPAT GPAT::gray25 = GPAT(64,   64,   64);
-TGPAT GPAT::gray50 = GPAT(128, 128, 128);
-TGPAT GPAT::gray75 = GPAT(192, 192, 192);
-TGPAT GPAT::gray90 = GPAT(224, 224, 224);
-TGPAT GPAT::white  = GPAT(255, 255, 255);
-TGPAT GPAT::invert = GPAT();
-#undef TGPAT
-#undef GPAT
 
 
 template <>
@@ -1262,7 +1277,7 @@ union blitter::pattern<blitter::mode::GRAY_4BPP>
     pattern(color a, color b, color c, color d);
 
     // Pattern from bits
-    pattern(uint64_t bits = ~0ULL): bits(bits) {}
+    pattern(uint64_t bits = 0ULL): bits(bits) {}
 
     // Some pre-defined shades of gray
     static const pattern black;
@@ -1314,6 +1329,9 @@ union blitter::pattern<blitter::mode::RGB_16BPP>
     pattern(color colors[N]);
     pattern(color a, color b);
     pattern(color a, color b, color c, color d);
+
+    // Pattern from bits
+    pattern(uint64_t bits = 0): bits(bits) {}
 
     // Some pre-defined shades of gray
     static const pattern black;
@@ -1551,7 +1569,7 @@ void blitter::blit(Dst           &dst,
             }
 
             ASSERT(dp >= dst.pixels);
-            ASSERT(dp <= dst.pixels + (dst.scanline * dst.h + (BPW-1)) / BPW);
+            ASSERT(dp <= dst.pixels + (dst.scanline*dst.h*DBPP+(BPW-1))/BPW);
             pixword ddata = dp[0];
             pixword tdata = op(ddata, sdata, cdata);
             *dp           = (tdata & dmask) | (ddata & ~dmask);
@@ -1604,6 +1622,31 @@ inline void blitter::surface<blitter::MONOCHROME_REVERSE>::horizontal_adjust(
 
 template <>
 inline bool blitter::surface<blitter::MONOCHROME_REVERSE>::horizontal_swap()
+// ----------------------------------------------------------------------------
+//   On the DM42, we need horizontal adjustment for coordinates
+// ----------------------------------------------------------------------------
+{
+    return true;
+}
+
+
+template <>
+inline void blitter::surface<blitter::RGB_16BPP>::horizontal_adjust(
+    coord &x1,
+    coord &x2) const
+// ----------------------------------------------------------------------------
+//   On the DM42, we need horizontal adjustment for coordinates
+// ----------------------------------------------------------------------------
+{
+    size  w   = width() - 1;
+    coord ox1 = w - x2;
+    x2        = w - x1;
+    x1        = ox1;
+}
+
+
+template <>
+inline bool blitter::surface<blitter::RGB_16BPP>::horizontal_swap()
 // ----------------------------------------------------------------------------
 //   On the DM42, we need horizontal adjustment for coordinates
 // ----------------------------------------------------------------------------
@@ -2079,5 +2122,6 @@ void blitter::surface<Mode>::rounded_rectangle(coord   x1,
         fill<Clip>(xl - r, yt, xr + r, yb, fg);
     }
 }
+
 
 #endif // BLITTER_H

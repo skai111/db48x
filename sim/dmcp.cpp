@@ -65,7 +65,7 @@ extern bool          noisy_tests;
 
 uint                 lcd_refresh_requested = 0;
 int                  lcd_buf_cleared_result = 0;
-uint8_t              lcd_buffer[LCD_SCANLINE * LCD_H / 8];
+pixword              lcd_buffer[LCD_SCANLINE * LCD_H * color::BPP / 32];
 bool                 shift_held = false;
 bool                 alt_held   = false;
 
@@ -380,8 +380,8 @@ int runner_get_key(int *repeat)
 void lcd_clear_buf()
 {
     record(lcd, "Clearing buffer");
-    for (unsigned i = 0; i < sizeof(lcd_buffer); i++)
-        lcd_buffer[i] = 0xFF;
+    for (unsigned i = 0; i < sizeof(lcd_buffer) / sizeof(*lcd_buffer); i++)
+        lcd_buffer[i] = pattern::white.bits;
 }
 
 static uint32_t last_warning = 0;
@@ -398,9 +398,8 @@ inline void lcd_set_pixel(int x, int y)
         }
         return;
     }
-    unsigned bo = y * LCD_SCANLINE + (LCD_W - x);
-    if (bo/8 < sizeof(lcd_buffer))
-        lcd_buffer[bo / 8] |= (1 << (bo % 8));
+    surface s(lcd_buffer, LCD_W, LCD_H, LCD_SCANLINE);
+    s.fill(x, y, x, y, pattern::black);
 }
 
 inline void lcd_clear_pixel(int x, int y)
@@ -416,9 +415,8 @@ inline void lcd_clear_pixel(int x, int y)
         }
         return;
     }
-    unsigned bo = y * LCD_SCANLINE + (LCD_W - x);
-    if (bo/8 < sizeof(lcd_buffer))
-        lcd_buffer[bo / 8] &= ~(1 << (bo % 8));
+    surface s(lcd_buffer, LCD_W, LCD_H, LCD_SCANLINE);
+    s.fill(x, y, x, y, pattern::white);
 }
 
 inline void lcd_pixel(int x, int y, int val)
@@ -532,8 +530,8 @@ uint8_t * lcd_line_addr(int y)
         record(lcd_warning, "lcd_line_addr(%d), line is out of range", y);
         y = 0;
     }
-    unsigned offset = y * LCD_SCANLINE / 8;
-    return lcd_buffer + offset;
+    blitter::offset offset = y * LCD_SCANLINE * color::BPP / 32;
+    return (uint8_t *) (lcd_buffer + offset);
 }
 int lcd_toggleFontT(int nr)
 {

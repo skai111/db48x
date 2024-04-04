@@ -198,8 +198,8 @@ GRAPH_BODY(symbol)
     if (!result)
         return nullptr;
 
-    surface ss = sym->pixels();
-    surface rs = result->pixels();
+    grob::surface ss = sym->pixels();
+    grob::surface rs = result->pixels();
 
     rs.fill(0, 0, rw, rh, g.background);
     for (coord y = 0; y < coord(rh); y++)

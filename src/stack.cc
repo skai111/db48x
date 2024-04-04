@@ -159,10 +159,10 @@ void stack::draw_stack()
 
         if (graph)
         {
-            surface s = graph->pixels();
+            grob::surface s = graph->pixels();
             rect r = s.area();
             r.offset(LCD_W - 2 - w, y);
-            Screen.copy(s, r);
+            Screen.copy_mono(s, r);
         }
         else
         {

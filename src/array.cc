@@ -108,7 +108,7 @@ GRAPH_BODY(array)
     grob_g result = a->graph(g, rows, cols, mat);
     if (!result)
         return nullptr;
-    surface rs = result->pixels();
+    grob::surface rs = result->pixels();
     pixsize gw = rs.width();
     pixsize gh = rs.height();
 

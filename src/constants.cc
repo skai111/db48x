@@ -101,8 +101,8 @@ GRAPH_BODY(constant)
     if (!result)
         return nullptr;
 
-    surface ss = sym->pixels();
-    surface rs = result->pixels();
+    grob::surface ss = sym->pixels();
+    grob::surface rs = result->pixels();
 
     rs.fill(0, 0, rw, rh, g.background);
     rs.copy(ss, 0, 0);

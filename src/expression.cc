@@ -1337,8 +1337,8 @@ grob_p expression::parentheses(grapher &g, grob_g what, uint padding)
         return nullptr;
 
     // Copy inner content
-    surface ws = what->pixels();
-    surface rs = result->pixels();
+    grob::surface ws = what->pixels();
+    grob::surface rs = result->pixels();
     rs.fill(0, 0, rw, rh, g.background);
     rs.copy(ws, prw + padding, 0);
 
@@ -1384,8 +1384,8 @@ grob_p expression::sqrt(grapher &g, grob_g what)
         return nullptr;
 
     // Copy inner content
-    surface ws = what->pixels();
-    surface rs = result->pixels();
+    grob::surface ws = what->pixels();
+    grob::surface rs = result->pixels();
     rs.fill(0, 0, rw, rh, g.background);
     rs.copy(ws, prw, prh);
 
@@ -1421,9 +1421,9 @@ grob_p expression::ratio(grapher &g, grob_g num, grob_g den)
     if (!result)
         return nullptr;
 
-    surface ns = num->pixels();
-    surface ds = den->pixels();
-    surface rs = result->pixels();
+    grob::surface ns = num->pixels();
+    grob::surface ds = den->pixels();
+    grob::surface rs = result->pixels();
 
     rs.fill(0, 0, gw, gh, g.background);
     rs.copy(ns, (gw - nw) / 2, 0);
@@ -1513,10 +1513,10 @@ grob_p expression::infix(grapher &g,
     if (!result)
         return nullptr;
 
-    surface xs = x->pixels();
-    surface ys = y->pixels();
-    surface ss = s->pixels();
-    surface rs = result->pixels();
+    grob::surface xs = x->pixels();
+    grob::surface ys = y->pixels();
+    grob::surface ss = s->pixels();
+    grob::surface rs = result->pixels();
 
     coord xx = 0;
     coord sx = xx + xw;
@@ -1564,9 +1564,9 @@ grob_p expression::suscript(grapher &g,
     if (!result)
         return nullptr;
 
-    surface xs = x->pixels();
-    surface ys = y->pixels();
-    surface rs = result->pixels();
+    grob::surface xs = x->pixels();
+    grob::surface ys = y->pixels();
+    grob::surface rs = result->pixels();
 
     rs.fill(0, 0, gw, gh, g.background);
     rs.copy(xs, 0,  xt - t);
@@ -1665,10 +1665,10 @@ grob_p expression::sumprod(grapher &g, bool isprod,
     if (!lower)
         return nullptr;
 
-    surface xs     = expr->pixels();
-    size    xh     = xs.height();
-    size    xw     = xs.width();
-    grob_g  sign   = isprod ? product(g, xh) : sum(g, xh);
+    grob::surface xs   = expr->pixels();
+    size          xh   = xs.height();
+    size          xw   = xs.width();
+    grob_g        sign = isprod ? product(g, xh) : sum(g, xh);
     if (!sign)
         return nullptr;
 
@@ -1680,14 +1680,14 @@ grob_p expression::sumprod(grapher &g, bool isprod,
     grob_g  result = g.grob(gw, gh);
     if (!result)
         return nullptr;
-    surface rs = result->pixels();
+    grob::surface rs = result->pixels();
     rs.fill(0, 0, gw, gh, g.background);
 
-    surface sgs = sign->pixels();
+    grob::surface sgs = sign->pixels();
     rs.copy(sgs, (lw - sgs.width()) / 2, last->height());
-    surface las = last->pixels();
+    grob::surface las = last->pixels();
     rs.copy(las, (lw - las.width()) / 2, 0 + 0 * vl);
-    surface los = lower->pixels();
+    grob::surface los = lower->pixels();
     rs.copy(los, (lw - los.width()) / 2, gh - los.height());
     coord xx = lw;
     coord xy = las.height() + sgs.height() / 2 - xs.height() / 2 - ve;
@@ -1710,7 +1710,7 @@ grob_p expression::sum(grapher &g, blitter::size h)
     if (!result)
         return nullptr;
 
-    surface rs = result->pixels();
+    grob::surface rs = result->pixels();
     rs.fill(0,          0,      w-1,    h-1,            g.background);
 
     rs.fill(0,          0,      w-1,    2,              g.foreground);
@@ -1735,7 +1735,7 @@ grob_p expression::product(grapher &g, blitter::size h)
     if (!result)
         return nullptr;
 
-    surface rs = result->pixels();
+    grob::surface rs = result->pixels();
     rs.fill(0,          0,      w-1,    h-1,    g.background);
 
     rs.fill(0,          0,      w-1,    2,      g.foreground);

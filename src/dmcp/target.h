@@ -40,15 +40,26 @@ enum target
     BITS_PER_PIXEL = 1,
     LCD_W          = 400,
     LCD_H          = 240,
+#ifndef CONFIG_COLOR
     LCD_SCANLINE   = 416,
+#else
+    LCD_SCANLINE   = 400,
+#endif
+
 };
 
 // We need to reverse grobs during parsing and rendering
 #define REVERSE_GROBS
 
+#ifdef CONFIG_COLOR
+using surface = blitter::surface<blitter::mode::RGB_16BPP>;
+using color   = blitter::color  <blitter::mode::RGB_16BPP>;
+using pattern = blitter::pattern<blitter::mode::RGB_16BPP>;
+#else
 using surface = blitter::surface<blitter::mode::MONOCHROME_REVERSE>;
 using color   = blitter::color  <blitter::mode::MONOCHROME_REVERSE>;
 using pattern = blitter::pattern<blitter::mode::MONOCHROME_REVERSE>;
+#endif
 using coord   = blitter::coord;
 using size    = blitter::size;
 using rect    = blitter::rect;

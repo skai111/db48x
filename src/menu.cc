@@ -1333,11 +1333,11 @@ MENU(UserInterfaceModesMenu,
 // ----------------------------------------------------------------------------
 //   Mode setting for numbers
 // ----------------------------------------------------------------------------
-     "GrStk",                                   ID_GraphicResultDisplay,
+     "GrRes",                                   ID_GraphicResultDisplay,
+     "GrStk",                                   ID_GraphicStackDisplay,
      "Beep",                                    ID_BeepOn,
      "Flash",                                   ID_SilentBeepOn,
-     ErrorBeepFrequency::label,                 ID_ErrorBeepFrequency,
-     ErrorBeepDuration::label,                  ID_ErrorBeepDuration,
+     "Round",                                   ID_RoundedMenus,
 
      ResultFont::label,                         ID_ResultFont,
      StackFont::label,                          ID_StackFont,
@@ -1348,19 +1348,20 @@ MENU(UserInterfaceModesMenu,
      "3-lines",                                 ID_ThreeRowsMenus,
      "1-line",                                  ID_SingleRowMenus,
      "Flat",                                    ID_FlatMenus,
-     "Round",                                   ID_RoundedMenus,
+     "VProg",                                   ID_VerticalProgramRendering,
      "Units",                                   ID_ShowBuiltinUnits,
 
      "cmd",                                     ID_LowerCase,
      "CMD",                                     ID_UpperCase,
      "Cmd",                                     ID_Capitalized,
      "Command",                                 ID_LongForm,
-     "VProg",                                   ID_VerticalProgramRendering,
+     ErrorBeepDuration::label,                  ID_ErrorBeepDuration,
 
      EditorWrapColumn::label,                   ID_EditorWrapColumn,
      TabWidth::label,                           ID_TabWidth,
      MaximumShowWidth::label,                   ID_MaximumShowWidth,
-     MaximumShowHeight::label,                  ID_MaximumShowHeight);
+     MaximumShowHeight::label,                  ID_MaximumShowHeight,
+     ErrorBeepFrequency::label,                 ID_ErrorBeepFrequency);
 
 MENU(MathModesMenu,
 // ----------------------------------------------------------------------------
