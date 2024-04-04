@@ -124,11 +124,19 @@
 		CLLCD
 		{ #0 #40 } PICT OVER Walk GXOR
 		1 99999 FOR i
-			#0 i 420 MOD + #40 2 →List
+			i 420 MOD R->B
+			#40 2 →List
 			PICT OVER Walk GXOR
 			PICT ROT Walk GXOR
-			0.01 WAIT
-		NEXT
+
+			@ Set flag 48 for HP-48-style slow walk
+			IF 48 FS?
+			THEN
+				0.2 WAIT 5
+			ELSE
+				0.01 WAIT 1
+			END
+		STEP
 		»
  »
 'WalkMan' STO
