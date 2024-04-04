@@ -252,16 +252,21 @@
 		Degrees ClearLCD 0 360000
 		for i
 			@ Erase old line
-			#FFFFFFFFFFFFFFFF Foreground i 100 - MyLine
-			@ Set random foreground and draw new line
+			1 10 for g
+				g 10 / Gray Foreground
+				i 100 g + - MyLine
+			next
 
+			@ Set random foreground and draw new line
 			if
 				Ticks 1000 ÷ 10 mod 7 <
 			then
 				#0 Foreground
 			else
 				#1111111111111111 i 16 mod × Foreground
-			end i MyLine
+			end
+			i MyLine
+
 			@ Wait 1ms
 			0.001 Wait
 		next
@@ -279,9 +284,9 @@
 
 «
 	@ Restore foreground and background in case we interrupted another program
-	#0 Foreground
+	0 Gray Foreground
 	64 STWS
-	#0 not Background
+	1 Gray Background
 
 	0 300
 	for i
@@ -295,35 +300,50 @@
 		0.01 Wait
 	next
 
-	ClearLCD
-	0 300
-	for i
-		"Pixel positioning " { 10#75 10#150 0 true true } Disp
-		"Pos " { } #0 i + 223 mod + #0 i 45 mod + 25 + +
-		dup Rot Swap ToText + " " +
-		Swap Disp
-		0.01 Wait
-	next
-
-	ClearLCD
-	1 360
-	for i
-		"Complex positioning " { 10#55 10#100 0 true true } Disp
-		" Angle " i + " " +
-		i 180 / Ⓒπ * Ⓒⅈ * exp 4.5 * ToDecimal 2.5 -
+	«
+		Dup2
 		Disp
 		0.01 Wait
-	next
+		'Foreground' RCL
+		→ fg
+		«
+			1 gray Foreground
+			Disp
+			fg Foreground
+		»
+	»
+	→ DispThenErase
+	«
+		ClearLCD
+		0 300
+		for i
+			"Pixel positioning " { 10#75 10#150 0 true true } Disp
+			"Pos " { } #0 i + 223 mod + #0 i 45 mod + 25 + +
+			dup Rot Swap ToText + " " +
+			Swap
+			DispThenErase
+		next
 
-	ClearLCD
-	1 360
-	for i
-		"Scaled positioning " { 10#55 10#100 0 true true } Disp
-		" Angle " i + " " +
-		{ } i cos 7 * 2.5 - + i 3 * sin 3 * +
-		Disp
-		0.01 Wait
-	next
+		ClearLCD
+		Degrees
+		1 360
+		for i
+			"Complex positioning " { 10#55 10#100 0 true true } Disp
+			" Angle " i +
+			4.5 i R->P 2.9 -
+			DispThenErase
+		next
+
+		ClearLCD
+		1 360
+		for i
+			"Scaled positioning " { 10#55 10#100 0 true true } Disp
+			" Angle " i +
+			{ } i cos 7 * 2.9 - + i 3 * sin 3 * +
+			DispThenErase
+		next
+	»
+
 
 	ClearLCD
 	"	 Fonts	"	 { 10#75 10#180 0 true true } Disp
@@ -542,13 +562,13 @@
 	0 255 for r
 		0 255 for g
 			0 255 for b
-				r   255 /
+				r 255 /
 				g 255 /
-				b  255 /
+				b 255 /
 				RGB Foreground
 
-				{ } 10#1 g * 400 * 255 / 0 + +  10#1 b * 240 * 255 / 0 + +
-				{ } 10#1 g * 400 * 255 / 2 + +  10#1 b * 240 * 255 / 1 + +
+				{ } 10#1 g * 400 * 255 / 0 + +	10#1 b * 240 * 255 / 0 + +
+				{ } 10#1 g * 400 * 255 / 2 + +	10#1 b * 240 * 255 / 1 + +
 				Rect
 			next
 		next
@@ -613,7 +633,5 @@
 	16#0 Foreground
 	1 LineWidth
 	ScatterPlot
-
-
 »
 'Plotting' STO
