@@ -355,12 +355,12 @@ static const cstring basic_constants[] =
 //   clang-format on
 
 
-static void invalid_constant_error()
+static runtime &invalid_constant_error()
 // ----------------------------------------------------------------------------
 //    Return the error message for invalid constants
 // ----------------------------------------------------------------------------
 {
-    rt.invalid_constant_error();
+    return rt.invalid_constant_error();
 }
 
 
@@ -473,7 +473,7 @@ constant_p constant::do_lookup(config_r cfg, utf8 txt, size_t len, bool error)
     }
 
     if (error)
-        cfg.error();
+        cfg.error().source(txt, len);
     return nullptr;
 }
 

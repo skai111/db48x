@@ -63,12 +63,12 @@ static const cstring basic_equations[] =
 //   clang-format on
 
 
-static void invalid_equation_error()
+static runtime &invalid_equation_error()
 // ----------------------------------------------------------------------------
 //    Return the error message for invalid equations
 // ----------------------------------------------------------------------------
 {
-    rt.invalid_equation_error();
+    return rt.invalid_equation_error();
 }
 
 

@@ -72,7 +72,7 @@ struct constant : algebraic
         cstring    file;        // CSV file for names and definitions
         builtins_p builtins;    // Builtins defintions
         size_t     nbuiltins;   // Number of entries in builtins[]
-        void      (*error)();   // Emit error message
+        runtime &  (*error)();   // Emit error message
     };
     typedef const config &config_r;
 

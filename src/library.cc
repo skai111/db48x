@@ -63,12 +63,12 @@ static const cstring basic_library[] =
 //   clang-format on
 
 
-static void invalid_xlib_error()
+static runtime &invalid_xlib_error()
 // ----------------------------------------------------------------------------
 //    Return the error message for invalid library
 // ----------------------------------------------------------------------------
 {
-    rt.invalid_xlib_error();
+    return rt.invalid_xlib_error();
 }
 
 
