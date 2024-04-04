@@ -150,31 +150,32 @@
 «
 	@ Summation loop
 	@ See https://www.hpmuseum.org/forum/thread-9750.html
-	Ticks
-	Radians 0 1 1000
-	for x
-		x tan⁻¹ sin exp ∛ +
-	next
-	Ticks Rot -
+	Radians
+	«
+		0 1 1000
+		for x
+			x tan⁻¹ sin exp ∛ +
+		next
+	»
+	TEval
 »
-'SumTest' STO
+'SumTestWithLoop' STO
 
 
 
 @@ ---------------------------------------------------------------------------
 @@
-@@	 Summation loop (FP performance test)
+@@	 Summation loop (FP performance test, using sum command)
 @@
 @@ ---------------------------------------------------------------------------
 «
 	@ Summation loop
 	@ See https://www.hpmuseum.org/forum/thread-9750.html
-	Ticks
 	Radians
-        x 1 1000 'cbrt(exp(sin(atan(x))))' sum
-	Ticks Rot -
+	« x 1 1000 'cbrt(exp(sin(atan(x))))' sum »
+	TEval
 »
-'SumTest2' STO
+'SumTestWithFunction' STO
 
 
 
@@ -185,38 +186,36 @@
 @@ ---------------------------------------------------------------------------
 
 «
-	@ Record starting time
-	Ticks
-
-	@ User RPL program lifted straight from
-	@ https://www.hpmuseum.org/cgi-sys/cgiwrap/hpmuseum/articles.cgi?read=700
-	0
-	do
-		8 Swap 1 +
-		while
-			Duplicate2
-			do
-				1 -
-			until
-				Duplicate2 5 + Pick - norm Duplicate2 - × not
-			end
-		repeat
-			Drop
+	«
+		@ User RPL program lifted straight from
+		@ https://www.hpmuseum.org/cgi-sys/cgiwrap/hpmuseum/articles.cgi?read=700
+		0
+		do
+			8 Swap 1 +
 			while
-				Swap Duplicate 1 same
+				Duplicate2
+				do
+					1 -
+				until
+					Duplicate2 5 + Pick - norm Duplicate2 - × not
+				end
 			repeat
-				-
+				Drop
+				while
+					Swap Duplicate 1 same
+				repeat
+					-
+				end
+				1 - Swap
 			end
-			1 - Swap
+			Drop
+		until
+			Duplicate 8 same
 		end
-		Drop
-	until
-		Duplicate 8 same
-	end
-	→List
-
-	@ Compute execution duration
-	Ticks Rot -
+		→List
+	»
+	@ Compute execution duration of that code
+	TEval
 »
 'NQueens' STO
 
@@ -618,23 +617,3 @@
 
 »
 'Plotting' STO
-
-
-
-
-
-@@ ---------------------------------------------------------------------------
-@@
-@@	 Benchmarking helper
-@@
-@@ ---------------------------------------------------------------------------
-
-«
-	@ Compute duration in ticks of evaluating a program
-	Ticks -> Program StartTime
-	«
-		Program
-		Ticks StartTime -
-	»
-»
-'Benchmark' STO
