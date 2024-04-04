@@ -416,6 +416,26 @@ unintentional differences, since the implementation is completely new.
   implementation shows and requires the `Σ(i;1;10;i^2)` syntax. Note that an `=`
   sign may appear inside an expression, but it always denotes equality.
 
+
+### Evaluation
+
+* Local names are evaluated on DB48X, unlike in the HP versions of RPL. This
+  makes it easier to use local subprograms in larger programs as if they were
+  normal operations. In the less frequent case where you do not want evaluation,
+  you need to use `RCL` like for global variables.
+
+* The `case` statement can contain `when` clauses as a shortcut for the frequent
+  combination of duplicating the value and testing against a reference. For
+  example, `case dup "A" = then "Alpha" end` can be replaced with `case "A" when
+  "Alpha" end`.
+
+* There are no _compiled local variables_. The a program like `→ ←x « Prog »`
+  might perform incorrectly if `Prog` attempts to access `←x`. Compiled local
+  variables are a rather obscure feature with a very limited use, and might be
+  replaced with true closures (which have a well-defined meaning) if there is
+  enough demand.
+
+
 ### Numbers
 
 * DB48X has several separate representations for numbers: integers, fractions

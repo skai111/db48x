@@ -157,9 +157,9 @@ PARSE_BODY(locals)
     object::result result = ERROR;
     switch(cp)
     {
-    case L'«':  result = program ::do_parse(p); break;
+    case L'«':  result = program   ::do_parse(p); break;
     case  '\'': result = expression::do_parse(p); break;
-    case '{':   result = list    ::do_parse(p); break;
+    case '{':   result = list      ::do_parse(p); break;
     default:                                    break;
     }
     if (result != OK)
