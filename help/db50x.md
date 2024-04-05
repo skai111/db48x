@@ -331,7 +331,7 @@ unintentional differences, since the implementation is completely new.
 
 * DB50X features an extensive built-in help system, which you are presently
   using. Information for that help system is stored using a regular *markdown*
-  file named `/HELP/DB50X.md`, stored in the calculator's flash storage.
+  file named `/help/db50x.md`, stored in the calculator's flash storage.
 
 * DB50X features auto-completion for commands while typing, through
   the  _CAT_ key (a [Catalog](#Catalog) of all commands).
@@ -611,7 +611,7 @@ the codepoints in a text.
 ## Help
 
 The DB50X project includes an extensive built-in help, which you are presently
-reading. This help is stored as a `HELP/DB50X.md` file on the calculator. You
+reading. This help is stored as a `help/db50x.md` file on the calculator. You
 can also read it from a web browser directly on the GitHub page of the project.
 
 The `Help` command makes it possible to access the built-in help in a contextual
@@ -8259,4 +8259,3 @@ Create a backup on a remote machine
 
 ## USBRESTORE
 Restore a backup from a remote machine
-

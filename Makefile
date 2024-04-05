@@ -127,14 +127,14 @@ QMAKE_fastest=release
 
 TTF2FONT=$(TOOLS)/ttf2font/ttf2font
 $(TTF2FONT): $(TTF2FONT).cpp $(TOOLS)/ttf2font/Makefile src/ids.tbl
-	cd $(TOOLS)/ttf2font; $(MAKE) TARGET=release
+	cd $(TOOLS)/ttf2font; $(MAKE) TARGET=
 sim/gcc111libbid.a: sim/gcc111libbid-$(shell uname)-$(shell uname -m).a
 	cp $< $@
 
 dist: all
 	cp $(BUILD)/$(TARGET)_qspi.bin  .
 	tar cvfz $(TARGET)-v$(VERSION).tgz $(TARGET).$(PGM) $(TARGET)_qspi.bin \
-		help/*.md STATE/*.48S
+		help/*.md state/*.48S
 	@echo "# Distributing $(VERSION)"
 
 $(VERSION_H): $(BUILD)/version-$(VERSION).h
@@ -285,7 +285,7 @@ DEFINES += \
 	DECIMAL_GLOBAL_EXCEPTION_FLAGS_ACCESS_FUNCTIONS \
 	$(DEFINES_$(OPT)) \
 	$(DEFINES_$(VARIANT)) \
-	HELPFILE_NAME=\"/HELP/$(TARGET).md\"
+	HELPFILE_NAME=\"/help/$(TARGET).md\"
 DEFINES_debug=DEBUG
 DEFINES_release=RELEASE
 DEFINES_small=RELEASE

@@ -634,7 +634,7 @@ text_p files::filename(text_p fname, bool writing) const
         txt++;
         len--;
 
-        // Turn CONFIG:/CONSTANTS.CSV into CONFIG/CONSTANTS.CSV
+        // Turn config:/constants.csv into config/constants.csv
         if (in_pool)
             absolute = false;
         name = text::make(txt, len);

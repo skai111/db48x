@@ -304,7 +304,7 @@ static int state_save()
     bool overwrite_check = true;
     void *user_data = NULL;
     int ret = file_selection_screen("Save state",
-                                    "/STATE", ".48S",
+                                    "/state", ".48S",
                                     state_save_callback,
                                     display_new, overwrite_check,
                                     user_data);
@@ -464,7 +464,7 @@ static int state_load(bool merge)
     bool overwrite_check = false;
     void *user_data = (void *) merge;
     int ret = file_selection_screen(merge ? "Merge state" : "Load state",
-                                    "/STATE", ".48S",
+                                    "/state", ".48S",
                                     state_load_callback,
                                     display_new, overwrite_check,
                                     user_data);
