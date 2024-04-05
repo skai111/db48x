@@ -1915,6 +1915,8 @@ void blitter::surface<Mode>::line(coord   x1,
             y2 = drawable.y2;
         }
     }
+    if (!width)
+        width = 1;
 
     size  dx = x1 > x2 ? x1 - x2 : x2 - x1;
     size  dy = y1 > y2 ? y1 - y2 : y2 - y1;
