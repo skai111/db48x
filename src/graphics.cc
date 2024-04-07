@@ -627,7 +627,7 @@ COMMAND_BODY(Show)
         while (running)
         {
             Screen.fill(pattern::gray50);
-            Screen.copy_mono(s, r, point(x,y));
+            Screen.copy(s, r, point(x,y));
             ui.draw_dirty(0, 0, LCD_W-1, LCD_H-1);
             refresh_dirty();
 

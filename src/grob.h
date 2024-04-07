@@ -248,18 +248,18 @@ struct grapher
 {
     using font_id = settings::font_id;
 
-    grapher(size    w    = LCD_W,
-            size    h    = LCD_H,
-            font_id f    = settings::EDITOR,
-            pattern fg   = pattern::black,
-            pattern bg   = pattern::white,
-            bool    stack = false)
+    grapher(size          w     = LCD_W,
+            size          h     = LCD_H,
+            font_id       f     = settings::EDITOR,
+            grob::pattern fg    = grob::pattern::black,
+            grob::pattern bg    = grob::pattern::white,
+            bool          stack = false)
         : maxw(w),
           maxh(h),
           voffset(0),
           font(f),
-          foreground(fg.bits),
-          background(bg.bits),
+          foreground(fg),
+          background(bg),
           stack(stack)
     {}
     grapher(const grapher &other) = default;

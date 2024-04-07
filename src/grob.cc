@@ -290,7 +290,7 @@ object::result grob::command(grob::blitop op)
             if (grob_p sg = src->as<grob>())
             {
                 ui.draw_graphics();
-                surface srcs = sg->pixels();
+                grob::surface srcs = sg->pixels();
                 bool drawn = false;
                 point p(0,0);
                 rect drect = srcs.area();

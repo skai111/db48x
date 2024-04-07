@@ -118,8 +118,8 @@ void stack::draw_stack()
             grapher g(avail - 2,
                       bottom - top,
                       fid,
-                      pattern::black,
-                      pattern::white,
+                      grob::pattern::black,
+                      grob::pattern::white,
                       true);
             do
             {
@@ -162,7 +162,7 @@ void stack::draw_stack()
             grob::surface s = graph->pixels();
             rect r = s.area();
             r.offset(LCD_W - 2 - w, y);
-            Screen.copy_mono(s, r);
+            Screen.copy(s, r);
         }
         else
         {
