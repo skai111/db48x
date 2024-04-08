@@ -421,7 +421,7 @@ INSERT_BODY(DoUntil)
 //   Insert a do-until loop in the editor
 // ----------------------------------------------------------------------------
 {
-    return ui.edit(utf8("do  until  end"), ui.PROGRAM, 3);
+    return ui.edit(utf8("do \t until  end"), ui.PROGRAM);
 }
 
 
@@ -486,7 +486,7 @@ INSERT_BODY(WhileRepeat)
 //   Insert a while loop in the editor
 // ----------------------------------------------------------------------------
 {
-    return ui.edit(utf8("while  repeat  end"), ui.PROGRAM, 6);
+    return ui.edit(utf8("while \t repeat  end"), ui.PROGRAM);
 }
 
 
@@ -544,7 +544,7 @@ INSERT_BODY(StartNext)
 //   Insert a start-next loop in the editor
 // ----------------------------------------------------------------------------
 {
-    return ui.edit(utf8("start  next"), ui.PROGRAM, 6);
+    return ui.edit(utf8("start \t next"), ui.PROGRAM);
 }
 
 
@@ -630,7 +630,7 @@ INSERT_BODY(StartStep)
 //   Insert a start-step loop in the editor
 // ----------------------------------------------------------------------------
 {
-    return ui.edit(utf8("start  step"), ui.PROGRAM, 6);
+    return ui.edit(utf8("start \t step"), ui.PROGRAM);
 }
 
 
@@ -696,7 +696,7 @@ INSERT_BODY(ForNext)
 //   Insert a for-next loop in the editor
 // ----------------------------------------------------------------------------
 {
-    return ui.edit(utf8("for  next"), ui.PROGRAM, 4);
+    return ui.edit(utf8("for \t next"), ui.PROGRAM);
 }
 
 
@@ -740,7 +740,7 @@ INSERT_BODY(ForStep)
 //   Insert a for-step loop in the editor
 // ----------------------------------------------------------------------------
 {
-    return ui.edit(utf8("for  step"), ui.PROGRAM, 4);
+    return ui.edit(utf8("for \t step"), ui.PROGRAM);
 }
 
 

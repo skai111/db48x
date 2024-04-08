@@ -500,7 +500,7 @@ MENU(MatrixMenu,
 // ----------------------------------------------------------------------------
 //   Matrix operations
 // ----------------------------------------------------------------------------
-     "[]",      ID_SelfInsert,
+     "[\t]",    ID_SelfInsert,
      "Idnty",   ID_Unimplemented,
      "Const",   ID_Unimplemented,
      "Transp",  ID_Unimplemented,
@@ -779,24 +779,24 @@ MENU(ProgramMenu,
 // ----------------------------------------------------------------------------
 //   Programming menu
 // ----------------------------------------------------------------------------
-     "«»",      ID_SelfInsert,
-     "{}",      ID_SelfInsert,
-     "[]",      ID_SelfInsert,
-     "→ «»",    ID_SelfInsert,
-     "→ ''",    ID_SelfInsert,
+     "«\t»",    ID_SelfInsert,
+     "{\t}",    ID_SelfInsert,
+     "[\t]",    ID_SelfInsert,
+     "→ \t «»", ID_SelfInsert,
+     "→ \t ''", ID_SelfInsert,
      "Eval",    ID_Eval,
 
-     "Memory",  ID_MemoryMenu,
-     "Tests",   ID_TestsMenu,
-     "Compare", ID_CompareMenu,
-     "Loops",   ID_LoopsMenu,
-     "Bases",   ID_BasesMenu,
+     "Mem",     ID_MemoryMenu,
+     "Test",    ID_TestsMenu,
+     "Cmp",     ID_CompareMenu,
+     "Loop",    ID_LoopsMenu,
+     "Base",    ID_BasesMenu,
      "Stack",   ID_StackMenu,
 
      "Debug",   ID_DebugMenu,
-     "Objects", ID_ObjectMenu,
-     "Lists",   ID_ListMenu,
-     "Flags",   ID_FlagsMenu,
+     "Obj",     ID_ObjectMenu,
+     "List",    ID_ListMenu,
+     "Flag",    ID_FlagsMenu,
                 ID_Version);
 
 

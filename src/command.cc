@@ -336,7 +336,6 @@ COMMAND_BODY(SelfInsert)
     {
         uint plane = ui.shift_plane();
         uint menu_idx = key - KEY_F1 + plane * ui.NUM_SOFTKEYS;
-        uint count = 0;
         if (symbol_p sym = ui.label(menu_idx))
         {
             size_t len = 0;
@@ -345,17 +344,7 @@ COMMAND_BODY(SelfInsert)
         }
         else if (cstring lbl = ui.label_text(menu_idx))
         {
-            uint cpos = ui.cursor_position();
-            for (utf8 p = utf8(lbl); *p; p = utf8_next(p))
-            {
-                ui.edit(utf8_codepoint(p), ui.PROGRAM, false);
-                count++;
-                if (count == 1)
-                    cpos = ui.cursor_position();
-            }
-            if (count == 2)
-                ui.cursor_position(cpos);
-
+            ui.edit(utf8(lbl), ui.TEXT);
         }
     }
     return OK;

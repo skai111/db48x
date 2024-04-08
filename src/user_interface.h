@@ -158,8 +158,8 @@ struct user_interface
     object_p    object_for_key(int key);
     int         evaluating_function_key() const;
     void        edit(unicode c, modes m, bool autoclose = true);
-    result      edit(utf8 s, size_t len, modes m, int off = 0);
-    result      edit(utf8 s, modes m, int off = 0);
+    result      edit(utf8 s, size_t len, modes m);
+    result      edit(utf8 s, modes m);
     bool        end_edit();
     void        clear_editor();
     text_p      editor_save(text_r ed, bool rewinding = false);

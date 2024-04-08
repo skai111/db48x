@@ -198,7 +198,7 @@ void user_interface::edit(unicode c, modes m, bool autoclose)
 }
 
 
-object::result user_interface::edit(utf8 text, size_t len, modes m, int offset)
+object::result user_interface::edit(utf8 text, size_t len, modes m)
 // ----------------------------------------------------------------------------
 //   Enter the given text on the command line
 // ----------------------------------------------------------------------------
@@ -232,7 +232,12 @@ object::result user_interface::edit(utf8 text, size_t len, modes m, int offset)
             insert(cursor, ' ');
     }
 
-    size_t added = insert(cursor, text, len);
+    uint   offset = 0;
+    if (cstring ins = strchr(cstring(text), '\t'))
+        offset = ins - cstring(text);
+
+    uint   pos    = cursor;
+    size_t added  = insert(cursor, text, len);
 
     if (m == TEXT)
     {
@@ -253,10 +258,11 @@ object::result user_interface::edit(utf8 text, size_t len, modes m, int offset)
     }
 
     // Offset from beginning or end of inserted text
-    if (offset > 0 && cursor > len)
-        cursor = cursor - len + offset;
-    else if (offset < 0 && cursor > uint(-offset))
-        cursor = cursor + offset;
+    if (offset)
+    {
+        cursor = pos + offset;
+        remove(cursor, 1);
+    }
 
     dirtyEditor = true;
     adjustSeps = true;
@@ -265,12 +271,12 @@ object::result user_interface::edit(utf8 text, size_t len, modes m, int offset)
 }
 
 
-object::result user_interface::edit(utf8 text, modes m, int offset)
+object::result user_interface::edit(utf8 text, modes m)
 // ----------------------------------------------------------------------------
 //   Edit a null-terminated text
 // ----------------------------------------------------------------------------
 {
-    return edit(text, strlen(cstring(text)), m, offset);
+    return edit(text, strlen(cstring(text)), m);
 }
 
 
@@ -1345,7 +1351,7 @@ bool user_interface::draw_menus()
         shplane = 0;
     }
 
-
+    settings::SaveTabWidth stw(0);
     for (int plane = 0; plane < planes; plane++)
     {
         cstring *labels = menu_label[plane];
