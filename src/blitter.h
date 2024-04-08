@@ -361,6 +361,7 @@ struct blitter
         FILL_QUICK  = SKIP_SOURCE,
         FILL_SAFE   = SKIP_SOURCE | CLIP_DST,
         COPY        = CLIP_ALL | SKIP_COLOR,
+        DRAW        = CLIP_ALL,
     };
 
     // blitop: a blitting operation
@@ -584,11 +585,65 @@ struct blitter
         //   Copy a rectangular area from the source
         // --------------------------------------------------------------------
         {
-            size w = src.w;
-            size h = src.h;
-            rect dest(x, y, x + w - 1, y + h - 1);
+            rect dest(x, y, x + src.w - 1, y + src.h - 1);
             blit<Clip>(*this, src, dest, point(), blitop_source, clear);
         }
+
+
+        template <clipping Clip = DRAW, mode SMode>
+        void draw(surface<SMode> &src,
+                  const point    &pos   = point(0, 0),
+                  pattern         color = pattern::black,
+                  blitop          op    = blitop_draw)
+        // --------------------------------------------------------------------
+        //   Draw a rectangular area from the source
+        // --------------------------------------------------------------------
+        {
+            return draw(src, pos.x, pos.y, color, op);
+        }
+
+
+        template <clipping Clip = DRAW, mode SMode>
+        void draw(surface<SMode> &src,
+                  coord           x,
+                  coord           y,
+                  pattern         color = pattern::black,
+                  blitop          op    = blitop_draw)
+        // --------------------------------------------------------------------
+        //   Draw a rectangular area from the source
+        // --------------------------------------------------------------------
+        {
+            rect dest(x, y, x + src.w - 1, y + src.h - 1);
+            blit<Clip>(*this, src, dest, point(), op, color);
+        }
+
+
+        template <clipping Clip = DRAW, mode SMode>
+        void draw_background(surface<SMode> &src,
+                             const point    &pos   = point(0, 0),
+                             pattern         color = pattern::black,
+                             blitop          op    = blitop_background)
+        // --------------------------------------------------------------------
+        //   Draw a rectangular area from the source backgroundo
+        // --------------------------------------------------------------------
+        {
+            draw(src, pos.x, pos.y, color, op);
+        }
+
+
+        template <clipping Clip = DRAW, mode SMode>
+        void draw_background(surface<SMode> &src,
+                             coord           x,
+                             coord           y,
+                             pattern         color = pattern::black,
+                             blitop          op    = blitop_background)
+        // --------------------------------------------------------------------
+        //   Draw a rectangular area from the source background
+        // --------------------------------------------------------------------
+        {
+            draw(src, x, y, color, op);
+        }
+
 
         template <clipping Clip = CLIP_DST>
         coord glyph(coord       x,
@@ -902,7 +957,17 @@ public:
     {
         return (dst & ~src) | (arg & src);
     }
+
+
+    static pixword blitop_background(pixword dst, pixword src, pixword arg)
+    // ------------------------------------------------------------------------
+    //   Colorize based on source
+    // ------------------------------------------------------------------------
+    {
+        return (dst & src) | (arg & ~src);
+    }
 };
+
 
 
 // ============================================================================

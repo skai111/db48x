@@ -34,6 +34,7 @@
 #include "command.h"
 #include "dmcp.h"
 #include "functions.h"
+#include "grob.h"
 #include "list.h"
 #include "menu.h"
 #include "precedence.h"
@@ -1669,7 +1670,14 @@ bool user_interface::draw_annunciators()
         size lw = HeaderFont->width(label);
         Screen.fill(280, 0, 280+lw, 1+lh, pattern::black);
         if (alpha)
-            Screen.text(280, 0, label, HeaderFont, pattern::white);
+        {
+#ifdef CONFIG_COLOR
+            pattern apat = pattern(200, 224, 224);
+#else
+            pattern apat = pattern::white;
+#endif // COLOR_CONFIG
+            Screen.text(280, 0, label, HeaderFont, apat);
+        }
         draw_dirty(280, 0, 280+lw, 1+lh);
         alpha_drawn = alpha;
         lowerc_drawn = lowercase;
@@ -1679,13 +1687,22 @@ bool user_interface::draw_annunciators()
     if (!force && shift == shift_drawn && xshift == xshift_drawn)
         return result;
 
+    coord       ann_x      = 260;
     coord       ann_y      = (lh - ann_height) / 2;
     const byte *source     = xshift ? ann_right : shift ? ann_left : nullptr;
     if (source)
     {
         pixword *sw = (pixword *) source;
-        surface  s(sw, ann_width, ann_height, 16);
-        Screen.copy(s, 260, ann_y);
+        grob::surface  s(sw, ann_width, ann_height, 16);
+#ifdef CONFIG_COLOR
+        pattern color = shift ? pattern(255, 230, 128)
+                              : pattern(128, 192, 255);
+        Screen.fill(ann_x, ann_y,
+                    260+ann_width, ann_y+ann_height, pattern::black);
+        Screen.draw(s, ann_x, ann_y, color);
+#else
+        Screen.copy(s, ann_x, ann_y);
+#endif
     }
     else if (!force)
     {
@@ -1730,8 +1747,19 @@ bool user_interface::draw_battery()
     // Experimentally, battery voltage below 2.6V cause calculator flakiness
     const int vmax = BATTERY_VMAX;
     const int vmin = BATTERY_VMIN;
-    const int vlow = BATTERY_VLOW;
+    const int vhalf = (BATTERY_VMAX + BATTERY_VMIN) / 2;
 
+#ifdef CONFIG_COLOR
+    pattern   vpat  = usb          ? pattern(128, 192, 255)
+                    : low          ? pattern(192, 64, 64)
+                    : vdd <= vhalf ? pattern(255, 192, 64)
+                                   : pattern(64, 192, 64);
+#else
+    pattern vpat = usb          ? pattern::gray50
+                 : low          ? pattern::gray25
+                 : vdd <= vhalf ? pattern::gray75
+                                : pattern::white;
+#endif
     bool showv = Settings.ShowVoltage();
     coord x = showv ? 311 : 370;
     rect bat(x + 3, ann_y+2, x + 25, ann_y + ann_height);
@@ -1740,9 +1768,6 @@ bool user_interface::draw_battery()
     {
         char buffer[64];
         snprintf(buffer, sizeof(buffer), "%d.%03dV", vdd / 1000, vdd % 1000);
-        pattern vpat = low         ? pattern::gray25
-                     : vdd <= vlow ? pattern::gray50
-                                   : pattern::white;
         Screen.text(340, 1, utf8(buffer), HeaderFont, vpat);
     }
     Screen.fill(x, ann_y + 4, x+4, ann_y + ann_height - 2, pattern::white);
@@ -1760,7 +1785,7 @@ bool user_interface::draw_battery()
         w = 1;
     bat.x1 = bat.x2 - w;
 
-    Screen.fill(bat, usb ? pattern::gray50 : pattern::white);
+    Screen.fill(bat, vpat);
     if (!usb)
     {
         bat.x2 += 1;
@@ -1788,7 +1813,7 @@ bool user_interface::draw_busy(unicode glyph)
 //    Draw the busy flying cursor
 // ----------------------------------------------------------------------------
 {
-    if (graphics)
+    if (graphics || shift || xshift || alpha)
         return false;
 
     size w  = 32;
@@ -1803,7 +1828,11 @@ bool user_interface::draw_busy(unicode glyph)
         rect clip = Screen.clip();
         Screen.clip(r);
         coord gx = x + sys_current_ms() / 16 % w;
+#ifdef CONFIG_COLOR
+        Screen.glyph(gx, y, glyph, HeaderFont, pattern(128, 192, 255));
+#else
         Screen.glyph(gx, y, glyph, HeaderFont, pattern::white);
+#endif // CONFIG_COLOR
         Screen.clip(clip);
     }
     draw_dirty(r);
@@ -2298,7 +2327,11 @@ bool user_interface::draw_error()
         rect clip = Screen.clip();
         rect r(x, y, x + width - 1, y + height - 1);
         draw_dirty(r);
+#ifdef CONFIG_COLOR
+        Screen.fill(r, pattern(192, 64, 64));
+#else // CONFIG_COLOR
         Screen.fill(r, pattern::gray50);
+#endif // CONFIG_COLOR
         r.inset(border);
         Screen.fill(r, pattern::white);
         r.inset(2);
