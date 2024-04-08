@@ -34,6 +34,7 @@
 #include "file.h"
 #include "object.h"
 #include "runtime.h"
+#include "target.h"
 #include "text.h"
 #include "types.h"
 
@@ -82,10 +83,9 @@ struct user_interface
     using result = object::result;
     using id     = object::id;
 
-    typedef blitter::coord coord;
-    typedef blitter::size  size;
-    typedef blitter::rect  rect;
-
+    using coord  = blitter::coord;
+    using size   = blitter::size;
+    using rect   = blitter::rect;
 
     bool        key(int key, bool repeating, bool transalpha);
     bool        repeating()     { return repeat; }
@@ -119,10 +119,15 @@ struct user_interface
     uint        draw_refresh()          { return nextRefresh; }
     rect        draw_dirty()            { return dirty; }
     void        draw_clean()            { dirty = rect(); }
-    bool        draw_graphics();
+    bool        draw_graphics(bool erase = false);
 
-    bool        draw_header();
-    bool        draw_annunciators();
+    bool        draw_header();          // Left part of header
+    bool        draw_battery();         // Rightmost part of header
+    bool        draw_annunciators();    // Left of battery
+    bool        draw_busy(unicode glyph, pattern col);
+    rect        draw_busy_background();
+    bool        draw_busy();
+    bool        draw_idle();
     bool        draw_editor();
     bool        draw_stack();
     bool        draw_error();
@@ -134,10 +139,7 @@ struct user_interface
     bool        draw_stepping_object();
 
     bool        draw_menus();
-    bool        draw_battery();
     bool        draw_cursor(int show, uint ncursor);
-    bool        draw_busy(unicode glyph = L'▶');
-    bool        draw_idle();
 
     modes       editing_mode()          { return mode; }
     int         stack_screen_bottom()   { return stack; }
@@ -201,6 +203,7 @@ protected:
     bool        noHelpForKey(int key);
     bool        do_search(unicode with = 0, bool restart = false);
 
+
 public:
     int      evaluating;        // Key being evaluated
 
@@ -228,6 +231,9 @@ protected:
     uint     menuPages;         // Number of menu pages
     uint     menuHeight;        // Height of the menu
     uint     busy;              // Busy counter
+    coord    busy_left;         // Left column for busy area in header
+    coord    busy_right;        // Right column for busy area in header
+    coord    battery_left;      // Left column for battery in header
     uint     nextRefresh;       // Time for next refresh
     rect     dirty;             // Dirty rectangles
     object_g editing;           // Object being edited if any
@@ -270,7 +276,7 @@ protected:
     file     helpfile;
     friend struct tests;
     friend struct runtime;
-};
+    };
 
 
 inline int user_interface::evaluating_function_key() const

@@ -171,7 +171,7 @@ object::result program::run_loop(size_t depth)
 
         if (stepping)
         {
-            ui.draw_busy(L'›');
+            ui.draw_busy(L'›', Settings.SteppingIconForeground());
             halted = --stepping == 0;
         }
     }

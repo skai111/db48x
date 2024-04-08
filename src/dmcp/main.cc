@@ -97,8 +97,8 @@ void redraw_lcd(bool force)
     // Draw the various components handled by the user interface
     ui.draw_start(force);
     ui.draw_header();
-    ui.draw_annunciators();
     ui.draw_battery();
+    ui.draw_annunciators();
     ui.draw_menus();
     if (!ui.draw_help())
     {

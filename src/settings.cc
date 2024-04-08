@@ -50,6 +50,86 @@
 settings Settings;
 
 
+settings::settings() :
+// ----------------------------------------------------------------------------
+//    Initial values for all the settings
+// ----------------------------------------------------------------------------
+#define ID(id)
+#define FLAG(Enable, Disable)
+#define SETTING(Name,Low,High,Init)             Name##_bits(Init),
+#define SETTING_BITS(Name,Type,Bits,Low,High,Init)
+#include "ids.tbl"
+
+    // Define the packed bits settings
+#define ID(id)
+#define FLAG(Enable, Disable)
+#define SETTING(Name, Low, High, Init)
+#define SETTING_BITS(Name,Type,Bits,Low,High,Init)   Name##_bits(Init - Low),
+#include "ids.tbl"
+
+    // Define the flags
+#define ID(id)
+#define FLAG(Enable, Disable)                   Enable##_bit(false),
+#define SETTINGS(Name, Low, High, Init)
+#define SETTING_BITS(Name,Type,Bits,Low,High,Init)
+#include "ids.tbl"
+
+        reserved(false)
+{
+#ifdef CONFIG_COLOR
+    AlphaForeground             (pattern(200, 224, 224).bits);
+    LowerAlphaForeground        (pattern(200, 224, 255).bits);
+    LeftShiftForeground         (pattern(  0,   0,   0).bits);
+    RightShiftForeground        (pattern(  0,   0,   0).bits);
+    LeftShiftBackground         (pattern(255, 230, 128).bits);
+    RightShiftBackground        (pattern(128, 192, 255).bits);
+
+    ChargingForeground          (pattern(128, 192, 255).bits);
+    LowBatteryForeground        (pattern(192,  64,  64).bits);
+    HalfBatteryForeground       (pattern(255, 192,  64).bits);
+    BatteryLevelForeground      (pattern( 64, 192,  64).bits);
+    VoltageForeground           (HeaderBackground());
+
+    RunningIconForeground       (pattern(128, 192, 255).bits);
+    SteppingIconForeground      (pattern( 64, 255, 128).bits);
+    HaltedIconForeground        (pattern(255,  64,  64).bits);
+    GCIconForeground            (pattern(255, 192,  64).bits);
+
+    UserCommandBorder           (pattern(128, 128, 255).bits);
+    UserCommandBackground       (pattern(224, 224, 224).bits);
+
+    CursorBackground            (pattern(  0, 128,  64).bits);
+    CursorBorder                (pattern(  0,  64,   0).bits);
+    CursorForeground            (pattern(224, 255, 224).bits);
+    CursorAlphaBackground       (pattern(  0,  64, 128).bits);
+    CursorAlphaBorder           (pattern(  0,   0,  64).bits);
+    CursorAlphaForeground       (pattern(224, 224, 255).bits);
+    CursorSelBackground         (pattern(192, 224, 255).bits);
+
+    EditorBackground            (pattern(224, 240, 255).bits);
+
+    ResultForeground            (pattern( 32,  64,  32).bits);
+    StackForeground             (pattern( 96,  96, 128).bits);
+
+    StackLevelBackground        (pattern(240, 240, 240).bits);
+    StackLevelForeground        (pattern( 96,   0,   0).bits);
+
+    SelectionBackground         (pattern(255, 255, 128).bits);
+    SelectionForeground         (pattern( 24,  24, 128).bits);
+
+    ErrorBackground             (pattern(255, 240, 224).bits);
+    ErrorForeground             (pattern( 64,   0,   0).bits);
+    ErrorBorder                 (pattern(192,  64,  64).bits);
+#else
+    ChargingForeground          (pattern::gray50.bits);
+    LowBatteryForeground        (pattern::gray25.bits);
+    HalfBatteryForeground       (pattern::gray75.bits);
+    BatteryLevelForeground      (pattern::white.bits);
+    SearchBackground            (pattern::gray25.bits);
+
+    CursorSelBackground         (pattern::gray90.bits);
+#endif // CONFIG_COLOR
+}
 
 // ============================================================================
 //

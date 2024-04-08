@@ -6972,6 +6972,7 @@ void tests::graphic_commands()
 
     step("Displaying text, background and foreground");
     test(CLEAR,
+         "1 Gray Background cllcd "
          "0.25 Gray Foreground 0.75 Gray Background "
          "\"Grayed\" { 0 0 } Disp", ENTER)
         .noerror().image("text-gray").test(ENTER);

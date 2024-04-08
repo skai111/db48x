@@ -88,18 +88,20 @@ void stack::draw_stack()
     coord  hdrx       = idxfont->width('0') * digits + 2;
     size   avail      = LCD_W - hdrx - 5;
 
-    Screen.fill(0, top, LCD_W, bottom, pattern::white);
+    Screen.fill(0, top, LCD_W, bottom, Settings.StackBackground());
+    if (rt.editing())
+    {
+        bottom--;
+        Screen.fill(0, bottom, LCD_W, bottom, Settings.EditorLineForeground());
+        bottom--;
+    }
     if (!depth)
         return;
 
     rect clip      = Screen.clip();
 
-    Screen.fill(hdrx, top, hdrx, bottom, pattern::gray50);
-    if (rt.editing())
-    {
-        bottom--;
-        Screen.fill(0, bottom, LCD_W, bottom, pattern::gray50);
-    }
+    Screen.fill(0, top, hdrx-1, bottom, Settings.StackLevelBackground());
+    Screen.fill(hdrx, top, hdrx, bottom, Settings.StackLineForeground());
 
     char buf[16];
     coord y = bottom;
@@ -157,12 +159,15 @@ void stack::draw_stack()
         coord yb   = y + lineHeight-1;
         Screen.clip(0, ytop, LCD_W, yb);
 
+        pattern fg = level == 0 ? Settings.ResultForeground()
+                                : Settings.StackForeground();
+        pattern bg = level == 0 ? Settings.ResultBackground()
+                                : Settings.StackBackground();
         if (graph)
         {
             grob::surface s = graph->pixels();
-            rect r = s.area();
-            r.offset(LCD_W - 2 - w, y);
-            Screen.copy(s, r);
+            Screen.draw(s, LCD_W - 2 - w, y, fg);
+            Screen.draw_background(s, LCD_W - 2 - w, y, bg);
         }
         else
         {
@@ -249,17 +254,17 @@ void stack::draw_stack()
                     size    offs  = lineHeight / 5;
 
                     Screen.clip(x, ytop, split, yb);
-                    Screen.text(x, y, out, len, font);
+                    Screen.text(x, y, out, len, font, fg);
                     Screen.clip(split, ytop, split + skip, yb);
                     Screen.glyph(split + skip/8, y - offs, sep, font,
                                  pattern::gray50);
                     Screen.clip(split+skip, y, LCD_W, yb);
-                    Screen.text(LCD_W - 2 - w, y, out, len, font);
+                    Screen.text(LCD_W - 2 - w, y, out, len, font, fg);
                 }
             }
             else
             {
-                Screen.text(LCD_W - 2 - w, y, out, len, font);
+                Screen.text(LCD_W - 2 - w, y, out, len, font, fg);
             }
 
             font = Settings.stack_font();
@@ -269,7 +274,8 @@ void stack::draw_stack()
         Screen.clip(clip);
         snprintf(buf, sizeof(buf), "%u", level + 1);
         size hw = idxfont->width(utf8(buf));
-        Screen.text(hdrx - hw, y + idxOffset, utf8(buf), idxfont);
+        Screen.text(hdrx - hw, y + idxOffset, utf8(buf), idxfont,
+                    Settings.StackLevelForeground());
 
         lineHeight = font->height();
     }

@@ -335,12 +335,12 @@ object::result grob::command(grob::blitop op)
 
 #ifdef CONFIG_COLOR
 // Pre-built grob::patterns for shades of grey
-const grob::pattern grob::pattern::black  = grob::pattern(0,     0,   0);
-const grob::pattern grob::pattern::gray10 = grob::pattern(32,   32,  32);
-const grob::pattern grob::pattern::gray25 = grob::pattern(64,   64,  64);
-const grob::pattern grob::pattern::gray50 = grob::pattern(128, 128, 128);
-const grob::pattern grob::pattern::gray75 = grob::pattern(192, 192, 192);
-const grob::pattern grob::pattern::gray90 = grob::pattern(224, 224, 224);
-const grob::pattern grob::pattern::white  = grob::pattern(255, 255, 255);
-const grob::pattern grob::pattern::invert = grob::pattern();
+const grob::pattern grob::pattern::black   = grob::pattern(0, 0, 0);
+const grob::pattern grob::pattern::gray10  = grob::pattern(32, 32, 32);
+const grob::pattern grob::pattern::gray25  = grob::pattern(64, 64, 64);
+const grob::pattern grob::pattern::gray50  = grob::pattern(128, 128, 128);
+const grob::pattern grob::pattern::gray75  = grob::pattern(192, 192, 192);
+const grob::pattern grob::pattern::gray90  = grob::pattern(224, 224, 224);
+const grob::pattern grob::pattern::white   = grob::pattern(255, 255, 255);
+const grob::pattern grob::pattern::invert  = grob::pattern();
 #endif

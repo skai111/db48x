@@ -72,6 +72,7 @@ RECORDER(tests_ui,      16, "Test interaction with user interface");
 
 #define NUM_TOPICS      (sizeof(topics) / sizeof(topics[0]))
 
+
 user_interface::user_interface()
 // ----------------------------------------------------------------------------
 //   Initialize the user interface
@@ -1254,16 +1255,16 @@ void user_interface::draw_dirty(const rect &r)
 }
 
 
-bool user_interface::draw_graphics()
+bool user_interface::draw_graphics(bool erase)
 // ----------------------------------------------------------------------------
 //   Start graphics mode
 // ----------------------------------------------------------------------------
 {
-    if (!graphics)
+    if (!graphics || erase)
     {
         draw_start(false);
         graphics = true;
-        Screen.fill(pattern::white);
+        Screen.fill(pattern(Settings.Background()));
         draw_dirty(0, 0, LCD_W, LCD_H);
         return true;
     }
@@ -1369,6 +1370,11 @@ bool user_interface::draw_menus()
                 continue;
 
         int my = LCD_H - (plane * !single + 1) * mh;
+        if (force || dirtyMenu)
+        {
+            pattern mbg = Settings.StackBackground();
+            Screen.fill(0, my, LCD_W-1, my+mh-1, mbg);
+        }
         for (int m = 0; m < NUM_SOFTKEYS; m++)
         {
             uint animask = (1<<(m + plane * NUM_SOFTKEYS));
@@ -1382,37 +1388,44 @@ bool user_interface::draw_menus()
                 draw_dirty(mrect);
 
             bool alt = planes > 1 && plane != shplane;
-            pattern color = pattern::black;
+            pattern color = alt
+                ? Settings.RoundMenuBackground()
+                : Settings.RoundMenuForeground();
 
             if (square)
             {
                 mrect.x2++;
                 mrect.y2++;
-                Screen.fill(mrect, alt ? pattern::gray50 : pattern::black);
+                color = Settings.SquareMenuForeground();
+                pattern border = alt
+                    ? Settings.SkippedMenuBackground()
+                    : Settings.SelectedMenuForeground();
+                Screen.fill(mrect, border);
                 mrect.inset(1, 1);
-                Screen.fill(mrect, pattern::white);
+                Screen.fill(mrect, pattern(Settings.SquareMenuBackground()));
                 if (!alt)
                 {
                     rect trect(x - mw/2-1, my, x + mw/2, my+1);
-                    Screen.fill(trect, pattern::black);
+                    Screen.fill(trect, color);
                     trect.offset(0, mh-2);
-                    Screen.fill(trect, pattern::black);
+                    Screen.fill(trect, color);
                 }
             }
             else
             {
-                if (!alt)
-                    color = pattern::white;
-                Screen.fill(mrect, pattern::white);
+                pattern clr = Settings.MenuBackground();
+                pattern bg  = Settings.RoundMenuBackground();
+                pattern fg  = Settings.RoundMenuForeground();
+                Screen.fill(mrect, clr);
                 mrect.inset(3,  1);
-                Screen.fill(mrect, pattern::black);
+                Screen.fill(mrect, bg);
                 mrect.inset(-1, 1);
-                Screen.fill(mrect, pattern::black);
+                Screen.fill(mrect, bg);
                 mrect.inset(-1, 1);
-                Screen.fill(mrect, pattern::black);
+                Screen.fill(mrect, bg);
                 mrect.inset(2, 0);
                 if (alt)
-                    Screen.fill(mrect, pattern::white);
+                    Screen.fill(mrect, fg);
             }
 
 
@@ -1450,7 +1463,7 @@ bool user_interface::draw_menus()
                         }
                         if (mark == L'░')
                         {
-                            color = pattern::gray50;
+                            color = Settings.UnimplementedForeground();
                         }
                         else
                         {
@@ -1491,10 +1504,12 @@ bool user_interface::draw_menus()
                     bool dossier = marker == L'◥';
                     if (dossier)
                     {
+                        pattern fldcol = Settings.FolderCornerForeground();
                         if (alt || square)
                             Screen.glyph(mkx+3, ty-3, marker, font, color);
-                        Screen.clip(clip);
-                        Screen.glyph(mkx+4, ty-4, marker, font, pattern::white);
+                        trect.inset(-2,-2);
+                        Screen.clip(trect);
+                        Screen.glyph(mkx+4, ty-4, marker, font, fldcol);
                     }
                     else if (marker == '/')
                     {
@@ -1513,7 +1528,8 @@ bool user_interface::draw_menus()
     if (square && shplane < visiblePlanes)
     {
         int my = LCD_H - (shplane * !single + 1) * mh;
-        Screen.fill(0, my, LCD_W-1, my, pattern::black);
+        pattern sel = Settings.SelectedMenuForeground();
+        Screen.fill(0, my, LCD_W-1, my, sel);
     }
 
     if (animate)
@@ -1523,6 +1539,9 @@ bool user_interface::draw_menus()
 
     return true;
 }
+
+
+static const size header_width = 248;
 
 
 bool user_interface::draw_header()
@@ -1535,7 +1554,7 @@ bool user_interface::draw_header()
     static uint dow = 0;
     bool changed = force;
 
-    if (!changed)
+    if (!changed || !day)
     {
         dt_t dt;
         tm_t tm;
@@ -1565,28 +1584,19 @@ bool user_interface::draw_header()
 
     if (changed)
     {
-        size h = HeaderFont->height() + 1;
+        const coord hdr_right = header_width - 1;
+        const coord hdr_bottom = HeaderFont->height() + 1;
         rect clip = Screen.clip();
-        rect header(0, 0, LCD_W, h);
+        rect header = rect(0, 0, hdr_right, hdr_bottom);
+        Screen.clip(header);
+        Screen.fill(header, pattern(Settings.HeaderBackground()));
 
-        Screen.clip(0, 0, 259, h);
-        Screen.fill(header, pattern::black);
-
-        char buffer[MAX_LCD_LINE_LEN];
-        size_t sz = 0;
-
-#define EMIT(...)                                               \
-        do                                                      \
-        {                                                       \
-            char  *to  = buffer + sz;                           \
-            size_t max = MAX_LCD_LINE_LEN - sz;                 \
-            size_t wr  = snprintf(to, max, __VA_ARGS__);        \
-            sz += wr;                                           \
-        } while (0)
+        coord  x  = 1;
 
         // Read the real-time clock
         if (Settings.ShowDate())
         {
+            renderer r;
             char mname[4];
             if (Settings.ShowMonthName())
                 snprintf(mname, 4, "%s", get_month_shortcut(month));
@@ -1599,43 +1609,163 @@ bool user_interface::draw_header()
                 snprintf(ytext, 6, "%d", year);
 
             if (Settings.ShowDayOfWeek())
-                EMIT("%s ", get_wday_shortcut(dow));
+                r.printf("%s ", get_wday_shortcut(dow));
 
             char sep   = Settings.DateSeparator();
             uint index = 2 * Settings.YearFirst() + Settings.MonthBeforeDay();
             switch(index)
             {
-            case 0: EMIT("%d%c%s%c%s ", day,   sep, mname, sep, ytext); break;
-            case 1: EMIT("%s%c%d%c%s ", mname, sep, day,   sep, ytext); break;
-            case 2: EMIT("%s%c%d%c%s ", ytext, sep, day,   sep, mname); break;
-            case 3: EMIT("%s%c%s%c%d ", ytext, sep, mname, sep, day);   break;
+            case 0: r.printf("%d%c%s%c%s ", day, sep, mname, sep, ytext); break;
+            case 1: r.printf("%s%c%d%c%s ", mname, sep, day, sep, ytext); break;
+            case 2: r.printf("%s%c%d%c%s ", ytext, sep, day, sep, mname); break;
+            case 3: r.printf("%s%c%s%c%d ", ytext, sep, mname, sep, day); break;
             }
+            pattern datecol = Settings.DateForeground();
+            x = Screen.text(x, 0, r.text(), r.size(), HeaderFont, datecol);
         }
         if (Settings.ShowTime())
         {
-            EMIT("%d", Settings.Time24H() ? hour : hour % 12);
-            EMIT(":%02d", minute);
+            renderer r;
+            r.printf("%d", Settings.Time24H() ? hour : hour % 12);
+            r.printf(":%02d", minute);
             if (Settings.ShowSeconds())
-                EMIT(":%02d", second);
+                r.printf(":%02d", second);
             if (Settings.Time12H())
-                EMIT("%c", hour < 12 ? 'A' : 'P');
-            EMIT(" ");
+                r.printf("%c", hour < 12 ? 'A' : 'P');
+            r.printf(" ");
+            pattern timecol = Settings.TimeForeground();
+            x = Screen.text(x, 0, r.text(), r.size(), HeaderFont, timecol);
             draw_refresh(Settings.ShowSeconds() ? 1000 : 1000 * (60 - second));
         }
 
-        EMIT("%s", state_name());
+        renderer r;
+        r.printf("%s", state_name());
 
-        Screen.text(1, 0, utf8(buffer), HeaderFont, pattern::white);
+        pattern namecol = Settings.StateNameForeground();
+        x = Screen.text(x, 0, r.text(), r.size(), HeaderFont, namecol);
         Screen.clip(clip);
         draw_dirty(header);
-        return true;
+
+        if (x > coord(header_width))
+            x = header_width;
+        busy_left = x;
     }
-    return false;
+    return changed;
 }
 
 
-static const uint  ann_width  = 15;
-static const uint  ann_height = 12;
+static const uint ann_width   = 15;
+static const uint ann_height  = 12;
+static const uint alpha_width = 30;
+
+bool user_interface::draw_battery()
+// ----------------------------------------------------------------------------
+//    Draw the battery information
+// ----------------------------------------------------------------------------
+{
+    static uint last       = 0;
+    uint        time       = sys_current_ms();
+
+    size        h          = HeaderFont->height() + 1;
+    coord       ann_y      = (h - 1 - ann_height) / 2;
+
+    // Print battery voltage
+    static int  vdd = 3000;
+    static bool low = false;
+    static bool usb = false;
+
+    if (time - last > 2000)
+    {
+        vdd  = (int) read_power_voltage();
+        low  = get_lowbat_state();
+        usb  = usb_powered();
+        last = time;
+    }
+    else if (!force)
+    {
+        return false;
+    }
+
+    // Experimentally, battery voltage below 2.6V cause calculator flakiness
+    const int vmax = BATTERY_VMAX;
+    const int vmin = BATTERY_VMIN;
+    const int vhalf = (BATTERY_VMAX + BATTERY_VMIN) / 2;
+
+    pattern   vpat  = usb          ? Settings.ChargingForeground()
+                    : low          ? Settings.LowBatteryForeground()
+                    : vdd <= vhalf ? Settings.HalfBatteryForeground()
+                                   : Settings.BatteryLevelForeground();
+    pattern   bg    = Settings.HeaderBackground();
+    coord     x     = LCD_W - 1;
+
+    if (Settings.ShowVoltage())
+    {
+        char buffer[16];
+        snprintf(buffer, sizeof(buffer), "%d.%03dV", vdd / 1000, vdd % 1000);
+        pattern vcol = Settings.VoltageForeground();
+        if (vcol.bits == Settings.HeaderBackground())
+            vcol = vpat;
+        size w = HeaderFont->width(utf8(buffer));
+        x -= w;
+
+        rect bgr(x-4, 0, LCD_W-1, h);
+        Screen.fill(bgr, bg);
+        Screen.text(x, 0, utf8(buffer), HeaderFont, vcol);
+
+        x -= 4;
+    }
+
+    size bat_width = 25;
+    size bat_tipw = 3;
+
+    x -= bat_width;
+
+    rect  bat_bgr(x, 0, x + bat_width, h);
+    Screen.fill(bat_bgr, bg);
+
+    rect  bat_body(x + bat_tipw, ann_y,
+                   x + bat_width - 1, ann_y + ann_height);
+    pattern bfg = Settings.BatteryForeground();
+    pattern bbg = Settings.BatteryBackground();
+
+    rect bat_tip(x, ann_y + 3, x + 4, ann_y + ann_height - 3);
+    Screen.fill(bat_tip, bfg);
+
+    Screen.fill(bat_body, bfg);
+    bat_body.inset(1,1);
+    Screen.fill(bat_body, bbg);
+    bat_body.inset(1,1);
+
+    size batw = bat_body.width();
+    size w = (vdd - vmin) * batw / (vmax - vmin);
+    if (w > batw)
+        w = batw;
+    else if (w < 1)
+        w = 1;
+    bat_body.x1 = bat_body.x2 - w;
+    Screen.fill(bat_body, vpat);
+
+    if (!usb)
+    {
+        bat_body.x2 += 1;
+        while (bat_body.x2 > x + 8)
+        {
+            bat_body.x2 -= 4;
+            bat_body.x1 = bat_body.x2;
+            Screen.fill(bat_body, bbg);
+        }
+    }
+
+    battery_left = x;
+    draw_dirty(x, 0, LCD_W-1, h);
+    draw_refresh(2000);
+
+    // Power off if battery power is really low
+    if (vdd < BATTERY_VOFF)
+        power_off();
+
+    return true;
+}
 
 
 static const byte ann_right[] =
@@ -1667,181 +1797,114 @@ bool user_interface::draw_annunciators()
 //    Draw the annunciators for Shift, Alpha, etc
 // ----------------------------------------------------------------------------
 {
-    bool result = false;
+    bool adraw = force || alpha != alpha_drawn || lowercase != lowerc_drawn;
+    bool sdraw = force || shift != shift_drawn || xshift != xshift_drawn;
 
-    size lh = HeaderFont->height();
-    if (force || alpha != alpha_drawn || lowercase != lowerc_drawn)
+    if (!adraw && !sdraw)
+        return false;
+
+    pattern bg      = Settings.HeaderBackground();
+    size    h       = HeaderFont->height() + 1;
+    size    alpha_w = alpha_width;
+    coord   alpha_x = battery_left - alpha_w;
+    coord   ann_x   = alpha_x - ann_width;
+
+    if (busy_right > alpha_x)
+        adraw = true;
+
+    busy_right = battery_left - 1;
+    if (adraw)
     {
-        utf8 label = utf8(lowercase ? "abc" : "ABC");
-        size lw = HeaderFont->width(label);
-        Screen.fill(280, 0, 280+lw, 1+lh, pattern::black);
+        rect r = rect(alpha_x, 0, battery_left - 1, h);
+        Screen.fill(r, bg);
+
         if (alpha)
         {
-#ifdef CONFIG_COLOR
-            pattern apat = pattern(200, 224, 224);
-#else
-            pattern apat = pattern::white;
-#endif // COLOR_CONFIG
-            Screen.text(280, 0, label, HeaderFont, apat);
+            utf8 label = utf8(lowercase ? "abc" : "ABC");
+            pattern apat = lowercase
+                ? Settings.LowerAlphaForeground()
+                : Settings.AlphaForeground();
+            Screen.text(alpha_x + 1, 0, label, HeaderFont, apat);
         }
-        draw_dirty(280, 0, 280+lw, 1+lh);
         alpha_drawn = alpha;
         lowerc_drawn = lowercase;
-        result = true;
     }
+    if (alpha)
+        busy_right = alpha_x - 1;
 
-    if (!force && shift == shift_drawn && xshift == xshift_drawn)
-        return result;
+    if (sdraw)
+    {
+        coord       ann_y  = (h - ann_height) / 2;
+        rect        ann(ann_x, 0, alpha_x - 1, h);
+        Screen.fill(ann, bg);
+        const byte *source = xshift ? ann_right : shift ? ann_left : nullptr;
+        if (source)
+        {
+            pixword      *sw = (pixword *) source;
+            grob::surface s(sw, ann_width, ann_height, 16);
+            pattern       fg = shift
+                ? Settings.LeftShiftForeground()
+                : Settings.RightShiftForeground();
+            pattern       bg = shift
+                ? Settings.LeftShiftBackground()
+                : Settings.RightShiftBackground();
+            Screen.draw(s, ann_x, ann_y, fg);
+            Screen.draw_background(s, ann_x, ann_y, bg);
+        }
+        shift_drawn = shift;
+        xshift_drawn = xshift;
+    }
+    if (shift || xshift)
+        busy_right = ann_x - 1;
 
-    coord       ann_x      = 260;
-    coord       ann_y      = (lh - ann_height) / 2;
-    const byte *source     = xshift ? ann_right : shift ? ann_left : nullptr;
-    if (source)
-    {
-        pixword *sw = (pixword *) source;
-        grob::surface  s(sw, ann_width, ann_height, 16);
-#ifdef CONFIG_COLOR
-        pattern color = shift ? pattern(255, 230, 128)
-                              : pattern(128, 192, 255);
-        Screen.fill(ann_x, ann_y,
-                    260+ann_width, ann_y+ann_height, pattern::black);
-        Screen.draw(s, ann_x, ann_y, color);
-#else
-        Screen.copy(s, ann_x, ann_y);
-#endif
-    }
-    else if (!force)
-    {
-        Screen.fill(260, ann_y, 260+ann_width, ann_y+ann_height);
-    }
-    draw_dirty(260, ann_y, 260+ann_width, ann_y+ann_height);
-    shift_drawn = shift;
-    xshift_drawn = xshift;
+    rect dirty(busy_right+1, 0, battery_left - 1, h);
+    draw_dirty(dirty);
     return true;
 }
 
 
-bool user_interface::draw_battery()
+rect user_interface::draw_busy_background()
 // ----------------------------------------------------------------------------
-//    Draw the battery information
+//   Draw the background behind the busy cursor and annunciators
 // ----------------------------------------------------------------------------
 {
-    static uint last       = 0;
-    uint        time       = sys_current_ms();
-
-    const uint  ann_height = 12;
-    size        hfh        = HeaderFont->height();
-    coord       ann_y      = (hfh - ann_height) / 2;
-
-    // Print battery voltage
-    static int  vdd = 3000;
-    static bool low = false;
-    static bool usb = false;
-
-    if (time - last > 2000)
-    {
-        vdd  = (int) read_power_voltage();
-        low  = get_lowbat_state();
-        usb  = usb_powered();
-        last = time;
-    }
-    else if (!force)
-    {
-        return false;
-    }
-
-    // Experimentally, battery voltage below 2.6V cause calculator flakiness
-    const int vmax = BATTERY_VMAX;
-    const int vmin = BATTERY_VMIN;
-    const int vhalf = (BATTERY_VMAX + BATTERY_VMIN) / 2;
-
-#ifdef CONFIG_COLOR
-    pattern   vpat  = usb          ? pattern(128, 192, 255)
-                    : low          ? pattern(192, 64, 64)
-                    : vdd <= vhalf ? pattern(255, 192, 64)
-                                   : pattern(64, 192, 64);
-#else
-    pattern vpat = usb          ? pattern::gray50
-                 : low          ? pattern::gray25
-                 : vdd <= vhalf ? pattern::gray75
-                                : pattern::white;
-#endif
-    bool showv = Settings.ShowVoltage();
-    coord x = showv ? 311 : 370;
-    rect bat(x + 3, ann_y+2, x + 25, ann_y + ann_height);
-    Screen.fill(x-3, 0, LCD_W, hfh + 1, pattern::black);
-    if (showv)
-    {
-        char buffer[64];
-        snprintf(buffer, sizeof(buffer), "%d.%03dV", vdd / 1000, vdd % 1000);
-        Screen.text(340, 1, utf8(buffer), HeaderFont, vpat);
-    }
-    Screen.fill(x, ann_y + 4, x+4, ann_y + ann_height - 2, pattern::white);
-
-    Screen.fill(bat, pattern::white);
-    bat.inset(1,1);
-    Screen.fill(bat, pattern::black);
-    bat.inset(1,1);
-
-    size batw = bat.width();
-    size w = (vdd - vmin) * batw / (vmax - vmin);
-    if (w > batw)
-        w = batw;
-    else if (w < 1)
-        w = 1;
-    bat.x1 = bat.x2 - w;
-
-    Screen.fill(bat, vpat);
-    if (!usb)
-    {
-        bat.x2 += 1;
-        while (bat.x2 > x + 8)
-        {
-            bat.x2 -= 4;
-            bat.x1 = bat.x2;
-            Screen.fill(bat, pattern::black);
-        }
-    }
-
-    draw_dirty(x, 0, LCD_W, hfh);
-    draw_refresh(2000);
-
-    // Power off if battery power is really low
-    if (vdd < BATTERY_VOFF)
-        power_off();
-
-    return true;
+    size h  = HeaderFont->height() + 1;
+    pattern bg = Settings.HeaderBackground();
+    rect busy(busy_left, 0, busy_right, h);
+    Screen.fill(busy, bg);
+    return busy;
 }
 
 
-bool user_interface::draw_busy(unicode glyph)
+bool user_interface::draw_busy()
+// ----------------------------------------------------------------------------
+//   Draw the default busy cursor
+// ----------------------------------------------------------------------------
+{
+    return draw_busy(L'▶', Settings.RunningIconForeground());
+}
+
+
+bool user_interface::draw_busy(unicode glyph, pattern color)
 // ----------------------------------------------------------------------------
 //    Draw the busy flying cursor
 // ----------------------------------------------------------------------------
 {
-    if (graphics || shift || xshift || alpha)
+    if (graphics)
         return false;
 
-    size w  = 32;
-    size h  = HeaderFont->height();
-    size x  = 279 - w;
-    size y  = 0;
-
-    rect r(x, y, x + w, y + h + 1);
-    Screen.fill(r, pattern::black);
+    rect busy = draw_busy_background();
     if (glyph)
     {
         rect clip = Screen.clip();
-        Screen.clip(r);
-        coord gx = x + sys_current_ms() / 16 % w;
-#ifdef CONFIG_COLOR
-        Screen.glyph(gx, y, glyph, HeaderFont, pattern(128, 192, 255));
-#else
-        Screen.glyph(gx, y, glyph, HeaderFont, pattern::white);
-#endif // CONFIG_COLOR
+        Screen.clip(busy);
+        size  w = HeaderFont->width('M');
+        coord x = busy.x1 + sys_current_ms() / 16 % (busy.width() - w);
+        coord y = busy.y1;
+        Screen.glyph(x, y, glyph, HeaderFont, color);
         Screen.clip(clip);
     }
-    draw_dirty(r);
+    draw_dirty(busy);
     refresh_dirty();
     return true;
 }
@@ -1860,7 +1923,7 @@ bool user_interface::draw_idle()
         record(tests_ui, "Redraw LCD");
         redraw_lcd(true);
     }
-    draw_busy(0);
+    draw_busy(0, pattern::black);
     alpha_drawn = !alpha_drawn;
     shift_drawn = !shift;
     xshift_drawn = !xshift;
@@ -2083,8 +2146,9 @@ bool user_interface::draw_editor()
         stack      = y - 1;
         dirtyStack = true;
     }
-    Screen.fill(0, stack, LCD_W, bottom, pattern::white);
-    draw_dirty(0, stack, LCD_W, bottom);
+    rect edbck(0, stack, LCD_W, bottom);
+    Screen.fill(edbck, Settings.EditorBackground());
+    draw_dirty(edbck);
 
     while (r < rows && display <= last)
     {
@@ -2104,7 +2168,8 @@ bool user_interface::draw_editor()
         if (c == '\n')
         {
             if (sel && x >= 0 && x < LCD_W)
-                Screen.fill(x, y, LCD_W, y + lineHeight - 1, pattern::black);
+                Screen.fill(x, y, LCD_W, y + lineHeight - 1,
+                            Settings.SelectionBackground());
             y += lineHeight;
             x  = -xoffset;
             r++;
@@ -2113,10 +2178,13 @@ bool user_interface::draw_editor()
         int cw = font->width(c);
         if (x + cw >= 0 && x < LCD_W)
         {
-            pattern fg  = sel ? pattern::white : pattern::black;
-            pattern bg  = sel ? (~searching ? pattern::gray25 : pattern::black)
-                              : pattern::white;
-            x = Screen.glyph(x, y, c, font, fg, bg);
+            pattern fg = sel ? (~searching ? Settings.SearchForeground()
+                                           : Settings.SelectionForeground())
+                             : Settings.EditorForeground();
+            pattern bg = sel ? (~searching ? Settings.SearchBackground()
+                                           : Settings.SelectionBackground())
+                             : Settings.EditorBackground();
+            x          = Screen.glyph(x, y, c, font, fg, bg);
         }
         else
         {
@@ -2195,41 +2263,45 @@ bool user_interface::draw_cursor(int show, uint ncursor)
             spaces = true;
         if (spaces)
             cchar = ' ';
-        size cw = edFont->width(cchar);
-        bool gray = x == cx && !show;
-        Screen.fill(x, cy, x + cw - 1, cy + ch - 1,
-                    gray ? pattern::gray75 : pattern::white);
-        draw_dirty(x, cy, x + cw - 1, cy + ch - 1);
+
+        size    cw  = edFont->width(cchar);
+        bool    cur = x == cx && (!show || blink);
 
         // Write the character under the cursor
-        uint pos = p - ed;
-        bool sel = ~select && int((pos - ncursor) ^ (pos - select)) < 0;
-        pattern fg = sel ? pattern::white : pattern::black;
-        pattern bg  = sel ? (~searching ? pattern::gray25 : pattern::black)
-                          : pattern::white;
-        x = Screen.glyph(x, cy, cchar, edFont, fg, bg);
+        uint    pos = p - ed;
+        bool    sel = ~select && int((pos - ncursor) ^ (pos - select)) < 0;
+        pattern fg  = sel ? (~searching ? Settings.SearchForeground()
+                                        : Settings.SelectionForeground())
+                          : Settings.EditorForeground();
+        pattern bg  = sel ? (~searching ? Settings.SearchBackground()
+                                        : Settings.SelectionBackground())
+                    : cur ? Settings.CursorSelBackground()
+                          : Settings.EditorBackground();
+        x           = Screen.glyph(x, cy, cchar, edFont, fg, bg);
+        draw_dirty(x, cy, x + cw - 1, cy + ch - 1);
         if (p < last)
             p = utf8_next(p);
     }
 
     if (blink)
     {
-        coord csrx = cx + 1;
+        coord csrx = cx;
         coord csry = cy + (ch - csrh)/2;
         Screen.invert(csrx, cy, csrx+1, cy + ch - 1);
         rect  r(csrx, csry - 1, csrx+csrw, csry + csrh);
-        if (alpha)
-        {
-            Screen.fill(r, pattern::black);
-            r.inset(2,2);
-            Screen.fill(r, pattern::white);
-            Screen.glyph(csrx, csry, cursorChar, cursorFont, pattern::black);
-        }
-        else
-        {
-            Screen.fill(r, pattern::black);
-            Screen.glyph(csrx, csry, cursorChar, cursorFont, pattern::white);
-        }
+        pattern border = alpha
+            ? Settings.CursorAlphaBorder()
+            : Settings.CursorBorder();
+        pattern bg = alpha
+            ? Settings.CursorAlphaBackground()
+            : Settings.CursorBackground();
+        pattern fg = alpha
+            ? Settings.CursorAlphaForeground()
+            : Settings.CursorForeground();
+        Screen.fill(r, border);
+        r.inset(1,1);
+        Screen.fill(r, bg);
+        Screen.glyph(csrx, csry, cursorChar, cursorFont, fg);
         draw_dirty(r);
     }
 
@@ -2256,9 +2328,11 @@ bool user_interface::draw_command()
             coord  x    = 25;
             coord  y    = HeaderFont->height() + 6;
 
-            Screen.fill(x-2, y-1, x+w+2, y+h+1, pattern::black);
-            Screen.text(x, y, command, font, pattern::white);
-            draw_dirty(x-2, y-1, x+w+2, y+h+1);
+            pattern bg = Settings.CommandBackground();
+            pattern fg = Settings.CommandForeground();
+            Screen.fill(x - 2, y - 1, x + w + 2, y + h + 1, bg);
+            Screen.text(x, y, command, font, fg);
+            draw_dirty(x - 2, y - 1, x + w + 2, y + h + 1);
             return true;
         }
     }
@@ -2273,26 +2347,29 @@ void user_interface::draw_user_command(utf8 cmd, size_t len)
 // ----------------------------------------------------------------------------
 {
     font_p font = ReducedFont;
-    size   w    = command ? font->width(command) : 0;
+    size   w    = font->width(cmd, len);
     size   h    = font->height();
     coord  x    = 25;
     coord  y    = HeaderFont->height() + 6;
 
     // Erase normal command
-    Screen.fill(x-2, y-1, x + w + 2, y + h + 1, pattern::gray50);
-
-    // Draw user command
-    size nw = font->width(cmd, len);
-    if (nw > w)
-        w = nw;
+    if (command)
+    {
+        size w = font->width(command);
+        pattern bg = Settings.StackBackground();
+        Screen.fill(x-2, y-1, x + w + 2, y + h + 1, bg);
+    }
 
     // User-defined command, display in white
-    rect r(x-2, y-1, x+w+2, y+h+1);
+    pattern bg  = Settings.UserCommandBackground();
+    pattern fg  = Settings.UserCommandForeground();
+    pattern col = Settings.UserCommandBorder();
+    rect    r(x - 2, y - 1, x + w + 2, y + h + 1);
     draw_dirty(r);
-    Screen.fill(r, pattern::black);
+    Screen.fill(r, col);
     r.inset(1,1);
-    Screen.fill(r, pattern::white);
-    Screen.text(x + (w - nw) / 2, y, cmd, len, font, pattern::black);
+    Screen.fill(r, bg);
+    Screen.text(x, y, cmd, len, font, fg);
 
     // Update screen
     refresh_dirty();
@@ -2306,10 +2383,10 @@ bool user_interface::draw_stepping_object()
 {
     if (object_p obj = rt.run_stepping())
     {
-        char buffer[40];
-        size_t length = obj->render(buffer, sizeof(buffer));
-        draw_user_command(utf8(buffer), length);
-        ui.draw_busy(L'♦');
+        renderer r(nullptr, 40);
+        obj->render(r);
+        draw_user_command(r.text(), r.size());
+        draw_busy(L'♦', Settings.HaltedIconForeground());
         return true;
     }
     return false;
@@ -2333,29 +2410,26 @@ bool user_interface::draw_error()
         rect clip = Screen.clip();
         rect r(x, y, x + width - 1, y + height - 1);
         draw_dirty(r);
-#ifdef CONFIG_COLOR
-        Screen.fill(r, pattern(192, 64, 64));
-#else // CONFIG_COLOR
-        Screen.fill(r, pattern::gray50);
-#endif // CONFIG_COLOR
+        Screen.fill(r, Settings.ErrorBorder());
         r.inset(border);
-        Screen.fill(r, pattern::white);
+        Screen.fill(r, Settings.ErrorBackground());
         r.inset(2);
 
         Screen.clip(r);
+        pattern fg = Settings.ErrorForeground();
         if (text_p cmd = rt.command())
         {
             size_t sz = 0;
             utf8 cmdt = cmd->value(&sz);
-            coord x = Screen.text(r.x1, r.y1, cmdt, sz, ErrorFont);
+            coord x = Screen.text(r.x1, r.y1, cmdt, sz, ErrorFont, fg);
             Screen.text(x, r.y1, utf8(" error:"), ErrorFont);
         }
         else
         {
-            Screen.text(r.x1, r.y1, utf8("Error:"), ErrorFont);
+            Screen.text(r.x1, r.y1, utf8("Error:"), ErrorFont, fg);
         }
         r.y1 += ErrorFont->height();
-        Screen.text(r.x1, r.y1, err, ErrorFont);
+        Screen.text(r.x1, r.y1, err, ErrorFont, fg);
         Screen.clip(clip);
 
         refresh_dirty();

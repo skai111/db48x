@@ -140,29 +140,7 @@ public:
 #include "ids.tbl"
 
 
-    settings() :
-#define ID(id)
-#define FLAG(Enable, Disable)
-#define SETTING(Name,Low,High,Init)             Name##_bits(Init),
-#define SETTING_BITS(Name,Type,Bits,Low,High,Init)
-#include "ids.tbl"
-
-    // Define the packed bits settings
-#define ID(id)
-#define FLAG(Enable, Disable)
-#define SETTING(Name, Low, High, Init)
-#define SETTING_BITS(Name,Type,Bits,Low,High,Init)   Name##_bits(Init - Low),
-#include "ids.tbl"
-
-    // Define the flags
-#define ID(id)
-#define FLAG(Enable, Disable)                   Enable##_bit(false),
-#define SETTINGS(Name, Low, High, Init)
-#define SETTING_BITS(Name,Type,Bits,Low,High,Init)
-#include "ids.tbl"
-
-        reserved(false)
-    {}
+    settings();
 
     // Accessor functions
 #define ID(id)
@@ -184,7 +162,7 @@ public:
     font_p result_font()        { return font(ResultFont()); }
     font_p stack_font()         { return font(StackFont()); }
     font_p editor_font(bool ml) { return font(ml ? MultilineEditorFont() : EditorFont()); }
-    font_p cursor_font(bool ml) { return cursor_font(ml ? MultilineEditorFont() : EditorFont()); }
+    font_p cursor_font(bool ml) { return cursor_font(ml ? MultilineCursorFont() : CursorFont()); }
 
     static unicode digit_separator(uint index);
 

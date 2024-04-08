@@ -1025,8 +1025,7 @@ COMMAND_BODY(ClLCD)
 // ----------------------------------------------------------------------------
 {
     ui.draw_graphics();
-    Screen.fill(0, 0, LCD_W, LCD_H, pattern::white);
-    graphics_dirty(0, 0, LCD_W-1, LCD_H-1, 0);
+    refresh_dirty();
     return OK;
 }
 
