@@ -460,7 +460,7 @@ void user_interface::clear_help()
 //   Clear help data
 // ----------------------------------------------------------------------------
 {
-   command     = nullptr;
+    command     = nullptr;
     help        = -1u;
     line        = 0;
     topic       = 0;
@@ -3168,8 +3168,11 @@ bool user_interface::handle_help(int &key)
                 if (utf8 htopic = obj->help())
                 {
                     record(help, "Help topic is %s\n", htopic);
-                    command = htopic;
-                    dirtyCommand = true;
+                    if (!rt.editing())
+                    {
+                        command = htopic;
+                        dirtyCommand = true;
+                    }
                     if (longpress)
                     {
                         rt.command(command::static_object(object::ID_Help));
