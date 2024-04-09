@@ -437,7 +437,7 @@ $(DECIMIZE): $(DECIMIZE).cpp $(dir $(DECIMIZE))/Makefile
 # clean up
 #######################################
 clean:
-	-rm -fR .dep build sim/*.o
+	-rm -fR .dep build sim/*.o sim/*/*.o
 
 
 #######################################

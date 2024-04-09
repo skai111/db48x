@@ -131,3 +131,5 @@ macx:    QMAKE_CFLAGS += -fsanitize=address
 macx:    LIBS += -fsanitize=address
 clang:   QMAKE_CFLAGS   += -Wno-unknown-pragmas
 clang:   QMAKE_CXXFLAGS += -Wno-unknown-pragmas
+
+OBJECTS_DIR=db48x-build
