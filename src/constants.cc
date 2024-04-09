@@ -106,7 +106,7 @@ GRAPH_BODY(constant)
 
     rs.fill(0, 0, rw, rh, g.background);
     rs.copy(ss, 0, 0);
-    blitter::blit<blitter::COPY>(rs, ss,
+    blitter::blit<blitter::DRAW>(rs, ss,
                                  rect(1, 0, sw, sh-1), point(),
                                  blitter::blitop_and, pattern::black);
 
