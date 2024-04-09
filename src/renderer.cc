@@ -258,65 +258,48 @@ size_t renderer::printf(const char *format, ...)
 //   Write a formatted string
 // ----------------------------------------------------------------------------
 {
-    if (saving)
+    if (written >= length)
+        return 0;
+
+    // Write in the scratchpad
+    char buf[80];
+    va_list va;
+    va_start(va, format);
+    size_t size = vsnprintf(buf, sizeof(buf), format, va);
+    va_end(va);
+
+    if (size < sizeof(buf))
     {
-        va_list va;
-        va_start(va, format);
-        char buf[80];
-        size_t remaining = length - written;
-        if (remaining > sizeof(buf))
-            remaining = sizeof(buf);
-        int size = vsnprintf(buf, remaining, format, va);
-        va_end(va);
-        if (size > 0)
-            if (saving->write(buf, size))
-                written += size;
+        // Common case: it fits in 80-bytes buffer, write directly
+        put(buf, size);
         return size;
     }
-    else if (target)
-    {
-        // Fixed target: write directly there
-        if (written >= length)
-            return 0;
 
-        va_list va;
-        va_start(va, format);
-        size_t remaining = length - written;
-        size_t size = vsnprintf(target + written, remaining, format, va);
-        va_end(va);
-        written += size;
+    size_t max = length - written;
+    if (max > size)
+        max = size;
+    byte *p = rt.allocate(max);
+    if (!p)
+        return 0;
+
+    va_start(va, format);
+    size = vsnprintf((char *) p, max, format, va);
+    va_end(va);
+
+    if (max > size)
+        max = size;
+
+    // If writing to some specific target, move data there
+    if (saving || target)
+    {
+        put((char *) p, max);
+        rt.free(max);
         return size;
     }
-    else
-    {
-        // Write in the scratchpad
-        char buf[32];
-        va_list va;
-        va_start(va, format);
-        size_t size = vsnprintf(buf, sizeof(buf), format, va);
-        va_end(va);
 
-        // Check if we can allocate enough for the output
-        byte *p = rt.allocate(size);
-        if (!p)
-            return 0;
-
-        if (size < sizeof(buf))
-        {
-            // Common case: it fits in 32-bytes buffer, allocate directly
-            memcpy(p, buf, size);
-        }
-        else
-        {
-            // Uncommon case: re-run vsnprintf in the allocated buffer
-            va_list va;
-            va_start(va, format);
-            size = vsnprintf((char *) p, size, format, va);
-            va_end(va);
-        }
-        written += size;
-        return size;
-    }
+    // Just update the pointer (this is a bit wrong for \n or anything in there)
+    written += max;
+    return size;
 }
 
 
