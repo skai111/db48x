@@ -1032,6 +1032,9 @@ bool tests::image_match(cstring file, int x, int y, int w, int h, bool force)
     QString name = force ? "images/bad/" : "images/";
     name += file;
     name += ".png";
+#ifdef CONFIG_COLOR
+    name = "color-" + name;
+#endif // CONFIG_COLOR
     QFileInfo reference(name);
     if (force || !reference.exists() || !data.load(name, "PNG"))
     {
