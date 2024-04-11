@@ -701,6 +701,35 @@ struct object
     }
 
 
+    static bool is_algebraic_or_list(id ty)
+    // ------------------------------------------------------------------------
+    //    Check if a type denotes an algebraic value or function
+    // ------------------------------------------------------------------------
+    {
+        return is_algebraic(ty) || ty == ID_list || ty == ID_array;
+    }
+
+
+    bool is_algebraic_or_list() const
+    // ------------------------------------------------------------------------
+    //   Check if an object is an algebraic function
+    // ------------------------------------------------------------------------
+    {
+        return is_algebraic_or_list(type());
+    }
+
+
+    algebraic_p as_algebraic_or_list() const
+    // ------------------------------------------------------------------------
+    //   Return an object as an algebraic if possible, or nullptr
+    // ------------------------------------------------------------------------
+    {
+        if (is_algebraic_or_list())
+            return algebraic_p(this);
+        return nullptr;
+    }
+
+
     uint arity() const
     // ------------------------------------------------------------------------
     //   Return the arity for arithmetic operators

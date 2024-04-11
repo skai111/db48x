@@ -6,7 +6,7 @@
 //
 //   File Description:
 //
-//     Standard mathematical functions
+//     Standard mathematoical functions
 //
 //
 //
@@ -226,6 +226,8 @@ FUNCTION(IntPart);
 FUNCTION(FracPart);
 FUNCTION(ceil);
 FUNCTION(floor);
+FUNCTION(mant);
+FUNCTION(xpon);
 FUNCTION_FANCY_MAT(inv);
 FUNCTION(neg);
 FUNCTION_FANCY_MAT(sq);
@@ -283,6 +285,8 @@ public:                                                                 \
                                   algebraic_g UNUSED args[], \
                                   uint UNUSED        arity)
 
+NFUNCTION(Round, 2, );
+NFUNCTION(Truncate, 2, );
 NFUNCTION(xroot, 2, );
 NFUNCTION(comb, 2, );
 NFUNCTION(perm, 2, );

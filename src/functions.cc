@@ -289,7 +289,7 @@ object::result function::evaluate(id op, nfunction_fn fn, uint arity,
         object_g oarg = rt.stack(a);
         while (tag_p tagged = oarg->as<tag>())
             oarg = tagged->tagged_object();
-        algebraic_p arg = oarg->as_algebraic();
+        algebraic_p arg = oarg->as_algebraic_or_list();
         if (!arg)
         {
             rt.type_error();
@@ -451,7 +451,7 @@ FUNCTION_BODY(abs)
                             unit_p(+x)->uexpr());
     case ID_tag:
     {
-        algebraic_g tagged = tag_p(+x)->tagged_object()->as_algebraic();
+        algebraic_g tagged = tag_p(+x)->tagged_object()->as_algebraic_or_list();
         return evaluate(tagged);
     }
 
@@ -750,6 +750,221 @@ FUNCTION_BODY(cubed)
         return expression::make(ID_cubed, x);
     return x * x * x;
 }
+
+
+FUNCTION_BODY(mant)
+// ----------------------------------------------------------------------------
+//   Return mantissa of object
+// ----------------------------------------------------------------------------
+{
+    if (!x)
+        return nullptr;
+    if (x->is_symbolic())
+        return expression::make(ID_mant, x);
+    algebraic_g a = x;
+    if (!decimal_promotion(a))
+    {
+        rt.type_error();
+        return nullptr;
+    }
+    decimal_p d = decimal_p(+a);
+    decimal::info i = d->shape();
+    // The mantissa is always positive on HP calculators
+    gcbytes bytes = i.base;
+    return rt.make<decimal>(1, i.nkigits, bytes);
+}
+
+
+FUNCTION_BODY(xpon)
+// ----------------------------------------------------------------------------
+//   Return exponent of object
+// ----------------------------------------------------------------------------
+{
+    if (!x)
+        return nullptr;
+    if (x->is_symbolic())
+        return expression::make(ID_xpon, x);
+    algebraic_g a = x;
+    if (!decimal_promotion(a))
+    {
+        rt.type_error();
+        return nullptr;
+    }
+    decimal_p d = decimal_p(+a);
+    return integer::make(d->exponent() - 1LL);
+}
+
+
+static decimal_p round(decimal_p value, int digits)
+// ----------------------------------------------------------------------------
+//   Round to given number of digits, in the manner of HP48 RND function
+// ----------------------------------------------------------------------------
+//   The HP50G documentation states that:
+//   * 0 through 11 rounds to n decimal places
+//   * -1 through -11 rounds to n significant digits
+//   * 12 rounds to the current display format
+//   Obviously, that does not work with variable precision, so we replace
+//   12 with the current precision. Also, experiment with HP calculators shows
+//   that any value above number of actual digits is the same as 12, and that
+//   negative values below -11 do nothing.
+{
+    large rndexp = digits;
+    if (rndexp >= Settings.Precision())
+        rndexp = Settings.DisplayDigits();
+    if (rndexp >= 0)
+        rndexp = -rndexp;
+    else
+        rndexp = value->exponent() + rndexp;
+    return value->round(rndexp);
+}
+
+
+static decimal_p truncate(decimal_p value, int digits)
+// ----------------------------------------------------------------------------
+//   Truncate to given number of digits, in the manner of HP48 TRNC function
+// ----------------------------------------------------------------------------
+//   Same interpretation as for 'round' / 'RND'
+{
+    large rndexp = digits;
+    if (rndexp >= Settings.Precision())
+        rndexp = Settings.DisplayDigits();
+    if (rndexp >= 0)
+        rndexp = -rndexp;
+    else
+        rndexp = value->exponent() + rndexp;
+    return value->truncate(rndexp);
+}
+
+
+static algebraic_p rnd_or_trnc(algebraic_r value, int digits,
+                               decimal_p (*func)(decimal_p value, int digits))
+// ----------------------------------------------------------------------------
+//   Implementation of round or truncate
+// ----------------------------------------------------------------------------
+{
+    object::id ty = value->type();
+    switch (ty)
+    {
+    case object::ID_polar:
+    {
+        polar_p p = polar_p(+value);
+        auto angles = Settings.AngleMode();
+        algebraic_g mod = p->mod();
+        algebraic_g arg = p->arg(angles);
+        mod = rnd_or_trnc(mod, digits, func);
+        arg = rnd_or_trnc(arg, digits, func);
+        return polar::make(mod, arg, angles);
+    }
+    case object::ID_rectangular:
+    {
+        rectangular_p r = rectangular_p(+value);
+        algebraic_g re = r->re();
+        algebraic_g im = r->im();
+        re = rnd_or_trnc(re, digits, func);
+        im = rnd_or_trnc(im, digits, func);
+        return rectangular::make(re, im);
+    }
+    case object::ID_unit:
+    {
+        unit_p u = unit_p(+value);
+        algebraic_g v = u->value();
+        algebraic_g x = u->uexpr();
+        v = rnd_or_trnc(v, digits, func);
+        return unit::make(v, x);
+    }
+    case object::ID_tag:
+    {
+        tag_p t = tag_p(+value);
+        if (object_p tv = t->tagged_object())
+        {
+            if (algebraic_g alg = tv->as_algebraic_or_list())
+            {
+                size_t sz = 0;
+                if (gcutf8 lbl = t->label_value(&sz))
+                {
+                    alg = rnd_or_trnc(alg, digits, func);
+                    if (tag_p tg = tag::make(lbl, sz, +alg))
+                        return algebraic_p(tg);
+                }
+            }
+        }
+        return nullptr;
+    }
+    case object::ID_array:
+    case object::ID_list:
+    {
+        scribble scr;
+        list_p l = list_p(+value);
+        for (object_p obj : *l)
+        {
+            algebraic_g a = obj->as_algebraic_or_list();
+            if (!a)
+            {
+                rt.type_error();
+                return nullptr;
+            }
+            a = rnd_or_trnc(a, digits, func);
+            if (!a)
+                return nullptr;
+            obj = +a;
+            size_t objsz = obj->size();
+            byte_p objp = byte_p(obj);
+            if (!rt.append(objsz, objp))
+                return nullptr;
+        }
+        return list::make(ty, scr.scratch(), scr.growth());
+    }
+    case object::ID_integer:
+    case object::ID_neg_integer:
+    case object::ID_bignum:
+    case object::ID_neg_bignum:
+    case object::ID_fraction:
+    case object::ID_neg_fraction:
+    case object::ID_big_fraction:
+    case object::ID_neg_big_fraction:
+    case object::ID_hwfloat:
+    case object::ID_hwdouble:
+    {
+        algebraic_g a = value;
+        if (algebraic::decimal_promotion(a))
+            return rnd_or_trnc(a, digits, func);
+        return nullptr;
+    }
+    case object::ID_decimal:
+    case object::ID_neg_decimal:
+        return func(decimal_p(+value), digits);
+
+    default:
+        rt.type_error();
+        return nullptr;
+    }
+}
+
+
+NFUNCTION_BODY(Round)
+// ----------------------------------------------------------------------------
+//   Round to a given number of decimal places
+// ----------------------------------------------------------------------------
+{
+    int digits = args[0]->as_int32(0, true);
+    if (rt.error())
+        return nullptr;
+    return rnd_or_trnc(args[1], digits, round);
+}
+
+
+
+NFUNCTION_BODY(Truncate)
+// ----------------------------------------------------------------------------
+//   Round to a given number of decimal places
+// ----------------------------------------------------------------------------
+{
+    int digits = args[0]->as_int32(0, true);
+    if (rt.error())
+        return nullptr;
+    return rnd_or_trnc(args[1], digits, truncate);
+}
+
 
 
 NFUNCTION_BODY(xroot)

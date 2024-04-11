@@ -80,6 +80,7 @@ struct tests
     void exact_trig_cases();
     void trig_units();
     void fraction_decimal_conversions();
+    void rounding_and_truncating();
     void complex_types();
     void complex_arithmetic();
     void complex_functions();
