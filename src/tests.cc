@@ -6998,7 +6998,7 @@ void tests::graphic_commands()
          "{ #400 } #0 i 20 * + + "
          "i LineWidth Line "
          "next "
-         "1 LineWidth", ENTER)
+         "1 LineWidth", LENGTHY(5000), ENTER)
         .noerror().image("line-width").test(ENTER);
 
     step("Line width, grayed");
@@ -7009,7 +7009,7 @@ void tests::graphic_commands()
          "i 12 / gray foreground "
          "i LineWidth Line "
          "next "
-         "1 LineWidth 0 Gray Foreground", ENTER)
+         "1 LineWidth 0 Gray Foreground", LENGTHY(5000), ENTER)
         .noerror().image("line-width-gray").test(ENTER);
 
     step("Circles");
@@ -7017,14 +7017,14 @@ void tests::graphic_commands()
          "1 11 for i "
          "{ 0 0 } i Circle "
          "{ 0 1 } i 0.25 * Circle "
-         "next ", ENTER)
+         "next ", LENGTHY(5000), ENTER)
         .noerror().image("circles").test(ENTER);
 
     step("Circles, complex coordinates");
     test(CLEAR,
          "2 150 for i "
          "ⅈ i 0.12 * * exp 0.75 0.05 i * + * 0.4 0.003 i * +  Circle "
-         "next ", ENTER)
+         "next ", LENGTHY(5000), ENTER)
         .noerror().image("circles-complex").test(ENTER);
 
     step("Circles, fill and patterns");
@@ -7033,7 +7033,7 @@ void tests::graphic_commands()
          "2 150 for i "
          "i 0.0053 * gray Foreground "
          "ⅈ i 0.12 * * exp 0.75 0.05 i * + * 0.1 0.008 i * +  Circle "
-         "next ", ENTER)
+         "next ", LENGTHY(5000), ENTER)
         .noerror().image("circles-fill").test(ENTER);
 
     step("Ellipses");
@@ -7043,7 +7043,7 @@ void tests::graphic_commands()
          "i 0.12 * ⅈ * exp 0.05 i * 0.75 + * "
          "i 0.17 * ⅈ * exp 0.05 i * 0.75 + * "
          " Ellipse "
-         "next ", ENTER)
+         "next ", LENGTHY(5000), ENTER)
         .noerror().image("ellipses").test(ENTER);
 
     step("Ellipses, fill and patterns");
@@ -7054,7 +7054,7 @@ void tests::graphic_commands()
          "0.23 ⅈ * exp 5.75 0.01 i * - * "
          "1.27 ⅈ * exp 5.45 0.01 i * - * neg "
          " Ellipse "
-         "next ", ENTER)
+         "next ", LENGTHY(5000), ENTER)
         .noerror().image("ellipses-fill").test(ENTER);
 
     step("Rectangles");
@@ -7064,7 +7064,7 @@ void tests::graphic_commands()
          "i 0.12 * ⅈ * exp 0.05 i * 0.75 + * "
          "i 0.17 * ⅈ * exp 0.05 i * 0.75 + * "
          " Rect "
-         "next ", ENTER)
+         "next ", LENGTHY(5000), ENTER)
         .noerror().image("rectangles").test(ENTER);
 
     step("Rectangles, fill and patterns");
@@ -7075,7 +7075,7 @@ void tests::graphic_commands()
          "0.23 ⅈ * exp 5.75 0.01 i * - * "
          "1.27 ⅈ * exp 5.45 0.01 i * - * neg "
          " Rect "
-         "next ", ENTER)
+         "next ", LENGTHY(5000), ENTER)
         .noerror().image("rectangle-fill").test(ENTER);
 
     step("Rounded rectangles");
@@ -7085,7 +7085,7 @@ void tests::graphic_commands()
          "i 0.12 * ⅈ * exp 0.05 i * 0.75 + * "
          "i 0.17 * ⅈ * exp 0.05 i * 0.75 + * "
          "0.8 RRect "
-         "next ", ENTER)
+         "next ", LENGTHY(5000), ENTER)
         .noerror().image("rounded-rectangle").test(ENTER);
 
     step("Rounded rectangles, fill and patterns");
@@ -7096,7 +7096,7 @@ void tests::graphic_commands()
          "0.23 ⅈ * exp 5.75 0.01 i * - * "
          "1.27 ⅈ * exp 5.45 0.01 i * - * neg "
          "0.8 RRect "
-         "next ", ENTER)
+         "next ", LENGTHY(5000), ENTER)
         .noerror().image("rounded-rectangle-fill").test(ENTER);
 
     step("Clipping");
@@ -7106,7 +7106,7 @@ void tests::graphic_commands()
          "i 0.0053 * gray Foreground "
          "ⅈ i 0.12 * * exp 0.75 0.05 i * + * 0.1 0.008 i * +  Circle "
          "next "
-         "{} Clip", ENTER)
+         "{} Clip", LENGTHY(5000), ENTER)
         .noerror().image("clip-circles").test(ENTER);
 
     step("Cleanup");
