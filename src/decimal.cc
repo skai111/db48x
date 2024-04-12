@@ -990,7 +990,6 @@ decimal_p decimal::round(large to_exp) const
     gcbytes  bp = s.base;
     id       ty = type();
     kint     ld = 0;
-    size_t   rm = (exp - to_exp) % 3;
     scribble scr;
 
     for (size_t i = 0; i <= copy; i++)
@@ -998,15 +997,14 @@ decimal_p decimal::round(large to_exp) const
         kint k = kigit(+bp, i);
         if (i == copy)
         {
-            if (rm == 0)
+            size_t rm = (exp - to_exp) % 3;
+            switch(rm)
             {
-                ld = kigit(+bp, i+1);
-                ld /= 100;
-                k = ld >= 5 ? 1 : 0;
-                ld = 0;
-            }
-            else if (rm == 1)
-            {
+            case 0:
+                ld = k >= 500;
+                k = 0;
+                break;
+            case 1:
                 ld = k % 100;
                 k -= ld;
                 ld = ld >= 50;
@@ -1017,9 +1015,8 @@ decimal_p decimal::round(large to_exp) const
                     if (ld)
                         k = 0;
                 }
-            }
-            else if (rm == 2)
-            {
+                break;
+            case 2:
                 ld = k % 10;
                 k -= ld;
                 ld = ld >= 5;
@@ -1030,6 +1027,7 @@ decimal_p decimal::round(large to_exp) const
                     if (ld)
                         k = 0;
                 }
+                break;
             }
         }
         kint *kp = (kint *) rt.allocate(sizeof(kint));
@@ -1054,6 +1052,7 @@ decimal_p decimal::round(large to_exp) const
         for (size_t i = rs; i > 0; --i)
             rp[i] = rp[i] / 10 + rp[i-1] % 10 * 100;
         *rp /= 10;
+        *rp += ld * 100;
     }
 
     if (!normalize(ty, rp, rs, exp))
