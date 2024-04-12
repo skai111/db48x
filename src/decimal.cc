@@ -3057,10 +3057,11 @@ decimal_p decimal::lgamma_internal(decimal_r x)
     }
 
     // Spouge's approximation uses a factor `a` - Compute it here
-    precision_adjust prec(6);
-    decimal_g tmp = make(prec + 4);
-    decimal_g a = make(125285, -5);
+    uint digits = Settings.Precision();
+    decimal_g tmp = make(digits + 4);
+    decimal_g a = make(12528504409125680958ULL , -19);
     a = ceil(a * tmp);
+    precision_adjust prec(digits < 24 ? 6 : digits/4);
 
     // Allocate number of ck elements we need
     uint na = a->as_unsigned();
