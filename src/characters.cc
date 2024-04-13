@@ -502,6 +502,7 @@ uint character_menu::build_for_code(menu_info &mi, unicode cp)
         }
     }
 
+    cfile.close();
     if (menuchars)
     {
         size_t len   = 0;

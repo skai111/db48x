@@ -573,6 +573,10 @@ algebraic_p constant::do_value(config_r cfg) const
     // If we found a definition, use that
     if (csym)
     {
+        // Need to close the configuration file before we parse the constants
+        if (cfile.valid())
+            cfile.close();
+
         // Special cases for pi and e where we have built-in constants
         if (cname->matches("π"))
             return decimal::pi();

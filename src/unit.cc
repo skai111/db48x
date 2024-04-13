@@ -787,6 +787,7 @@ unit_p unit::lookup(symbol_p name, int *prefix_info)
                         }
 
                         // Check if we must evaluate, e.g. 1_min -> seconds
+                        ufile.close();
                         uexpr = u->evaluate();
                         if (!uexpr || uexpr->type() != ID_unit)
                         {
