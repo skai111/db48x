@@ -517,6 +517,8 @@ bool user_interface::key(int key, bool repeating, bool talpha)
             rt.clear_error();
             dirtyStack = true;
             dirtyEditor = true;
+            if (key == KEY_EXIT || key == KEY_ENTER || key == KEY_BSP)
+                return true;
         }
         else
         {
