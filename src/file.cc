@@ -135,6 +135,12 @@ file::~file()
 }
 
 
+#if SIMULATOR
+// DMCP is configured to only allows one open file at a time
+static int open_count = 0;
+#endif
+
+
 void file::open(cstring path)
 // ----------------------------------------------------------------------------
 //    Open a file for reading
@@ -143,19 +149,16 @@ void file::open(cstring path)
 #if SIMULATOR
     data = fopen(path, "r");
     if (!data)
-    {
         record(file_error, "Error %s opening %s", strerror(errno), path);
-        rt.error(strerror(errno));
-    }
+    else if (open_count++)
+        record(file_error,
+               "open is opening %u files at the same time",
+               open_count);
 #else
     FRESULT ok = f_open(&data, path, FA_READ);
     data.err = ok;
     if (ok != FR_OK)
-    {
         data.flag = 0;
-        rt.error(error(data.err));
-    }
-
 #endif                          // SIMULATOR
 }
 
@@ -168,12 +171,12 @@ void file::open_for_writing(cstring path)
 #if SIMULATOR
     data = fopen(path, "w");
     if (!data)
-    {
         record(file_error, "Error %s opening %s for writing",
                strerror(errno), path);
-        rt.error(strerror(errno));
-        return;
-    }
+    else if (open_count++)
+        record(file_error,
+               "open_for_writing is opening %u files at the same time",
+               open_count);
 #else
     sys_disk_write_enable(1);
     FRESULT ok = f_open(&data, path, FA_WRITE | FA_CREATE_ALWAYS);
@@ -182,7 +185,6 @@ void file::open_for_writing(cstring path)
     {
         sys_disk_write_enable(0);
         data.flag = 0;
-        rt.error(error(data.err));
     }
 #endif                          // SIMULATOR
 }
@@ -196,9 +198,9 @@ void file::close()
     if (valid())
     {
         fclose(data);
-
 #if SIMULATOR
         data = nullptr;
+        open_count--;
 #else
         sys_disk_write_enable(0);
         data.flag = 0;
