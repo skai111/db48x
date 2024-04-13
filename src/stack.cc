@@ -75,6 +75,18 @@ void stack::draw_stack()
 //   Draw the stack on screen
 // ----------------------------------------------------------------------------
 {
+    // Do not redraw if there is an error
+    if (utf8 errmsg = rt.error())
+    {
+        utf8 source = rt.source();
+        size_t srclen = rt.source_length();
+        text_g command = rt.command();
+        rt.clear_error();
+        draw_stack();
+        rt.error(errmsg).source(source, srclen).command(command);
+        return;
+    }
+
     font_p font       = Settings.result_font();
     font_p hdrfont    = HeaderFont;
     font_p idxfont    = HelpFont;
@@ -99,7 +111,6 @@ void stack::draw_stack()
         return;
 
     rect clip      = Screen.clip();
-
     Screen.fill(0, top, hdrx-1, bottom, Settings.StackLevelBackground());
     Screen.fill(hdrx, top, hdrx, bottom, Settings.StackLineForeground());
 
@@ -126,7 +137,8 @@ void stack::draw_stack()
             do
             {
                 graph = obj->graph(g);
-            } while (!graph && Settings.AutoScaleStack() && g.reduce_font());
+            } while (!graph && !rt.error() &&
+                     Settings.AutoScaleStack() && g.reduce_font());
 
             if (graph)
             {
@@ -268,6 +280,13 @@ void stack::draw_stack()
             }
 
             font = Settings.stack_font();
+        }
+
+        // If there was any error during rendering, draw it on top
+        if (utf8 errmsg = rt.error())
+        {
+            Screen.text(hdrx + 2, ytop, errmsg, HelpFont, bg, fg);
+            rt.clear_error();
         }
 
         // Draw index
