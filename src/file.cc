@@ -147,13 +147,18 @@ void file::open(cstring path)
 // ----------------------------------------------------------------------------
 {
 #if SIMULATOR
+    if (open_count++)
+    {
+        errno = EMFILE;
+        record(file_error,
+               "open is opening %u files at the same time",
+               open_count--);
+        return;
+    }
+
     data = fopen(path, "r");
     if (!data)
         record(file_error, "Error %s opening %s", strerror(errno), path);
-    else if (open_count++)
-        record(file_error,
-               "open is opening %u files at the same time",
-               open_count);
 #else
     FRESULT ok = f_open(&data, path, FA_READ);
     data.err = ok;
@@ -169,14 +174,19 @@ void file::open_for_writing(cstring path)
 // ----------------------------------------------------------------------------
 {
 #if SIMULATOR
+    if (open_count++)
+    {
+        errno = EMFILE;
+        record(file_error,
+               "open_for_writing is opening %u files at the same time",
+               open_count--);
+        return;
+    }
+
     data = fopen(path, "w");
     if (!data)
         record(file_error, "Error %s opening %s for writing",
                strerror(errno), path);
-    else if (open_count++)
-        record(file_error,
-               "open_for_writing is opening %u files at the same time",
-               open_count);
 #else
     sys_disk_write_enable(1);
     FRESULT ok = f_open(&data, path, FA_WRITE | FA_CREATE_ALWAYS);
