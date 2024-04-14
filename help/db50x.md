@@ -331,7 +331,7 @@ unintentional differences, since the implementation is completely new.
 
 * DB50X features an extensive built-in help system, which you are presently
   using. Information for that help system is stored using a regular *markdown*
-  file named `/help/db50x.md`, stored in the calculator's flash storage.
+  file named `/help/db48x.md`, stored in the calculator's flash storage.
 
 * DB50X features auto-completion for commands while typing, through
   the  _CAT_ key (a [Catalog](#Catalog) of all commands).
@@ -611,7 +611,7 @@ the codepoints in a text.
 ## Help
 
 The DB50X project includes an extensive built-in help, which you are presently
-reading. This help is stored as a `help/db50x.md` file on the calculator. You
+reading. This help is stored as a `help/db48x.md` file on the calculator. You
 can also read it from a web browser directly on the GitHub page of the project.
 
 The `Help` command makes it possible to access the built-in help in a contextual
@@ -2277,6 +2277,88 @@ You can edit it by recalling its content on the stack using
 `"config:equations.csv" RCL`, editing the values, and then storing the content
 back to disk using `"config:equations.csv" STO`.
 # Release notes
+
+## Release 0.7.4 "Flesh" - Polishing and refinements
+
+This release is mostly about polishing various aspects of the
+implementation to make it more convenient and more efficient. It also
+adds user-defined functions parsing and evaluation, pixel-manipulation
+commands, bit operations on binary numbers, memory operations like
+`sto+` or `incr`, loading and saving BMP files, color support in the
+simulator, and more.
+
+
+### New features
+
+* editor: Implement configurable word wrapping
+* expressions: Add code for n-ary functions like `sum`
+* expressions: Parse user-function calls like `F(1;2;3;4)`
+* expressions: Ensure funcall objects are evaluated immediately
+* functions: Add `sum` and `product` functions
+* functions: Add combinations and permutations
+* functions: Implement number rounding operations (`rnd` and `trnc`)
+* graph: Add graphical rendering for `cbrt` (cube root) and `xroot`
+* graph: Graphical rendering of combinations, permutations
+* graph: Graphical rendering of sum and product
+* graphics: Add `pixon`, `pixoff` and `pix?` commands
+* graphics: Store and recall BMP files with `sto` and `rcl`
+* graphics: `ToGrob` command converting object to graphic
+* logical: Add `SetBit`, `ClearBit` and `FlipBit` commands
+* memory: Implement the `Clone` (`NewOb`) function
+* menus: Add `log2` and `exp2` to `ExpLogMenu`
+* menus: Place `ListMenu` as a keyboard-accesisble menu
+* parsing: Parse n-ary functions
+* program: Add vertical program rendering mode
+* stack: Display error message emitted during stack rendering
+* ui: Add colorization parameters for the user interface
+* ui: Add some colorization
+* variables: Add `Sto+`, `Rcl+` and other variable arithmetic
+* variables: Implement `Increment` and `Decrement`
+
+
+### Bug fixes
+
+* decimal: Fix precision when computing gamma/lgamma
+* decimal: Fix rounding bug when rounding increases exponent
+* doc: Add missing dependencies on Fedora (submitted by @vkadlcik)
+* files: Do not error when opening constants/equation/library files
+* files: Open only one configuration file at a time
+* graphics: Fix bug drawing a line of width 0
+* graphics: Use foreground color for parenthese and ratio
+* lists: Separate list sum/product from regular sum/product
+* renderer: Make sure `printf` respects target buffer size
+* simulator: process double-clicks correctly (submitted by @kjellc)
+* tests: Change the height of ignored header
+
+
+### Improvements
+
+* command: Factor out arity for all commands
+* constants: Report parse error location for invalid constants
+* demo: Add HP-48 style slow walk to `Walk` demo
+* demo: Modernize the code a little
+* demo: Modify performance benchmarks to use `TEval`
+* demo: Replace imaginary unit constant
+* doc: Remove reference to Intel Decimal Library
+* files: Convert all file names to lowercase (Linux support)
+* functions: Make it possible to interrupt a running sum/product
+* graph: Improve rendering of `exp`, `exp2`, `exp10`
+* graphics: Separate color conversion step
+* help: Do not display command name while editing
+* ids: Make room for a few additional 1-byte commands
+* locals: Document the absence of compiled local variables
+* makefile: Add configuration files to the release `.tgz` file
+* parsing: Make the error message for sub-expressions more local
+* readme: Remove reference to DM32 from top-level readme
+* simulator: Avoid crash rendering %t in recorder
+* simulator: Convert simulator code to support color
+* simulator: Replicate open files limitations
+* simulator: Separate db50x and db48x builds
+* tests: Add colorized images to testing
+* tests: Avoid occasional errors on some long-running tests
+* ui: Define cursor position in `SelfInsert` with `\t`
+* ui: Ignore EXIT, BSP and ENTER keys when clearing error
+
 
 ## Release 0.7.3 "Perfume" - Mostly bug fixes
 
@@ -8220,3 +8302,4 @@ Create a backup on a remote machine
 
 ## USBRESTORE
 Restore a backup from a remote machine
+
