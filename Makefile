@@ -134,7 +134,7 @@ sim/gcc111libbid.a: sim/gcc111libbid-$(shell uname)-$(shell uname -m).a
 dist: all
 	cp $(BUILD)/$(TARGET)_qspi.bin  .
 	tar cvfz $(TARGET)-v$(VERSION).tgz $(TARGET).$(PGM) $(TARGET)_qspi.bin \
-		help/*.md state/*.48S
+		help/*.md state/*.48S config/*.csv
 	@echo "# Distributing $(VERSION)"
 
 $(VERSION_H): $(BUILD)/version-$(VERSION).h
