@@ -781,7 +781,17 @@ COMMAND_BODY(Cycle)
             break;
 #endif // CONFIG_FIXED_BASED_OBJECTS
         case ID_expression:
-            Settings.GraphicStackDisplay(!Settings.GraphicStackDisplay());
+            Settings.GraphicResultDisplay(!Settings.GraphicResultDisplay());
+            if (!Settings.GraphicResultDisplay())
+                Settings.GraphicStackDisplay(!Settings.GraphicStackDisplay());
+            if (0)
+                ui.draw_message("Stack rendering",
+                                Settings.GraphicStackDisplay()
+                                ? "Stack shown graphically"
+                                : "Stack shown as text",
+                                Settings.GraphicResultDisplay()
+                                ? "Results shown graphically"
+                                : "Results shown as text");
             break;
         case ID_list:                   type = ID_array;        break;
         case ID_array:                  type = ID_program;      break;
