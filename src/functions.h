@@ -309,4 +309,9 @@ NFUNCTION(Max, 2,
           static algebraic_p evaluate(algebraic_r x, algebraic_r y);
 );
 
+
+NFUNCTION(Percent, 2, );
+NFUNCTION(PercentChange, 2, );
+NFUNCTION(PercentTotal, 2, );
+
 #endif // FUNCTIONS_H

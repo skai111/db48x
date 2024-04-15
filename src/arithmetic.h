@@ -196,24 +196,6 @@ ARITHMETIC_DECLARE(hypot,               POWER);
 ARITHMETIC_DECLARE(atan2,               POWER);
 
 
-struct Percent : arithmetic
-// ----------------------------------------------------------------------------
-//  Percentage commands
-// ----------------------------------------------------------------------------
-{
-    Percent(id i = ID_Percent) : arithmetic(i) {}
-
-    OBJECT_DECL(Percent)
-    ARITY_DECL(2);
-    PREC_DECL(MULTIPLICATIVE);
-    EVAL_DECL(Percent);
-};
-
-
-struct PercentChange : Percent {};
-struct PercentTotal  : Percent {};
-
-
 
 // ============================================================================
 //

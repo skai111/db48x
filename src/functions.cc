@@ -1451,3 +1451,47 @@ NFUNCTION_BODY(Max)
     algebraic_g y = args[1]->as_extended_algebraic();
     return evaluate(x, y);
 }
+
+
+
+// ============================================================================
+//
+//    Percentage operations
+//
+// ============================================================================
+
+NFUNCTION_BODY(Percent)
+// ----------------------------------------------------------------------------
+//   Evaluate percentage operation
+// ----------------------------------------------------------------------------
+{
+    algebraic_r x = args[0];
+    algebraic_r y = args[1];
+    algebraic_g hundred = integer::make(100);
+    return x * (y / hundred);
+}
+
+
+NFUNCTION_BODY(PercentChange)
+// ----------------------------------------------------------------------------
+//   Evaluate percentage change operation
+// ----------------------------------------------------------------------------
+{
+    algebraic_r x = args[0];
+    algebraic_r y = args[1];
+    algebraic_g one = integer::make(1);
+    algebraic_g hundred = integer::make(100);
+    return (x/y - one) * hundred;
+}
+
+
+NFUNCTION_BODY(PercentTotal)
+// ----------------------------------------------------------------------------
+//   Evaluate percentage total operation
+// ----------------------------------------------------------------------------
+{
+    algebraic_r x = args[0];
+    algebraic_r y = args[1];
+    algebraic_g hundred = integer::make(100);
+    return x/y * hundred;
+}
