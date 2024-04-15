@@ -39,6 +39,9 @@ struct menu_info
 //  Info filled by the menu() interface
 // ----------------------------------------------------------------------------
 {
+    menu_info(uint page = 0, int planes = 0, uint skip = 0, int marker = 0)
+        : page(page), skip(skip), marker(marker),
+          pages(0), index(0), plane(0), planes(planes) {}
     uint page;   // In:  Page index
     uint skip;   // In:  Items to skip
     int  marker; // In:  Default marker
@@ -60,12 +63,16 @@ struct menu : command
 
     result update(uint page = 0) const
     {
-        info mi = { .page = page };
+        info mi(page);
         return ops().menu(this, mi) ? OK : ERROR;
     }
 
-    static void items_init(info &mi, uint nitems, uint planes = 3);
-    static void items(info &UNUSED mi) { }
+    static void items_init(info &mi, uint nitems, uint planes, uint vplanes);
+    static void items_init(info &mi, uint nitems, uint planes = 3)
+    {
+        items_init(mi, nitems, planes, planes);
+    }
+    static void items(info &) { }
     static void items(info &mi, id action);
     static void items(info &mi, cstring label, object_p action);
     static void items(info &mi, cstring label, id action)
@@ -103,7 +110,7 @@ struct menu : command
     }
 
     // Dynamic menus
-    typedef cstring (*menu_label_fn)(info &mi);
+    typedef cstring (*menu_label_fn)(object::id ty);
 
     template <typename... Args>
     static uint count(menu_label_fn UNUSED lbl, id UNUSED action, Args... args)
@@ -138,7 +145,7 @@ void menu::items(info &mi, menu_label_fn lblfn, id type, Args... args)
 //   Update menu items
 // ----------------------------------------------------------------------------
 {
-    items(mi, lblfn(mi), type);
+    items(mi, lblfn(type), type);
     items(mi, args...);
 }
 
@@ -161,7 +168,7 @@ void menu::items(info &mi, id type, Args... args)
 //
 // ============================================================================
 
-COMMAND(MenuNextPage)
+COMMAND(MenuNextPage,-1)
 // ----------------------------------------------------------------------------
 //   Select the next page in the menu
 // ----------------------------------------------------------------------------
@@ -171,7 +178,7 @@ COMMAND(MenuNextPage)
 }
 
 
-COMMAND(MenuPreviousPage)
+COMMAND(MenuPreviousPage,-1)
 // ----------------------------------------------------------------------------
 //   Select the previous page in the menu
 // ----------------------------------------------------------------------------
@@ -181,7 +188,7 @@ COMMAND(MenuPreviousPage)
 }
 
 
-COMMAND(MenuFirstPage)
+COMMAND(MenuFirstPage,-1)
 // ----------------------------------------------------------------------------
 //   Select the previous page in the menu
 // ----------------------------------------------------------------------------
@@ -202,6 +209,17 @@ struct SysMenu : menu                                                   \
     MENU_DECL(SysMenu);                                                 \
 };
 #include "ids.tbl"
+
+
+
+// ============================================================================
+//
+//   Commands related to menus
+//
+// ============================================================================
+
+COMMAND_DECLARE(LastMenu,-1);   // Return to previous menu
+COMMAND_DECLARE(ToolsMenu,-1);  // Automatic selection of the right menu
 
 
 #endif // MENU_H

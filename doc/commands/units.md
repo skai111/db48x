@@ -8,26 +8,44 @@ Create a user-defined unit
 Delete a user-defined unit
 
 
-## UVAL
-Numeric part of a unit object
+## UnitValue (UVAL)
+
+Return the numeric part of a unit object.
+
+`3_km`  ▶ `3`
+
+## BaseUnits (UBASE)
+
+Expand all unit factors to their base units.
+
+`3_km`  ▶ `3000_m`
 
 
-## UBASE
-Expand all unit factors to their base unit
+## Convert
+
+Convert value from one unit to another. This convert the values in the second level of the stack to the unit of the object in the first level of the stack. Only the unit in the first level of the stack is being considered, the actual value is ignored. For example:
+
+`3_km` `2_m` ▶ `3000_m`
 
 
-## CONVERT
-Convert value from one unit to another
+
+## FactorUnit (UFACT)
+
+Factor the unit in level 1 from the unit expression of the level 2 unit object.
+
+`1_W` `1_N` ▶ `1_N*m/s`
 
 
-## UFACT
-Expose a group of units within a unit object (factor)
+## →Unit (ToUnit)
 
+Creates a unit object from a real number and the unit part of a unit object.
+`→Unit` adds units to a number, combining the number and the unit part of a
+unit object. The numerical part of the unit object is ignored.
 
-## TOUNIT
-Apply a unit to an object
+`→Unit` is the reverse of `Unit→` or of `Obj→` applied to a unit object.
+
+`3000` `2_km` ▶ `3000_km`
 
 
 ## ULIST
 List all user-defined units
-

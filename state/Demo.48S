@@ -1,0 +1,637 @@
+@@ ---------------------------------------------------------------------------
+@@
+@@	 Beep
+@@
+@@ ---------------------------------------------------------------------------
+
+«
+	0 50 for n
+		 2 n 12 / 1 + ^ 55 * 1/10 BEEP
+	next
+»
+'Beeps' STO
+
+
+
+@@ ---------------------------------------------------------------------------
+@@
+@@	 IFTE evaluation test
+@@
+@@ ---------------------------------------------------------------------------
+
+«
+	Duplicate 1 =
+	« Drop "One" »
+	« 1 < "Less" "More" IFTE »
+	IFTE
+
+	'1=1' '1+1' '1*3' IFTE
+»
+'IfTEEval' STO
+
+
+@@ ---------------------------------------------------------------------------
+@@
+@@	 If Then Else expression evaluation
+@@
+@@ ---------------------------------------------------------------------------
+
+«
+  -> x << IF 'x<1' THEN "less" ELSE "more" END >>
+»
+'IfThenElseEval' STO
+
+
+@@ ---------------------------------------------------------------------------
+@@
+@@	 Case statement test
+@@
+@@ ---------------------------------------------------------------------------
+
+«
+	CASE
+		DUP "A" == THEN "Alpha" END
+		DUP "B" == THEN "Beta"	END
+		DUP "C" == THEN "Gamma" END
+		"D"		  WHEN "Delta" END
+	END
+»
+'CaseTest' STO
+
+
+@@ ---------------------------------------------------------------------------
+@@
+@@	 RPL recursion test - Demonstrate we don't consume memory in that case
+@@
+@@ ---------------------------------------------------------------------------
+@@	 In such a case, the HP48 or HP50 will slowly consume memory
+«
+	1 + DUP 1 DISP MEM 2 DISP Recurse
+»
+'Recurse' STO
+
+
+@@ ---------------------------------------------------------------------------
+@@
+@@	 Collatz conjecture check - Check tail recursion in a test
+@@
+@@ ---------------------------------------------------------------------------
+@@	  Interesting values to start with:
+@@	  - Long stopping time: 1161, 2223, 2463, 2919, 3711, 6171
+@@	  - High trajectory value: 138367, 159487, 270271, 665215, 704511
+@@	  See https://en.wikipedia.org/wiki/Collatz_conjecture for more info
+«
+	DUP "	  " + 1 DISP MEM 2 DISP
+
+	IF DUP 1 ≠ THEN
+		IF DUP 2 MOD THEN
+			3 * 1 +
+		ELSE
+			2 /
+		END
+		Collatz
+	END
+»
+'Collatz' STO
+
+
+@@ ---------------------------------------------------------------------------
+@@
+@@	 Collatz conjecture benchmark
+@@
+@@ ---------------------------------------------------------------------------
+@@	  This is a case where the DM42 and DM32 will do much better than HP's
+@@	  because of the tail recursion optimizations shown above.
+«
+	 Ticks
+	 989345275647 Collatz
+	 Ticks Rot -
+»
+'CBench' STO
+
+
+@@ ---------------------------------------------------------------------------
+@@
+@@	 Graphic test
+@@
+@@ ---------------------------------------------------------------------------
+«
+	@ A little character, from p 2-39 of HP50G advanced reference
+	@ This tests the compatibility for GROB format
+	GROB 9 15 E300140015001C001400E3008000C110AA00940090004100220014102800
+	→ Walk
+	«
+		CLLCD
+		{ #0 #40 } PICT OVER Walk GXOR
+		1 99999 FOR i
+			i 420 MOD R->B
+			#40 2 →List
+			PICT OVER Walk GXOR
+			PICT ROT Walk GXOR
+
+			@ Set flag 48 for HP-48-style slow walk
+			IF 48 FS?
+			THEN
+				0.2 WAIT 5
+			ELSE
+				0.01 WAIT 1
+			END
+		STEP
+		»
+ »
+'WalkMan' STO
+
+
+@@ ---------------------------------------------------------------------------
+@@
+@@	 Summation loop (FP performance test)
+@@
+@@ ---------------------------------------------------------------------------
+«
+	@ Summation loop
+	@ See https://www.hpmuseum.org/forum/thread-9750.html
+	Radians
+	«
+		0 1 1000
+		for x
+			x tan⁻¹ sin exp ∛ +
+		next
+	»
+	TEval
+»
+'SumTestWithLoop' STO
+
+
+
+@@ ---------------------------------------------------------------------------
+@@
+@@	 Summation loop (FP performance test, using sum command)
+@@
+@@ ---------------------------------------------------------------------------
+«
+	@ Summation loop
+	@ See https://www.hpmuseum.org/forum/thread-9750.html
+	Radians
+	« x 1 1000 'cbrt(exp(sin(atan(x))))' sum »
+	TEval
+»
+'SumTestWithFunction' STO
+
+
+
+@@ ---------------------------------------------------------------------------
+@@
+@@	 NQueens benchmark
+@@
+@@ ---------------------------------------------------------------------------
+
+«
+	«
+		@ User RPL program lifted straight from
+		@ https://www.hpmuseum.org/cgi-sys/cgiwrap/hpmuseum/articles.cgi?read=700
+		0
+		do
+			8 Swap 1 +
+			while
+				Duplicate2
+				do
+					1 -
+				until
+					Duplicate2 5 + Pick - norm Duplicate2 - × not
+				end
+			repeat
+				Drop
+				while
+					Swap Duplicate 1 same
+				repeat
+					-
+				end
+				1 - Swap
+			end
+			Drop
+		until
+			Duplicate 8 same
+		end
+		→List
+	»
+	@ Compute execution duration of that code
+	TEval
+»
+'NQueens' STO
+
+
+@@ ---------------------------------------------------------------------------
+@@
+@@	 Line drawing example
+@@
+@@ ---------------------------------------------------------------------------
+
+«
+	@ Helper program to draw a line at index i
+	«
+		10 6 → i XSize YSize
+		«
+			@ Build starting point
+			{}
+			@ X coordinate
+			i sin XSize × +
+			@ Y coordinate
+			i 2.17 × cos YSize × +
+			@ Build end point
+			{}
+			@ X coordinate
+			i 2.3 × sin XSize × +
+			@ Y coordinate
+			i 2.615 × cos YSize × +
+			@ Draw the line and wait for 1ms
+			DrawLine
+		»
+	»
+	→ MyLine
+	«
+		Degrees ClearLCD 0 360000
+		for i
+			@ Erase old line
+			1 10 for g
+				g 10 / Gray Foreground
+				i 100 g + - MyLine
+			next
+
+			@ Set random foreground and draw new line
+			if
+				Ticks 1000 ÷ 10 mod 7 <
+			then
+				#0 Foreground
+			else
+				#1111111111111111 i 16 mod × Foreground
+			end
+			i MyLine
+
+			@ Wait 1ms
+			0.001 Wait
+		next
+	»
+»
+'Lines' STO
+
+
+
+@@ ---------------------------------------------------------------------------
+@@
+@@	 Text drawing example
+@@
+@@ ---------------------------------------------------------------------------
+
+«
+	@ Restore foreground and background in case we interrupted another program
+	0 Gray Foreground
+	64 STWS
+	1 Gray Background
+
+	0 300
+	for i
+		"Text line i=" i + " " + i 9 mod Disp
+		0.01 Wait
+	next
+
+	0 300
+	for i
+		"Fractional line i=" i + " " + i 16 / 9 mod Disp
+		0.01 Wait
+	next
+
+	«
+		Dup2
+		Disp
+		0.01 Wait
+		'Foreground' RCL
+		→ fg
+		«
+			1 gray Foreground
+			Disp
+			fg Foreground
+		»
+	»
+	→ DispThenErase
+	«
+		ClearLCD
+		0 300
+		for i
+			"Pixel positioning " { 10#75 10#150 0 true true } Disp
+			"Pos " { } #0 i + 223 mod + #0 i 45 mod + 25 + +
+			dup Rot Swap ToText + " " +
+			Swap
+			DispThenErase
+		next
+
+		ClearLCD
+		Degrees
+		1 360
+		for i
+			"Complex positioning " { 10#55 10#100 0 true true } Disp
+			" Angle " i +
+			4.5 i R->P 2.9 -
+			DispThenErase
+		next
+
+		ClearLCD
+		1 360
+		for i
+			"Scaled positioning " { 10#55 10#100 0 true true } Disp
+			" Angle " i +
+			{ } i cos 7 * 2.9 - + i 3 * sin 3 * +
+			DispThenErase
+		next
+	»
+
+
+	ClearLCD
+	"	 Fonts	"	 { 10#75 10#180 0 true true } Disp
+	0 11 for f
+			"Font " f +
+			{
+				{ 10#10	 10#0	 }
+				{ 10#10	 10#48 }
+				{ 10#10	 10#80 }
+				{ 10#10	 10#98 }
+				{ 10#10	 10#130 }
+				{ 10#240 10#0 }
+				{ 10#240 10#25 }
+				{ 10#240 10#45 }
+				{ 10#240 10#64 }
+				{ 10#240 10#84 }
+				{ 10#240 10#120 }
+				{ 10#240 10#150 }
+			}
+			f 1 + Get
+			f +
+			Disp
+	next
+	1.5 Wait
+
+	ClearLCD
+	"	 Patterns	 "	{ 10#75 10#180 0 true true } Disp
+	0 15 for p
+		16#1111111111111111 p * Foreground
+		0 11 for f
+				"Font " f +
+				{
+					{ 10#10	 10#0	 }
+					{ 10#10	 10#48 }
+					{ 10#10	 10#80 }
+					{ 10#10	 10#98 }
+					{ 10#10	 10#130 }
+					{ 10#240 10#0 }
+					{ 10#240 10#25 }
+					{ 10#240 10#45 }
+					{ 10#240 10#64 }
+					{ 10#240 10#84 }
+					{ 10#240 10#120 }
+					{ 10#240 10#150 }
+				}
+				f 1 + Get
+				f +
+				Disp
+		next
+		0.2 Wait
+	next
+
+	ClearLCD
+	#0 Foreground
+	"	 Background	 "	{ 10#75 10#180 0 true true } Disp
+	16#FFFFFFFFFFFFFFFF Foreground
+	0 15 for p
+		16#1111111111111111 p * Background
+		0 11 for f
+				"Font " f +
+				{
+					{ 10#10	 10#0	 }
+					{ 10#10	 10#48 }
+					{ 10#10	 10#80 }
+					{ 10#10	 10#98 }
+					{ 10#10	 10#130 }
+					{ 10#240 10#0 }
+					{ 10#240 10#25 }
+					{ 10#240 10#45 }
+					{ 10#240 10#64 }
+					{ 10#240 10#84 }
+					{ 10#240 10#120 }
+					{ 10#240 10#150 }
+				}
+				f 1 + Get
+				f +
+				Disp
+		next
+		0.2 Wait
+	next
+»
+'Texts' STO
+
+
+
+@@ ---------------------------------------------------------------------------
+@@
+@@	 Shape drawing examples
+@@
+@@ ---------------------------------------------------------------------------
+
+«
+	@ Helper program to generate the coordinates
+	«
+			→ i
+			«
+					16#1111111111111111 i 16 mod * Foreground
+					{ }
+					i 2.51 * sin 9.5 * +
+					i 3.21 * cos 4.5 * 2.0 + +
+					{ }
+					i 1.03 * sin 9.5 * +
+					i 5.17 * cos 4.5 * 2.0 + +
+			»
+	»
+
+	→ Coords
+	«
+		ClearLCD
+		#0 Foreground
+		"	 Rectangles	 "	{ 10#75 10#180 0 true true } Disp
+		0 LineWidth
+		0 300
+		for i
+				i Coords Rect
+				0.01 Wait
+		next
+
+		ClearLCD
+		#0 Foreground
+		"	 Outlines	 "	{ 10#75 10#180 0 true true } Disp
+		0 LineWidth
+		0 300
+		for i
+				i 7 mod 1 + LineWidth
+				i Coords Rect
+				0.01 Wait
+		next
+
+		ClearLCD
+		#0 Foreground
+		"	 Ellipse	 "	{ 10#75 10#180 0 true true } Disp
+		0 LineWidth
+		0 300
+		for i
+				i Coords Ellipse
+				0.01 Wait
+		next
+
+		ClearLCD
+		#0 Foreground
+		"	 Outlines	 "	{ 10#75 10#180 0 true true } Disp
+		0 LineWidth
+		0 300
+		for i
+			i 7 mod 1 + LineWidth
+			i Coords Ellipse
+			0.01 Wait
+		next
+
+		ClearLCD
+		#0 Foreground
+		"	 Rounded Rect "	{ 10#75 10#180 0 true true } Disp
+		0 LineWidth
+		0 300
+		for i
+			i Coords #0 i 75 mod + RRect
+			0.01 Wait
+		next
+
+		ClearLCD
+		#0 Foreground
+		"	 Outlines	 "	{ 10#75 10#180 0 true true } Disp
+		0 LineWidth
+		0 300
+		for i
+			i 7 mod 1 + LineWidth
+			i Coords #0 i 75 mod + RRect
+			0.01 Wait
+		next
+
+		ClearLCD
+		#0 Foreground
+		"	 Clipping	 "	{ 10#75 10#180 0 true true } Disp
+		0 LineWidth
+		{ 30 30 370 150 } Clip
+		0 300
+		for i
+			i Coords #0 i 75 mod + RRect
+			0.01 Wait
+		next
+		{ } Clip
+	»
+
+
+»
+'Shapes' STO
+
+
+
+@@ ---------------------------------------------------------------------------
+@@
+@@	 Grayscale and color
+@@
+@@ ---------------------------------------------------------------------------
+
+«
+	Ticks
+
+	0 LineWidth
+	0 255 for i
+		i 255 / Gray Foreground
+		{ } 10#25 i 16 mod *	 1 + + 10#15 #0 i + 16 / *	 1 + +
+		{ } 10#25 i 16 mod * 24 + + 10#15 #0 i + 16 / *	 14 + +
+		#10 RRect
+		0.01 Wait
+	next
+	#0 Foreground
+	Ticks Swap - 0.001 * "Finished in " Swap + " s" +
+	{ 10#150 10#100 2 1 1 } Disp
+	"Press a key to continue"
+	{ 10#140 10#150 2 1 1 } Disp
+	0 Wait DROP
+
+	Ticks
+	0 255 for r
+		0 255 for g
+			0 255 for b
+				r 255 /
+				g 255 /
+				b 255 /
+				RGB Foreground
+
+				{ } 10#1 g * 400 * 255 / 0 + +	10#1 b * 240 * 255 / 0 + +
+				{ } 10#1 g * 400 * 255 / 2 + +	10#1 b * 240 * 255 / 1 + +
+				Rect
+			next
+		next
+	25 step
+	#0 Foreground
+	Ticks	 Swap - 0.001 * "Finished in " Swap + " s" +
+	{ 10#150 10#100 2 1 1 } Disp
+	"Press a key to continue"
+	{ 10#140 10#150 2 1 1 } Disp
+	0 Wait DROP
+»
+'Patterns' STO
+
+
+
+@@ ---------------------------------------------------------------------------
+@@
+@@	 Curve plotting examples
+@@
+@@ ---------------------------------------------------------------------------
+
+«
+	Degrees
+	#0 Foreground
+
+	1 LineWidth
+	'sin(325*X)*lgamma(X)' Function
+
+	2 LineWidth
+	'X' Polar
+
+	3 LineWidth
+	16#AAAAAAAAAAAAAAAA Foreground
+	« '9.5*sin(31.27*X)' Eval '5.5*cos(42.42*X)' Eval RealToComplex » Parametric
+
+	#0 Foreground
+
+	0 WAIT DROP
+
+	[ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 ]
+	25 * sin BarPlot
+
+	0 WAIT DROP
+
+	CLLCD
+	16#CCCCCCCCCCCCCCCC Foreground
+	[ [ 1 -1 ] [2 -2] [3 -3] [4 -4] [5 -6] [7 -8] [9 -10] ]
+	33 * cos 2 * BarPlot
+
+	0 WAIT DROP
+
+	CLLCD
+
+	[ [ -5 -5 ] [ -3 0 ] [ -5 5] [ 0 3 ] [ 5 5 ] [ 3 0 ] [ 5 -5 ] [ 0 -3 ] [-5 -5] ]
+	DUP
+	NoCurveFilling
+	16#1111111111111111 Foreground
+	12 LineWidth
+	ScatterPlot
+
+	CurveFilling
+	16#0 Foreground
+	1 LineWidth
+	ScatterPlot
+»
+'Plotting' STO

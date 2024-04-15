@@ -66,68 +66,31 @@ struct symbol : text
         return rt.make<symbol>(ID_symbol, utf8(s), strlen(s));
     }
 
+    static symbol_g make(gcutf8 s, size_t len)
+    {
+        return rt.make<symbol>(ID_symbol, s, len);
+    }
+
     object_p recall(bool noerror = true) const;
     bool     store(object_g obj) const;
     bool     is_same_as(symbol_p other) const;
+
+    bool     matches(cstring name) const
+    {
+        return matches(utf8(name), strlen(name));
+    }
+    bool     matches(utf8 name, size_t len) const;
 
 public:
     OBJECT_DECL(symbol);
     PARSE_DECL(symbol);
     EVAL_DECL(symbol);
-    EXEC_DECL(symbol);
     RENDER_DECL(symbol);
+    GRAPH_DECL(symbol);
     PREC_DECL(SYMBOL);
 };
 
 symbol_g operator+(symbol_r x, symbol_r y);
 
-
-inline bool is_valid_as_name_initial(unicode cp)
-// ----------------------------------------------------------------------------
-//   Check if character is valid as initial of a name
-// ----------------------------------------------------------------------------
-{
-    return (cp >= 'A' && cp <= 'Z')
-        || (cp >= 'a' && cp <= 'z')
-        || (cp >= 0x100 &&
-            (cp != L'÷' &&      // Exclude symbols you can't have in a name
-             cp != L'×' &&
-             cp != L'↑' &&
-             cp != L'∂' &&
-             cp != L'⁻' &&
-             cp != L'¹' &&
-             cp != L'²' &&
-             cp != L'³' &&
-             cp != L'ⅈ' &&
-             cp != L'∡'));
-}
-
-
-inline bool is_valid_as_name_initial(utf8 s)
-// ----------------------------------------------------------------------------
-//   Check if first character in a string is valid in a name
-// ----------------------------------------------------------------------------
-{
-    return is_valid_as_name_initial(utf8_codepoint(s));
-}
-
-
-inline bool is_valid_in_name(unicode cp)
-// ----------------------------------------------------------------------------
-//   Check if character is valid in a name
-// ----------------------------------------------------------------------------
-{
-    return is_valid_as_name_initial(cp)
-        || (cp >= '0' && cp <= '9');
-}
-
-
-inline bool is_valid_in_name(utf8 s)
-// ----------------------------------------------------------------------------
-//   Check if first character in a string is valid in a name
-// ----------------------------------------------------------------------------
-{
-    return is_valid_in_name(utf8_codepoint(s));
-}
 
 #endif // SYMBOL_H

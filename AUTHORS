@@ -1,9 +1,12 @@
 This software was brought to you by the DB48X authors below:
 
 - Christophe de Dinechin <christophe@dinechin.org>
-- Camille Wormser <cwormser@google.com>
-- spiff72 <mgobluevictor@gmail.com>
+- Camille Wormser <cwormser@google.com> (complex number fixes)
+- spiff72 <mgobluevictor@gmail.com> (keyboard overlay)
+- Conrado Seibel <conrado.seibel@novatechautomation.com> (help file fix)
+- Kjell Christenson <kjell.christenson@gmail.com> (simulator fix)
+- Václav Kadlčík <vkadlcik@redhat.com> (documentation fix)
 
-Copyright (c) 2022-2023, the DB48X authors
+Copyright (c) 2022-2024, the DB48X authors
 
 Thank you!

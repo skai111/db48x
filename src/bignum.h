@@ -52,7 +52,6 @@
 
 
 #include "algebraic.h"
-#include "decimal128.h"
 #include "integer.h"
 #include "object.h"
 #include "runtime.h"
@@ -189,6 +188,7 @@ public:
     static bignum_g multiply(bignum_r y, bignum_r x, id ty);
     static bool quorem(bignum_r y, bignum_r x, id ty, bignum_g *q, bignum_g *r);
     static bignum_g pow(bignum_r y, bignum_r x);
+    static bignum_p shift(bignum_r x, int bits, bool rotate, bool arith);
 
 public:
     OBJECT_DECL(bignum);
@@ -280,7 +280,10 @@ bignum_g operator% (bignum_r y, bignum_r x);
 bignum_g operator& (bignum_r y, bignum_r x);
 bignum_g operator| (bignum_r y, bignum_r x);
 bignum_g operator^ (bignum_r y, bignum_r x);
-
+bignum_g operator<<(bignum_r y, bignum_r x);
+bignum_g operator>>(bignum_r y, bignum_r x);
+bignum_g operator<<(bignum_r y, uint x);
+bignum_g operator>>(bignum_r y, uint x);
 
 
 
@@ -296,7 +299,7 @@ inline size_t bignum::wordsize(id type)
 // ----------------------------------------------------------------------------
 {
     if (is_based(type))
-        return Settings.wordsize;
+        return Settings.WordSize();
     return 0;
 }
 
@@ -308,33 +311,32 @@ bignum_g bignum::binary(Op op, bignum_r xg, bignum_r yg, id ty)
 // ----------------------------------------------------------------------------
 //   This uses the scratch pad AND can cause garbage collection
 {
-    if (!xg.Safe() || !yg.Safe())
+    if (!xg || !yg)
         return nullptr;
 
     size_t   xs     = 0;
     size_t   ys     = 0;
     byte_p   x      = xg->value(&xs);
     byte_p   y      = yg->value(&ys);
-    id       xt     = xg->type();
-    size_t   wbits  = wordsize(xt);
+    size_t   wbits  = wordsize(ty);
     size_t   wbytes = (wbits + 7) / 8;
     uint16_t c      = 0;
     size_t   needed = std::max(xs, ys) + 1;
-    if (needed * 8 > Settings.maxbignum)
+    if (!wbits && needed * 8 > Settings.MaxNumberBits())
     {
         rt.number_too_big_error();
         return nullptr;
     }
-    if (wbits && needed < wbytes)
+    if (needed < wbytes || wbits)
         needed = wbytes;
     byte *buffer = rt.allocate(needed);         // May GC here
     if (!buffer)
         return nullptr;                         // Out of memory
-    x = xg->value(&xs);                       // Re-read after potential GC
+    x = xg->value(&xs);                         // Re-read after potential GC
     y = yg->value(&ys);
-    size_t i = 0;
 
     // Process the part that is common to X and Y
+    size_t i = 0;
     size_t max = std::min(std::min(xs, ys), needed);
     for (i = 0; i < max; i++)
     {
@@ -364,7 +366,7 @@ bignum_g bignum::binary(Op op, bignum_r xg, bignum_r yg, id ty)
     }
 
     // Process extension to wordsize (when op(0, 0, 0) can be non-zero)
-    for (max = (extend && wbits) ? wbytes : 0; i < max; i++)
+    for (max = ((extend || c) && wbits) ? wbytes : 0; i < max; i++)
     {
         c = op(0, 0, c);
         buffer[i] = byte(c);
@@ -398,7 +400,7 @@ bignum_g bignum::unary(Op op, bignum_r xg)
 // ----------------------------------------------------------------------------
 //   This uses the scratch pad AND can cause garbage collection
 {
-    if (!xg.Safe())
+    if (!xg)
         return nullptr;
     size_t   xs     = 0;
     byte_p   x      = xg->value(&xs);
@@ -412,10 +414,10 @@ bignum_g bignum::unary(Op op, bignum_r xg)
     byte *buffer = rt.allocate(needed); // May GC here
     if (!buffer)
         return nullptr; // Out of memory
-    size_t i   = 0;
-    x          = xg->value(&xs); // Re-read after potential GC
+    x = xg->value(&xs); // Re-read after potential GC
 
     // Process the part in X
+    size_t i   = 0;
     size_t max = std::min(xs, needed);
     for (i = 0; i < max; i++)
     {
@@ -463,10 +465,14 @@ inline object::id bignum::product_type(id yt, id xt)
     case ID_bignum:
         if (yt == ID_neg_bignum)
             return ID_neg_bignum;
+        if (is_based(yt))
+            return yt;
         return ID_bignum;
     case ID_neg_bignum:
         if (yt == ID_neg_bignum)
             return ID_bignum;
+        if (is_based(yt))
+            return yt;
         return ID_neg_bignum;
     default:
         return xt;

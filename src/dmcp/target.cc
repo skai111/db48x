@@ -32,13 +32,12 @@
 // Initialize the screen
 surface Screen((pixword *) lcd_line_addr(0), LCD_W, LCD_H, LCD_SCANLINE);
 
-#define GPAT      blitter::pattern<blitter::mode::MONOCHROME_REVERSE>
-const GPAT GPAT::black  = GPAT(  0,   0,   0);
-const GPAT GPAT::gray10 = GPAT( 32,  32,  32);
-const GPAT GPAT::gray25 = GPAT( 64,  64,  64);
-const GPAT GPAT::gray50 = GPAT(128, 128, 128);
-const GPAT GPAT::gray75 = GPAT(192, 192, 192);
-const GPAT GPAT::gray90 = GPAT(224, 224, 224);
-const GPAT GPAT::white  = GPAT(255, 255, 255);
-const GPAT GPAT::invert = GPAT();
-#undef GPAT
+// Pre-built patterns for shades of grey
+const pattern pattern::black   = pattern(0, 0, 0);
+const pattern pattern::gray10  = pattern(32, 32, 32);
+const pattern pattern::gray25  = pattern(64, 64, 64);
+const pattern pattern::gray50  = pattern(128, 128, 128);
+const pattern pattern::gray75  = pattern(192, 192, 192);
+const pattern pattern::gray90  = pattern(224, 224, 224);
+const pattern pattern::white   = pattern(255, 255, 255);
+const pattern pattern::invert  = pattern(~0ULL);

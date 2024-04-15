@@ -31,24 +31,29 @@
 
 #include "arithmetic.h"
 #include "bignum.h"
-#include "decimal-32.h"
-#include "decimal-64.h"
-#include "decimal128.h"
+#include "decimal.h"
 #include "dmcp.h"
 #include "fraction.h"
 #include "integer.h"
 #include "parser.h"
+#include "program.h"
 #include "renderer.h"
 #include "runtime.h"
 #include "settings.h"
 #include "symbol.h"
 #include "sysmenu.h"
+#include "tag.h"
+#include "tests.h"
+#include "unit.h"
 #include "user_interface.h"
 #include "utf8.h"
+#include "util.h"
 #include "version.h"
 
 #include <ctype.h>
 #include <stdio.h>
+#include <string.h>
+
 
 RECORDER(command,       16, "RPL Commands");
 RECORDER(command_error, 16, "Errors processing a command");
@@ -59,44 +64,49 @@ PARSE_BODY(command)
 //    Try to parse this as a command, using either short or long name
 // ----------------------------------------------------------------------------
 {
-    id      i      = p.candidate;
-    bool    eq     = p.precedence;
-
-    // If we are parsing an equation, only accept algebraic command
-    if (eq && !is_algebraic(i))
+    // We scan all the commands in one loop under 'Drop'. Skip all other
+    id i = p.candidate;
+    if (i != ID_Drop)
         return SKIP;
 
+    bool    eq     = p.precedence;
+    id      type   = id(0);
     id      found  = id(0);
     cstring ref    = cstring(utf8(p.source));
     size_t  maxlen = p.length;
     size_t  len    = maxlen;
 
-    bool disambiguate = eq && (i == ID_sq || i == ID_cubed || i == ID_inv);
-
-    cstring names[3] = { nullptr };
-    names[0] = disambiguate ? nullptr : cstring(object::fancy(i));
-    names[1] = cstring(name(i));
-    switch(i)
+    for (size_t i = 0; i < spelling_count; i++)
     {
-#define ALIAS(base, name)                                               \
-        case ID_##base: names[2] = name; break;
-#define ID(i)
-#include "ids.tbl"
-        default:
-            break;
-    }
-
-    for (uint attempt = 0; !found && attempt < 3; attempt++)
-    {
-        if (cstring cmd = names[attempt])
+        if (!is_command(spellings[i].type))
+            continue;
+        if (cstring cmd = spellings[i].name)
         {
+            if (type != spellings[i].type)
+            {
+                type = spellings[i].type;
+
+                // When parsing an equation, parse x³ as cubed(x)
+                if (eq && (type == ID_sq || type == ID_cubed || type == ID_inv))
+                    continue;
+            }
+
+            // No function names like `min` while parsing units
+            if (unit::mode && is_valid_as_name_initial(utf8(cmd)))
+                continue;
+
             len = strlen(cmd);
             if (len <= maxlen
                 && strncasecmp(ref, cmd, len) == 0
                 && (len >= maxlen
-                    || (eq && !is_valid_as_name_initial(utf8(cmd)))
+                    || (eq && (!is_valid_as_name_initial(utf8(cmd)) ||
+                               ((ref[len] < '0' || ref[len] > '9') &&
+                                !is_valid_as_name_initial(utf8(ref + len)))))
                     || is_separator(utf8(ref + len))))
-                found = id(i);
+            {
+                found = type;
+                break;
+            }
         }
     }
 
@@ -123,88 +133,29 @@ RENDER_BODY(command)
     id ty = o->type();
     if (ty < NUM_IDS)
     {
-        auto format = Settings.command_fmt;
+        id format = Settings.CommandDisplayMode();
 
         // Ensure that we display + as `+` irrespective of mode
-        utf8 fname = fancy(ty);
-        if (!is_valid_as_name_initial(utf8_codepoint(fname)))
-            if (utf8_length(fname) == 1)
-                format = settings::commands::LONG_FORM;
+        utf8 fname = object::name(ty);
 
-        utf8 text = utf8(format == settings::commands::LONG_FORM
-                         ? fname : name(ty));
-        r.put(format, text);
+        while (unit::mode)
+        {
+            if (ty == ID_div)
+                r.put('/');
+            else if (ty == ID_mul)
+                r.put(unicode(L'·'));
+            else
+                break;
+            return r.size();
+        }
+        if (ty == ID_mul && format == ID_LongForm &&
+            r.expression() && Settings.UseDotForMultiplication())
+            fname = utf8("·");
+        r.put(format, fname);
     }
 
     record(command, "Render %u as [%s]", ty, (cstring) r.text());
     return r.size();
-}
-
-
-object_p command::static_object(id i)
-// ----------------------------------------------------------------------------
-//   Return a pointer to a static object representing the command
-// ----------------------------------------------------------------------------
-{
-    static byte cmds[] =
-    {
-#define ID(id)                                                \
-    object::ID_##id < 0x80 ? (object::ID_##id & 0x7F) | 0x00  \
-                           : (object::ID_##id & 0x7F) | 0x80, \
-    object::ID_##id < 0x80 ? 0 : ((object::ID_##id) >> 7),
-#include "ids.tbl"
-    };
-
-    if (i >= NUM_IDS)
-        i = ID_object;
-
-    return (object_p) (cmds + 2 * i);
-}
-
-
-bool command::is_separator(utf8 str)
-// ----------------------------------------------------------------------------
-//   Check if the code point at given string is a separator
-// ----------------------------------------------------------------------------
-{
-    unicode code = utf8_codepoint(str);
-    return is_separator(code);
-}
-
-
-bool command::is_separator(unicode code)
-// ----------------------------------------------------------------------------
-//   Check if the code point at given string is a separator
-// ----------------------------------------------------------------------------
-{
-    static utf8 separators = utf8(" ;,.'\"<=>≤≠≥[](){}«»\n\t");
-    for (utf8 p = separators; *p; p = utf8_next(p))
-        if (code == utf8_codepoint(p))
-            return true;
-    return false;
-}
-
-
-bool command::is_separator_or_digit(utf8 str)
-// ----------------------------------------------------------------------------
-//   Check if the code point at given string is a separator
-// ----------------------------------------------------------------------------
-{
-    unicode code = utf8_codepoint(str);
-    return is_separator(code);
-}
-
-
-bool command::is_separator_or_digit(unicode code)
-// ----------------------------------------------------------------------------
-//   Check if the code point at given string is a separator
-// ----------------------------------------------------------------------------
-{
-    static utf8 separators = utf8(" ;,.'\"<=>≤≠≥[](){}«»0123456789⁳");
-    for (utf8 p = separators; *p; p = utf8_next(p))
-        if (code == utf8_codepoint(p))
-            return true;
-    return false;
 }
 
 
@@ -242,56 +193,177 @@ COMMAND_BODY(Eval)
 //   Evaluate an object
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
-        if (object_p x = rt.pop())
-            return x->execute();
+    if (object_p x = rt.pop())
+        return program::run(x);
     return ERROR;
 }
+
 
 COMMAND_BODY(ToText)
 // ----------------------------------------------------------------------------
 //   Convert an object to text
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
-        if (object_g obj = rt.top())
-            if (object_g txt = obj->as_text(false, false))
-                if (rt.top(txt))
-                    return OK;
+    if (object_g obj = rt.top())
+        if (object_g txt = obj->as_text(false, false))
+            if (rt.top(txt))
+                return OK;
     return ERROR;
 }
+
+
+COMMAND_BODY(Compile)
+// ----------------------------------------------------------------------------
+//   Interpret the object as a command line and evaluate it
+// ----------------------------------------------------------------------------
+{
+    if (object_p obj = rt.top())
+    {
+        if (text_p tobj = obj->as<text>())
+        {
+            if (tobj->compile_and_run())
+                return OK;
+        }
+        else
+        {
+            rt.type_error();
+        }
+    }
+    return ERROR;
+}
+
+
+COMMAND_BODY(Explode)
+// ----------------------------------------------------------------------------
+//  Implement the Obj→ command
+// ----------------------------------------------------------------------------
+{
+    object_p obj = rt.top();
+    id       oty = obj->type();
+    switch (oty)
+    {
+    case ID_rectangular:
+    case ID_polar:
+    case ID_unit:
+    {
+        complex_p cplx = complex_p(obj);
+        if (rt.top(cplx->x()) && rt.push(+cplx->y()))
+            return OK;
+        break;
+    }
+    case ID_program:
+    case ID_expression:
+    case ID_list:
+        if (rt.drop())
+        {
+            if (list_p(obj)->expand())
+                return OK;
+            rt.push(obj);
+        }
+        break;
+    case ID_array:
+        if (rt.drop())
+        {
+            if (array_p(obj)->expand())
+                return OK;
+            rt.dimension_error();
+            rt.push(obj);
+        }
+        break;
+    case ID_text:
+        if (rt.drop())
+        {
+            size_t depth = rt.depth();
+            if (text_p(obj)->compile_and_run())
+                return OK;
+            // Try to undo the damage - Won't always work
+            if (rt.depth() > depth)
+                rt.drop(rt.depth() - depth);
+            rt.push(obj);
+        }
+        break;
+    case ID_fraction:
+    case ID_neg_fraction:
+    case ID_big_fraction:
+    case ID_neg_big_fraction:
+    {
+        fraction_p frac = fraction_p(obj);
+        bignum_g num = frac->numerator();
+        bignum_g den = frac->denominator();
+        if (num && den && rt.top(num) && rt.push(+den))
+            return OK;
+        break;
+    }
+    case ID_tag:
+    {
+        tag_p tobj = tag_p(obj);
+        if (rt.top(tobj->tagged_object()) && rt.push(tobj->label()))
+            return OK;
+        break;
+    }
+    default:
+        rt.type_error();
+        break;
+    }
+    return ERROR;
+}
+
+
+COMMAND_BODY(ReplaceChar)
+// ----------------------------------------------------------------------------
+//   Find the label associated to the menu and enter it in the editor
+// ----------------------------------------------------------------------------
+{
+    if (int key = ui.evaluating_function_key())
+    {
+        uint plane = ui.shift_plane();
+        uint menu_idx = key - KEY_F1 + plane * ui.NUM_SOFTKEYS;
+        if (symbol_p sym = ui.label(menu_idx))
+            ui.replace_character_left_of_cursor(sym);
+        else if (cstring lbl = ui.label_text(menu_idx))
+            ui.replace_character_left_of_cursor(utf8(lbl), strlen(lbl));
+    }
+    return OK;
+}
+
 
 COMMAND_BODY(SelfInsert)
 // ----------------------------------------------------------------------------
 //   Find the label associated to the menu and enter it in the editor
 // ----------------------------------------------------------------------------
 {
-    int key = ui.evaluating;
-    if (key >= KEY_F1 && key <= KEY_F6)
+    if (int key = ui.evaluating_function_key())
     {
         uint plane = ui.shift_plane();
         uint menu_idx = key - KEY_F1 + plane * ui.NUM_SOFTKEYS;
-        if (cstring lbl = ui.labelText(menu_idx))
-            for (utf8 p = utf8(lbl); *p; p = utf8_next(p))
-                ui.edit(utf8_codepoint(p), ui.PROGRAM);
+        if (symbol_p sym = ui.label(menu_idx))
+        {
+            size_t len = 0;
+            utf8 txt = sym->value(&len);
+            ui.edit(txt, len, ui.TEXT);
+        }
+        else if (cstring lbl = ui.label_text(menu_idx))
+        {
+            ui.edit(utf8(lbl), ui.TEXT);
+        }
     }
     return OK;
 }
 
 
-EXEC_BODY(Unimplemented)
+EVAL_BODY(Unimplemented)
 // ----------------------------------------------------------------------------
 //   Display an unimplemented error
 // ----------------------------------------------------------------------------
 {
-    int key = ui.evaluating;
-    rt.command("Future");
-    if (key >= KEY_F1 && key <= KEY_F6)
+    int key = ui.evaluating_function_key();
+    rt.command(o);
+    if (key)
     {
         uint plane = ui.shift_plane();
         uint menu_idx = key - KEY_F1 + plane * ui.NUM_SOFTKEYS;
-        if (cstring lbl = ui.labelText(menu_idx))
-            rt.command(lbl);
+        if (cstring lbl = ui.label_text(menu_idx))
+            rt.command(symbol::make(lbl));
     }
     rt.unimplemented_error();
     return ERROR;
@@ -312,13 +384,10 @@ COMMAND_BODY(Ticks)
 //   Return number of ticks
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(0))
-    {
-        uint ticks = sys_current_ms();
-        if (integer_p ti = rt.make<integer>(ID_integer, ticks))
-            if (rt.push(ti))
-                return OK;
-    }
+    uint ticks = sys_current_ms();
+    if (integer_p ti = rt.make<integer>(ID_integer, ticks))
+        if (rt.push(ti))
+            return OK;
     return ERROR;
 }
 
@@ -328,8 +397,6 @@ COMMAND_BODY(Wait)
 //   Wait the specified amount of seconds
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return ERROR;
     if (object_p obj = rt.top())
     {
         if (algebraic_g wtime = obj->as_algebraic())
@@ -349,17 +416,46 @@ COMMAND_BODY(Wait)
                     ui.draw_menus();
                 while (!key)
                 {
-                    int remains = infinite ? 100 : int(end - sys_current_ms());
+                    // Sleep in chunks of one minute
+                    int remains = infinite ? 60000 : int(end - sys_current_ms());
                     if (remains <= 0)
                         break;
-                    if (remains > 50)
-                        remains = 50;
-                    sys_delay(remains);
+                    if (remains > 60000)
+                        remains = 60000;
+
+                    // Refresh screen moving elements after the requested period
+                    sys_timer_disable(TIMER1);
+                    sys_timer_start(TIMER1, remains);
+
+                    // Do not switch off if on USB power
+                    if (usb_powered())
+                        reset_auto_off();
+
+                    // Honor auto-off while waiting, do not erase drawn image
+                    if (power_check(false))
+                        continue;
+
                     if (!key_empty())
+                    {
 #if SIMULATOR
                         if (key_tail() != KEY_EXIT)
-#endif
+                        {
                             key = key_pop();
+                            record(tests_rpl,
+                                   "Wait cmd processing "
+                                   "key %d, last=%d, command=%u",
+                                   key, last_key, test_command);
+                            process_test_key(key);
+                        }
+#else // SIMULATOR
+                        key = key_pop();
+#endif // SIMULATOR
+                    }
+                    if (key == KEY_EXIT)
+                    {
+                        program::halted = true;
+                        program::stepping = 0;
+                    }
                 }
                 if (infinite)
                 {
@@ -386,28 +482,93 @@ COMMAND_BODY(Bytes)
 //   Return the bytes and a binary represenetation of the object
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
+    if (object_p top = rt.top())
     {
-        if (object_p top = rt.top())
-        {
-            size_t size = top->size();
-            size_t maxsize = (Settings.wordsize + 7) / 8;
-            size_t hashsize = size > maxsize ? maxsize : size;
-            gcbytes bytes = byte_p(top);
+        size_t size = top->size();
+        size_t maxsize = (Settings.WordSize() + 7) / 8;
+        size_t hashsize = size > maxsize ? maxsize : size;
+        gcbytes bytes = byte_p(top);
 #if CONFIG_FIXED_BASED_OBJECTS
-            // Force base 16 if we have that option
-            const id type = ID_hex_bignum;
+        // Force base 16 if we have that option
+        const id type = ID_hex_bignum;
 #else // !CONFIG_FIXED_BASED_OBJECTS
-            const id type = ID_based_bignum;
+        const id type = ID_based_bignum;
 #endif // CONFIG_FIXED_BASED_OBJECTS
-            if (bignum_p bin = rt.make<bignum>(type, bytes, hashsize))
-                if (rt.top(bin))
-                    if (rt.push(integer::make(size)))
-                        return OK;
+        if (bignum_p bin = rt.make<bignum>(type, bytes, hashsize))
+            if (rt.top(bin))
+                if (rt.push(integer::make(size)))
+                    return OK;
 
-        }
     }
     return ERROR;
+}
+
+
+static integer_p type_value(object_p obj)
+// ----------------------------------------------------------------------------
+//   Return a native or compatible type value
+// ----------------------------------------------------------------------------
+{
+    uint type = obj->type();
+    if (Settings.CompatibleTypes())
+    {
+        switch (type)
+        {
+        case object::ID_hwfloat:
+        case object::ID_hwdouble:
+        case object::ID_decimal:                type = 0; break; // Or 21
+        case object::ID_rectangular:
+        case object::ID_polar:                  type = 1; break;
+        case object::ID_text:                   type = 2; break;
+        // Treat as symbolic vector matrix on HP50G,
+        // don't check inside to see if it's real (3) or complex (4) array
+        case object::ID_array:                  type = 29; break;
+        case object::ID_list:                   type = 5; break;
+        case object::ID_symbol:                 type = 6; break;
+        case object::ID_local:                  type = 7; break;
+        case object::ID_block:
+        case object::ID_locals:
+        case object::ID_program:                type = 8; break;
+        case object::ID_fraction:
+        case object::ID_neg_fraction:
+        case object::ID_big_fraction:
+        case object::ID_neg_big_fraction:
+        case object::ID_expression:             type = 9; break;
+
+#ifdef CONFIG_FIXED_BASED_OBJECTS
+        case object::ID_hex_integer:
+        case object::ID_dec_integer:
+        case object::ID_oct_integer:
+        case object::ID_bin_integer:
+        case object::ID_hex_bignum:
+        case object::ID_dec_bignum:
+        case object::ID_oct_bignum:
+        case object::ID_bin_bignum:
+#endif // CONFIG_FIXED_BASED_OBJECTS
+        case object::ID_based_integer:
+        case object::ID_based_bignum:           type = 10; break;
+        case object::ID_grob:
+        case object::ID_bitmap:                 type = 11; break;
+        case object::ID_tag:                    type = 12; break;
+        case object::ID_unit:                   type = 13; break;
+        // No XLIB type 14 yet
+        case object::ID_directory:              type = 15; break;
+        // No Library type 16 yet
+        // No Backup object type 17 yet
+        case object::ID_integer:
+        case object::ID_neg_integer:
+        case object::ID_bignum:
+        case object::ID_neg_bignum:             type = 28; break;
+        case object::ID_dense_font:             type = 27; break;
+        case object::ID_sparse_font:            type = 30; break;
+
+        default:
+            type = object::is_algebraic(object::id(type)) ? 18 : 19;
+            break;
+        }
+        return integer::make(type);
+    }
+    return rt.make<neg_integer>(type + 1);
 }
 
 
@@ -417,11 +578,10 @@ COMMAND_BODY(Type)
 //   Return the type of the top of stack as a numerical value
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
-        if (object_p top = rt.top())
-            if (integer_p type = integer::make(uint(top->type())))
-                if (rt.top(type))
-                    return OK;
+    if (object_p top = rt.top())
+        if (integer_p type = type_value(top))
+            if (rt.top(type))
+                return OK;
     return ERROR;
 }
 
@@ -431,11 +591,10 @@ COMMAND_BODY(TypeName)
 //   Return the type of the top of stack as text
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
-        if (object_p top = rt.top())
-            if (text_p type = text::make(top->fancy()))
-                if (rt.top(type))
-                    return OK;
+    if (object_p top = rt.top())
+        if (text_p type = text::make(top->fancy()))
+            if (rt.top(type))
+                return OK;
     return ERROR;
 }
 
@@ -445,8 +604,6 @@ COMMAND_BODY(Off)
 //   Switch the calculator off
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(0))
-        return ERROR;
     power_off();
     return OK;
 }
@@ -457,8 +614,6 @@ COMMAND_BODY(SaveState)
 //   Save the system state to disk
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(0))
-        return ERROR;
     save_system_state();
     return OK;
 }
@@ -469,10 +624,55 @@ COMMAND_BODY(SystemSetup)
 //   Select the system menu
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(0))
-        return ERROR;
     system_setup();
     return OK;
+}
+
+
+COMMAND_BODY(ScreenCapture)
+// ----------------------------------------------------------------------------
+//   Snapshot the screen and save to a file
+// ----------------------------------------------------------------------------
+{
+    if (screenshot())
+        return OK;
+
+    rt.screenshot_capture_error();
+    return ERROR;
+}
+
+
+COMMAND_BODY(Beep)
+// ----------------------------------------------------------------------------
+//   Emit a sound
+// ----------------------------------------------------------------------------
+{
+    algebraic_g duration  = rt.stack(0)->as_real();
+    if (!duration)
+    {
+        rt.type_error();
+        return ERROR;
+    }
+    uint frequency = rt.stack(1)->as_uint32(4400, true);
+    if (frequency < 1 || frequency > 18000)
+    {
+        rt.drop(2);
+        return OK;
+    }
+    duration = duration * integer::make(1000);
+    if (duration)
+    {
+        uint ms = duration->as_uint32(10, true);
+        if (ms > 10000)
+            ms = 10000;
+        if (!rt.error())
+        {
+            rt.drop(2);
+            beep(frequency, ms);
+            return OK;
+        }
+    }
+    return ERROR;
 }
 
 
@@ -487,11 +687,10 @@ COMMAND_BODY(Version)
         "Reverse Polish Lisp (RPL)\n"
         "and a tribute to\n"
         "Bill Hewlett and Dave Packard\n"
-        "© 2022-2023 Christophe de Dinechin";
-    if (rt.args(0))
-        if (text_g version = text::make(version_text))
-            if (rt.push(object_p(version)))
-                return OK;
+        "© 2024 Christophe de Dinechin";
+    if (text_g version = text::make(version_text))
+        if (rt.push(object_p(version)))
+            return OK;
     return ERROR;
 }
 
@@ -506,8 +705,6 @@ COMMAND_BODY(Help)
 
     if (rt.depth())
     {
-        if (!rt.args(1))
-            return ERROR;
         if (object_p top = rt.top())
         {
             if (text_p index = top->as<text>())
@@ -526,86 +723,9 @@ COMMAND_BODY(Help)
             }
         }
     }
-    else
-    {
-        if (!rt.args(0))
-            return ERROR;
-    }
 
     ui.load_help(topic, length);
     return OK;
-}
-
-
-COMMAND_BODY(ToolsMenu)
-// ----------------------------------------------------------------------------
-//   Contextual tool menu
-// ----------------------------------------------------------------------------
-{
-    id menu = ID_MainMenu;
-
-    if (rt.editing())
-    {
-        switch(ui.editing_mode())
-        {
-        case ui.DIRECT:                 menu = ID_MathMenu; break;
-        case ui.TEXT:                   menu = ID_TextMenu; break;
-        case ui.PROGRAM:                menu = ID_ProgramMenu; break;
-        case ui.ALGEBRAIC:              menu = ID_EquationsMenu; break;
-        case ui.MATRIX:                 menu = ID_MatrixMenu; break;
-        case ui.BASED:                  menu = ID_BasesMenu; break;
-        default:
-        case ui.STACK:                  break;
-        }
-    }
-    else if (rt.depth())
-    {
-        if (!rt.args(1))
-            return ERROR;
-        if (object_p top = rt.top())
-        {
-            switch(top->type())
-            {
-            case ID_integer:
-            case ID_neg_integer:
-            case ID_bignum:
-            case ID_neg_bignum:
-            case ID_decimal128:
-            case ID_decimal64:
-            case ID_decimal32:          menu = ID_RealMenu; break;
-            case ID_fraction:
-            case ID_neg_fraction:
-            case ID_big_fraction:
-            case ID_neg_big_fraction:   menu = ID_FractionsMenu; break;
-            case ID_polar:
-            case ID_rectangular:        menu = ID_ComplexMenu; break;
-#if CONFIG_FIXED_BASED_OBJECTS
-            case ID_hex_integer:
-            case ID_dec_integer:
-            case ID_oct_integer:
-            case ID_bin_integer:
-            case ID_hex_bignum:
-            case ID_dec_bignum:
-            case ID_oct_bignum:
-            case ID_bin_bignum:
-#endif // CONFIG_FIXED_BASED_OBJECTS
-            case ID_based_integer:
-            case ID_based_bignum:       menu = ID_BasesMenu; break;
-            case ID_equation:           menu = ID_SymbolicMenu; break;
-            case ID_list:               menu = ID_ListMenu; break;
-            case ID_array:              menu = ID_MatrixMenu; break;
-            case ID_tag:                menu = ID_ObjectMenu; break;
-            default:                    break;
-            }
-        }
-    }
-    else if (!rt.args(0))
-    {
-        return ERROR;
-    }
-
-    object_p obj = command::static_object(menu);
-    return obj->execute();
 }
 
 
@@ -614,92 +734,71 @@ COMMAND_BODY(Cycle)
 //  Cycle object across multiple representations
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return ERROR;
     if (object_p top = rt.top())
     {
-        id cmd  = ID_object;
-        id type = ID_object;
-
-        switch(top->type())
+        id     cmd   = ID_object;
+        id     type  = ID_object;
+        id     ttype = top->type();
+        switch(ttype)
         {
+        case ID_hwfloat:
+        case ID_hwdouble:
+        case ID_decimal:
+        case ID_neg_decimal:            cmd = ID_ToFraction; break;
         case ID_integer:
+        case ID_bignum:
         case ID_neg_integer:
         case ID_neg_bignum:
-        case ID_bignum:
-            cmd = ID_RealToBinary;
-            break;
-        case ID_decimal128:
-        case ID_decimal64:
-        case ID_decimal32:
-            cmd = ID_ToFraction;
-            break;
         case ID_fraction:
         case ID_neg_fraction:
         case ID_big_fraction:
-        case ID_neg_big_fraction:
-            cmd = ID_ToDecimal;
-            break;
-        case ID_polar:
-            cmd = ID_ToRectangular;
-            break;
-        case ID_rectangular:
-            cmd = ID_ToPolar;
-            break;
+        case ID_neg_big_fraction:       cmd = ID_ToDecimal;     break;
+        case ID_polar:                  cmd = ID_ToRectangular; break;
+        case ID_rectangular:            cmd = ID_ToPolar;       break;
 #if CONFIG_FIXED_BASED_OBJECTS
-        case ID_hex_integer:
-        case ID_dec_integer:
-        case ID_oct_integer:
-        case ID_bin_integer:
-        case ID_hex_bignum:
-        case ID_dec_bignum:
-        case ID_oct_bignum:
-        case ID_bin_bignum:
-            cmd = ID_BinaryToReal;
-#endif // CONFIG_FIXED_BASED_OBJECTS
+        case ID_based_integer:          type = ID_hex_integer;  break;
+        case ID_hex_integer:            type = ID_dec_integer;  break;
+        case ID_dec_integer:            type = ID_oct_integer;  break;
+        case ID_oct_integer:            type = ID_bin_integer;  break;
+        case ID_bin_integer:            type = ID_based_integer;break;
+
+        case ID_based_bignum:           type = ID_hex_bignum;   break;
+        case ID_hex_bignum:             type = ID_dec_bignum;   break;
+        case ID_dec_bignum:             type = ID_oct_bignum;   break;
+        case ID_oct_bignum:             type = ID_bin_bignum;   break;
+        case ID_bin_bignum:             type = ID_based_bignum; break;
+#else // ! CONFIG_FIXED_BASED_OBJECTS
         case ID_based_integer:
         case ID_based_bignum:
-            switch(Settings.base)
+            switch(Settings.Base())
             {
-            case 2:
-                Settings.base = 8;
-                return OK;
-            case 8:
-                Settings.base = 10;
-                return OK;
-            case 10:
-                Settings.base = 16;
-                cmd = ID_BinaryToReal;
-                break;
-            case 16:
-                Settings.base = 2;
-                return OK;
             default:
-                Settings.base = 16;
-                break;
+            case 2:                     Settings.Base(16);     return OK;
+            case 8:                     Settings.Base(2);      return OK;
+            case 10:                    Settings.Base(8);      return OK;
+            case 16:                    Settings.Base(10);     return OK;
             }
             break;
-        case ID_equation:
-            Settings.graph_stack = !Settings.graph_stack;
+#endif // CONFIG_FIXED_BASED_OBJECTS
+        case ID_expression:
+            Settings.GraphicStackDisplay(!Settings.GraphicStackDisplay());
             break;
-        case ID_list:
-            type = ID_array;
-            break;
-        case ID_array:
-            type = ID_program;
-            break;
-        case ID_program:
-            type = ID_list;
-            break;
-        case ID_symbol:
-            type = ID_text;
-            break;
-        case ID_text:
-            type = ID_symbol;
-            break;
-        case ID_tag:
-            cmd = ID_dtag;
-            break;
+        case ID_list:                   type = ID_array;        break;
+        case ID_array:                  type = ID_program;      break;
+        case ID_program:                type = ID_list;         break;
+        case ID_symbol:                 type = ID_text;         break;
+        case ID_text:                   type = ID_symbol;       break;
+        case ID_tag:                    cmd  = ID_dtag;         break;
+        case ID_unit:
+        {
+            // Cycle prefix
+            unit_p uobj = unit_p(top);
+            uobj = uobj->cycle();
+            if (uobj && rt.top(uobj))
+                return OK;
+            return ERROR;
+        }
+
         default:
             rt.type_error();
             return ERROR;
@@ -734,8 +833,6 @@ COMMAND_BODY(BinaryToReal)
 //    Convert binary values to real (really integer)
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return ERROR;
     if (object_p top = rt.top())
     {
         id type = top->type();
@@ -754,7 +851,7 @@ COMMAND_BODY(BinaryToReal)
         case ID_dec_bignum:
         case ID_oct_bignum:
         case ID_bin_bignum:
-            to = ID_big_integer;
+            to = ID_bignum;
             break;
 #endif // CONFIG_FIXED_BASED_OBJECTS
         case ID_based_integer:
@@ -788,34 +885,22 @@ COMMAND_BODY(RealToBinary)
 //    Convert real and integer values to binary
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return ERROR;
     if (object_p top = rt.top())
     {
-        id type = top->type();
-        id to = ID_object;
+        id   type = top->type();
+        id   to   = ID_object;
+        bool neg  = type == ID_neg_integer || type == ID_neg_bignum;
 
         switch (type)
         {
         case ID_neg_integer:
-        case ID_neg_bignum:
-        case ID_neg_fraction:
-        case ID_neg_big_fraction:
-            rt.domain_error();
-            return ERROR;
         case ID_integer:
             to = ID_based_integer;
             break;
+        case ID_neg_bignum:
         case ID_bignum:
             to = ID_based_bignum;
             break;
-        case ID_fraction:
-        case ID_big_fraction:
-        case ID_decimal128:
-        case ID_decimal64:
-        case ID_decimal32:
-            rt.unimplemented_error();
-            return ERROR;
         default:
             rt.type_error();
             return ERROR;
@@ -827,7 +912,11 @@ COMMAND_BODY(RealToBinary)
             byte *p = (byte *) clone;
             leb128(p, to);
             if (rt.top(clone))
+            {
+                if (neg)
+                    return neg::evaluate();
                 return OK;
+            }
         }
         return ERROR;
 
@@ -836,17 +925,12 @@ COMMAND_BODY(RealToBinary)
 }
 
 
-COMMAND_BODY(LastMenu)
-// ----------------------------------------------------------------------------
-//   Go back one entry in the menu history
-// ----------------------------------------------------------------------------
-{
-    if (!rt.args(0))
-        return ERROR;
-    ui.menu_pop();
-    return OK;
-}
 
+// ============================================================================
+//
+//   History and undo
+//
+// ============================================================================
 
 COMMAND_BODY(LastArg)
 // ----------------------------------------------------------------------------
@@ -874,6 +958,13 @@ COMMAND_BODY(Undo)
     return rt.undo() ? OK : ERROR;
 }
 
+
+
+// ============================================================================
+//
+//   Editor commands
+//
+// ============================================================================
 
 COMMAND_BODY(EditorSelect)
 // ----------------------------------------------------------------------------

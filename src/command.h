@@ -59,15 +59,6 @@ struct command : object
         return def;
     }
 
-    // Get a static command pointer for a given command
-    static object_p static_object(id i);
-
-    // Check if a code point or text is a separator
-    static bool is_separator(unicode code);
-    static bool is_separator(utf8 str);
-    static bool is_separator_or_digit(unicode code);
-    static bool is_separator_or_digit(utf8 str);
-
     // Get the top of the stack as an integer
     static uint32_t uint32_arg(uint level = 0);
     static int32_t  int32_arg (uint level = 0);
@@ -82,33 +73,41 @@ public:
 
 
 // Macro to defined a simple command handler for derived classes
-#define COMMAND_DECLARE_SPECIAL(derived, base, special) \
-struct derived : base                                   \
-{                                                       \
-    derived(id i = ID_##derived) : base(i) { }          \
-                                                        \
-    OBJECT_DECL(derived);                               \
-    EVAL_DECL(derived)                                  \
-    {                                                   \
-        rt.command(fancy(ID_##derived));                \
-        return evaluate();                              \
-    }                                                   \
-    EXEC_DECL(derived)                                  \
-    {                                                   \
-        return do_evaluate(o);                          \
-    }                                                   \
-    special                                             \
-    static result evaluate();                           \
+#define COMMAND_DECLARE_SPECIAL(derived, base, nargs, special)   \
+struct derived : base                                            \
+{                                                                \
+    derived(id i = ID_##derived) : base(i) { }                   \
+                                                                 \
+    OBJECT_DECL(derived);                                        \
+    ARITY_DECL(nargs >= 0 ? nargs : ~nargs);                     \
+    EVAL_DECL(derived)                                           \
+    {                                                            \
+        rt.command(o);                                           \
+        if (nargs >= 0 && !rt.args(nargs))                       \
+            return ERROR;                                        \
+        return evaluate();                                       \
+    }                                                            \
+    special                                                      \
+    static result evaluate();                                    \
 }
 
-#define COMMAND_DECLARE(derived)                        \
-    COMMAND_DECLARE_SPECIAL(derived, command, )
+#define COMMAND_DECLARE(derived, nargs)               \
+    COMMAND_DECLARE_SPECIAL(derived, command, nargs, )
+
+#define COMMAND_DECLARE_INSERT(derived, nargs)          \
+    COMMAND_DECLARE_SPECIAL(derived, command, nargs,    \
+                            INSERT_DECL(derived);)
+
+#define COMMAND_DECLARE_INSERT_HELP(derived, nargs)     \
+    COMMAND_DECLARE_SPECIAL(derived, command, nargs,    \
+                            INSERT_DECL(derived);       \
+                            HELP_DECL(derived);)
 
 #define COMMAND_BODY(derived)                   \
     object::result derived::evaluate()
 
-#define COMMAND(derived)                                \
-    COMMAND_DECLARE(derived);                           \
+#define COMMAND(derived, nargs)                         \
+    COMMAND_DECLARE(derived, nargs);                    \
     inline COMMAND_BODY(derived)
 
 
@@ -127,45 +126,47 @@ struct Unimplemented : command
     Unimplemented(id i = ID_Unimplemented) : command(i) { }
 
     OBJECT_DECL(Unimplemented);
-    EXEC_DECL(Unimplemented);
+    EVAL_DECL(Unimplemented);
     MARKER_DECL(Unimplemented);
 };
 
 // Various global commands
-COMMAND_DECLARE(Eval);          // Evaluate an object
-COMMAND_DECLARE(ToText);        // Convert an object to text
-COMMAND_DECLARE(SelfInsert);    // Enter menu label in the editor
-COMMAND_DECLARE(Ticks);         // Return number of ticks
-COMMAND_DECLARE(Wait);          // Wait a given amount of time
-COMMAND_DECLARE(Bytes);         // Return the bytes representation of object
-COMMAND_DECLARE(Type);          // Return the type of the object
-COMMAND_DECLARE(TypeName);      // Return the type name of the object
-COMMAND_DECLARE(Off);           // Switch the calculator off
-COMMAND_DECLARE(SaveState);     // Save state to disk
-COMMAND_DECLARE(SystemSetup);   // Select the system menu
-COMMAND_DECLARE(Version);       // Return a version string
-COMMAND_DECLARE(Help);          // Activate online help
-COMMAND_DECLARE(LastArg);       // Return last arguments
-COMMAND_DECLARE(LastX);         // Return last X argument
-COMMAND_DECLARE(Undo);          // Revert to the Undo stack
-COMMAND_DECLARE(ToolsMenu);     // Automatic selection of the right menu
-COMMAND_DECLARE(LastMenu);      // Return to previous menu
-COMMAND_DECLARE(ToList);        // Build a list from stack
-COMMAND_DECLARE(Cycle);         // Cycle object across multiple representations
-COMMAND_DECLARE(BinaryToReal);  // Convert binary to real
-COMMAND_DECLARE(RealToBinary);  // Convert real to binary
+COMMAND_DECLARE(Eval,1);                // Evaluate an object
+COMMAND_DECLARE(Compile,1);             // Compile and evalaute a text
+COMMAND_DECLARE(Explode,1);             // Explode an object (aka Obj→)
+COMMAND_DECLARE(ToText,1);              // Convert an object to text
+COMMAND_DECLARE(SelfInsert,-1);         // Enter menu label in the editor
+COMMAND_DECLARE(ReplaceChar,-1);        // Replace editor character with label
+COMMAND_DECLARE(Ticks,0);               // Return number of ticks
+COMMAND_DECLARE(Wait,1);                // Wait a given amount of time
+COMMAND_DECLARE(Bytes,1);               // Return bytes for object
+COMMAND_DECLARE(Type,1);                // Return the type of the object
+COMMAND_DECLARE(TypeName,1);            // Return the type name of the object
+COMMAND_DECLARE(Off,-1);                // Switch the calculator off
+COMMAND_DECLARE(SaveState,-1);          // Save state to disk
+COMMAND_DECLARE(SystemSetup,-1);        // Select the system menu
+COMMAND_DECLARE(ScreenCapture,-1);      // Snapshot screen state to a file
+COMMAND_DECLARE(Beep,2);                // Emit a sound (if enabled)
+COMMAND_DECLARE(Version,0);             // Return a version string
+COMMAND_DECLARE(Help,-1);               // Activate online help
+COMMAND_DECLARE(LastArg,-1);            // Return last arguments
+COMMAND_DECLARE(LastX,-1);              // Return last X argument
+COMMAND_DECLARE(Undo,-1);               // Revert to the Undo stack
+COMMAND_DECLARE(Cycle,1);               // Cycle among representations
+COMMAND_DECLARE(BinaryToReal,1);        // Convert binary to real
+COMMAND_DECLARE(RealToBinary,1);        // Convert real to binary
 
-COMMAND_DECLARE(EditorSelect);  // Select from current cursor position
-COMMAND_DECLARE(EditorWordLeft); // Move cursor one word left
-COMMAND_DECLARE(EditorWordRight); // Move cursor one word right
-COMMAND_DECLARE(EditorBegin);   // Move cursor to beginning of buffer
-COMMAND_DECLARE(EditorEnd);     // Move cursor to end of buffer
-COMMAND_DECLARE(EditorCut);     // Cut current selection
-COMMAND_DECLARE(EditorCopy);    // Copy current selection
-COMMAND_DECLARE(EditorPaste);   // Paste to cursor position
-COMMAND_DECLARE(EditorSearch);  // Begin search
-COMMAND_DECLARE(EditorReplace); // Replace search with cursor
-COMMAND_DECLARE(EditorClear);   // Clear editor
-COMMAND_DECLARE(EditorFlip);    // Flip cursor and selection
+COMMAND_DECLARE(EditorSelect,-1);       // Select from current cursor position
+COMMAND_DECLARE(EditorWordLeft,-1);     // Move cursor one word left
+COMMAND_DECLARE(EditorWordRight,-1);    // Move cursor one word right
+COMMAND_DECLARE(EditorBegin,-1);        // Move cursor to beginning of buffer
+COMMAND_DECLARE(EditorEnd,-1);          // Move cursor to end of buffer
+COMMAND_DECLARE(EditorCut,-1);          // Cut current selection
+COMMAND_DECLARE(EditorCopy,-1);         // Copy current selection
+COMMAND_DECLARE(EditorPaste,-1);        // Paste to cursor position
+COMMAND_DECLARE(EditorSearch,-1);       // Begin search
+COMMAND_DECLARE(EditorReplace,-1);      // Replace search with cursor
+COMMAND_DECLARE(EditorClear,-1);        // Clear editor
+COMMAND_DECLARE(EditorFlip,-1);         // Flip cursor and selection
 
 #endif // COMMAND_H

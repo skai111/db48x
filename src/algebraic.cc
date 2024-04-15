@@ -33,17 +33,23 @@
 #include "array.h"
 #include "bignum.h"
 #include "complex.h"
-#include "equation.h"
+#include "constants.h"
+#include "decimal.h"
+#include "expression.h"
 #include "functions.h"
+#include "hwfp.h"
 #include "integer.h"
 #include "parser.h"
 #include "renderer.h"
 #include "runtime.h"
 #include "settings.h"
+#include "tag.h"
+#include "unit.h"
 #include "user_interface.h"
 
-#include <ctype.h>
-#include <stdio.h>
+#include <cctype>
+#include <cmath>
+#include <cstdio>
 
 
 RECORDER(algebraic,       16, "RPL Algebraics");
@@ -59,201 +65,185 @@ INSERT_BODY(algebraic)
 }
 
 
-bool algebraic::real_promotion(algebraic_g &x, object::id type)
+bool algebraic::decimal_promotion(algebraic_g &x)
 // ----------------------------------------------------------------------------
-//   Promote the value x to the given type
+//   Promote the value x to a decimal / floating-point type
 // ----------------------------------------------------------------------------
 {
-    if (!x.Safe())
+    if (!x)
         return false;
 
     id xt = x->type();
-    if (xt == type)
-        return true;
+    record(algebraic,
+           "Real promotion of %p from %+s to decimal",
+           (object_p) x, object::name(xt));
 
-    record(algebraic, "Real promotion of %p from %+s to %+s",
-           (object_p) x, object::name(xt), object::name(type));
     switch(xt)
     {
+    case ID_hwfloat:
+        x = decimal::from(hwfloat_p(+x)->value());
+        return x;
+    case ID_hwdouble:
+        x = decimal::from(hwdouble_p(+x)->value());
+        return x;
+    case ID_decimal:
+    case ID_neg_decimal:
+        return true;
+
     case ID_integer:
-    {
-        integer_p i    = x->as<integer>();
-        ularge    ival = i->value<ularge>();
-        switch (type)
-        {
-        case ID_decimal32:
-            x = rt.make<decimal32>(ID_decimal32, ival);
-            return x.Safe();
-        case ID_decimal64:
-            x = rt.make<decimal64>(ID_decimal64, ival);
-            return x.Safe();
-        case ID_decimal128:
-            x = rt.make<decimal128>(ID_decimal128, ival);
-            return x.Safe();
-        default:
-            break;
-        }
-        record(algebraic_error,
-               "Cannot promote integer %p (%llu) from %+s to %+s",
-               i, ival, object::name(xt), object::name(type));
-        break;
-    }
     case ID_neg_integer:
     {
-        integer_p i    = x->as<neg_integer>();
-        ularge    ival = i->value<ularge>();
-        switch (type)
-        {
-        case ID_decimal32:
-            x = rt.make<decimal32>(ID_decimal32, ival, true);
-            return x.Safe();
-        case ID_decimal64:
-            x = rt.make<decimal64>(ID_decimal64, ival, true);
-            return x.Safe();
-        case ID_decimal128:
-            x = rt.make<decimal128>(ID_decimal128, ival, true);
-            return x.Safe();
-        default:
-            break;
-        }
-        record(algebraic_error,
-               "Cannot promote neg_integer %p (%lld) from %+s to %+s",
-               i, ival, object::name(xt), object::name(type));
-        break;
+        integer_p i = integer_p(+x);
+        x = decimal::from_integer(i);
+        return x;
     }
-
     case ID_bignum:
     case ID_neg_bignum:
     {
-        bignum_g i = bignum_p(object_p(x));
-        switch (type)
-        {
-        case ID_decimal32:
-            x = rt.make<decimal32>(ID_decimal32, i);
-            return x.Safe();
-        case ID_decimal64:
-            x = rt.make<decimal64>(ID_decimal64, i);
-            return x.Safe();
-        case ID_decimal128:
-            x = rt.make<decimal128>(ID_decimal128, i);
-            return x.Safe();
-        default:
-            break;
-        }
-        record(algebraic_error,
-               "Cannot promote bignum %p from %+s to %+s",
-               i.Safe(), object::name(xt), object::name(type));
-        break;
+        bignum_p i = bignum_p(+x);
+        x = decimal::from_bignum(i);
+        return x;
     }
 
     case ID_fraction:
     case ID_neg_fraction:
+    {
+        fraction_p f = fraction_p(+x);
+        x = decimal::from_fraction(f);
+        return x;
+    }
     case ID_big_fraction:
     case ID_neg_big_fraction:
     {
-        fraction_g f = fraction_p(object_p(x));
-        switch (type)
-        {
-        case ID_decimal32:
-            x = rt.make<decimal32>(ID_decimal32, f);
-            return x.Safe();
-        case ID_decimal64:
-            x = rt.make<decimal64>(ID_decimal64, f);
-            return x.Safe();
-        case ID_decimal128:
-            x = rt.make<decimal128>(ID_decimal128, f);
-            return x.Safe();
-        default:
-            break;
-        }
-        record(algebraic_error,
-               "Cannot promote fraction %p from %+s to %+s",
-               f.Safe(), object::name(xt), object::name(type));
-        break;
+        big_fraction_p f = big_fraction_p(+x);
+        x = decimal::from_big_fraction(f);
+        return x;
     }
-
-    case ID_decimal32:
-    {
-        decimal32_p d = x->as<decimal32>();
-        bid32       dval = d->value();
-        switch (type)
-        {
-        case ID_decimal32:
-            return true;
-        case ID_decimal64:
-            x = rt.make<decimal64>(ID_decimal64, dval);
-            return x.Safe();
-        case ID_decimal128:
-            x = rt.make<decimal128>(ID_decimal128, dval);
-            return x.Safe();
-        default:
-            break;
-        }
-        record(algebraic_error,
-               "Cannot promote decimal32 %p from %+s to %+s",
-               d, object::name(xt), object::name(type));
-        break;
-    }
-
-    case ID_decimal64:
-    {
-        decimal64_p d = x->as<decimal64>();
-        bid64       dval = d->value();
-        switch (type)
-        {
-        case ID_decimal32:
-        case ID_decimal64:
-            return true;
-        case ID_decimal128:
-            x = rt.make<decimal128>(ID_decimal128, dval);
-            return x.Safe();
-        default:
-            break;
-        }
-        record(algebraic_error,
-               "Cannot promote decimal64 %p from %+s to %+s",
-               d, object::name(xt), object::name(type));
-        break;
-    }
-
-    case ID_decimal128:
-    {
-        switch(type)
-        {
-        case ID_decimal32:
-        case ID_decimal64:
-        case ID_decimal128:
-            return x.Safe();
-        default:
-            break;
-        }
-        record(algebraic_error,
-               "Cannot promote decimal128 %p from %+s to %+s",
-               x.Safe(), object::name(xt), object::name(type));
-        break;
-    }
-
     default:
-        break;
+        return false;
     }
-
-    return false;
 }
 
-
-object::id algebraic::real_promotion(algebraic_g &x)
+template<typename value>
+algebraic_p algebraic::as_hwfp(value x)
 // ----------------------------------------------------------------------------
-//   Promote the value x to a type selected based on preferences
+//   Return a hardware floating-point value if possible
 // ----------------------------------------------------------------------------
 {
-    // Auto-selection of type
-    uint16_t prec = Settings.precision;
-    id       type = prec > BID64_MAXDIGITS ? ID_decimal128
-                  : prec > BID32_MAXDIGITS ? ID_decimal64
-                                           : ID_decimal32;
-    return real_promotion(x, type) ? type : ID_object;
+    if (Settings.HardwareFloatingPoint())
+    {
+        uint prec = Settings.Precision();
+        if (prec <= 7)
+            return hwfloat::make(float(x));
+        if (prec <= 16)
+            return hwdouble::make(double(x));
+    }
+    return nullptr;
 }
 
+
+bool algebraic::hwfp_promotion(algebraic_g &x)
+// ----------------------------------------------------------------------------
+//   Promote the value x to a hardware floating-point type if possible
+// ----------------------------------------------------------------------------
+{
+    if (!x)
+        return false;
+
+    if (!Settings.HardwareFloatingPoint())
+        return false;
+    uint prec = Settings.Precision();
+    if (prec > 16)
+        return false;
+    bool need_double = prec > 7;
+
+
+    id xt = x->type();
+    record(algebraic,
+           "Real promotion of %p from %+s to hwfp",
+           (object_p) x, object::name(xt));
+
+    switch(xt)
+    {
+    case ID_hwfloat:
+        if (need_double)
+        {
+            x = hwdouble::make(hwfloat_p(+x)->value());
+            if (!x)
+                return false;
+        }
+        return true;
+    case ID_hwdouble:
+        if (!need_double)
+        {
+            x = hwfloat::make(hwdouble_p(+x)->value());
+            if (!x)
+                return false;
+        }
+        return true;
+    case ID_decimal:
+    case ID_neg_decimal:
+        if (need_double)
+            x = hwdouble::make(decimal_p(+x)->to_double());
+        else
+            x = hwfloat::make(decimal_p(+x)->to_float());
+        return x;
+
+    case ID_integer:
+        if (need_double)
+            x = as_hwfp(double(integer_p(+x)->value<ularge>()));
+        else
+            x = as_hwfp(float(integer_p(+x)->value<ularge>()));
+        return x;
+    case ID_neg_integer:
+        if (need_double)
+            x = as_hwfp(-double(integer_p(+x)->value<ularge>()));
+        else
+            x = as_hwfp(-float(integer_p(+x)->value<ularge>()));
+        return x;
+    case ID_bignum:
+    case ID_neg_bignum:
+        x = decimal::from_bignum(bignum_p(+x));
+        if (x && x->is_decimal())
+        {
+            if (need_double)
+                x = as_hwfp(decimal_p(+x)->to_double());
+            else
+                x = as_hwfp(decimal_p(+x)->to_float());
+        }
+        return x;
+
+    case ID_fraction:
+        if (need_double)
+            x = as_hwfp(double(fraction_p(+x)->numerator_value()) /
+                        double(fraction_p(+x)->denominator_value()));
+        else
+            x = as_hwfp(float(fraction_p(+x)->numerator_value()) /
+                        float(fraction_p(+x)->denominator_value()));
+        return x;
+    case ID_neg_fraction:
+        if (need_double)
+            x = as_hwfp(- double(fraction_p(+x)->numerator_value()) /
+                        double(fraction_p(+x)->denominator_value()));
+        else
+            x = as_hwfp(- float(fraction_p(+x)->numerator_value()) /
+                        float(fraction_p(+x)->denominator_value()));
+        return x;
+    case ID_big_fraction:
+    case ID_neg_big_fraction:
+        x = decimal::from_big_fraction(big_fraction_p(+x));
+        if (x && x->is_decimal())
+        {
+            if (need_double)
+                x = as_hwfp(decimal_p(+x)->to_double());
+            else
+                x = as_hwfp(decimal_p(+x)->to_float());
+        }
+        return x;
+    default:
+        return false;
+    }
+}
 
 bool algebraic::complex_promotion(algebraic_g &x, object::id type)
 // ----------------------------------------------------------------------------
@@ -279,30 +269,29 @@ bool algebraic::complex_promotion(algebraic_g &x, object::id type)
         // Convert from polar to rectangular
         polar_g z = polar_p(algebraic_p(x));
         x = rectangular_p(z->as_rectangular());
-        return x.Safe();
+        return +x;
     }
     else if (xt == ID_rectangular)
     {
         // Convert from rectangular to polar
         rectangular_g z = rectangular_p(algebraic_p(x));
         x = polar_p(z->as_polar());
-        return x.Safe();
+        return +x;
     }
-    else if (is_strictly_symbolic(xt))
+    else if (is_symbolic(xt))
     {
         // Assume a symbolic value is complex for now
         // TODO: Implement `REALASSUME`
         return false;
     }
-    else if (is_integer(xt) || is_real(xt) || is_symbolic(xt) ||
-             is_algebraic(xt))
+    else if (is_symbolic_arg(xt) || is_algebraic(xt))
     {
         algebraic_g zero = algebraic_p(integer::make(0));
         if (type == ID_polar)
-            x = polar::make(x, zero, settings::PI_RADIANS);
+            x = polar::make(x, zero, object::ID_PiRadians);
         else
             x = rectangular::make(x, zero);
-        return x.Safe();
+        return +x;
     }
 
     return false;
@@ -340,6 +329,56 @@ object::id algebraic::bignum_promotion(algebraic_g &x)
 }
 
 
+object::id algebraic::based_promotion(algebraic_g &x)
+// ----------------------------------------------------------------------------
+//   Promote the value x to a based number
+// ----------------------------------------------------------------------------
+{
+    id xt = x->type();
+
+    switch (xt)
+    {
+    case ID_integer:
+    case ID_neg_integer:
+        if (Settings.WordSize() < 64)
+        {
+            ularge value = integer_p(+x)->value<ularge>();
+            if (xt == ID_neg_integer)
+                value = -value;
+            x = rt.make<based_integer>(value);
+            return ID_based_integer;
+        }
+        else
+        {
+            xt = xt == ID_neg_integer ? ID_neg_bignum : ID_bignum;
+            integer_g xi = integer_p(+x);
+            bignum_g  xb = rt.make<bignum>(xt, xi);
+            x = +xb;
+        }
+        // fallthrough
+
+    case ID_bignum:
+    case ID_neg_bignum:
+    {
+        size_t   sz   = 0;
+        gcbytes  data = bignum_p(+x)->value(&sz);
+        bignum_g xb   = rt.make<bignum>(ID_based_bignum, data, sz);
+        if (xt == ID_neg_bignum)
+        {
+            bignum_g zero = rt.make<based_bignum>(0);
+            xb = zero - xb;
+        }
+        x = +xb;
+        return ID_based_bignum;
+    }
+
+    default:
+        break;
+    }
+    return xt;
+}
+
+
 bool algebraic::decimal_to_fraction(algebraic_g &x)
 // ----------------------------------------------------------------------------
 //  Check if we can promote the number to a fraction
@@ -348,13 +387,21 @@ bool algebraic::decimal_to_fraction(algebraic_g &x)
     id ty = x->type();
     switch(ty)
     {
-    case ID_decimal64:
-    case ID_decimal32:
-        if (!real_promotion(x, ID_decimal128))
-            return false;
-    case ID_decimal128:
-        x = decimal128_p(x.Safe())->to_fraction();
+    case ID_hwfloat:
+        x = hwfloat_p(+x)->to_fraction();
         return true;
+    case ID_hwdouble:
+        x = hwdouble_p(+x)->to_fraction();
+        return true;
+    case ID_decimal:
+    case ID_neg_decimal:
+        x = decimal_p(+x)->to_fraction();
+        return true;
+
+    case ID_integer:
+    case ID_neg_integer:
+    case ID_bignum:
+    case ID_neg_bignum:
     case ID_fraction:
     case ID_neg_fraction:
     case ID_big_fraction:
@@ -363,7 +410,7 @@ bool algebraic::decimal_to_fraction(algebraic_g &x)
 
     case ID_rectangular:
     {
-        rectangular_p z = rectangular_p(x.Safe());
+        rectangular_p z = rectangular_p(+x);
         algebraic_g re = z->re();
         algebraic_g im = z->im();
         if (!decimal_to_fraction(re) || !decimal_to_fraction(im))
@@ -373,21 +420,34 @@ bool algebraic::decimal_to_fraction(algebraic_g &x)
     }
     case ID_polar:
     {
-        polar_p z = polar_p(x.Safe());
+        polar_p z = polar_p(+x);
         algebraic_g mod = z->mod();
         algebraic_g arg = z->pifrac();
         if (!decimal_to_fraction(mod) || !decimal_to_fraction(arg))
             return false;
-        x = polar::make(mod, arg, settings::PI_RADIANS);
+        x = polar::make(mod, arg, object::ID_PiRadians);
         return true;
     }
-    default:
-        return false;
+    case ID_unit:
+    {
+        unit_p ux = unit_p(+x);
+        algebraic_g v = ux->value();
+        algebraic_g u = ux->uexpr();
+        if (decimal_to_fraction(v))
+        {
+            x = unit::simple(v, u);
+            return true;
+        }
+        break;
     }
+    default:
+        break;
+    }
+    return false;
 }
 
 
-bool algebraic::to_decimal(algebraic_g &x)
+bool algebraic::to_decimal(algebraic_g &x, bool weak)
 // ----------------------------------------------------------------------------
 //   Convert a value to decimal
 // ----------------------------------------------------------------------------
@@ -398,10 +458,10 @@ bool algebraic::to_decimal(algebraic_g &x)
     {
     case ID_rectangular:
     {
-        rectangular_p z = rectangular_p(x.Safe());
+        rectangular_p z = rectangular_p(+x);
         algebraic_g re = z->re();
         algebraic_g im = z->im();
-        if (arithmetic::real_promotion(re) && arithmetic::real_promotion(im))
+        if (to_decimal(re, weak) && to_decimal(im, weak))
         {
             x = rectangular::make(re, im);
             return true;
@@ -410,49 +470,64 @@ bool algebraic::to_decimal(algebraic_g &x)
     }
     case ID_polar:
     {
-        polar_p z = polar_p(x.Safe());
+        polar_p z = polar_p(+x);
         algebraic_g mod = z->mod();
         algebraic_g arg = z->pifrac();
-        if (arithmetic::real_promotion(mod) &&
-            (mod->is_fraction() || arithmetic::real_promotion(arg)))
+        if (to_decimal(mod, weak) &&
+            (mod->is_fraction() || to_decimal(arg, weak)))
         {
-            x = polar::make(mod, arg, settings::PI_RADIANS);
+            x = polar::make(mod, arg, object::ID_PiRadians);
+            return true;
+        }
+        break;
+    }
+    case ID_unit:
+    {
+        unit_p ux = unit_p(+x);
+        algebraic_g v = ux->value();
+        algebraic_g u = ux->uexpr();
+        if (to_decimal(v, weak))
+        {
+            x = unit::simple(v, u);
             return true;
         }
         break;
     }
     case ID_integer:
     case ID_neg_integer:
+        if (weak)
+            return true;
+        // fallthrough
     case ID_bignum:
     case ID_neg_bignum:
     case ID_fraction:
     case ID_neg_fraction:
     case ID_big_fraction:
     case ID_neg_big_fraction:
-    case ID_decimal32:
-    case ID_decimal64:
-    case ID_decimal128:
-        return real_promotion(x);
-    case ID_pi:
-        x = algebraic::pi();
+    case ID_hwfloat:
+    case ID_hwdouble:
+    case ID_decimal:
+    case ID_neg_decimal:
+        return decimal_promotion(x);
+    case ID_constant:
+        x = constant_p(+x)->value();
         return true;
-    case ID_ImaginaryUnit:
-        x = rectangular::make(integer::make(0),integer::make(1));
-        return true;
-    case ID_equation:
-    {
-        bool save = Settings.numeric;
-        Settings.numeric = true;
-        result r = x->execute();
-        Settings.numeric = save;
-        if (r == OK)
-            if (object_p obj = rt.pop())
-                if (algebraic_p alg = obj->as_algebraic())
-                    x = alg;
-        return !rt.error();
-    }
+    case ID_expression:
+        if (!unit::mode)
+        {
+            expression_p eq = expression_p(+x);
+            settings::SaveNumericalResults save(true);
+            result r = eq->run();
+            if (r == OK)
+                if (object_p obj = rt.pop())
+                    if (algebraic_p alg = obj->as_algebraic())
+                        x = alg;
+            return !rt.error();
+        }
+        // fallthrough
     default:
-        rt.type_error();
+        if (!weak)
+            rt.type_error();
     }
     return false;
 }
@@ -463,22 +538,152 @@ algebraic_g algebraic::pi()
 //   Return the value of pi
 // ----------------------------------------------------------------------------
 {
-    static bool init = false;
-    static byte rep[1+sizeof(bid128)];
-    if (!init)
-    {
-        bid128 pival;
-        bid128_from_string(&pival.value,
-                           "3.141592653589793238462643383279502884");
-        memcpy(rep+1, &pival.value, sizeof(pival.value));
-        rep[0] = object::ID_decimal128;
-        init = true;
-    }
-    return decimal128_p(rep);
+    if (algebraic_p result = as_hwfp(M_PI))
+        return result;
+    return decimal::pi();
 }
 
 
-algebraic_p algebraic::evaluate_function(object_r eq, algebraic_r x)
+algebraic::angle_unit algebraic::adjust_angle(algebraic_g &x)
+// ----------------------------------------------------------------------------
+//   If we have an angle unit, use it for the computation
+// ----------------------------------------------------------------------------
+{
+    angle_unit amode = ID_object;
+    if (unit_p uobj = x->as<unit>())
+    {
+        algebraic_g uexpr = uobj->uexpr();
+        if (symbol_p sym = uexpr->as_quoted<symbol>())
+        {
+            if (sym->matches("dms") || sym->matches("°"))
+                amode = ID_Deg;
+            else if (sym->matches("r"))
+                amode = ID_Rad;
+            else if (sym->matches("pir") || sym->matches("πr"))
+                amode = ID_PiRadians;
+            else if (sym->matches("grad"))
+                amode = ID_Grad;
+        }
+        if (amode)
+            x = uobj->value();
+    }
+    return amode;
+}
+
+
+bool algebraic::add_angle(algebraic_g &x)
+// ----------------------------------------------------------------------------
+//   Add an angle unit if this is required
+// ----------------------------------------------------------------------------
+{
+    cstring uname;
+
+    switch(Settings.AngleMode())
+    {
+    case ID_Deg:        uname = "°";    break;
+    case ID_Grad:       uname = "grad"; break;
+    case ID_PiRadians:  uname = "πr";   break;
+    case ID_Rad:        uname = "r";    break;
+    default:
+        return false;
+    }
+
+    symbol_p uexpr = symbol::make(uname);
+    x = unit::make(x, uexpr);
+    return true;
+}
+
+
+algebraic_p algebraic::convert_angle(algebraic_r ra,
+                                     angle_unit  from,
+                                     angle_unit  to,
+                                     bool        negmod)
+// ----------------------------------------------------------------------------
+//   Convert to angle in current angle mode.
+// ----------------------------------------------------------------------------
+//   If radians is set, input is in radians.
+//   Otherwise, input is in fractions of pi (internal format for y() in polar).
+{
+    algebraic_g a = ra;
+    if (a->is_real() && (from != to || negmod))
+    {
+        switch (from)
+        {
+        case ID_Deg:
+            a = a / integer::make(180);
+            break;
+        case ID_Grad:
+            a = a / integer::make(200);
+            break;
+        case ID_Rad:
+        {
+            algebraic_g pi = algebraic::pi();
+            if (a->is_fraction())
+            {
+                fraction_g  f = fraction_p(+a);
+                algebraic_g n = algebraic_p(f->numerator());
+                algebraic_g d = algebraic_p(f->denominator());
+                a = n / pi / d;
+            }
+            else
+            {
+                a = a / pi;
+            }
+            break;
+        }
+        case ID_PiRadians:
+        default:
+            break;
+        }
+
+        // Check if we have (-1, 0π), change it to (1, 1π)
+        if (negmod)
+            a = a + algebraic_g(integer::make(1));
+
+        // Bring the result between -1 and 1
+        algebraic_g one = integer::make(1);
+        algebraic_g two = integer::make(2);
+        a = (one - a) % two;
+        if (!a)
+            return nullptr;
+        if (a->is_negative(false))
+            a = a + two;
+        a = one - a;
+
+        switch (to)
+        {
+        case ID_Deg:
+            a = a * integer::make(180);
+            break;
+        case ID_Grad:
+            a = a * integer::make(200);
+            break;
+        case ID_Rad:
+        {
+            algebraic_g pi = algebraic::pi();
+            if (a->is_fraction())
+            {
+                fraction_g f = fraction_p(+a);
+                algebraic_g n = algebraic_p(f->numerator());
+                algebraic_g d = algebraic_p(f->denominator());
+                a = pi * n / d;
+            }
+            else
+            {
+                a = a * pi;
+            }
+            break;
+        }
+        case ID_PiRadians:
+        default:
+            break;
+        }
+    }
+    return a;
+}
+
+
+algebraic_p algebraic::evaluate_function(program_r eq, algebraic_r x)
 // ----------------------------------------------------------------------------
 //   Evaluate the eq object as a function
 // ----------------------------------------------------------------------------
@@ -488,17 +693,19 @@ algebraic_p algebraic::evaluate_function(object_r eq, algebraic_r x)
 //   - Something that evaluates using the indep and returns it on the stack,
 //     for example 'X + 1' (assuming X is the independent variable)
 {
-    if (!rt.push(x.Safe()))
+    if (!rt.push(+x))
         return nullptr;
-    save<object_g *> ival(equation::independent_value, (object_g *) &x);
+    rt.clear_error();
+    save<object_g *> ival(expression::independent_value, (object_g *) &x);
     size_t   depth  = rt.depth();
-    result   err    = eq->execute();
+    result   err    = eq->run();
     size_t   dnow   = rt.depth();
     object_p result = rt.pop();
     if (dnow == depth + 1)
     {
         object_p indep = rt.pop();
-        if (indep != x.Safe())
+        dnow--;
+        if (indep != +x)
         {
             rt.invalid_function_error();
             err = ERROR;
@@ -521,23 +728,29 @@ algebraic_p algebraic::evaluate_function(object_r eq, algebraic_r x)
 }
 
 
-EVAL_BODY(ImaginaryUnit)
+algebraic_p algebraic::evaluate() const
 // ----------------------------------------------------------------------------
-//   Push a unit complex number on the stack
-// ----------------------------------------------------------------------------
-{
-    if (!rt.push(o))
-        return ERROR;
-    return OK;
-}
-
-
-EVAL_BODY(pi)
-// ----------------------------------------------------------------------------
-//   Push a symbolic representation of π on the stack
+//   Evaluate an algebraic value as an algebraic
 // ----------------------------------------------------------------------------
 {
-    if (!rt.push(o))
-        return ERROR;
-    return OK;
+    stack_depth_restore sdr;
+    if (program::run(this) != OK)
+        return nullptr;
+
+    if (rt.depth() != sdr.depth + 1)
+    {
+        rt.invalid_algebraic_error();
+        return nullptr;
+    }
+
+    if (object_p obj = rt.pop())
+    {
+        while (tag_p tagged = obj->as<tag>())
+            obj = tagged->tagged_object();
+        if (obj->is_algebraic())
+            return algebraic_p(obj);
+    }
+
+    rt.type_error();
+    return nullptr;
 }

@@ -48,8 +48,6 @@ struct complex : algebraic
 //    Base class shared by both rectangular and polar implementations
 // ----------------------------------------------------------------------------
 {
-    typedef settings::angles angle_unit;
-
     complex(id type, algebraic_r x, algebraic_r y): algebraic(type)
     {
         byte *p = (byte *) payload(this);
@@ -83,6 +81,7 @@ struct complex : algebraic
     algebraic_g         arg(angle_unit unit) const;
     algebraic_g         pifrac() const;
     complex_g           conjugate() const;
+    algebraic_p         is_real() const;
 
     polar_g             as_polar() const;
     rectangular_g       as_rectangular() const;
@@ -91,11 +90,6 @@ struct complex : algebraic
                              algebraic_r x, algebraic_r y,
                              angle_unit polar_unit);
     static rectangular_p make(int re = 0, int im = 1);
-
-    // Convert to/from angle in current angle mode
-    static algebraic_g  convert_angle(algebraic_g pimul,
-                                      angle_unit from, angle_unit to,
-                                      bool negmod = false);
 
     enum { I_MARK = L'ⅈ', ANGLE_MARK = L'∡' };
 
@@ -166,10 +160,11 @@ struct rectangular : complex
     algebraic_g pifrac() const;
     bool        is_zero() const;
     bool        is_one()  const;
+    algebraic_p is_real() const;
 
     static rectangular_p make(algebraic_r r, algebraic_r i)
     {
-        if (!r.Safe() || !i.Safe())
+        if (!r|| !i)
             return nullptr;
         return rt.make<rectangular>(r, i);
     }
@@ -196,6 +191,7 @@ struct polar : complex
     algebraic_g pifrac() const  { return y(); }
     bool        is_zero() const;
     bool        is_one()  const;
+    algebraic_p is_real() const;
 
     static polar_p make(algebraic_r mod, algebraic_r arg, angle_unit unit);
 
@@ -205,9 +201,11 @@ public:
     RENDER_DECL(polar);
 };
 
-COMMAND_DECLARE(RealToComplex);
-COMMAND_DECLARE(ComplexToReal);
-COMMAND_DECLARE(ToRectangular);
-COMMAND_DECLARE(ToPolar);
+COMMAND_DECLARE(RealToRectangular,2);
+COMMAND_DECLARE(RealToPolar,2);
+COMMAND_DECLARE(RectangularToReal,1);
+COMMAND_DECLARE(PolarToReal,1);
+COMMAND_DECLARE(ToRectangular,1);
+COMMAND_DECLARE(ToPolar,1);
 
 #endif // COMPLEX_H

@@ -15,6 +15,11 @@ values such as `3-1`.
 Additionally, variables with a name that begins with `u`, `v` or `w` must
 be _unique_ within the pattern. This is useful for term-reordering rules,
 such as `'x*u*x' 'x*x*u'`, which should not match `a*a*a` where it is a no-op.
+If multiple variables with a unique name exist in the same pattern, then they
+must match symbols, and the symbols must be sorted in the same order as
+in the pattern. For example, rewriting `v*u` as `u*v` and `x*v*u` as `x*u*v` and
+applying these rules repeadely will result in a sorting of terms in
+multiplications.
 
 `Eq` `From` `To` ▶ `Eq`
 

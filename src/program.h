@@ -30,9 +30,11 @@
 // ****************************************************************************
 
 #include "list.h"
+#include "recorder.h"
 
 GCP(program);
 GCP(block);
+RECORDER_DECLARE(program);
 
 struct program : list
 // ----------------------------------------------------------------------------
@@ -41,15 +43,24 @@ struct program : list
 {
     program(id type, gcbytes bytes, size_t len): list(type, bytes, len) {}
 
+
+    result run(bool synchronous = true) const;
+    INLINE result run_program() const               { return run(false); }
+    static result run(object_p obj, bool sync = true);
+    INLINE static result run_program(object_p obj)  { return run(obj, false); }
+    static result run_loop(size_t depth);
+
     static bool      interrupted(); // Program interrupted e.g. by EXIT key
     static program_p parse(utf8 source, size_t size);
 
-public:
+    static bool running, halted;
+    static uint stepping;
+
+  public:
     OBJECT_DECL(program);
     PARSE_DECL(program);
     RENDER_DECL(program);
     EVAL_DECL(program);
-    EXEC_DECL(program);
 };
 typedef const program *program_p;
 
@@ -67,5 +78,15 @@ public:
     RENDER_DECL(block);
     EVAL_DECL(block);
 };
+
+
+COMMAND_DECLARE(Halt,-1);
+COMMAND_DECLARE(Debug,1);
+COMMAND_DECLARE(SingleStep,-1);
+COMMAND_DECLARE(StepOver,-1);
+COMMAND_DECLARE(StepOut,-1);
+COMMAND_DECLARE(MultipleSteps,1);
+COMMAND_DECLARE(Continue,-1);
+COMMAND_DECLARE(Kill,-1);
 
 #endif // PROGRAM_H

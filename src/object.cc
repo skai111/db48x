@@ -34,21 +34,25 @@
 #include "array.h"
 #include "bignum.h"
 #include "catalog.h"
+#include "characters.h"
 #include "comment.h"
 #include "compare.h"
 #include "complex.h"
 #include "conditionals.h"
-#include "decimal-32.h"
-#include "decimal-64.h"
-#include "decimal128.h"
-#include "equation.h"
+#include "constants.h"
+#include "datetime.h"
+#include "decimal.h"
+#include "equations.h"
+#include "expression.h"
 #include "font.h"
 #include "fraction.h"
 #include "functions.h"
 #include "graphics.h"
 #include "grob.h"
+#include "hwfp.h"
 #include "integer.h"
 #include "integrate.h"
+#include "library.h"
 #include "list.h"
 #include "locals.h"
 #include "logical.h"
@@ -62,9 +66,11 @@
 #include "settings.h"
 #include "solve.h"
 #include "stack-cmds.h"
+#include "stats.h"
 #include "symbol.h"
 #include "tag.h"
 #include "text.h"
+#include "unit.h"
 #include "user_interface.h"
 #include "variables.h"
 
@@ -81,30 +87,69 @@ RECORDER(object_errors,  16, "Runtime errors on objects");
 RECORDER(assert_error,   16, "Assertion failures");
 
 
-template <typename first, typename last, typename ...rest>
-struct handler_flag
+const object::spelling object::spellings[] =
+// ----------------------------------------------------------------------------
+//   Table of all the possible spellings for a given type
+// ----------------------------------------------------------------------------
 {
-    static constexpr bool set(object::id id)
-    {
-        return (id >= first::static_id && id <= last::static_id)
-            || handler_flag<rest...>::set(id);
-    }
-};
-
-template <typename first, typename last>
-struct handler_flag<first, last>
-{
-    static constexpr bool set(object::id id)
-    {
-        return id >= first::static_id && id <= last::static_id;
-    }
-};
-
-
-#define ID(id)
-#define FLAGS(name, ...)                                        \
-static constexpr auto name = handler_flag<__VA_ARGS__>();
+#define ALIAS(ty, name)         { ID_##ty, name },
+#define ID(ty)                  ALIAS(ty, #ty)
+#define NAMED(ty, name)         ALIAS(ty, name) ALIAS(ty, #ty)
 #include "ids.tbl"
+};
+
+const size_t object::spelling_count  = sizeof(spellings) / sizeof(*spellings);
+
+
+utf8 object::alias(id t, uint index)
+// ----------------------------------------------------------------------------
+//   Return the name of the object at given index
+// ----------------------------------------------------------------------------
+{
+    for (size_t i = 0; i < spelling_count; i++)
+        if (t == spellings[i].type)
+            if (cstring name = spellings[i].name)
+                if (index-- == 0)
+                    return utf8(name);
+    return nullptr;
+}
+
+
+utf8 object::fancy(id t)
+// ----------------------------------------------------------------------------
+//   Return the fancy name for the given index
+// ----------------------------------------------------------------------------
+{
+    return alias(t, 0);
+}
+
+
+utf8 object::name(id t)
+// ----------------------------------------------------------------------------
+//   Return the name for a given ID with current style
+// ------------------------------------------------------------------------
+{
+    bool compat = Settings.CommandDisplayMode() != ID_LongForm;
+    cstring result = nullptr;
+    for (size_t i = 0; i < spelling_count; i++)
+    {
+        if (t == spellings[i].type)
+        {
+            if (cstring name = spellings[i].name)
+            {
+                result = name;
+                if (!compat)
+                    break;
+            }
+        }
+        else if (result)
+        {
+            break;
+        }
+    }
+    return utf8(result);
+}
+
 
 
 const object::dispatch object::handler[NUM_IDS] =
@@ -116,13 +161,10 @@ const object::dispatch object::handler[NUM_IDS] =
 #define CMD(id)         ID(id)
 #define NAMED(id, label)                                     \
     [ID_##id] = {                                            \
-        .name         = #id,                                 \
-        .fancy        = label,                               \
         .size         = (size_fn) id::do_size,               \
         .parse        = (parse_fn) id::do_parse,             \
         .help         = (help_fn) id::do_help,               \
         .evaluate     = (evaluate_fn) id::do_evaluate,       \
-        .execute      = (execute_fn) id::do_execute,         \
         .render       = (render_fn) id::do_render,           \
         .graph        = (graph_fn) id::do_graph,             \
         .insert       = (insert_fn) id::do_insert,           \
@@ -130,18 +172,6 @@ const object::dispatch object::handler[NUM_IDS] =
         .menu_marker  = (menu_marker_fn) id::do_menu_marker, \
         .arity        = id::ARITY,                           \
         .precedence   = id::PRECEDENCE,                      \
-        .is_type      = ::is_type.set(ID_##id),              \
-        .is_integer   = ::is_integer.set(ID_##id),           \
-        .is_based     = ::is_based.set(ID_##id),             \
-        .is_bignum    = ::is_bignum.set(ID_##id),            \
-        .is_fraction  = ::is_fraction.set(ID_##id),          \
-        .is_real      = ::is_real.set(ID_##id),              \
-        .is_decimal   = ::is_decimal.set(ID_##id),           \
-        .is_complex   = ::is_complex.set(ID_##id),           \
-        .is_command   = ::is_command.set(ID_##id),           \
-        .is_symbolic  = ::is_symbolic.set(ID_##id),          \
-        .is_algebraic = ::is_algebraic.set(ID_##id),         \
-        .is_immediate = ::is_immediate.set(ID_##id),         \
     },
 #include "ids.tbl"
 };
@@ -165,9 +195,10 @@ object_p object::parse(utf8 source, size_t &size, int precedence)
     size -= skipped;
 
     parser p(source, size, precedence);
-    utf8   err = nullptr;
-    utf8   src = source;
-    result r   = SKIP;
+    utf8   err  = nullptr;
+    utf8   src  = source;
+    size_t slen = 0;
+    result r    = SKIP;
 
     // Try parsing with the various handlers
     do
@@ -196,6 +227,7 @@ object_p object::parse(utf8 source, size_t &size, int precedence)
             {
                 err = rt.error();
                 src = rt.source();
+                slen = rt.source_length();
                 rt.clear_error();
                 r = SKIP;
             }
@@ -208,12 +240,32 @@ object_p object::parse(utf8 source, size_t &size, int precedence)
     if (r == SKIP)
     {
         if (err)
-            rt.error(err).source(src);
+            rt.error(err).source(src, slen);
         else
-            rt.syntax_error().source(p.source);
+            rt.syntax_error().source(p.source, size);
     }
 
     return r == OK ? p.out : nullptr;
+}
+
+
+bool object::defer() const
+// ----------------------------------------------------------------------------
+//   Defer evaluation of the given object after next one
+// ----------------------------------------------------------------------------
+{
+    return rt.run_push(this, skip());
+}
+
+
+bool object::defer(id type)
+// ----------------------------------------------------------------------------
+//   Defer evaluation of a given opcode
+// ----------------------------------------------------------------------------
+{
+    if (object_p obj = command::static_object(type))
+        return rt.run_push(obj, obj->skip());
+    return false;
 }
 
 
@@ -278,44 +330,43 @@ uint32_t object::as_uint32(uint32_t def, bool err) const
     id ty = type();
     switch(ty)
     {
+#if CONFIG_FIXED_BASED_OBJECTS
+    case ID_hex_integer:
+    case ID_dec_integer:
+    case ID_oct_integer:
+    case ID_bin_integer:
+#endif // CONFIG_FIXED_BASED_OBJECTS
+    case ID_based_integer:
     case ID_integer:
         return integer_p(this)->value<uint32_t>();
-    case ID_neg_integer:
-        if (err)
-            rt.value_error();
-        return def;
+#if CONFIG_FIXED_BASED_OBJECTS
+    case ID_hex_bignum:
+    case ID_dec_bignum:
+    case ID_oct_bignum:
+    case ID_bin_bignum:
+#endif // CONFIG_FIXED_BASED_OBJECTS
+    case ID_based_bignum:
     case ID_bignum:
         return bignum_p(this)->value<uint32_t>();
+    case ID_neg_integer:
+    case ID_neg_decimal:
     case ID_neg_bignum:
+    case ID_neg_fraction:
+    case ID_neg_big_fraction:
         if (err)
             rt.value_error();
         return def;
-    case ID_decimal128:
-    {
-        uint result = def;
-        bid128 v = decimal128_p(this)->value();
-        bid128_to_uint32_int(&result, &v.value);
-        return result;
-    }
-    case ID_decimal64:
-    {
-        uint result = def;
-        bid64 v = decimal64_p(this)->value();
-        bid64_to_uint32_int(&result, &v.value);
-        return result;
-    }
-    case ID_decimal32:
-    {
-        uint result = def;
-        bid32 v = decimal32_p(this)->value();
-        bid32_to_uint32_int(&result, &v.value);
-        return result;
-    }
+    case ID_hwfloat:
+        return hwfloat_p(this)->as_unsigned();
+    case ID_hwdouble:
+        return hwdouble_p(this)->as_unsigned();
+    case ID_decimal:
+        return decimal_p(this)->as_unsigned();
 
     case ID_fraction:
-        return fraction_p(this)->as_uint32();
+        return fraction_p(this)->as_unsigned();
     case ID_big_fraction:
-        return big_fraction_p(this)->as_uint32();
+        return big_fraction_p(this)->as_unsigned();
 
     default:
         if (err)
@@ -333,45 +384,157 @@ int32_t object::as_int32 (int32_t  def, bool err)  const
     id ty = type();
     switch(ty)
     {
+#if CONFIG_FIXED_BASED_OBJECTS
+    case ID_hex_integer:
+    case ID_dec_integer:
+    case ID_oct_integer:
+    case ID_bin_integer:
+#endif // CONFIG_FIXED_BASED_OBJECTS
+    case ID_based_integer:
     case ID_integer:
         return integer_p(this)->value<uint32_t>();
     case ID_neg_integer:
         return  -integer_p(this)->value<uint32_t>();
+#if CONFIG_FIXED_BASED_OBJECTS
+    case ID_hex_bignum:
+    case ID_dec_bignum:
+    case ID_oct_bignum:
+    case ID_bin_bignum:
+#endif // CONFIG_FIXED_BASED_OBJECTS
+    case ID_based_bignum:
     case ID_bignum:
         return bignum_p(this)->value<uint32_t>();
     case ID_neg_bignum:
         return -bignum_p(this)->value<uint32_t>();
 
-    case ID_decimal128:
-    {
-        int result = def;
-        bid128 v = decimal128_p(this)->value();
-        bid128_to_int32_int(&result, &v.value);
-        return result;
-    }
-    case ID_decimal64:
-    {
-        int result = def;
-        bid64 v = decimal64_p(this)->value();
-        bid64_to_int32_int(&result, &v.value);
-        return result;
-    }
-    case ID_decimal32:
-    {
-        int result = def;
-        bid32 v = decimal32_p(this)->value();
-        bid32_to_int32_int(&result, &v.value);
-        return result;
-    }
+    case ID_hwfloat:
+        return hwfloat_p(this)->as_int32();
+    case ID_hwdouble:
+        return hwdouble_p(this)->as_int32();
+    case ID_decimal:
+    case ID_neg_decimal:
+        return decimal_p(this)->as_int32();
 
     case ID_fraction:
-        return fraction_p(this)->as_uint32();
+        return fraction_p(this)->as_unsigned();
     case ID_neg_fraction:
-        return -fraction_p(this)->as_uint32();
+        return -fraction_p(this)->as_unsigned();
     case ID_big_fraction:
-        return big_fraction_p(this)->as_uint32();
+        return big_fraction_p(this)->as_unsigned();
     case ID_neg_big_fraction:
-        return -big_fraction_p(this)->as_uint32();
+        return -big_fraction_p(this)->as_unsigned();
+
+    default:
+        if (err)
+            rt.type_error();
+        return def;
+    }
+}
+
+
+uint64_t object::as_uint64(uint64_t def, bool err) const
+// ----------------------------------------------------------------------------
+//   Return the given object as an uint64
+// ----------------------------------------------------------------------------
+//   def is the default value if no valid value comes from object
+//   err indicates if we error out in that case
+{
+    id ty = type();
+    switch(ty)
+    {
+#if CONFIG_FIXED_BASED_OBJECTS
+    case ID_hex_integer:
+    case ID_dec_integer:
+    case ID_oct_integer:
+    case ID_bin_integer:
+#endif // CONFIG_FIXED_BASED_OBJECTS
+    case ID_based_integer:
+    case ID_integer:
+        return integer_p(this)->value<uint64_t>();
+#if CONFIG_FIXED_BASED_OBJECTS
+    case ID_hex_bignum:
+    case ID_dec_bignum:
+    case ID_oct_bignum:
+    case ID_bin_bignum:
+#endif // CONFIG_FIXED_BASED_OBJECTS
+    case ID_based_bignum:
+    case ID_bignum:
+        return bignum_p(this)->value<uint64_t>();
+    case ID_neg_integer:
+    case ID_neg_decimal:
+    case ID_neg_bignum:
+    case ID_neg_fraction:
+    case ID_neg_big_fraction:
+        if (err)
+            rt.value_error();
+        return def;
+    case ID_hwfloat:
+        return hwfloat_p(this)->as_unsigned();
+    case ID_hwdouble:
+        return hwdouble_p(this)->as_unsigned();
+    case ID_decimal:
+        return decimal_p(this)->as_unsigned();
+
+    case ID_fraction:
+        return fraction_p(this)->as_unsigned();
+    case ID_big_fraction:
+        return big_fraction_p(this)->as_unsigned();
+
+    default:
+        if (err)
+            rt.type_error();
+        return def;
+    }
+}
+
+
+int64_t object::as_int64 (int64_t  def, bool err)  const
+// ----------------------------------------------------------------------------
+//   Return the given object as an int64
+// ----------------------------------------------------------------------------
+{
+    id ty = type();
+    switch(ty)
+    {
+#if CONFIG_FIXED_BASED_OBJECTS
+    case ID_hex_integer:
+    case ID_dec_integer:
+    case ID_oct_integer:
+    case ID_bin_integer:
+#endif // CONFIG_FIXED_BASED_OBJECTS
+    case ID_based_integer:
+    case ID_integer:
+        return integer_p(this)->value<uint64_t>();
+    case ID_neg_integer:
+        return  -integer_p(this)->value<uint64_t>();
+#if CONFIG_FIXED_BASED_OBJECTS
+    case ID_hex_bignum:
+    case ID_dec_bignum:
+    case ID_oct_bignum:
+    case ID_bin_bignum:
+#endif // CONFIG_FIXED_BASED_OBJECTS
+    case ID_based_bignum:
+    case ID_bignum:
+        return bignum_p(this)->value<uint64_t>();
+    case ID_neg_bignum:
+        return -bignum_p(this)->value<uint64_t>();
+
+    case ID_hwfloat:
+        return hwfloat_p(this)->as_integer();
+    case ID_hwdouble:
+        return hwdouble_p(this)->as_integer();
+    case ID_decimal:
+    case ID_neg_decimal:
+        return decimal_p(this)->as_integer();
+
+    case ID_fraction:
+        return fraction_p(this)->as_unsigned();
+    case ID_neg_fraction:
+        return -fraction_p(this)->as_unsigned();
+    case ID_big_fraction:
+        return big_fraction_p(this)->as_unsigned();
+    case ID_neg_big_fraction:
+        return -big_fraction_p(this)->as_unsigned();
 
     default:
         if (err)
@@ -403,6 +566,171 @@ object_p object::at(size_t index, bool err) const
     if (err && !result && !rt.error())
         rt.index_error();
     return result;
+}
+
+
+object_p object::at(object_p index) const
+// ----------------------------------------------------------------------------
+//  Index an object, either from a list or a numerical value
+// ----------------------------------------------------------------------------
+{
+    id ity = index->type();
+    if (ity == ID_list || ity == ID_array)
+    {
+        list_p idxlist = list_p(index);
+        object_p result = this;
+        for (object_p idxobj : *idxlist)
+        {
+            result = result->at(idxobj);
+            if (!result)
+                return nullptr;
+        }
+        return result;
+    }
+
+    size_t idx = index->as_uint32(1, true);
+    if (!idx)
+        rt.index_error();
+    if (rt.error())
+        return nullptr;
+    return at(idx - 1);
+}
+
+
+object_p object::at(object_p index, object_p value) const
+// ----------------------------------------------------------------------------
+//  Replace an object at given index with the value
+// ----------------------------------------------------------------------------
+//  Consider a list L and an index
+//    {
+//       { 1 2 3 }
+//       4
+//       {
+//          5
+//          { 6 7 }
+//       }
+//    }
+//    { 3 3 } "ABC" PUT
+//
+//    This turns into:
+//    L 3 L 3 GET 3 "ABC" PUT PUT
+//
+{
+    object_g ref  = this;
+    object_g head = index;
+    list_g   tail = nullptr;
+    object_g item = value;
+
+    if (list_p idxlist = index->as<list>())
+    {
+        head = idxlist->head();
+        tail = idxlist->tail();
+    }
+    size_t idx = head->as_uint32(1, true);
+    if (!idx)
+        rt.index_error();
+    if (rt.error())
+        return nullptr;
+    idx--;
+
+    id ty = ref->type();
+    if (ty == ID_list || ty == ID_array)
+    {
+        object_g first = ref->at(idx);
+
+        // Check if we need to recurse
+        if (tail && tail->length())
+            item = first->at(tail, value);
+
+        // For a list, copy bytes before, value bytes, and bytes after
+        size_t   size  = 0;
+        object_g items = list_p(+ref)->objects(&size);
+        size_t   fsize = first->size();
+        object_g next  = +first + fsize;
+        size_t   hsize = +first - +items;
+        size_t   tsize = size - (+next - +items);
+        list_g   head  = rt.make<list>(ty, byte_p(+items), hsize);
+        list_g   mid   = rt.make<list>(ty, byte_p(+item), item->size());
+        list_g   tail  = rt.make<list>(ty, byte_p(+next), tsize);
+        return head + mid + tail;
+    }
+
+    if (ty == ID_text)
+    {
+        if (tail && tail->length())
+        {
+            rt.dimension_error();
+            return nullptr;
+        }
+
+        // For text, replace the indexed character with the value as text
+        text_g tval = value->as_text();
+        size_t size  = 0;
+        gcutf8 chars = text_p(this)->value(&size);
+        size_t o = 0;
+        for (o = 0; idx && o < size; o = utf8_next(chars, o))
+            idx--;
+        if (idx)
+        {
+            rt.index_error();
+            return nullptr;
+        }
+        size_t n = utf8_next(chars, o);
+        text_g head = text::make(chars, o);
+        text_g tail = text::make(chars + n, size - n);
+        return head + tval + tail;
+    }
+
+    rt.type_error();
+    return nullptr;
+}
+
+
+bool object::next_index(object_p *indexp) const
+// ----------------------------------------------------------------------------
+//  Find the next index on this object, returns true if we wrap
+// ----------------------------------------------------------------------------
+{
+    bool wrap = false;
+    object_g index = *indexp;
+    if (list_g idxlist = index->as<list>())
+    {
+        object_g obj     = this;
+        object_g idxhead = idxlist->head();
+        if (!idxhead)
+        {
+            // Bad argument value error, like on the HP50
+            rt.value_error();
+            return false;
+        }
+
+        list_p   idxtail = idxlist->tail();
+        if (idxtail && idxtail->length())
+        {
+            object_g itobj   = idxtail;
+            object_g child   = obj->at(+idxhead);
+            if (child->next_index(&+itobj))
+                wrap = obj->next_index(&+idxhead);
+            idxlist = list::make(idxhead);
+            idxlist = idxlist + list_g(list_p(+itobj));
+            *indexp = +idxlist;
+            return wrap;
+        }
+        wrap = obj->next_index(&+idxhead);
+        idxlist = list::make(idxhead);
+        *indexp = +idxlist;
+        return wrap;
+    }
+
+    size_t idx = index->as_uint32(1, true);
+    if (!idx)
+        rt.index_error();
+    if (rt.error())
+        return false;
+    wrap = at(idx, false) == nullptr;
+    idx = wrap ? 1 : idx + 1;
+    *indexp = integer::make(idx);
+    return wrap;
 }
 
 
@@ -456,15 +784,6 @@ EVAL_BODY(object)
 }
 
 
-EXEC_BODY(object)
-// ----------------------------------------------------------------------------
-//   The default execution is to evaluate
-// ----------------------------------------------------------------------------
-{
-    return o->evaluate();
-}
-
-
 SIZE_BODY(object)
 // ----------------------------------------------------------------------------
 //   The default size is just the ID
@@ -494,26 +813,256 @@ grob_p object::as_grob() const
 }
 
 
+static inline coord flatten_text(grob::surface &s, coord x, coord y,
+                                 utf8 start, utf8 end,
+                                 font_p font,
+                                 grob::pattern fg, grob::pattern bg)
+// ----------------------------------------------------------------------------
+//   Flatten a text
+// ----------------------------------------------------------------------------
+{
+    for (utf8 wp = start; wp < end; wp = utf8_next(wp))
+    {
+        unicode cp = utf8_codepoint(wp);
+        if (cp == '\t' || cp == '\n')
+            cp = ' ';
+        x = s.glyph(x, y, cp, font, fg, bg);
+    }
+    return x;
+}
+
+
 GRAPH_BODY(object)
 // ----------------------------------------------------------------------------
 //  The default for rendering is to render the text using default font
 // ----------------------------------------------------------------------------
 {
-    renderer r;
+    renderer r(nullptr, ~0U, g.stack, true);
     using pixsize  = blitter::size;
     size_t  sz     = o->render(r);
     gcutf8  txt    = r.text();
     font_p  font   = Settings.font(g.font);
-    pixsize height = font->height();
-    pixsize width  = font->width(txt, sz);
-    if (width > g.maxw)
-        width = g.maxw;
-    if (height > g.maxh)
-        height = g.maxh;
-    grob_g  result = grob::make(width, height);
-    surface s      = result->pixels();
-    s.text(0, 0, txt, sz, font, g.foreground, g.background);
+    pixsize fh     = font->height();
+    pixsize width  = 0;
+    pixsize height = fh;
+    pixsize maxw   = g.maxw;
+    pixsize maxh   = g.maxh;
+    utf8    end    = txt + sz;
+    pixsize rw     = 0;
+    bool    flat   = false;
+
+    // Try to fit it with the original structure
+    for (utf8 p = txt; p < end; p = utf8_next(p))
+    {
+        unicode c  = utf8_codepoint(p);
+        pixsize cw = font->width(c);
+        rw += cw;
+        if (rw >= maxw)
+        {
+            flat = true;
+            break;
+        }
+        if (c == '\n')
+        {
+            if (width < rw - cw)
+                width = rw - cw;
+            height += fh;
+            rw = cw;
+            if (height > maxh)
+                break;
+        }
+    }
+
+    // If it was too wide, try "flat" mode, flatten tabs and \n
+    if (flat)
+    {
+        pixsize ww   = 0;
+        utf8    word = nullptr;
+        utf8    next = nullptr;
+        rw           = 0;
+        width        = 0;
+        height       = fh;
+
+        for (utf8 p = txt; p < end; p = next)
+        {
+            unicode c = utf8_codepoint(p);
+            next = utf8_next(p);
+            if (c == '\n' || c == '\t')
+                c = ' ';
+            bool    sp = is_unicode_space(c);
+            pixsize cw = font->width(c);
+            rw += cw;
+            if (sp)
+            {
+                ww = 0;
+                word = nullptr;
+            }
+            else
+            {
+                ww += cw;
+                if (!word)
+                    word = p;
+            }
+            if (!sp && rw > maxw)
+            {
+                if (word)
+                {
+                    rw -= ww;
+                    next = word;
+                    word = nullptr;
+                }
+                else if (cw > maxw)
+                {
+                    break;
+                }
+                else
+                {
+                    rw -= cw;
+                    next = p;
+                }
+
+                if (width < rw)
+                    width = rw;
+                height += fh;
+                if (height > maxh)
+                    break;
+                rw = 0;
+            }
+        }
+    }
+
+    if (width < rw)
+        width = rw;
+
+    grob_g  result = g.grob(width, height);
+    if (!result)
+        return result;
+    grob::surface s = result->pixels();
+    coord         x = 0;
+    coord         y = 0;
+    s.fill(g.background);
+
+    // Reset end pointer in case grob allocation caused a GC
+    end = txt + sz;
+
+    if (flat)
+    {
+        // Flat mode - Cut at word boundaries
+        utf8    word = nullptr;
+        utf8    next = nullptr;
+        utf8    row  = txt;
+        rw           = 0;
+
+        for (utf8 p = txt; p < end; p = next)
+        {
+            unicode c = utf8_codepoint(p);
+            next = utf8_next(p);
+            if (c == '\n' || c == '\t')
+                c = ' ';
+            bool    sp = is_unicode_space(c);
+            pixsize cw = font->width(c);
+            rw += cw;
+            if (sp)
+                word = nullptr;
+            else if (!word)
+                word = p;
+            if (!sp && rw > width)
+            {
+                if (word)
+                {
+                    x = flatten_text(s, x, y, row, word,
+                                     font, g.foreground, g.background);
+                    next = word;
+                    row = word;
+                    word = nullptr;
+                }
+                else if (cw > width)
+                {
+                    break;
+                }
+                else
+                {
+                    x = flatten_text(s, x, y, row, p,
+                                     font, g.foreground, g.background);
+                    next = p;
+                    row = p;
+                }
+
+                y += fh;
+                if (y > coord(maxh))
+                    break;
+                x = 0;
+                rw = 0;
+            }
+        }
+        flatten_text(s, x, y, row, end, font, g.foreground, g.background);
+    }
+    else
+    {
+        // We can display it with the structure
+        for (utf8 p = txt; p < end; p = utf8_next(p))
+        {
+            unicode c  = utf8_codepoint(p);
+            pixsize cw = font->width(c);
+            if (x + cw > width || c == '\n')
+            {
+                y += fh;
+                if (y > coord(maxh))
+                    break;
+                x = 0;
+            }
+            x = s.glyph(x, y, c, font, g.foreground, g.background);
+        }
+    }
+
     return result;
+}
+
+
+grob_p object::graph() const
+// ----------------------------------------------------------------------------
+//  Render the object like for the `Show` command
+// ----------------------------------------------------------------------------
+{
+    object_g obj = this;
+    uint digits = Settings.DisplayDigits();
+    if (obj->is_decimal())
+        digits = decimal_p(+obj)->kigits() * 3;
+    else if (obj->is_complex())
+        digits = Settings.Precision();
+    settings::SaveDisplayDigits sdd(digits);
+
+    using size = grob::pixsize;
+    grob_g  graph  = obj->is_graph() ? grob_p(+obj) : nullptr;
+    size    width  = LCD_W;
+    size    height = LCD_H;
+    grapher g(width, height, settings::EDITOR,
+              Settings.Foreground(), Settings.Background(), true);
+    while (!graph)
+    {
+        graph = obj->graph(g);
+        if (graph)
+            break;
+
+        if (g.reduce_font())
+            continue;
+        if (g.maxh < Settings.MaximumShowHeight())
+        {
+            g.maxh = Settings.MaximumShowHeight();
+            g.font = settings::EDITOR;
+            continue;
+        }
+        if (g.maxw < Settings.MaximumShowWidth())
+        {
+            g.maxw = Settings.MaximumShowWidth();
+            g.font = settings::EDITOR;
+            continue;
+        }
+
+        // Exhausted all options, give up
+        break;
+    }
+    return graph;
 }
 
 
@@ -522,7 +1071,7 @@ INSERT_BODY(object)
 //   Default insertion is as a program object
 // ----------------------------------------------------------------------------
 {
-    return ui.edit(o->fancy(), ui.PROGRAM);
+    return ui.edit(o->name(), ui.PROGRAM);
 }
 
 
@@ -552,7 +1101,7 @@ object_p object::as_quoted(id ty) const
 {
     if (type() == ty)
         return this;
-    if (equation_p eq = as<equation>())
+    if (expression_p eq = as<expression>())
         return eq->quoted(ty);
     return nullptr;
 }
@@ -590,9 +1139,10 @@ int object::as_truth(bool error) const
     case ID_neg_fraction:
     case ID_big_fraction:
     case ID_neg_big_fraction:
-    case ID_decimal128:
-    case ID_decimal64:
-    case ID_decimal32:
+    case ID_hwfloat:
+    case ID_hwdouble:
+    case ID_decimal:
+    case ID_neg_decimal:
     case ID_polar:
     case ID_rectangular:
         return !is_zero(error);
@@ -642,12 +1192,13 @@ bool object::is_zero(bool error) const
     case ID_big_fraction:
     case ID_neg_big_fraction:
         return big_fraction_p(this)->numerator()->is_zero();
-    case ID_decimal128:
-        return decimal128_p(this)->is_zero();
-    case ID_decimal64:
-        return decimal64_p(this)->is_zero();
-    case ID_decimal32:
-        return decimal32_p(this)->is_zero();
+    case ID_hwfloat:
+        return hwfloat_p(this)->is_zero();
+    case ID_hwdouble:
+        return hwdouble_p(this)->is_zero();
+    case ID_decimal:
+    case ID_neg_decimal:
+        return decimal_p(this)->is_zero();
     case ID_polar:
         return polar_p(this)->is_zero();
     case ID_rectangular:
@@ -688,12 +1239,13 @@ bool object::is_one(bool error) const
         return bignum_p(this)->is_one();
     case ID_fraction:
         return fraction_p(this)->is_one();
-    case ID_decimal128:
-        return decimal128_p(this)->is_one();
-    case ID_decimal64:
-        return decimal64_p(this)->is_one();
-    case ID_decimal32:
-        return decimal32_p(this)->is_one();
+    case ID_hwfloat:
+        return hwfloat_p(this)->is_one();
+    case ID_hwdouble:
+        return hwdouble_p(this)->is_one();
+    case ID_decimal:
+    case ID_neg_decimal:
+        return decimal_p(this)->is_one();
     case ID_polar:
         return polar_p(this)->is_one();
     case ID_rectangular:
@@ -742,12 +1294,13 @@ bool object::is_negative(bool error) const
     case ID_neg_fraction:
     case ID_neg_big_fraction:
         return !fraction_p(this)->is_zero();
-    case ID_decimal128:
-        return decimal128_p(this)->is_negative();
-    case ID_decimal64:
-        return decimal64_p(this)->is_negative();
-    case ID_decimal32:
-        return decimal32_p(this)->is_negative();
+    case ID_hwfloat:
+        return hwfloat_p(this)->is_negative();
+    case ID_hwdouble:
+        return hwdouble_p(this)->is_negative();
+    case ID_decimal:
+    case ID_neg_decimal:
+        return decimal_p(this)->is_negative();
 
     default:
         if (error)
@@ -757,19 +1310,23 @@ bool object::is_negative(bool error) const
 }
 
 
-bool object::is_same_as(object_p other) const
+int object::compare_to(object_p other) const
 // ----------------------------------------------------------------------------
 //   Bitwise comparison of two objects
 // ----------------------------------------------------------------------------
 {
     if (other == this)
-        return true;
-    if (type() != other->type())
-        return false;
+        return 0;
+    id ty = type();
+    id oty = other->type();
+    if (ty != oty)
+        return ty < oty ? -1 : 1;
     size_t sz = size();
-    if (sz != other->size())
-        return false;
-    return memcmp(this, other, sz) == 0;
+    size_t osz = other->size();
+    size_t ssz = sz < osz ? sz : osz;
+    if (int diff = memcmp(this, other, ssz))
+        return diff;
+    return sz < osz ? -1 : sz > osz ? 1 : 0;
 }
 
 
@@ -842,7 +1399,7 @@ bool object::is_big() const
     case ID_program:
     case ID_block:
     case ID_array:
-    case ID_equation:
+    case ID_expression:
         for (object_p o : *(list_p(this)))
             if (o->is_big())
                 return true;
@@ -858,7 +1415,28 @@ bool object::is_big() const
 }
 
 
-#if SIMULATOR
+object_p object::static_object(id i)
+// ----------------------------------------------------------------------------
+//   Return a pointer to a static object representing the command
+// ----------------------------------------------------------------------------
+{
+    static byte cmds[] =
+    {
+#define ID(id)                                                \
+    object::ID_##id < 0x80 ? (object::ID_##id & 0x7F) | 0x00  \
+                           : (object::ID_##id & 0x7F) | 0x80, \
+    object::ID_##id < 0x80 ? 0 : ((object::ID_##id) >> 7),
+#include "ids.tbl"
+    };
+
+    if (i >= NUM_IDS)
+        i = ID_object;
+
+    return (object_p) (cmds + 2 * i);
+}
+
+
+#if DEBUG
 cstring object::debug() const
 // ----------------------------------------------------------------------------
 //   Render an object from the debugger

@@ -31,10 +31,11 @@
 
 #include "array.h"
 #include "bignum.h"
-#include "decimal-32.h"
-#include "decimal-64.h"
-#include "decimal128.h"
-#include "equation.h"
+#include "compare.h"
+#include "constants.h"
+#include "datetime.h"
+#include "decimal.h"
+#include "expression.h"
 #include "fraction.h"
 #include "functions.h"
 #include "integer.h"
@@ -43,6 +44,7 @@
 #include "settings.h"
 #include "tag.h"
 #include "text.h"
+#include "unit.h"
 
 #include <bit>
 #include <bitset>
@@ -51,43 +53,12 @@
 RECORDER(arithmetic,            16, "Arithmetic");
 RECORDER(arithmetic_error,      16, "Errors from arithmetic code");
 
-bool arithmetic::real_promotion(algebraic_g &x, algebraic_g &y)
-// ----------------------------------------------------------------------------
-//   Promote x or y to the largest of both types
-// ----------------------------------------------------------------------------
-{
-    if (!x.Safe() || !y.Safe())
-        return false;
-
-    id xt = x->type();
-    id yt = y->type();
-    if (is_integer(xt) && is_integer(yt))
-        // If we got here, we failed an integer op, e.g. 2/3, promote to real
-        return real_promotion(x) && real_promotion(y);
-
-    if (!is_real(xt) || !is_real(yt))
-        return false;
-
-    uint16_t prec  = Settings.precision;
-    id       minty = prec > BID64_MAXDIGITS ? ID_decimal128
-                   : prec > BID32_MAXDIGITS ? ID_decimal64
-                                            : ID_decimal32;
-    if (is_decimal(xt) && xt > minty)
-        minty = xt;
-    if (is_decimal(yt) && yt > minty)
-        minty = yt;
-
-    return (xt == minty || real_promotion(x, minty))
-        && (yt == minty || real_promotion(y, minty));
-}
-
-
 bool arithmetic::complex_promotion(algebraic_g &x, algebraic_g &y)
 // ----------------------------------------------------------------------------
 //   Return true if one type is complex and the other can be promoted
 // ----------------------------------------------------------------------------
 {
-    if (!x.Safe() || !y.Safe())
+    if (!x || !y)
         return false;
 
     id xt = x->type();
@@ -146,8 +117,40 @@ algebraic_p arithmetic::non_numeric<add>(algebraic_r x, algebraic_r y)
 //   - Text + object: Concatenation of text + object text
 //   - Object + text: Concatenation of object text + text
 {
+    // Check addition of unit objects
+    if (unit_g xu = x->as<unit>())
+    {
+        if (algebraic_p daf = days_after(x, y, false))
+            return daf;
+        if (algebraic_p daf = days_after(y, x, false))
+            return daf;
+
+        if (unit_g yu = y->as<unit>())
+        {
+            if (yu->convert(xu))
+            {
+                algebraic_g xv = xu->value();
+                algebraic_g yv = yu->value();
+                algebraic_g ye = yu->uexpr();
+                xv = xv + yv;
+                return unit::simple(xv, ye);
+            }
+            return nullptr;
+        }
+        rt.inconsistent_units_error();
+        return nullptr;
+    }
+    else if (y->type() == ID_unit)
+    {
+        if (algebraic_p daf = days_after(y, x, false))
+            return daf;
+
+        rt.inconsistent_units_error();
+        return nullptr;
+    }
+
     // Deal with basic auto-simplifications rules
-    if (Settings.auto_simplify && x->is_algebraic() && y->is_algebraic())
+    if (Settings.AutoSimplify() && x->is_algebraic() && y->is_algebraic())
     {
         if (x->is_zero(false))                  // 0 + X = X
             return y;
@@ -160,12 +163,12 @@ algebraic_p arithmetic::non_numeric<add>(algebraic_r x, algebraic_r y)
     {
         if (list_g yl = y->as<list>())
             return xl + yl;
-        if (list_g yl = rt.make<list>(byte_p(y.Safe()), y->size()))
+        if (list_g yl = rt.make<list>(byte_p(+y), y->size()))
             return xl + yl;
     }
     else if (list_g yl = y->as<list>())
     {
-        if (list_g xl = rt.make<list>(byte_p(x.Safe()), x->size()))
+        if (list_g xl = rt.make<list>(byte_p(+x), x->size()))
             return xl + yl;
     }
 
@@ -282,14 +285,42 @@ algebraic_p arithmetic::non_numeric<sub>(algebraic_r x, algebraic_r y)
 // ----------------------------------------------------------------------------
 //   This deals with vector and matrix operations
 {
+    // Check subtraction of unit objects
+    if (unit_g xu = x->as<unit>())
+    {
+        if (algebraic_p dbef = days_before(x, y, false))
+            return dbef;
+        if (unit_g yu = y->as<unit>())
+        {
+            if (algebraic_p ddays = days_between_dates(x, y, false))
+                return ddays;
+
+            if (yu->convert(xu))
+            {
+                algebraic_g xv = xu->value();
+                algebraic_g yv = yu->value();
+                algebraic_g ye = yu->uexpr();
+                xv = xv - yv;
+                return unit::simple(xv, ye);
+            }
+        }
+        rt.inconsistent_units_error();
+        return nullptr;
+    }
+    else if (y->type() == ID_unit)
+    {
+        rt.inconsistent_units_error();
+        return nullptr;
+    }
+
     // Deal with basic auto-simplifications rules
-    if (Settings.auto_simplify && x->is_algebraic() && y->is_algebraic())
+    if (Settings.AutoSimplify() && x->is_algebraic() && y->is_algebraic())
     {
         if (y->is_zero(false))                  // X - 0 = X
             return x;
         if (x->is_same_as(y))                   // X - X = 0
             return integer::make(0);
-        if (x->is_zero(false) && y->is_strictly_symbolic())
+        if (x->is_zero(false) && y->is_symbolic())
             return neg::run(y);                 // 0 - X = -X
     }
 
@@ -389,8 +420,38 @@ algebraic_p arithmetic::non_numeric<mul>(algebraic_r x, algebraic_r y)
 //   - Text * integer: Repeat the text
 //   - Integer * text: Repeat the text
 {
+    // Check multiplication of unit objects
+    if (unit_p xu = x->as<unit>())
+    {
+        algebraic_g xv = xu->value();
+        algebraic_g xe = xu->uexpr();
+        if (unit_p yu = y->as<unit>())
+        {
+            algebraic_g yv = yu->value();
+            algebraic_g ye = yu->uexpr();
+            xv = xv * yv;
+            xe = xe * ye;
+            return unit::simple(xv, xe);
+        }
+        else if (!y->is_symbolic() || xv->is_one())
+        {
+            xv = xv * y;
+            return unit::simple(xv, xe);
+        }
+    }
+    else if (unit_p yu = y->as<unit>())
+    {
+        algebraic_g yv = yu->value();
+        if (!x->is_symbolic() || yv->is_one())
+        {
+            algebraic_g ye = yu->uexpr();
+            yv = x * yv;
+            return unit::simple(yv, ye);
+        }
+    }
+
     // Deal with basic auto-simplifications rules
-    if (Settings.auto_simplify && x->is_algebraic() && y->is_algebraic())
+    if (Settings.AutoSimplify() && x->is_algebraic() && y->is_algebraic())
     {
         if (x->is_zero(false))                  // 0 * X = 0
             return x;
@@ -400,20 +461,16 @@ algebraic_p arithmetic::non_numeric<mul>(algebraic_r x, algebraic_r y)
             return y;
         if (y->is_one(false))                   // X * 1 = X
             return x;
-        if (x->type() == ID_ImaginaryUnit)
+        if (x->is_symbolic() && x->is_same_as(y))
         {
-            if (y->type() == ID_ImaginaryUnit)
-                return integer::make(-1);
-            if (y->is_real())
-                return rectangular::make(integer::make(0), y);
-        }
-        if (y->type() == ID_ImaginaryUnit)
-            if (x->is_real())
-                return rectangular::make(integer::make(0), x);
-        if (x->is_strictly_symbolic() && x->is_same_as(y))
+            if (constant_p cst = x->as<constant>())
+                if (cst->is_imaginary_unit())
+                    return integer::make(-1);
             return sq::run(x);                  // X * X = X²
+        }
     }
 
+    // Text multiplication
     if (text_g xs = x->as<text>())
         if (integer_g yi = y->as<integer>())
             return xs * yi->value<uint>();
@@ -511,21 +568,58 @@ algebraic_p arithmetic::non_numeric<struct div>(algebraic_r x, algebraic_r y)
 // ----------------------------------------------------------------------------
 //   This deals with vector and matrix operations
 {
+    // Check division of unit objects
+    if (unit_p xu = x->as<unit>())
+    {
+        algebraic_g xv = xu->value();
+        algebraic_g xe = xu->uexpr();
+        if (unit_p yu = y->as<unit>())
+        {
+            algebraic_g yv = yu->value();
+            algebraic_g ye = yu->uexpr();
+            xv = xv / yv;
+            xe = xe / ye;
+            return unit::simple(xv, xe);
+        }
+        else if (!y->is_symbolic())
+        {
+            xv = xv / y;
+            return unit::simple(xv, xe);
+        }
+    }
+    else if (unit_p yu = y->as<unit>())
+    {
+        if (!x->is_symbolic())
+        {
+            algebraic_g yv = yu->value();
+            algebraic_g ye = yu->uexpr();
+            yv = x / yv;
+            ye = inv::run(ye);
+            return unit::simple(yv, ye);
+        }
+    }
+
+    // Check divide by zero
+    if (y->is_zero(false))
+    {
+        if (x->is_zero(false))
+        {
+            if (Settings.ZeroOverZeroIsUndefined())
+                return rt.undefined_result();
+            rt.zero_divide_error();
+            return nullptr;
+        }
+        return rt.zero_divide(x->is_negative());
+    }
+
     // Deal with basic auto-simplifications rules
-    if (Settings.auto_simplify && x->is_algebraic() && y->is_algebraic())
+    if (Settings.AutoSimplify() && x->is_algebraic() && y->is_algebraic())
     {
         if (x->is_zero(false))                  // 0 / X = 0
-        {
-            if (y->is_zero(false))
-            {
-                rt.zero_divide_error();
-                return nullptr;
-            }
             return x;
-        }
         if (y->is_one(false))                   // X / 1 = X
             return x;
-        if (x->is_one(false) && y->is_strictly_symbolic())
+        if (x->is_one(false) && y->is_symbolic())
             return inv::run(y);                 // 1 / X = X⁻¹
         if (x->is_same_as(y))
             return integer::make(1);            // X / X = 1
@@ -601,7 +695,7 @@ inline bool div::bignum_ok(bignum_g &x, bignum_g &y)
         result = bignum_p(r) != nullptr;
     if (result)
     {
-        if (r->is_zero())
+        if (is_based(type) || r->is_zero())
             x = q;                  // Integer result
         else
             x = bignum_p(fraction_p(big_fraction::make(x, y))); // Wrong-cast
@@ -679,8 +773,8 @@ inline bool mod::bignum_ok(bignum_g &x, bignum_g &y)
     bignum_g r = x % y;
     if (byte_p(r) == nullptr)
         return false;
-    if (y->type() == ID_neg_bignum && !r->is_zero())
-        x = y - r;
+    if (x->type() == ID_neg_bignum && !r->is_zero())
+        x = y->type() == ID_neg_bignum ? r - y : r + y;
     else
         x = r;
     return true;
@@ -698,8 +792,8 @@ inline bool mod::fraction_ok(fraction_g &x, fraction_g &y)
         return false;
     }
     x = x % y;
-    if (y->type() == ID_neg_fraction && !x->is_zero())
-        x = y - x;
+    if (x->is_negative() && !x->is_zero())
+        x = y->is_negative() ? x - y : x + y;
     return true;
 }
 
@@ -713,7 +807,7 @@ inline bool mod::complex_ok(complex_g &, complex_g &)
 }
 
 
-inline bool rem::integer_ok(object::id &UNUSED xt, object::id &UNUSED yt,
+inline bool rem::integer_ok(object::id &/* xt */, object::id &/* yt */,
                             ularge &xv, ularge &yv)
 // ----------------------------------------------------------------------------
 //   The reminder of two integers is always an integer
@@ -772,8 +866,27 @@ algebraic_p arithmetic::non_numeric<struct pow>(algebraic_r x, algebraic_r y)
 //   Deal with non-numerical data types for multiplication
 // ----------------------------------------------------------------------------
 {
-    if (!x.Safe() || !y.Safe())
+    if (!x || !y)
         return nullptr;
+
+    // Deal with the case of units
+    if (unit_p xu = x->as<unit>())
+    {
+        algebraic_g xv = xu->value();
+        algebraic_g xe = xu->uexpr();
+        save<bool> save(unit::mode, false);
+        return unit::simple(pow(xv, y), pow(xe, y));
+    }
+
+    // Check 0^0 (but check compatibility flag, since HPs return 1)
+    // See https://www.hpcalc.org/hp48/docs/faq/48faq-5.html#ss5.2 as
+    // to rationale on why HP calculators compute 0^0 as 1.
+    if (x->is_zero(false) && y->is_zero(false))
+    {
+        if (Settings.ZeroPowerZeroIsUndefined())
+            return rt.undefined_result();
+        return integer::make(1);
+    }
 
     // Deal with X^N where N is a positive  or negative integer
     id   yt   = y->type();
@@ -781,18 +894,25 @@ algebraic_p arithmetic::non_numeric<struct pow>(algebraic_r x, algebraic_r y)
     bool posy = yt == ID_integer;
     if (negy || posy)
     {
-        // Do not expand X^3 or integers when y>=0
-        if (x->is_strictly_symbolic() || (x->is_integer() && !negy))
+        // Defer computations for integer values to integer_ok
+        if (x->is_integer() && !negy)
             return nullptr;
 
-        // Deal with X^N where N is a positive integer
-        ularge yv = integer_p(y.Safe())->value<ularge>();
-        if (yv == 0 && x->is_zero(false))
+        // Auto-simplify x^0 = 1 and x^1 = x (we already tested 0^0)
+        if (Settings.AutoSimplify())
         {
-            rt.undefined_operation_error();
-            return nullptr;
+            if (y->is_zero(false))
+                return integer::make(1);
+            if (y->is_one())
+                return x;
         }
 
+        // Do not expand X^3 or integers when y>=0
+        if (x->is_symbolic())
+            return expression::make(ID_pow, x, y);
+
+        // Deal with X^N where N is a positive integer
+        ularge yv = integer_p(+y)->value<ularge>();
         algebraic_g r = integer::make(1);
         algebraic_g xx = x;
         while (yv)
@@ -818,13 +938,6 @@ inline bool pow::integer_ok(object::id &xt, object::id &yt,
 //   Compute Y^X
 // ----------------------------------------------------------------------------
 {
-    // Check 0^0
-    if (xv == 0 && yv == 0)
-    {
-        rt.undefined_operation_error();
-        return false;
-    }
-
     // Cannot raise to a negative power as integer
     if (yt == ID_neg_integer)
         return false;
@@ -881,7 +994,7 @@ inline bool pow::complex_ok(complex_g &x, complex_g &y)
 }
 
 
-inline bool pow::fraction_ok(fraction_g &UNUSED x, fraction_g &UNUSED y)
+inline bool pow::fraction_ok(fraction_g &/* x */, fraction_g &/* y */)
 // ----------------------------------------------------------------------------
 //   Compute y^x, works if x >= 0
 // ----------------------------------------------------------------------------
@@ -890,8 +1003,8 @@ inline bool pow::fraction_ok(fraction_g &UNUSED x, fraction_g &UNUSED y)
 }
 
 
-inline bool hypot::integer_ok(object::id &UNUSED xt, object::id &UNUSED yt,
-                              ularge &UNUSED xv, ularge &UNUSED yv)
+inline bool hypot::integer_ok(object::id &/* xt */, object::id &/* yt */,
+                              ularge &/* xv */, ularge &/* yv */)
 // ----------------------------------------------------------------------------
 //   hypot() involves a square root, so not working on integers
 // ----------------------------------------------------------------------------
@@ -901,7 +1014,7 @@ inline bool hypot::integer_ok(object::id &UNUSED xt, object::id &UNUSED yt,
 }
 
 
-inline bool hypot::bignum_ok(bignum_g &UNUSED x, bignum_g &UNUSED y)
+inline bool hypot::bignum_ok(bignum_g &/* x */, bignum_g &/* y */)
 // ----------------------------------------------------------------------------
 //   Hypot never works with big integers
 // ----------------------------------------------------------------------------
@@ -910,7 +1023,7 @@ inline bool hypot::bignum_ok(bignum_g &UNUSED x, bignum_g &UNUSED y)
 }
 
 
-inline bool hypot::fraction_ok(fraction_g &UNUSED x, fraction_g &UNUSED y)
+inline bool hypot::fraction_ok(fraction_g &/* x */, fraction_g &/* y */)
 // ----------------------------------------------------------------------------
 //   Hypot never works with big integers
 // ----------------------------------------------------------------------------
@@ -935,8 +1048,8 @@ inline bool hypot::complex_ok(complex_g &, complex_g &)
 //
 // ============================================================================
 
-inline bool atan2::integer_ok(object::id &UNUSED xt, object::id &UNUSED yt,
-                              ularge &UNUSED xv, ularge &UNUSED yv)
+inline bool atan2::integer_ok(object::id &/* xt */, object::id &/* yt */,
+                              ularge &/* xv */, ularge &/* yv */)
 // ----------------------------------------------------------------------------
 //   Optimized for integers on the real axis
 // ----------------------------------------------------------------------------
@@ -945,7 +1058,7 @@ inline bool atan2::integer_ok(object::id &UNUSED xt, object::id &UNUSED yt,
 }
 
 
-inline bool atan2::bignum_ok(bignum_g &UNUSED x, bignum_g &UNUSED y)
+inline bool atan2::bignum_ok(bignum_g &/* x */, bignum_g &/* y */)
 // ----------------------------------------------------------------------------
 //   Optimize for bignums on the real axis
 // ----------------------------------------------------------------------------
@@ -954,7 +1067,7 @@ inline bool atan2::bignum_ok(bignum_g &UNUSED x, bignum_g &UNUSED y)
 }
 
 
-inline bool atan2::fraction_ok(fraction_g &UNUSED x, fraction_g &UNUSED y)
+inline bool atan2::fraction_ok(fraction_g &/* x */, fraction_g &/* y */)
 // ----------------------------------------------------------------------------
 //   Optimize for fractions on the real and complex axis and for diagonals
 // ----------------------------------------------------------------------------
@@ -980,8 +1093,8 @@ algebraic_p arithmetic::non_numeric<struct atan2>(algebraic_r y, algebraic_r x)
 //   Note that the first argument to atan2 is traditionally called y,
 //   and represents the imaginary axis for complex numbers
 {
-    auto angle_mode = Settings.angle_mode;
-    if (angle_mode != settings::RADIANS)
+    auto angle_mode = Settings.AngleMode();
+    if (angle_mode != object::ID_Rad)
     {
         // Deal with special cases without rounding
         if (y->is_zero(false))
@@ -997,7 +1110,7 @@ algebraic_p arithmetic::non_numeric<struct atan2>(algebraic_r y, algebraic_r x)
         }
         algebraic_g s = x + y;
         algebraic_g d = x - y;
-        if (!s.Safe() || !d.Safe())
+        if (!s || !d)
             return nullptr;
         bool posdiag = d->is_zero(false);
         bool negdiag = s->is_zero(false);
@@ -1007,11 +1120,11 @@ algebraic_p arithmetic::non_numeric<struct atan2>(algebraic_r y, algebraic_r x)
             int  num  = posdiag ? (xneg ? -3 : 1) : (xneg ? 3 : -1);
             switch (angle_mode)
             {
-            case settings::PI_RADIANS:
+            case object::ID_PiRadians:
                 return fraction::make(integer::make(num), integer::make(4));
-            case settings::DEGREES:
+            case object::ID_Deg:
                 return integer::make(num * 45);
-            case settings::GRADS:
+            case object::ID_Grad:
                 return integer::make(num * 50);
             default:
                 break;
@@ -1037,54 +1150,94 @@ algebraic_p arithmetic::evaluate(id          op,
 //   Shared code for all forms of evaluation, does not use the RPL stack
 // ----------------------------------------------------------------------------
 {
-    if (!xr.Safe() || !yr.Safe())
+    if (!xr || !yr)
         return nullptr;
 
-    algebraic_g x = xr;
-    algebraic_g y = yr;
+    algebraic_g x   = xr;
+    algebraic_g y   = yr;
+    utf8        err = rt.error();
 
     // Convert arguments to numeric if necessary
-    if (Settings.numeric)
+    if (Settings.NumericalResults())
     {
-        (void) to_decimal(x);          // May fail silently
-        (void) to_decimal(y);
+        (void) to_decimal(x, true);          // May fail silently
+        (void) to_decimal(y, true);
     }
 
     id xt = x->type();
     id yt = y->type();
 
     // All non-numeric cases, e.g. string concatenation
-    // Must come first, e.g. for optimization of X^3
-    if (algebraic_p result = ops.non_numeric(x, y))
-        return result;
+    // Must come first, e.g. for optimization of X^3 or list + tagged object
+    while(true)
+    {
+        if (algebraic_p result = ops.non_numeric(x, y))
+            return result;
+        if (rt.error() != err)
+            return nullptr;
 
-    // Integer types%
+        if (xt == ID_tag)
+        {
+            x = algebraic_p(tag_p(+x)->tagged_object());
+            xt = x->type();
+        }
+        else if (yt == ID_tag)
+        {
+            y = algebraic_p(tag_p(+y)->tagged_object());
+            yt = y->type();
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    // Integer types
     if (is_integer(xt) && is_integer(yt))
     {
+        bool based = is_based(xt) || is_based(yt);
+        if (based)
+        {
+            xt = algebraic::based_promotion(x);
+            yt = algebraic::based_promotion(y);
+        }
+
         if (!is_bignum(xt) && !is_bignum(yt))
         {
             // Perform conversion of integer values to the same base
-            integer_p xi = integer_p(object_p(x.Safe()));
-            integer_p yi = integer_p(object_p(y.Safe()));
-            if (xi->native() && yi->native())
+            integer_p xi = integer_p(object_p(+x));
+            integer_p yi = integer_p(object_p(+y));
+            uint      ws = Settings.WordSize();
+            if (xi->native() && yi->native() && (ws < 64 || !based))
             {
                 ularge xv = xi->value<ularge>();
                 ularge yv = yi->value<ularge>();
                 if (ops.integer_ok(xt, yt, xv, yv))
+                {
+                    if (based)
+                        xv &= (1UL << ws) - 1UL;
                     return rt.make<integer>(xt, xv);
+                }
             }
         }
 
+        algebraic_g xb = x;
+        algebraic_g yb = y;
         if (!is_bignum(xt))
-            xt = bignum_promotion(x);
+            xt = bignum_promotion(xb);
         if (!is_bignum(yt))
-            yt = bignum_promotion(y);
+            yt = bignum_promotion(yb);
 
         // Proceed with big integers if native did not fit
-        bignum_g xg = bignum_p(x.Safe());
-        bignum_g yg = bignum_p(y.Safe());
+        bignum_g xg = bignum_p(+xb);
+        bignum_g yg = bignum_p(+yb);
         if (ops.bignum_ok(xg, yg))
-            return bignum_p(xg);
+        {
+            x = +xg;
+            if (Settings.NumericalResults())
+                (void) to_decimal(x, true);
+            return x;
+        }
     }
 
     // Fraction types
@@ -1098,55 +1251,47 @@ algebraic_p arithmetic::evaluate(id          op,
                 if (ops.fraction_ok(xf, yf))
                 {
                     x = algebraic_p(fraction_p(xf));
-                    if (x.Safe())
+                    if (x)
                     {
                         bignum_g d = xf->denominator();
                         if (d->is(1))
                             return algebraic_p(bignum_p(xf->numerator()));
                     }
+                    if (Settings.NumericalResults())
+                        (void) to_decimal(x, true);
                     return x;
                 }
             }
         }
     }
 
+    // Hardware-accelerated floating-point data types
+    if (hwfp_promotion(x, y))
+    {
+        if (hwfloat_g fx = x->as<hwfloat>())
+            if (hwfloat_g fy = y->as<hwfloat>())
+                return ops.fop(fx, fy);
+        if (hwdouble_g dx = x->as<hwdouble>())
+            if (hwdouble_g dy = y->as<hwdouble>())
+                return ops.dop(dx, dy);
+    }
+
+
     // Real data types
-    if (real_promotion(x, y))
+    if (decimal_promotion(x, y))
     {
         // Here, x and y have the same type, a decimal type
-        xt = x->type();
-        switch(xt)
+        decimal_g xv = decimal_p(+x);
+        decimal_g yv = decimal_p(+y);
+        xv = ops.decop(xv, yv);
+        if (xv && !xv->is_normal())
         {
-        case ID_decimal32:
-        {
-            bid32 xv = x->as<decimal32>()->value();
-            bid32 yv = y->as<decimal32>()->value();
-            bid32 res;
-            ops.op32(&res.value, &xv.value, &yv.value);
-            x = rt.make<decimal32>(ID_decimal32, res);
+            if (xv->is_infinity())
+                return rt.numerical_overflow(xv->is_negative());
+            rt.domain_error();
+            return nullptr;
         }
-        case ID_decimal64:
-        {
-            bid64 xv = x->as<decimal64>()->value();
-            bid64 yv = y->as<decimal64>()->value();
-            bid64 res;
-            ops.op64(&res.value, &xv.value, &yv.value);
-            x = rt.make<decimal64>(ID_decimal64, res);
-        }
-        case ID_decimal128:
-        {
-            bid128 xv = x->as<decimal128>()->value();
-            bid128 yv = y->as<decimal128>()->value();
-            bid128 res;
-            ops.op128(&res.value, &xv.value, &yv.value);
-            x = rt.make<decimal128>(ID_decimal128, res);
-        }
-        default:
-            break;
-        }
-        if (op == ID_atan2)
-            function::adjust_to_angle(x);
-        return x;
+        return xv;
     }
 
     // Complex data types
@@ -1155,20 +1300,25 @@ algebraic_p arithmetic::evaluate(id          op,
         complex_g xc = complex_p(algebraic_p(x));
         complex_g yc = complex_p(algebraic_p(y));
         if (ops.complex_ok(xc, yc))
+        {
+            if (Settings.AutoSimplify())
+                if (algebraic_p re = xc->is_real())
+                    return re;
             return xc;
+        }
     }
 
-    if (!x.Safe() || !y.Safe())
+    if (!x || !y)
         return nullptr;
 
-    if (x->is_symbolic() && y->is_symbolic())
+    if (x->is_symbolic_arg() && y->is_symbolic_arg())
     {
-        x = equation::make(op, x, y);
+        x = expression::make(op, x, y);
         return x;
     }
 
     // Default error is "Bad argument type", unless we got something else
-    if (!rt.error())
+    if (rt.error() == err)
         rt.type_error();
     return nullptr;
 }
@@ -1179,9 +1329,6 @@ object::result arithmetic::evaluate(id op, ops_t ops)
 //   Shared code for all forms of evaluation using the RPL stack
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(2))
-        return ERROR;
-
     // Fetch arguments from the stack
     // Possibly wrong type, i.e. it migth not be an algebraic on the stack,
     // but since we tend to do extensive type checking later, don't overdo it
@@ -1192,15 +1339,8 @@ object::result arithmetic::evaluate(id op, ops_t ops)
     if (!x)
         return ERROR;
 
-    // Strip tags
-    while (tag_p xtag = x->as<tag>())
-        x = algebraic_p(xtag->tagged_object());
-    while (tag_p ytag = y->as<tag>())
-        y = algebraic_p(ytag->tagged_object());
-
     // Evaluate the operation
     algebraic_g r = evaluate(op, y, x, ops);
-
 
     // If result is valid, drop second argument and push result on stack
     if (r)
@@ -1210,97 +1350,10 @@ object::result arithmetic::evaluate(id op, ops_t ops)
             return OK;
     }
 
+    // Default error is "Bad argument type", unless we got something else
+    if (!rt.error())
+        rt.type_error();
     return ERROR;
-}
-
-
-
-// ============================================================================
-//
-//   128-bit stubs
-//
-// ============================================================================
-//   The non-trivial functions like sqrt or exp are not present in the QSPI
-//   on the DM42. Calling them causes a discrepancy with the QSPI content,
-//   and increases the size of the in-flash image above what is allowed
-//   So we need to stub out some bid64 and bid42 functions and compute them
-//   using bid128
-
-void bid64_pow(BID_UINT64 *pres, BID_UINT64 *px, BID_UINT64 *py)
-// ----------------------------------------------------------------------------
-//   Perform the computation with bid128 code
-// ----------------------------------------------------------------------------
-{
-    BID_UINT128 x128, y128, res128;
-    bid64_to_bid128(&x128, px);
-    bid64_to_bid128(&y128, py);
-    bid128_pow(&res128, &x128, &y128);
-    bid128_to_bid64(pres, &res128);
-}
-
-
-void bid32_pow(BID_UINT32 *pres, BID_UINT32 *px, BID_UINT32 *py)
-// ----------------------------------------------------------------------------
-//   Perform the computation with bid128 code
-// ----------------------------------------------------------------------------
-{
-    BID_UINT128 x128, y128, res128;
-    bid32_to_bid128(&x128, px);
-    bid32_to_bid128(&y128, py);
-    bid128_pow(&res128, &x128, &y128);
-    bid128_to_bid32(pres, &res128);
-}
-
-
-void bid64_hypot(BID_UINT64 *pres, BID_UINT64 *px, BID_UINT64 *py)
-// ----------------------------------------------------------------------------
-//   Perform the computation with bid128 code
-// ----------------------------------------------------------------------------
-{
-    BID_UINT128 x128, y128, res128;
-    bid64_to_bid128(&x128, px);
-    bid64_to_bid128(&y128, py);
-    bid128_hypot(&res128, &x128, &y128);
-    bid128_to_bid64(pres, &res128);
-}
-
-
-void bid32_hypot(BID_UINT32 *pres, BID_UINT32 *px, BID_UINT32 *py)
-// ----------------------------------------------------------------------------
-//   Perform the computation with bid128 code
-// ----------------------------------------------------------------------------
-{
-    BID_UINT128 x128, y128, res128;
-    bid32_to_bid128(&x128, px);
-    bid32_to_bid128(&y128, py);
-    bid128_hypot(&res128, &x128, &y128);
-    bid128_to_bid32(pres, &res128);
-}
-
-
-void bid64_atan2(BID_UINT64 *pres, BID_UINT64 *px, BID_UINT64 *py)
-// ----------------------------------------------------------------------------
-//   Perform the computation with bid128 code
-// ----------------------------------------------------------------------------
-{
-    BID_UINT128 x128, y128, res128;
-    bid64_to_bid128(&x128, px);
-    bid64_to_bid128(&y128, py);
-    bid128_atan2(&res128, &x128, &y128);
-    bid128_to_bid64(pres, &res128);
-}
-
-
-void bid32_atan2(BID_UINT32 *pres, BID_UINT32 *px, BID_UINT32 *py)
-// ----------------------------------------------------------------------------
-//   Perform the computation with bid128 code
-// ----------------------------------------------------------------------------
-{
-    BID_UINT128 x128, y128, res128;
-    bid32_to_bid128(&x128, px);
-    bid32_to_bid128(&y128, py);
-    bid128_atan2(&res128, &x128, &y128);
-    bid128_to_bid32(pres, &res128);
 }
 
 
@@ -1320,6 +1373,11 @@ template object::result arithmetic::evaluate<struct rem>();
 template object::result arithmetic::evaluate<struct pow>();
 template object::result arithmetic::evaluate<struct hypot>();
 template object::result arithmetic::evaluate<struct atan2>();
+template object::result arithmetic::evaluate<struct Min>();
+template object::result arithmetic::evaluate<struct Max>();
+
+template algebraic_p arithmetic::evaluate<struct mod>(algebraic_r x, algebraic_r y);
+template algebraic_p arithmetic::evaluate<struct rem>(algebraic_r x, algebraic_r y);
 template algebraic_p arithmetic::evaluate<struct hypot>(algebraic_r x, algebraic_r y);
 template algebraic_p arithmetic::evaluate<struct atan2>(algebraic_r x, algebraic_r y);
 
@@ -1332,9 +1390,9 @@ arithmetic::ops_t arithmetic::Ops()
 {
     static const ops result =
     {
-        Op::bid128_op,
-        Op::bid64_op,
-        Op::bid32_op,
+        Op::decop,
+        hwfloat_fn(Op::fop),
+        hwdouble_fn(Op::dop),
         Op::integer_ok,
         Op::bignum_ok,
         Op::fraction_ok,
@@ -1439,5 +1497,148 @@ INSERT_BODY(arithmetic)
 //   Arithmetic objects do not insert parentheses
 // ----------------------------------------------------------------------------
 {
+    if (o->type() == ID_mul && Settings.UseDotForMultiplication())
+    {
+        auto mode = ui.editing_mode();
+        if (mode == ui.ALGEBRAIC || mode == ui.PARENTHESES)
+            return ui.edit(utf8("·"), ui.INFIX);
+    }
     return ui.edit(o->fancy(), ui.INFIX);
+}
+
+
+
+// ============================================================================
+//
+//    Percentage operations
+//
+// ============================================================================
+
+EVAL_BODY(Percent)
+// ----------------------------------------------------------------------------
+//   Evaluate percentage operation
+// ----------------------------------------------------------------------------
+{
+    if (!rt.args(2))
+        return object::ERROR;
+
+    // Fetch arguments from the stack
+    // Possibly wrong type, i.e. it migth not be an algebraic on the stack,
+    // but since we tend to do extensive type checking later, don't overdo it
+    algebraic_g y = algebraic_p(rt.stack(1));
+    algebraic_g x = algebraic_p(rt.stack(0));
+    if (!x ||!y)
+        return object::ERROR;
+
+    // Command type
+    id          type    = o->type();
+    algebraic_g hundred = integer::make(100);
+    algebraic_g one     = integer::make(1);
+
+    // Evaluate the operation
+    switch(type)
+    {
+    default:
+    case ID_Percent:            x = y * (x / hundred); break;
+    case ID_PercentChange:      x = (x/y - one) * hundred; break;
+    case ID_PercentTotal:       x = (x/y) * hundred; break;
+    }
+
+    // If result is valid, drop second argument and push result on stack
+    if (x)
+    {
+        rt.drop();
+        if (rt.top(x))
+            return OK;
+    }
+
+    return ERROR;
+}
+
+
+
+// ============================================================================
+//
+//   Min and Max operations
+//
+// ============================================================================
+
+bool Min::integer_ok(id &, id &, ularge &, ularge &)    { return false; }
+bool Max::integer_ok(id &, id &, ularge &, ularge &)    { return false; }
+bool Min::bignum_ok(bignum_g &, bignum_g &)             { return false; }
+bool Max::bignum_ok(bignum_g &, bignum_g &)             { return false; }
+bool Min::fraction_ok(fraction_g &, fraction_g &)       { return false; }
+bool Max::fraction_ok(fraction_g &, fraction_g &)       { return false; }
+bool Min::complex_ok(complex_g &, complex_g &)          { return false; }
+bool Max::complex_ok(complex_g &, complex_g &)          { return false; }
+
+
+static algebraic_p min_max(algebraic_r x, algebraic_r y, int sign)
+// ----------------------------------------------------------------------------
+//   Compute min / max
+// ----------------------------------------------------------------------------
+{
+    if (array_g xa = x->as<array>())
+    {
+        if (array_g ya = y->as<array>())
+        {
+            auto xi = xa->begin();
+            auto xe = xa->end();
+            auto yi = ya->begin();
+            auto ye = ya->end();
+            array_g ra = array_p(rt.make<array>(nullptr, 0));
+            algebraic_g xo, yo;
+            while (xi != xe && yi != ye)
+            {
+                object_p xobj = *xi++;
+                if (!xobj->is_algebraic())
+                    return nullptr;
+                object_p yobj = *yi++;
+                if (!yobj->is_algebraic())
+                    return nullptr;
+                xo = algebraic_p(xobj);
+                yo = algebraic_p(yobj);
+                xo = min_max(xo, yo, sign);
+                if (!xo)
+                    return nullptr;
+                ra = ra->append(+xo);
+            }
+            if (xi != xe || yi != ye)
+            {
+                rt.dimension_error();
+                return nullptr;
+            }
+            return ra;
+        }
+        return xa->map(Min::evaluate, y);
+    }
+    else if (array_g ya = y->as<array>())
+    {
+        return ya->map(x, Min::evaluate);
+    }
+
+    int cmp = 0;
+    if (comparison::compare(&cmp, x, y))
+        return sign * cmp > 0 ? x : y;
+    return nullptr;
+}
+
+
+template<>
+algebraic_p arithmetic::non_numeric<Min>(algebraic_r x, algebraic_r y)
+// ----------------------------------------------------------------------------
+//   Process the Min command
+// ----------------------------------------------------------------------------
+{
+    return min_max(x, y, -1);
+}
+
+
+template<>
+algebraic_p arithmetic::non_numeric<Max>(algebraic_r x, algebraic_r y)
+// ----------------------------------------------------------------------------
+//  Process the Max command
+// ----------------------------------------------------------------------------
+{
+    return min_max(x, y, 1);
 }

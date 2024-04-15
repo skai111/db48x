@@ -92,8 +92,9 @@ Cross produce of vectors
 Swap two columns in a matrix
 
 
-## DET
-Determinant of a matrix
+## Determinant (DET)
+
+Compute the determinant of a matrix
 
 
 ## DIAGMAP
@@ -249,4 +250,3 @@ Decompose A into LDUP such that P*A=L*D<sup>-1</sup>*U
 
 ## MMAP
 Apply expression or program to the elements of a matrix
-

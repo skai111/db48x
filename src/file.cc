@@ -28,9 +28,14 @@
 // ****************************************************************************
 
 #include "file.h"
+
 #include "ff_ifc.h"
 #include "recorder.h"
+#include "text.h"
 #include "utf8.h"
+
+#include <unistd.h>
+
 
 
 RECORDER(file,          16, "File operations");
@@ -80,13 +85,44 @@ file::file()
 {}
 
 
-file::file(cstring path)
+file::file(cstring path, bool writing)
 // ----------------------------------------------------------------------------
 //   Construct a file object for writing
 // ----------------------------------------------------------------------------
     : data()
 {
-    open_for_writing(path);
+    if (writing)
+        open_for_writing(path);
+    else
+        open(path);
+}
+
+
+file::file(text_p name, bool writing)
+// ----------------------------------------------------------------------------
+//   Open a file from a text value
+// ----------------------------------------------------------------------------
+    : data()
+{
+    if (name)
+    {
+        char   buf[80];
+        size_t len  = 0;
+        utf8   path = name->value(&len);
+        if (len < sizeof(buf))
+        {
+            memcpy(buf, path, len);
+            buf[len] = 0;
+            if (writing)
+                open_for_writing(buf);
+            else
+                open(buf);
+        }
+        else
+        {
+            rt.file_name_too_long_error();
+        }
+    }
 }
 
 
@@ -99,18 +135,30 @@ file::~file()
 }
 
 
+#if SIMULATOR
+// DMCP is configured to only allows one open file at a time
+static int open_count = 0;
+#endif
+
+
 void file::open(cstring path)
 // ----------------------------------------------------------------------------
 //    Open a file for reading
 // ----------------------------------------------------------------------------
 {
 #if SIMULATOR
-    data = fopen(path, "r");
-    if (!data)
+    if (open_count++)
     {
-        record(file_error, "Error %s opening %s", strerror(errno), path);
+        errno = EMFILE;
+        record(file_error,
+               "open is opening %u files at the same time",
+               open_count--);
         return;
     }
+
+    data = fopen(path, "r");
+    if (!data)
+        record(file_error, "Error %s opening %s", strerror(errno), path);
 #else
     FRESULT ok = f_open(&data, path, FA_READ);
     data.err = ok;
@@ -126,13 +174,19 @@ void file::open_for_writing(cstring path)
 // ----------------------------------------------------------------------------
 {
 #if SIMULATOR
-    data = fopen(path, "w");
-    if (!data)
+    if (open_count++)
     {
-        record(file_error, "Error %s opening %s for writing",
-               strerror(errno), path);
+        errno = EMFILE;
+        record(file_error,
+               "open_for_writing is opening %u files at the same time",
+               open_count--);
         return;
     }
+
+    data = fopen(path, "w");
+    if (!data)
+        record(file_error, "Error %s opening %s for writing",
+               strerror(errno), path);
 #else
     sys_disk_write_enable(1);
     FRESULT ok = f_open(&data, path, FA_WRITE | FA_CREATE_ALWAYS);
@@ -154,9 +208,9 @@ void file::close()
     if (valid())
     {
         fclose(data);
-
 #if SIMULATOR
         data = nullptr;
+        open_count--;
 #else
         sys_disk_write_enable(0);
         data.flag = 0;
@@ -206,6 +260,20 @@ bool file::write(const char *buf, size_t len)
 #else
     UINT bw = 0;
     return f_write(&data, buf, len, &bw) == FR_OK && bw == len;
+#endif
+}
+
+
+bool file::read(char *buf, size_t len)
+// ----------------------------------------------------------------------------
+//   Read data from a file
+// ----------------------------------------------------------------------------
+{
+#if SIMULATOR
+    return fread(buf, 1, len, data) == len;
+#else
+    UINT bw = 0;
+    return f_read(&data, buf, len, &bw) == FR_OK && bw == len;
 #endif
 }
 
@@ -285,4 +353,73 @@ uint file::rfind(unicode  cp)
     }
     while (c != cp);
     return off;
+}
+
+
+cstring file::error(int err) const
+// ----------------------------------------------------------------------------
+//   Return error from error code
+// ----------------------------------------------------------------------------
+{
+#ifdef SIMULATOR
+    return strerror(err);
+#else
+    switch (err)
+    {
+    case FR_OK:
+        return nullptr;
+
+#define ERROR(name, msg)
+#define FRROR(name, msg, sys)   case FR_##sys: return msg; break;
+#include "errors.tbl"
+
+    default: break;
+    }
+    return "Unkown error";
+#endif // SIMULATOR
+}
+
+
+cstring file::error() const
+// ----------------------------------------------------------------------------
+//   Return error from errno or data.err
+// ----------------------------------------------------------------------------
+{
+#ifdef SIMULATOR
+    return error(errno);
+#else
+    return error(data.err);
+#endif
+}
+
+
+bool file::unlink(text_p name)
+// ----------------------------------------------------------------------------
+//   Purge (unlink) a file
+// ----------------------------------------------------------------------------
+{
+    char   buf[80];
+    size_t len  = 0;
+    utf8   path = name->value(&len);
+    if (len < sizeof(buf))
+    {
+        memcpy(buf, path, len);
+        buf[len] = 0;
+        return unlink(buf);
+    }
+    rt.file_name_too_long_error();
+    return false;
+}
+
+
+bool file::unlink(cstring file)
+// ----------------------------------------------------------------------------
+//   Purge (unlink) a file
+// ----------------------------------------------------------------------------
+{
+#ifdef SIMULATOR
+    return ::unlink(file) == 0;
+#else // !SIMULATOR
+    return f_unlink(file) == FR_OK;
+#endif // SIMULATOR
 }

@@ -30,9 +30,13 @@
 // ****************************************************************************
 
 #include "dmcp.h"
-
 #include "types.h"
+
 #include <stdio.h>
+
+
+// For the text pointer variant of the constructor
+typedef const struct text *text_p;
 
 
 struct file
@@ -41,16 +45,19 @@ struct file
 // ----------------------------------------------------------------------------
 {
     file();
-    file(cstring path);
+    file(cstring path, bool writing);
+    file(text_p path, bool writing);
     ~file();
 
     void    open(cstring path);
     void    open_for_writing(cstring path);
     bool    valid();
+    bool    eof();
     void    close();
     bool    put(unicode out);
     bool    put(char c);
     bool    write(const char *buf, size_t len);
+    bool    read(char *buf, size_t len);
     unicode get();
     unicode get(uint offset);
     char    getchar();
@@ -59,6 +66,11 @@ struct file
     uint    position();
     uint    find(unicode cp);
     uint    rfind(unicode cp);
+    cstring error(int err) const;
+    cstring error() const;
+
+    static  bool unlink(text_p path);
+    static  bool unlink(cstring path);
 
 protected:
 #if SIMULATOR
@@ -82,6 +94,7 @@ protected:
 #define ftell(f)     f_tell(&f)
 #define fseek(f,o,w) f_lseek(&f,o)
 #define fclose(f)    f_close(&f)
+#define feof(f)      f_eof(&f)
 #endif // SIMULATOR
 
 
@@ -142,6 +155,15 @@ inline uint file::position()
 // ----------------------------------------------------------------------------
 {
     return ftell(data);
+}
+
+
+inline bool file::eof()
+// ----------------------------------------------------------------------------
+//   Indicate if end of file
+// ----------------------------------------------------------------------------
+{
+    return feof(data);
 }
 
 #endif // FILE_H

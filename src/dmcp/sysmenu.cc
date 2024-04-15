@@ -29,20 +29,22 @@
 
 #include "sysmenu.h"
 
+#include "dmcp.h"
 #include "file.h"
-#include "user_interface.h"
-#include "program.h"
 #include "main.h"
 #include "object.h"
+#include "program.h"
 #include "renderer.h"
 #include "runtime.h"
 #include "settings.h"
+#include "sim-dmcp.h"
+#include "target.h"
 #include "types.h"
+#include "user_interface.h"
 #include "util.h"
 #include "variables.h"
 
 #include <cstdio>
-#include <dmcp.h>
 
 
 // ============================================================================
@@ -90,21 +92,22 @@ void about_dialog()
 
     // Header based on original system about
     lcd_for_calc(DISP_ABOUT);
-    lcd_putsAt(t24,4,"");
-    lcd_prevLn(t24);
 
-    // Display the main text
-    int h2 = lcd_lineHeight(t20)/2; // Extra spacing
-    lcd_setXY(t20, t24->x, t24->y + h2);
-    lcd_puts(t20, "DB48X v" PROGRAM_VERSION " (C) C. de Dinechin");
-    t20->y += h2;
-    lcd_puts(t20, "DMCP platform (C) SwissMicros GmbH");
-    lcd_puts(t20, "Intel Decimal Floating Point Lib v2.0u1");
-    lcd_puts(t20, "  (C) 2007-2018, Intel Corp.");
+    font_p font = LibMonoFont10x17;
+    coord x = 0;
+    coord y = LCD_H / 2 + 15;
+    size  h = font->height();
+    coord x2;
+    for (uint i = 0; i < 2; i++)
+        x2 = Screen.text(x + i, y, utf8("DB48X "), font, pattern::black);
+    Screen.text(x2, y, utf8("v" PROGRAM_VERSION " © 2024 C. de Dinechin"), font);
+    y += h;
+    Screen.text(x, y, utf8("A modern implementation of RPL, and"), font);
+    y += h;
+    Screen.text(x, y, utf8("a tribute to Bill Hewlett and Dave Packard"), font);
 
-    t20->y = LCD_Y - lcd_lineHeight(t20);
-    lcd_putsR(t20, "    Press EXIT key to continue...");
-
+    y += 3 * h / 2;
+    Screen.text(x, y, utf8("    Press EXIT key to continue..."), font);
     lcd_refresh();
 
     wait_for_key_press();
@@ -126,6 +129,7 @@ const uint8_t settings_menu_items[] =
     MI_SET_TIME,                // Standard set time menu
     MI_SET_DATE,                // Standard set date menu
     MI_BEEP_MUTE,               // Mute the beep
+    MI_DB48_FLASH,              // Mute the beep
     MI_SLOW_AUTOREP,            // Slow auto-repeat
     0
 }; // Terminator
@@ -188,6 +192,7 @@ const uint8_t state_menu_items[] =
     MI_48STATE_LOAD,            // Load a 48 program from disk
     MI_48STATE_SAVE,            // Save a 48 program to disk
     MI_48STATE_CLEAN,           // Start with a fresh clean state
+    MI_48STATE_MERGE,           // Merge a 48S state from disk
     MI_MSC,                     // Activate USB disk
     MI_DISK_INFO,               // Show disk information
 
@@ -204,14 +209,14 @@ const smenu_t state_menu =
 };
 
 
-static bool state_save_variable(symbol_p name, object_p obj, void *renderer_ptr)
+static bool state_save_variable(object_p name, object_p obj, void *renderer_ptr)
 // ----------------------------------------------------------------------------
 //   Emit Object 'Name' STO for each object in the top level directory
 // ----------------------------------------------------------------------------
 {
     renderer &r = *((renderer *) renderer_ptr);
 
-    symbol_g  n = name;
+    object_g  n = name;
     object_g  o = obj;
 
     o->render(r);
@@ -222,23 +227,19 @@ static bool state_save_variable(symbol_p name, object_p obj, void *renderer_ptr)
 }
 
 
-static int state_save_callback(cstring fpath,
-                                 cstring fname,
-                                 void       *)
+static int state_save_callback(cstring fpath, cstring fname, void *)
 // ----------------------------------------------------------------------------
 //   Callback when a file is selected
 // ----------------------------------------------------------------------------
 {
     // Display the name of the file being saved
-    lcd_puts(t24,"Saving state...");
-    lcd_puts(t24, fname);
-    lcd_refresh();
+    ui.draw_message("Saving state...", fname);
 
     // Store the state file name so that we automatically reload it
     set_reset_state_file(fpath);
 
     // Open save file name
-    file prog(fpath);
+    file prog(fpath, true);
     if (!prog.valid())
     {
         disp_disk_info("State save failed");
@@ -247,11 +248,17 @@ static int state_save_callback(cstring fpath,
     }
 
     // Always render things to disk using default settings
-    renderer render(&prog);
+    // See also what depends on "raw" (r.file_save()) in renderers
+    renderer render(prog);
     settings saved = Settings;
     Settings = settings();
-    Settings.fancy_exponent = false;
-    Settings.standard_exp = 1;
+    Settings.FancyExponent(false);
+    Settings.StandardExponent(1);
+    Settings.MantissaSpacing(0);
+    Settings.BasedSpacing(0);
+    Settings.FractionSpacing(0);
+    Settings.DisplayDigits(DB48X_MAXDIGITS);
+    Settings.MinimumSignificantDigits(DB48X_MAXDIGITS);
 
     // Save global variables
     gcp<directory> home = rt.homedir();
@@ -297,7 +304,7 @@ static int state_save()
     bool overwrite_check = true;
     void *user_data = NULL;
     int ret = file_selection_screen("Save state",
-                                    "/STATE", ".48S",
+                                    "/state", ".48S",
                                     state_save_callback,
                                     display_new, overwrite_check,
                                     user_data);
@@ -306,32 +313,23 @@ static int state_save()
 
 
 static bool danger_will_robinson(cstring header,
-                                 cstring msg1,
-                                 cstring msg2 = "",
-                                 cstring msg3 = "",
-                                 cstring msg4 = "",
-                                 cstring msg5 = "",
-                                 cstring msg6 = "",
-                                 cstring msg7 = "")
+                                 cstring msg1 = nullptr,
+                                 cstring msg2 = nullptr,
+                                 cstring msg3 = nullptr,
+                                 cstring msg4 = nullptr,
+                                 cstring msg5 = nullptr)
 // ----------------------------------------------------------------------------
 //  Warn user about the possibility to lose calculator state
 // ----------------------------------------------------------------------------
 {
-    lcd_writeClr(t24);
-    lcd_clear_buf();
-    lcd_putsR(t24, header);
-    t24->ln_offs = 8;
+    utf8 msgs[] =
+    {
+        utf8(msg1), utf8(msg2), utf8(msg3), utf8(msg4), utf8(msg5),
+        utf8(""),
+        utf8("Press [ENTER] to confirm.")
+    };
 
-    lcd_puts(t24, msg1);
-    lcd_puts(t24, msg2);
-    lcd_puts(t24, msg3);
-    lcd_puts(t24, msg4);
-    lcd_puts(t24, msg5);
-    lcd_puts(t24, msg6);
-    lcd_puts(t24, msg7);
-    lcd_puts(t24, "Press [ENTER] to confirm.");
-    lcd_refresh();
-
+    ui.draw_message(utf8(header), sizeof(msgs)/sizeof(*msgs), msgs);
     wait_for_key_release(-1);
 
     while (true)
@@ -364,18 +362,15 @@ static int state_load_callback(cstring path, cstring name, void *merge)
 
         // Clear the state
         rt.reset();
+        Settings = settings();
 
         set_reset_state_file(path);
 
     }
 
     // Display the name of the file being saved
-    lcd_writeClr(t24);
-    lcd_clear_buf();
-    lcd_putsR(t24, merge ? "Merge state" : "Load state");
-    lcd_puts(t24,"Loading state...");
-    lcd_puts(t24, name);
-    lcd_refresh();
+    ui.draw_message(merge ? "Merge state" : "Load state",
+                    "Loading state...", name);
 
     // Store the state file name
     file prog;
@@ -388,7 +383,7 @@ static int state_load_callback(cstring path, cstring name, void *merge)
     }
 
     // Loop on the input file and process it as if it was being typed
-    uint bytes = 0;
+    size_t bytes = 0;
     rt.clear();
 
     for (unicode c = prog.get(); c; c = prog.get())
@@ -403,26 +398,27 @@ static int state_load_callback(cstring path, cstring name, void *merge)
     size_t edlen = rt.editing();
     if (edlen)
     {
-        text_g edstr = rt.close_editor(true);
+        text_g edstr = rt.close_editor(true, false);
         if (edstr)
         {
-            gcutf8 editor = edstr->value();
-            char ds = Settings.decimal_mark;
-            Settings.decimal_mark = '.';
+            // Need to re-fetch editor length after text conversion
+            gcutf8 editor = edstr->value(&edlen);
+            bool dc = Settings.DecimalComma();
+            Settings.DecimalComma(false);
+            bool store_at_end = Settings.StoreAtEnd();
+            Settings.StoreAtEnd(true);
             program_g cmds = program::parse(editor, edlen);
-            Settings.decimal_mark = ds;
+            Settings.DecimalComma(dc);
             if (cmds)
             {
                 // We successfully parsed the line
                 rt.clear();
-                object::result exec = cmds->execute();
+                object::result exec = cmds->run();
+                Settings.StoreAtEnd(store_at_end);
                 if (exec != object::OK)
                 {
-                    lcd_print(t24, "Error loading file");
-                    lcd_puts(t24, (cstring) rt.error());
-                    lcd_print(t24, "executing %s", rt.command());
-                    lcd_refresh();
-                    wait_for_key_press();
+                    ui.draw_error();
+                    refresh_dirty();
                     return 1;
                 }
 
@@ -435,26 +431,21 @@ static int state_load_callback(cstring path, cstring name, void *merge)
                 utf8 pos = rt.source();
                 utf8 ed = editor;
 
-                lcd_print(t24, "Error at byte %u", pos - ed);
-                lcd_puts(t24, rt.error() ? (cstring) rt.error() : "");
-                lcd_refresh();
+                Settings.StoreAtEnd(store_at_end);
+                if (!rt.error())
+                    rt.syntax_error();
                 beep(3300, 100);
-                wait_for_key_press();
-
                 if (pos >= editor && pos <= ed + edlen)
-                    ui.cursorPosition(pos - ed);
+                    ui.cursor_position(pos - ed);
                 if (!rt.edit(ed, edlen))
-                    ui.cursorPosition(0);
+                    ui.cursor_position(0);
 
                 return 1;
             }
         }
         else
         {
-            lcd_print(t24, "Out of memory");
-            lcd_refresh();
-            beep(3300, 100);
-            wait_for_key_press();
+            rt.out_of_memory_error();
             return 1;
         }
     }
@@ -473,7 +464,7 @@ static int state_load(bool merge)
     bool overwrite_check = false;
     void *user_data = (void *) merge;
     int ret = file_selection_screen(merge ? "Merge state" : "Load state",
-                                    "/STATE", ".48S",
+                                    "/state", ".48S",
                                     state_load_callback,
                                     display_new, overwrite_check,
                                     user_data);
@@ -538,16 +529,42 @@ cstring state_name()
 }
 
 
-bool load_state_file(cstring path)
+#ifndef SIMULATOR
+int ui_wrap_io(file_sel_fn callback,
+               const char *path,
+               void       *data,
+               bool        writing)
 // ----------------------------------------------------------------------------
-//   Load the state file directly
+//   On hardware, we simply compute the name from the path
 // ----------------------------------------------------------------------------
 {
     cstring name = path;
     for (cstring p = path; *p; p++)
         if (*p == '/' || *p == '\\')
             name = p + 1;
-    return state_load_callback(path, name, (void *) 1) == 0;
+    return callback(path, name, data);
+}
+
+#endif // SIMULATOR
+
+
+
+
+bool load_state_file(cstring path)
+// ----------------------------------------------------------------------------
+//   Load the state file directly
+// ----------------------------------------------------------------------------
+{
+    return ui_wrap_io(state_load_callback, path, (void *) 1, false) == 0;
+}
+
+
+bool save_state_file(cstring path)
+// ----------------------------------------------------------------------------
+//   Save the state file directly
+// ----------------------------------------------------------------------------
+{
+    return ui_wrap_io(state_save_callback, path, (void *) 1, true) == 0;
 }
 
 
@@ -566,19 +583,6 @@ bool load_system_state()
             return load_state_file(state);
     }
     return false;
-}
-
-
-bool save_state_file(cstring path)
-// ----------------------------------------------------------------------------
-//   Save the state file directly
-// ----------------------------------------------------------------------------
-{
-    cstring name = path;
-    for (cstring p = path; *p; p++)
-        if (*p == '/' || *p == '\\')
-            name = p + 1;
-    return state_save_callback(path, name, nullptr) == 0;
 }
 
 
@@ -602,19 +606,18 @@ bool save_system_state()
 }
 
 
-static char next_date_sep(char sep)
+static void cycle_date()
 // ----------------------------------------------------------------------------
-//   Compute the next date separator
+//   Cycle date settting
 // ----------------------------------------------------------------------------
 {
-    switch(sep)
-    {
-    case '/':   return '.';
-    case '.':   return '-';
-    case '-':   return ' ';
-    default:
-    case ' ':   return '/';
-    }
+    uint index = Settings.ShowDate()
+        * (1 + Settings.YearFirst() * 2 + Settings.MonthBeforeDay());
+    index = (index + 1) % 5;
+    Settings.ShowDate(index);
+    index -= 1;
+    Settings.YearFirst(index & 2);
+    Settings.MonthBeforeDay(index & 1);
 }
 
 
@@ -629,30 +632,34 @@ int menu_item_run(uint8_t menu_id)
     {
     case MI_DB48_ABOUT:    about_dialog(); break;
     case MI_DB48_SETTINGS: ret = handle_menu(&settings_menu, MENU_ADD, 0); break;
+
     case MI_48STATE:       ret = handle_menu(&state_menu, MENU_ADD, 0); break;
-    case MI_48STATE_LOAD:  ret = state_load(false); break;
-    case MI_48STATE_MERGE: ret = state_load(true); break;
-    case MI_48STATE_SAVE:  ret = state_save(); break;
-    case MI_48STATE_CLEAN: ret = state_clear(); break;
+    case MI_48STATE_LOAD:  ret = state_load(false);                     break;
+    case MI_48STATE_MERGE: ret = state_load(true);                      break;
+    case MI_48STATE_SAVE:  ret = state_save();                          break;
+    case MI_48STATE_CLEAN: ret = state_clear();                         break;
+
+    case MI_DB48_FLASH:
+        Settings.SilentBeepOn(!Settings.SilentBeepOn());                break;
 
     case MI_48STATUS:
-        ret = handle_menu(&status_bar_menu, MENU_ADD, 0); break;
+        ret = handle_menu(&status_bar_menu, MENU_ADD, 0);               break;
     case MI_48STATUS_DAY_OF_WEEK:
-        Settings.show_dow = !Settings.show_dow; break;
+        Settings.ShowDayOfWeek(!Settings.ShowDayOfWeek());              break;
     case MI_48STATUS_DATE:
-        Settings.show_date = settings::dmy_ord((int(Settings.show_date) + 1) & 3); break;
+        cycle_date();                                                   break;
     case MI_48STATUS_DATE_SEPARATOR:
-        Settings.date_separator = next_date_sep(Settings.date_separator); break;
+        Settings.NextDateSeparator();                                   break;
     case MI_48STATUS_SHORT_MONTH:
-        Settings.show_month = !Settings.show_month;                     break;
+        Settings.ShowMonthName(!Settings.ShowMonthName());              break;
     case MI_48STATUS_TIME:
-        Settings.show_time = !Settings.show_time;                       break;
+        Settings.ShowTime(!Settings.ShowTime());                        break;
     case MI_48STATUS_SECONDS:
-        Settings.show_seconds = !Settings.show_seconds;                 break;
+        Settings.ShowSeconds(!Settings.ShowSeconds());                  break;
     case MI_48STATUS_24H:
-        Settings.show_24h = !Settings.show_24h;                         break;
+        Settings.Time24H(!Settings.Time24H());                          break;
     case MI_48STATUS_VOLTAGE:
-        Settings.show_voltage = !Settings.show_voltage;                 break;
+        Settings.ShowVoltage(!Settings.ShowVoltage());                  break;
     default:
         ret = MRET_UNIMPL; break;
     }
@@ -661,12 +668,12 @@ int menu_item_run(uint8_t menu_id)
 }
 
 
-static char *sep_str(char *s, cstring txt, char sep)
+static char *dsep_str(char *s, cstring txt)
 // ----------------------------------------------------------------------------
 //   Build a separator string
 // ----------------------------------------------------------------------------
 {
-    snprintf(s, 40, "[%c] %s", sep, txt);
+    snprintf(s, 40, "[%c] %s", Settings.DateSeparator(), txt);
     return s;
 }
 
@@ -676,16 +683,19 @@ static char *flag_str(char *s, cstring txt, bool flag)
 //   Build a flag string
 // ----------------------------------------------------------------------------
 {
-    return sep_str(s, txt, flag ? 'X' : '_');
+    snprintf(s, 40, "[%c] %s", flag ? 'X' : '_', txt);
+    return s;
 }
 
 
-static char *dord_str(char *s, cstring txt, settings::dmy_ord flag)
+static char *dord_str(char *s, cstring txt)
 // ----------------------------------------------------------------------------
 //   Build a string for date order
 // ----------------------------------------------------------------------------
 {
-    cstring order[] = { "___", "DMY", "MDY", "YMD" };
+    cstring order[] = { "___", "DMY", "MDY", "YDM", "YMD" };
+    uint flag = Settings.ShowDate()
+        * (1 + Settings.YearFirst() * 2 + Settings.MonthBeforeDay());
     snprintf(s, 40, "[%s] %s", order[flag], txt);
     return s;
 }
@@ -702,6 +712,8 @@ cstring menu_item_description(uint8_t menu_id, char *s, const int UNUSED len)
     {
     case MI_DB48_SETTINGS:              ln = "Settings >";              break;
     case MI_DB48_ABOUT:                 ln = "About >";                 break;
+    case MI_DB48_FLASH:
+        ln = flag_str(s, "Silent beep", Settings.SilentBeepOn());       break;
 
     case MI_48STATE:                    ln = "State >";                 break;
     case MI_48STATE_LOAD:               ln = "Load State";              break;
@@ -711,21 +723,21 @@ cstring menu_item_description(uint8_t menu_id, char *s, const int UNUSED len)
 
     case MI_48STATUS:                   ln = "Status bar >";            break;
     case MI_48STATUS_DAY_OF_WEEK:
-        ln = flag_str(s, "Day of week", Settings.show_dow);             break;
+        ln = flag_str(s, "Day of week", Settings.ShowDayOfWeek());      break;
     case MI_48STATUS_DATE:
-        ln = dord_str(s, "Date", Settings.show_date);                   break;
+        ln = dord_str(s, "Date");                                       break;
     case MI_48STATUS_DATE_SEPARATOR:
-        ln = sep_str(s, "Date separator", Settings.date_separator);     break;
+        ln = dsep_str(s, "Date separator");                             break;
     case MI_48STATUS_SHORT_MONTH:
-        ln = flag_str(s, "Month name", Settings.show_month);            break;
+        ln = flag_str(s, "Month name", Settings.ShowMonthName());       break;
     case MI_48STATUS_TIME:
-        ln = flag_str(s, "Time", Settings.show_time);                   break;
+        ln = flag_str(s, "Time", Settings.ShowTime());                  break;
     case MI_48STATUS_SECONDS:
-        ln = flag_str(s, "Show seconds", Settings.show_seconds);        break;
+        ln = flag_str(s, "Show seconds", Settings.ShowSeconds());       break;
     case MI_48STATUS_24H:
-        ln = flag_str(s, "Show 24h time", Settings.show_24h);           break;
+        ln = flag_str(s, "Show 24h time", Settings.Time24H());          break;
     case MI_48STATUS_VOLTAGE:
-        ln = flag_str(s, "Voltage", Settings.show_voltage);             break;
+        ln = flag_str(s, "Voltage", Settings.ShowVoltage());            break;
 
     default:                            ln = NULL;                      break;
     }

@@ -6,7 +6,7 @@
 //
 //   File Description:
 //
-//     Standard mathematical functions
+//     Standard mathematoical functions
 //
 //
 //
@@ -32,6 +32,8 @@
 #include "algebraic.h"
 #include "array.h"
 #include "complex.h"
+#include "decimal.h"
+#include "hwfp.h"
 #include "list.h"
 #include "runtime.h"
 
@@ -45,15 +47,26 @@ struct function : algebraic
 
 
 public:
-    typedef complex_g (*complex_fn)(complex_r x);
+    typedef complex_g  (*complex_fn)(complex_r x);
+    typedef hwfloat_p  (*hwfloat_fn)(hwfloat_r x);
+    typedef hwdouble_p (*hwdouble_fn)(hwdouble_r x);
 
-    static result evaluate(id op, bid128_fn op128, complex_fn zop);
+    // Structure holding the function pointers called by generic code
+    struct ops
+    {
+        decimal_fn    decop;
+        hwfloat_fn    fop;
+        hwdouble_fn   dop;
+        complex_fn    zop;
+    };
+    typedef const ops &ops_t;
+
+    static result evaluate(id op, ops_t ops);
     // ------------------------------------------------------------------------
     //   Stack-based evaluation for all functions implemented in BID library
     // ------------------------------------------------------------------------
 
-    static algebraic_p evaluate(algebraic_r x, id op,
-                                bid128_fn op128, complex_fn zop);
+    static algebraic_p evaluate(algebraic_r x, id op, ops_t ops);
     // ------------------------------------------------------------------------
     //   C++ evaluation for all functions implemented in BID library
     // ------------------------------------------------------------------------
@@ -74,12 +87,22 @@ public:
     // ------------------------------------------------------------------------
 
     static bool exact_trig(id op, algebraic_g &x);
-
-    static void adjust_from_angle(bid128 &x);
-    static void adjust_to_angle(bid128 &x);
-    static bool adjust_to_angle(algebraic_g &x);
+    // ------------------------------------------------------------------------
+    //   Process exact trigonometry cases
+    // ------------------------------------------------------------------------
 
     static const bool does_matrices = false;
+
+
+    typedef algebraic_p (*nfunction_fn)(id op, algebraic_g args[], uint arity);
+    static result evaluate(id op, nfunction_fn fn, uint arity,
+                           bool (*can_be_symbolic)(uint arg));
+    // ------------------------------------------------------------------------
+    //   Evaluate a function with n arguments
+    // ------------------------------------------------------------------------
+
+    // For functions with N arguments, check if arg can be symbolic
+    static bool can_be_symbolic(uint /* argument */) { return false; }
 };
 
 
@@ -91,8 +114,10 @@ struct derived : function                                               \
 {                                                                       \
     derived(id i = ID_##derived) : function(i) {}                       \
                                                                         \
-    static constexpr auto bid128_op = bid128_##derived;                 \
-    static constexpr complex_fn zop = complex::derived;                 \
+    static constexpr decimal_fn  decop = decimal::derived;              \
+    static constexpr auto        fop   = hwfloat::derived;              \
+    static constexpr auto        dop   = hwdouble::derived;             \
+    static constexpr complex_fn  zop   = complex::derived;              \
                                                                         \
 public:                                                                 \
     OBJECT_DECL(derived);                                               \
@@ -100,7 +125,9 @@ public:                                                                 \
     PREC_DECL(FUNCTION);                                                \
     EVAL_DECL(derived)                                                  \
     {                                                                   \
-        rt.command(fancy(ID_##derived));                                \
+        rt.command(o);                                                  \
+        if (!rt.args(ARITY))                                            \
+            return ERROR;                                               \
         return evaluate();                                              \
     }                                                                   \
     static result evaluate()                                            \
@@ -110,7 +137,11 @@ public:                                                                 \
     static algebraic_g run(algebraic_r x) { return evaluate(x); }       \
     static algebraic_p evaluate(algebraic_r x)                          \
     {                                                                   \
-        return function::evaluate(x, ID_##derived, bid128_op, zop);     \
+        static const ops optable =                                      \
+        {                                                               \
+            decop, hwfloat_fn(fop), hwdouble_fn(dop), zop               \
+        };                                                              \
+        return function::evaluate(x, ID_##derived, optable);            \
     }                                                                   \
 }
 
@@ -159,7 +190,9 @@ public:                                                                 \
     PREC_DECL(FUNCTION);                                                \
     EVAL_DECL(derived)                                                  \
     {                                                                   \
-        rt.command(fancy(ID_##derived));                                \
+        rt.command(o);                                                  \
+        if (!rt.args(ARITY))                                            \
+            return ERROR;                                               \
         return evaluate();                                              \
     }                                                                   \
     extra                                                               \
@@ -174,7 +207,7 @@ public:                                                                 \
 
 #define FUNCTION(derived) FUNCTION_EXT(derived, )
 
-#define FUNCTION_FANCY(derived)                         \
+#define FUNCTION_FANCY(derived)                                         \
     FUNCTION_EXT(derived, INSERT_DECL(derived);)
 #define FUNCTION_MAT(derived)                                           \
     FUNCTION_EXT(derived,                                               \
@@ -189,11 +222,16 @@ algebraic_p derived::evaluate(algebraic_r x)
 
 FUNCTION_MAT(abs);
 FUNCTION(sign);
+FUNCTION(IntPart);
+FUNCTION(FracPart);
+FUNCTION(ceil);
+FUNCTION(floor);
+FUNCTION(mant);
+FUNCTION(xpon);
 FUNCTION_FANCY_MAT(inv);
 FUNCTION(neg);
 FUNCTION_FANCY_MAT(sq);
 FUNCTION_FANCY_MAT(cubed);
-COMMAND_DECLARE(xroot);
 FUNCTION_FANCY(fact);
 
 FUNCTION(re);
@@ -207,5 +245,62 @@ FUNCTION(Simplify);
 
 FUNCTION(ToDecimal);
 FUNCTION(ToFraction);
+FUNCTION(RadiansToDegrees);
+FUNCTION(DegreesToRadians);
+
+
+
+
+#define NFUNCTION(derived, fnarity, extra)                              \
+struct derived : function                                               \
+/* ----------------------------------------------------------------- */ \
+/*  Macro to define a mathematical function with more than 1 arg     */ \
+/* ----------------------------------------------------------------- */ \
+{                                                                       \
+    derived(id i = ID_##derived) : function(i) {}                       \
+                                                                        \
+public:                                                                 \
+    OBJECT_DECL(derived);                                               \
+    ARITY_DECL(fnarity);                                                \
+    PREC_DECL(FUNCTION);                                                \
+    EVAL_DECL(derived)                                                  \
+    {                                                                   \
+        rt.command(o);                                                  \
+        return evaluate();                                              \
+    }                                                                   \
+    extra                                                               \
+public:                                                                 \
+    static result evaluate()                                            \
+    {                                                                   \
+        return function::evaluate(derived::static_id,                   \
+                                  derived::evaluate, fnarity,           \
+                                  derived::can_be_symbolic);            \
+    }                                                                   \
+    static algebraic_p evaluate(id op, algebraic_g args[], uint arity); \
+}
+
+
+#define NFUNCTION_BODY(derived)                              \
+    algebraic_p derived::evaluate(id UNUSED          op,     \
+                                  algebraic_g UNUSED args[], \
+                                  uint UNUSED        arity)
+
+NFUNCTION(Round, 2, );
+NFUNCTION(Truncate, 2, );
+NFUNCTION(xroot, 2, );
+NFUNCTION(comb, 2, );
+NFUNCTION(perm, 2, );
+NFUNCTION(Sum, 4,
+          static bool can_be_symbolic(uint a)
+          {
+              return a == 0 || a == 3;
+          }
+    );
+NFUNCTION(Product, 4,
+          static bool can_be_symbolic(uint a)
+          {
+              return a == 0 || a == 3;
+          }
+    );
 
 #endif // FUNCTIONS_H

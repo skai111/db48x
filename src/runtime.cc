@@ -29,8 +29,13 @@
 
 #include "runtime.h"
 
-#include "user_interface.h"
+#include "arithmetic.h"
+#include "compare.h"
+#include "constants.h"
+#include "integer.h"
 #include "object.h"
+#include "program.h"
+#include "user_interface.h"
 #include "variables.h"
 
 #include <cstring>
@@ -62,8 +67,8 @@ runtime::runtime(byte *mem, size_t size)
     : Error(nullptr),
       ErrorSave(nullptr),
       ErrorSource(nullptr),
+      ErrorSrcLen(0),
       ErrorCommand(nullptr),
-      Code(nullptr),
       LowMem(),
       Globals(),
       Temporaries(),
@@ -74,8 +79,10 @@ runtime::runtime(byte *mem, size_t size)
       Undo(),
       Locals(),
       Directories(),
+      CallStack(),
       Returns(),
-      HighMem()
+      HighMem(),
+      SaveArgs(false)
 {
     if (mem)
         memory(mem, size);
@@ -92,9 +99,10 @@ void runtime::memory(byte *memory, size_t size)
 
     // Stuff at top of memory
     Returns = HighMem;                          // No return stack
-    Directories = Returns - 1;                  // Make room for one path
+    CallStack = Returns;                        // Reserve space for call stack
+    Directories = CallStack - 1;                // Make room for one path
     Locals = Directories;                       // No locals
-    Args = Locals;                          // No args
+    Args = Locals;                              // No args
     Undo = Locals;                              // No undo stack
     Stack = Locals;                             // Empty stack
 
@@ -128,6 +136,11 @@ void runtime::reset()
 //    Temporaries
 //
 // ============================================================================
+
+#ifdef DM42
+#  pragma GCC push_options
+#  pragma GCC optimize("-O3")
+#endif // DM42
 
 size_t runtime::available()
 // ----------------------------------------------------------------------------
@@ -197,7 +210,7 @@ bool runtime::integrity_test()
 //   Check all the objects in a given range
 // ----------------------------------------------------------------------------
 {
-    return integrity_test(rt.Globals,rt.Temporaries,rt.Stack,rt.Returns);
+    return integrity_test(rt.Globals,rt.Temporaries,rt.Stack,rt.CallStack);
 }
 
 
@@ -245,7 +258,7 @@ void runtime::dump_object_list(cstring  message)
 // ----------------------------------------------------------------------------
 {
     dump_object_list(message,
-                     rt.Globals, rt.Temporaries, rt.Stack, rt.Returns);
+                     rt.Globals, rt.Temporaries, rt.Stack, rt.Args);
 }
 
 
@@ -302,28 +315,27 @@ size_t runtime::gc()
     object_p free     = first;
     object_p next;
 
-    draw_gc();
+    ui.draw_busy(L'●', Settings.GCIconForeground());
 
     record(gc, "Garbage collection, available %u, range %p-%p",
            available(), first, last);
 #ifdef SIMULATOR
-    if (!integrity_test(first, last, Stack, Returns))
+    if (!integrity_test(first, last, Stack, CallStack))
     {
         record(gc_errors, "Integrity test failed pre-collection");
         RECORDER_TRACE(gc) = 1;
         dump_object_list("Pre-collection failure",
-                         first, last, Stack, Returns);
-        integrity_test(first, last, Stack, Returns);
+                         first, last, Stack, CallStack);
+        integrity_test(first, last, Stack, CallStack);
         recorder_dump();
     }
     if (RECORDER_TRACE(gc) > 1)
         dump_object_list("Pre-collection",
-                         first, last, Stack, Returns);
+                         first, last, Stack, CallStack);
 #endif // SIMULATOR
 
     object_p *firstobjptr = Stack;
     object_p *lastobjptr = HighMem;
-    size_t count = 0;
 
     for (object_p obj = first; obj < last; obj = next)
     {
@@ -355,8 +367,14 @@ size_t runtime::gc()
             found = (Error         >= start && Error         < end)
                 ||  (ErrorSave     >= start && ErrorSave     < end)
                 ||  (ErrorSource   >= start && ErrorSource   < end)
-                ||  (ErrorCommand  >= start && ErrorCommand  < end)
+                ||  (ErrorCommand  >= obj   && ErrorCommand  < next)
                 ||  (ui.command    >= start && ui.command    < end);
+            if (!found)
+            {
+                utf8 *label = (utf8 *) &ui.menu_label[0][0];
+                for (uint l = 0; !found && l < ui.NUM_MENUS; l++)
+                    found = label[l] >= start && label[l] < end;
+            }
         }
 
         if (found)
@@ -372,15 +390,13 @@ size_t runtime::gc()
             record(gc_details, "Recycling %p size %u total %u",
                    obj, next - obj, recycled);
         }
-        if (count++ % 0x400 == 0)
-            draw_gc();
     }
 
     // Move the command line and scratch buffer
     if (Editing + Scratch)
     {
         object_p edit = Temporaries;
-        move(edit - recycled, edit, Editing + Scratch, true);
+        move(edit - recycled, edit, Editing + Scratch, 1, true);
     }
 
     // Adjust Temporaries
@@ -388,30 +404,41 @@ size_t runtime::gc()
 
 
 #ifdef SIMULATOR
-    if (!integrity_test(Globals, Temporaries, Stack, Returns))
+    if (!integrity_test(Globals, Temporaries, Stack, CallStack))
     {
         record(gc_errors, "Integrity test failed post-collection");
         RECORDER_TRACE(gc) = 2;
         dump_object_list("Post-collection failure",
-                         first, last, Stack, Returns);
+                         first, last, Stack, CallStack);
         recorder_dump();
     }
     if (RECORDER_TRACE(gc) > 1)
         dump_object_list("Post-collection",
                          (object_p) Globals, Temporaries,
-                         Stack, Returns);
+                         Stack, CallStack);
 #endif // SIMULATOR
 
     record(gc, "Garbage collection done, purged %u, available %u",
            recycled, available());
+
+    ui.draw_busy();
     return recycled;
 }
 
 
-void runtime::move(object_p to, object_p from, size_t size, bool scratch)
+void runtime::move(object_p to, object_p from,
+                   size_t size, size_t overscan, bool scratch)
 // ----------------------------------------------------------------------------
 //   Move objects in memory to a new location, adjusting pointers
 // ----------------------------------------------------------------------------
+//   This is called from various places that need to move memory.
+//   - During garbage collection, when we move an object to its new location.
+//     In that case, we don't want to move a pointer that is outside of object.
+//   - When writing a global variable and moving everything above it.
+//     In that case, we need to move everything up to the end of temporaries.
+//   - When building temporary objects in the scratchpad
+//     In that case, the object is not yet referenced by the stack, but we
+//     may have gcp that are just above temporaries, so overscan is 1
 //   The scratch flag indicates that we move the scratch area. In that case,
 //   we don't need to adjust stack or function pointers, only gc-safe pointers.
 //   Furthermore, scratch pointers may (temporarily) be above the scratch area.
@@ -425,7 +452,7 @@ void runtime::move(object_p to, object_p from, size_t size, bool scratch)
     memmove((byte *) to, (byte *) from, size);
 
     // Adjust the protected pointers
-    object_p last = scratch ? (object_p) Stack : from + size;
+    object_p last = from + size + overscan;
     record(gc_details, "Move %p to %p size %u, %+s",
            from, to, size, scratch ? "scratch" : "no scratch");
     for (gcptr *p = GCSafe; p; p = p->next)
@@ -444,7 +471,7 @@ void runtime::move(object_p to, object_p from, size_t size, bool scratch)
 
     // Adjust the stack pointers
     object_p *firstobjptr = Stack;
-    object_p *lastobjptr = Returns;
+    object_p *lastobjptr = HighMem;
     for (object_p *s = firstobjptr; s < lastobjptr; s++)
     {
         if (*s >= from && *s < last)
@@ -464,10 +491,16 @@ void runtime::move(object_p to, object_p from, size_t size, bool scratch)
         ErrorSave += delta;
     if (ErrorSource >= start && ErrorSource < end)
         ErrorSource += delta;
-    if (ErrorCommand >= start && ErrorCommand < end)
+    if (ErrorCommand >= from && ErrorCommand < last)
         ErrorCommand += delta;
     if (ui.command >= start && ui.command < end)
         ui.command += delta;
+
+    // Adjust menu labels
+    utf8 *label = (utf8 *) &ui.menu_label[0][0];
+    for (uint l = 0; l < ui.NUM_MENUS; l++)
+        if (label[l] >= start && label[l] < end)
+            label[l] += delta;
 }
 
 
@@ -477,18 +510,23 @@ void runtime::move_globals(object_p to, object_p from)
 // ----------------------------------------------------------------------------
 //    In that case, we need to move everything up to the scratchpad
 {
+    // We overscan by 1 to deal with gcp that point to end of objects
     object_p last = (object_p) scratchpad() + allocated();
     object_p first = to < from ? to : from;
     size_t moving = last - first;
-    move(to, from, moving);
+    move(to, from, moving, 1);
 
     // Adjust Globals and Temporaries (for Temporaries, must be <=, not <)
     int delta = to - from;
     if (Globals >= first && Globals < last)             // Storing global var
         Globals += delta;
-    if (Temporaries >= first && Temporaries <= last)    // Probably always
-        Temporaries += delta;
+    Temporaries += delta;
 }
+
+#ifdef DM42
+#  pragma GCC pop_options
+#endif // DM42
+
 
 
 
@@ -548,7 +586,7 @@ size_t runtime::remove(size_t offset, size_t len)
 }
 
 
-text_p runtime::close_editor(bool convert)
+text_p runtime::close_editor(bool convert, bool trailing_zero)
 // ----------------------------------------------------------------------------
 //   Close the editor and encapsulate its content into a string
 // ----------------------------------------------------------------------------
@@ -557,8 +595,9 @@ text_p runtime::close_editor(bool convert)
 //   overwriting the editor
 {
     // Compute the extra size we need for a string header
-    size_t hdrsize = leb128size(object::ID_text) + leb128size(Editing + 1);
-    if (available(hdrsize+1) < hdrsize+1)
+    size_t tzs = trailing_zero ? 1 : 0;
+    size_t hdrsize = leb128size(object::ID_text) + leb128size(Editing + tzs);
+    if (available(hdrsize+tzs) < hdrsize+tzs)
         return nullptr;
 
     // Move the editor data above that header
@@ -567,16 +606,17 @@ text_p runtime::close_editor(bool convert)
     memmove(str, ed, Editing);
 
     // Null-terminate that string for safe use by C code
-    str[Editing] = 0;
+    if (trailing_zero)
+        str[Editing] = 0;
     record(editor, "Closing editor size %u at %p [%s]", Editing, ed, str);
 
     // Write the string header
     text_p obj = text_p(ed);
     ed = leb128(ed, object::ID_text);
-    ed = leb128(ed, Editing + 1);
+    ed = leb128(ed, Editing + tzs);
 
     // Move Temporaries past that newly created string
-    Temporaries = (object_p) str + Editing + 1;
+    Temporaries = (object_p) str + Editing + tzs;
 
     // We are no longer editing
     Editing = 0;
@@ -654,7 +694,7 @@ byte *runtime::append(size_t sz, gcbytes bytes)
 {
     byte *ptr = allocate(sz);
     if (ptr)
-        memcpy(ptr, bytes.Safe(), sz);
+        memcpy(ptr, +bytes, sz);
     return ptr;
 }
 
@@ -670,27 +710,31 @@ object_p runtime::clone(object_p source)
         return nullptr;
     object_p result = Temporaries;
     Temporaries = object_p((byte *) Temporaries + size);
-    move(Temporaries, result, Editing + Scratch, true);
+    move(Temporaries, result, Editing + Scratch, 1, true);
     memmove((void *) result, source, size);
     return result;
 }
 
 
-object_p runtime::clone_global(object_p global)
+object_p runtime::clone_global(object_p global, size_t sz)
 // ----------------------------------------------------------------------------
 //   Check if any entry in the stack points to a given global, if so clone it
 // ----------------------------------------------------------------------------
+//   We scan everywhere to see if an object is used. If so, we clone it
+//   and adjust the pointer to the cloned value
+//   We clone the object at most once, and adjust objects in a list or
+//   program to preserve the original structure
 {
     object_p cloned = nullptr;
     object_p *begin = Stack;
-    object_p *end = Returns;
+    object_p *end    = HighMem;
     for (object_p *s = begin; s < end; s++)
     {
-        if (*s == global)
+        if (*s >= global && *s < global + sz)
         {
             if (!cloned)
                 cloned = clone(global);
-            *s = cloned;
+            *s = cloned + (*s - global);
         }
     }
     return cloned;
@@ -942,19 +986,22 @@ bool runtime::args(uint count)
         missing_argument_error();
         return false;
     }
-    size_t nargs = args();
-    if (count > nargs)
+    if (SaveArgs)
     {
-        size_t sz = (count - nargs) * sizeof(object_p);
-        if (available(sz) < sz)
-            return false;
+        size_t nargs = args();
+        if (count > nargs)
+        {
+            size_t sz = (count - nargs) * sizeof(object_p);
+            if (available(sz) < sz)
+                return false;
+        }
+
+        memmove(Stack + nargs - count, Stack, nstk * sizeof(object_p));
+        Stack = Stack + nargs - count;
+        Args = Args + nargs - count;
+        memmove(Args, Stack, count * sizeof(object_p));
+        SaveArgs = false;
     }
-
-    memmove(Stack + nargs - count, Stack, nstk * sizeof(object_p));
-    Stack = Stack + nargs - count;
-    Args = Args + nargs - count;
-    memmove(Args, Stack, count * sizeof(object_p));
-
     return true;
 }
 
@@ -1010,6 +1057,8 @@ bool runtime::save()
     }
 
     object_p *ns = Stack + ucount - scount;
+    ASSERT(ns + (Undo - Stack) < HighMem);
+    ASSERT(Stack + depth() < HighMem);
     memmove(ns, Stack, (Undo - Stack) * sizeof(object_p));
     Stack = ns;
     Args = Args + ucount - scount;
@@ -1041,7 +1090,7 @@ bool runtime::undo()
 }
 
 
-runtime &runtime::command(utf8 cmd)
+runtime &runtime::command(object_p cmd)
 // ----------------------------------------------------------------------------
 //   Set the command name and initialize the undo setup
 // ----------------------------------------------------------------------------
@@ -1049,8 +1098,6 @@ runtime &runtime::command(utf8 cmd)
     ErrorCommand = cmd;
     return *this;
 }
-
-
 
 
 
@@ -1130,23 +1177,26 @@ bool runtime::unlocals(size_t count)
 //    Free the given number of locals
 // ----------------------------------------------------------------------------
 {
-    // Sanity check on what we remove
-    if (count > size_t(Directories - Locals))
+    if (count)
     {
-        invalid_local_error();
-        return false;
-    }
+        // Sanity check on what we remove
+        if (count > size_t(Directories - Locals))
+        {
+            invalid_local_error();
+            return false;
+        }
 
-    // Move pointers up
-    object_p *oldp = Locals;
-    Stack += count;
-    Args += count;
-    Undo += count;
-    Locals += count;
-    object_p *newp = Locals;
-    size_t moving = Locals - Stack;
-    for (size_t i = 0; i < moving; i++)
-        *(--newp) = *(--oldp);
+        // Move pointers up
+        object_p *oldp = Locals;
+        Stack += count;
+        Args += count;
+        Undo += count;
+        Locals += count;
+        object_p *newp = Locals;
+        size_t moving = Locals - Stack;
+        for (size_t i = 0; i < moving; i++)
+            *(--newp) = *(--oldp);
+    }
 
     return true;
 }
@@ -1159,12 +1209,25 @@ bool runtime::unlocals(size_t count)
 //
 // ============================================================================
 
+bool runtime::is_active_directory(object_p obj) const
+// ----------------------------------------------------------------------------
+//    Check if a global variable is referenced by the directories
+// ----------------------------------------------------------------------------
+{
+    size_t depth = (object_p *) CallStack - Directories;
+    for (size_t i = 0; i < depth; i++)
+        if (obj == Directories[i])
+            return true;
+    return false;
+}
+
+
 bool runtime::enter(directory_p dir)
 // ----------------------------------------------------------------------------
 //   Enter a given directory
 // ----------------------------------------------------------------------------
 {
-    size_t sz = sizeof(dir);
+    size_t sz = sizeof(directory_p);
     if (available(sz) < sz)
         return false;
 
@@ -1191,7 +1254,7 @@ bool runtime::updir(size_t count)
 //   Move one directory up
 // ----------------------------------------------------------------------------
 {
-    size_t depth = (object_p *) Returns - Directories;
+    size_t depth = CallStack - Directories;
     if (count >= depth - 1)
         count = depth - 1;
     if (!count)
@@ -1220,42 +1283,253 @@ bool runtime::updir(size_t count)
 //
 // ============================================================================
 
-void runtime::call(object_g callee)
-// ------------------------------------------------------------------------
-//   Push the current object on the RPL stack
-// ------------------------------------------------------------------------
+#ifdef DM42
+#  pragma GCC push_options
+#  pragma GCC optimize("-O3")
+#endif // DM42
+
+bool runtime::run_conditionals(object_p truecase, object_p falsecase, bool xeq)
+// ----------------------------------------------------------------------------
+//   Push the two conditionals
+// ----------------------------------------------------------------------------
 {
-    if (available(sizeof(callee)) < sizeof(callee))
+    object_g tc = truecase;
+    object_g tce = truecase ? truecase->skip() : nullptr;
+    object_g fc = falsecase;
+    object_g fce = falsecase ? falsecase->skip() : nullptr;
+
+    if (xeq)
+    {
+        // For IFT / IFTE, we want to execute programs, not put them on stack
+        if (tc && tc->is_program())
+            tc = program_p(+tc)->objects();
+        if (fc && fc->is_program())
+            fc = program_p(+fc)->objects();
+    }
+
+    return run_push(tc, tce) && run_push(fc, fce);
+}
+
+
+bool runtime::run_select(bool condition)
+// ----------------------------------------------------------------------------
+//   Select which condition path to pick
+// ----------------------------------------------------------------------------
+//   In this case, we have pushed the true condition and the false condition.
+//   We only leave one depending on whether the condition is true or not
+{
+    if (Returns + 4 > HighMem)
+    {
+        record(runtime_error,
+               "select (%+s) Returns=%p HighMem=%p",
+               condition ? "true" : "false",
+               Returns, HighMem);
+        return false;
+    }
+
+
+    if (!condition)
+    {
+        Returns[3] = Returns[1];
+        Returns[2] = Returns[0];
+    }
+
+    Returns += 2;
+    if ((HighMem - Returns) % CALLS_BLOCK == 0)
+        call_stack_drop();
+
+    return true;
+}
+
+
+bool runtime::run_select_while(bool condition)
+// ----------------------------------------------------------------------------
+//   Select which condition of a while path to pick
+// ----------------------------------------------------------------------------
+//   In that case, we have pushed the loop and its body
+//   If the condition is true, we leave loop and body
+//   If the condition is false, we drop both
+{
+    if (Returns + 4 > HighMem)
+    {
+        record(runtime_error,
+               "select_while (%+s) Returns=%p HighMem=%p",
+               condition ? "true" : "false",
+               Returns, HighMem);
+        return false;
+    }
+
+    size_t sz = condition ? 0 : 4;
+    if (sz && size_t(HighMem - Returns) % CALLS_BLOCK <= sz)
+        call_stack_drop();
+    Returns += sz;
+
+    return true;
+}
+
+
+bool runtime::run_select_start_step(bool for_loop, bool has_step)
+// ----------------------------------------------------------------------------
+//   Select evaluation branches in a for loop
+// ----------------------------------------------------------------------------
+{
+    if (Returns + 4 > HighMem)
+    {
+        record(runtime_error,
+               "select_start_step (%+s %+s) Returns=%p HighMem=%p",
+               for_loop ? "for" : "start",
+               has_step ? "step" : "next",
+               Returns, HighMem);
+        return false;
+    }
+
+    bool down = false;
+    algebraic_g step;
+    if (has_step)
+    {
+        object_p obj = rt.pop();
+        if (!obj)
+            return false;
+        step = obj->as_algebraic();
+        if (!step)
+        {
+            object::id ty = for_loop?object::ID_ForStep:object::ID_StartStep;
+            object_p cmd = command::static_object(ty);
+            rt.command(cmd).type_error();
+            return false;
+        }
+        down = step->is_negative();
+    }
+    else
+    {
+        step = integer::make(1);
+        if (!step)
+            return false;
+    }
+
+    // Increment and compare with last iteration
+    algebraic_g cur  = Returns[0]->as_algebraic();
+    algebraic_g last = Returns[1]->as_algebraic();
+    if (!cur || !last)
+    {
+        object::id ty = for_loop?object::ID_ForStep:object::ID_StartStep;
+        object_p cmd = command::static_object(ty);
+        rt.command(cmd);
+        return false;
+    }
+    cur = cur + step;
+    last = down ? (cur < last) : (cur > last);
+    Returns[0] = cur;
+
+    // Write the current value in the variable if it's a for loop
+    if (for_loop)
+        rt.local(0, cur);
+
+    // Check the truth value
+    int finished = last->as_truth(true);
+    if (finished < 0)
+        return false;
+
+    if (finished)
+    {
+        if ((HighMem - Returns) % CALLS_BLOCK <= 4)
+            call_stack_drop();
+        Returns += 4;
+    }
+    else
+    {
+        object::id type = object::id(object::ID_start_next_conditional
+                                     + 2*for_loop
+                                     + has_step);
+        return object::defer(type) && run_push_data(Returns[4], Returns[5]);
+    }
+
+    return true;
+}
+
+
+bool runtime::run_select_case(bool condition)
+// ----------------------------------------------------------------------------
+//   Select evaluation branches in a case statement
+// ----------------------------------------------------------------------------
+//   In that case, we have the true case at level 0, null at level 2
+//   If the condition is true, we put an ID_case_skip_conditional in level 2
+//
+{
+    if (Returns + 4 > HighMem)
+    {
+        record(runtime_error,
+               "select_case (%+s) Returns=%p HighMem=%p",
+               condition ? "true" : "false",
+               Returns, HighMem);
+        return false;
+    }
+
+    if (condition)
+    {
+        object_p obj = command::static_object(object::ID_case_skip_conditional);
+        ASSERT(Returns[0] == nullptr && Returns[1] + 1 == nullptr);
+        Returns[0] = Returns[2];
+        Returns[1] = Returns[3];
+        Returns[2] = obj;
+        Returns[3] = obj->skip() - 1;
+    }
+    else
+    {
+        if (size_t(HighMem - Returns) % CALLS_BLOCK <= 4)
+            call_stack_drop();
+        Returns += 4;
+    }
+
+    return true;
+}
+
+
+bool runtime::call_stack_grow(object_p &next, object_p &end)
+// ----------------------------------------------------------------------------
+//   Grow the call stack by a block
+// ----------------------------------------------------------------------------
+{
+    size_t   block = sizeof(object_p) * CALLS_BLOCK ;
+    object_g nextg = next;
+    object_g endg  = end;
+    if (available(block) < block)
     {
         recursion_error();
-        return;
+        return false;
     }
-    Stack--;
-    Locals--;
-    for (object_p *s = Locals; s < Stack; s++)
-        s[0] = s[1];
-    *(--Returns) = Code;
-    Code = callee;
+    for (object_p *s = Stack; s < CallStack; s++)
+        s[-CALLS_BLOCK] = s[0];
+    Stack -= CALLS_BLOCK;
+    Args -= CALLS_BLOCK;
+    Undo -= CALLS_BLOCK;
+    Locals -= CALLS_BLOCK;
+    Directories -= CALLS_BLOCK;
+    CallStack -= CALLS_BLOCK;
+    next = nextg;
+    end = endg;
+    return true;
 }
 
 
-void runtime::ret()
+void runtime::call_stack_drop()
 // ----------------------------------------------------------------------------
-//   Return from an RPL call
+//   Drop the outermost block
 // ----------------------------------------------------------------------------
 {
-    if ((byte *) Returns >= (byte *) HighMem)
-    {
-        return_without_caller_error();
-        return;
-    }
-    Code = *Returns++;
-    Stack++;
-    Locals++;
-    for (object_p *s = Stack; s > Stack; s--)
-        s[0] = s[-1];
+    Stack += CALLS_BLOCK;
+    Args += CALLS_BLOCK;
+    Undo += CALLS_BLOCK;
+    Locals += CALLS_BLOCK;
+    Directories += CALLS_BLOCK;
+    CallStack += CALLS_BLOCK;
+    for (object_p *s = CallStack-1; s >= Stack; s--)
+        s[0] = s[-CALLS_BLOCK];
 }
 
+#ifdef DM42
+#  pragma GCC pop_options
+#endif // DM42
 
 
 // ============================================================================
@@ -1263,6 +1537,97 @@ void runtime::ret()
 //   Generation of the error functions
 //
 // ============================================================================
+
+text_p runtime::command() const
+// ----------------------------------------------------------------------------
+//   Return the name associated with the command
+// ----------------------------------------------------------------------------
+{
+    if (ErrorCommand)
+        return ErrorCommand->as_text();
+    return nullptr;
+}
+
+
+algebraic_p runtime::zero_divide(bool negative) const
+// ----------------------------------------------------------------------------
+//   Return a zero divide or an infinity constant
+// ----------------------------------------------------------------------------
+{
+    if (Settings.InfinityError())
+    {
+        rt.zero_divide_error();
+        return nullptr;
+    }
+    Settings.InfiniteResultIndicator(true);
+    algebraic_g infinity = constant::lookup("∞");
+    if (!infinity)
+        return nullptr;
+    if (Settings.NumericalConstants() || Settings.NumericalResults())
+        infinity = constant_p(+infinity)->value();
+    if (negative)
+        infinity = -infinity;
+    return infinity;
+}
+
+
+algebraic_p runtime::numerical_overflow(bool negative) const
+// ----------------------------------------------------------------------------
+//   Return a numerical overflow result
+// ----------------------------------------------------------------------------
+{
+    if (Settings.OverflowError())
+    {
+        rt.overflow_error();
+        return nullptr;
+    }
+    Settings.OverflowIndicator(true);
+    algebraic_g infinity = constant::lookup("∞");
+    if (!infinity)
+        return nullptr;
+    if (Settings.NumericalConstants() || Settings.NumericalResults())
+        infinity = constant_p(+infinity)->value();
+    if (negative)
+        infinity = -infinity;
+    return infinity;
+}
+
+
+algebraic_p runtime::numerical_underflow(bool negative) const
+// ----------------------------------------------------------------------------
+//   Return a numerical underflow result
+// ----------------------------------------------------------------------------
+{
+    if (Settings.UnderflowError())
+    {
+        if (negative)
+            rt.negative_underflow_error();
+        else
+            rt.positive_underflow_error();
+        return nullptr;
+    }
+    if (negative)
+        Settings.NegativeUnderflowIndicator(true);
+    else
+        Settings.PositiveUnderflowIndicator(true);
+    return integer::make(0);
+}
+
+
+algebraic_p runtime::undefined_result() const
+// ----------------------------------------------------------------------------
+//   Return an undefined result
+// ----------------------------------------------------------------------------
+{
+    if (Settings.UndefinedError())
+    {
+        rt.undefined_operation_error();
+        return nullptr;
+    }
+    Settings.UndefinedResultIndicator(true);
+    return constant::lookup("?");
+}
+
 
 #define ERROR(name, msg)                        \
 runtime &runtime::name##_error()                \

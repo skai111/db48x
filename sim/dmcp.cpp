@@ -30,20 +30,19 @@
 #include "dmcp.h"
 
 #include "dmcp_fonts.c"
-#include "sim-rpl.h"
-#include "sim-screen.h"
-#include "sim-window.h"
-#include "types.h"
 #include "recorder.h"
+#include "sim-dmcp.h"
+#include "target.h"
+#include "tests.h"
+#include "types.h"
 
+#include <iostream>
 #include <stdarg.h>
 #include <stdio.h>
+#include <sys/select.h>
+#include <sys/stat.h>
 #include <sys/time.h>
-#include <target.h>
 
-#include <QFileDialog>
-#include <QSettings>
-#include <iostream>
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
@@ -61,25 +60,60 @@ RECORDER(lcd_warning,   64, "Warnings from lcd/display functions");
 
 #undef ppgm_fp
 
-volatile int       lcd_needsupdate = 0;
-int                lcd_buf_cleared = 0;
-uint8_t            lcd_buffer[LCD_SCANLINE * LCD_H / 8];
-bool               shiftHeld = false;
-bool               altHeld   = false;
+extern bool          run_tests;
+extern bool          noisy_tests;
 
-static disp_stat_t t20_ds = { .f = &lib_mono_10x17 };
-static disp_stat_t t24_ds = { .f = &lib_mono_12x20 };
-static disp_stat_t fReg_ds = { .f = &lib_mono_17x25 };
-static FIL ppgm_fp_file;
+uint                 lcd_refresh_requested = 0;
+int                  lcd_buf_cleared_result = 0;
+pixword              lcd_buffer[LCD_SCANLINE * LCD_H * color::BPP / 32];
+bool                 shift_held = false;
+bool                 alt_held   = false;
+
+
+// Eliminate a really cumbersome warning
+#define DS_INIT                                 \
+    .x          = 0,                            \
+    .y          = 0,                            \
+    .ln_offs    = 0,                            \
+    .y_top_grd  = 0,                            \
+    .ya         = 0,                            \
+    .yb         = 0,                            \
+    .xspc       = 0,                            \
+    .xoffs      = 0,                            \
+    .fixed      = 0,                            \
+    .inv        = 0,                            \
+    .bgfill     = 0,                            \
+    .lnfill     = 0,                            \
+    .newln      = 0,                            \
+    .post_offs  = 0
+
+static disp_stat_t   t20_ds     = { .f = &lib_mono_10x17, DS_INIT };
+static disp_stat_t   t24_ds     = { .f = &lib_mono_12x20, DS_INIT };
+static disp_stat_t   fReg_ds    = { .f = &lib_mono_17x25, DS_INIT };
+static FIL           ppgm_fp_file;
 
 sys_sdb_t sdb =
 {
-    .ppgm_fp = &ppgm_fp_file,
-    .pds_t20 = &t20_ds,
-    .pds_t24 = &t24_ds,
-    .pds_fReg = &fReg_ds,
+    // Can't even use .field notation here because all fields are #defined!
+    /* calc_state         */ 0,
+    /* ppgm_fp            */ &ppgm_fp_file,
+    /* key_to_alpha_table */ nullptr,
+    /* run_menu_item_app  */ nullptr,
+    /* menu_line_str_app  */ nullptr,
+    /* after_fat_format   */ nullptr,
+    /* get_flag_dmy       */ nullptr,
+    /* set_flag_dmy       */ nullptr,
+    /* is_flag_clk24      */ nullptr,
+    /* set_flag_clk24     */ nullptr,
+    /* is_beep_mute       */ nullptr,
+    /* set_beep_mute      */ nullptr,
+    /* pds_t20            */ &t20_ds,
+    /* pds_t24            */ &t24_ds,
+    /* pds_fReg           */ &fReg_ds,
+    /* timer2_counter     */ nullptr,
+    /* timer3_counter     */ nullptr,
+    /* msc_end_cb         */ nullptr
 };
-
 
 void LCD_power_off(int UNUSED clear)
 {
@@ -94,23 +128,24 @@ void LCD_power_on()
 
 uint32_t read_power_voltage()
 {
-    return 2000 + sys_current_ms() % 1500;
+    return ui_battery() * (BATTERY_VMAX - BATTERY_VMIN) / 1000 + BATTERY_VMIN;
 }
 
 int get_lowbat_state()
 {
-    return read_power_voltage() < 2300;
+    return read_power_voltage() < BATTERY_VLOW;
 }
 
 int usb_powered()
 {
-    return sys_current_ms() / 10000 % 3;
+    return ui_charging();
 }
 
 int create_screenshot(int report_error)
 {
     record(dmcp_notyet,
            "create_screenshot(%d) not implemented", report_error);
+    ui_screenshot();
     return 0;
 }
 
@@ -168,10 +203,13 @@ int handle_menu(const smenu_t * menu_id, int action, int cur_line)
         bool redraw = false;
         while (!redraw)
         {
-            while (key_empty())
+            while (!test_command && key_empty())
                 sys_sleep();
+            if (test_command)
+                return 0;
 
             int key = key_pop();
+            uint wanted = 0;
             switch (key)
             {
             case KEY_UP:
@@ -188,6 +226,16 @@ int handle_menu(const smenu_t * menu_id, int action, int cur_line)
                     redraw = true;
                 }
                 break;
+            case KEY_1: wanted = 1; break;
+            case KEY_2: wanted = 2; break;
+            case KEY_3: wanted = 3; break;
+            case KEY_4: wanted = 4; break;
+            case KEY_5: wanted = 5; break;
+            case KEY_6: wanted = 6; break;
+            case KEY_7: wanted = 7; break;
+            case KEY_8: wanted = 8; break;
+            case KEY_9: wanted = 9; break;
+
             case -1:
                 // Signals that main application is exiting, leave all dialogs
             case KEY_EXIT:
@@ -200,6 +248,16 @@ int handle_menu(const smenu_t * menu_id, int action, int cur_line)
                 redraw = true;
                 break;
             }
+            if (wanted)
+            {
+                if (wanted <= count)
+                {
+                    menu_line = wanted - 1;
+                    run_menu_item_app(menu_id->items[menu_line]);
+                    redraw = true;
+                }
+            }
+
         }
     }
 
@@ -235,8 +293,10 @@ int key_pop()
 {
     if (keyrd != keywr)
     {
-        record(keys, "Key %d (rd %u wr %u)", keys[keyrd % nkeys], keyrd, keywr);
-        return keys[keyrd++ % nkeys];
+        int key = keys[keyrd++ % nkeys];
+        record(keys, "Key %d (rd %u wr %u)", key, keyrd, keywr);
+        record(tests_rpl, "Key %d (rd %u wr %u)", key, keyrd, keywr);
+        return key;
     }
     return -1;
 }
@@ -266,9 +326,9 @@ int key_push(int k)
 {
     record(keys, "Push key %d (wr %u rd %u) shifts=%+s",
            k, keywr, keyrd,
-           shiftHeld ? altHeld ? "Shift+Alt" : "Shift"
-           : altHeld ? "Alt" : "None");
-    MainWindow::theMainWindow()->pushKey(k);
+           shift_held ? alt_held ? "Shift+Alt" : "Shift"
+           : alt_held ? "Alt" : "None");
+    ui_push_key(k);
     if (keywr - keyrd < nkeys)
         keys[keywr++ % nkeys] = k;
     else
@@ -280,12 +340,12 @@ int key_push(int k)
 int read_key(int *k1, int *k2)
 {
     uint count = keywr - keyrd;
-    if (shiftHeld || altHeld)
+    if (shift_held || alt_held)
     {
         *k1 = keys[(keywr - 1) % nkeys];
         if (*k1)
         {
-            *k2 = shiftHeld ? KEY_UP : KEY_DOWN;
+            *k2 = shift_held ? KEY_UP : KEY_DOWN;
             return 2;
         }
     }
@@ -320,8 +380,8 @@ int runner_get_key(int *repeat)
 void lcd_clear_buf()
 {
     record(lcd, "Clearing buffer");
-    for (unsigned i = 0; i < sizeof(lcd_buffer); i++)
-        lcd_buffer[i] = 0xFF;
+    for (unsigned i = 0; i < sizeof(lcd_buffer) / sizeof(*lcd_buffer); i++)
+        lcd_buffer[i] = pattern::white.bits;
 }
 
 static uint32_t last_warning = 0;
@@ -338,9 +398,8 @@ inline void lcd_set_pixel(int x, int y)
         }
         return;
     }
-    unsigned bo = y * LCD_SCANLINE + (LCD_W - x);
-    if (bo/8 < sizeof(lcd_buffer))
-        lcd_buffer[bo / 8] |= (1 << (bo % 8));
+    surface s(lcd_buffer, LCD_W, LCD_H, LCD_SCANLINE);
+    s.fill(x, y, x, y, pattern::black);
 }
 
 inline void lcd_clear_pixel(int x, int y)
@@ -356,9 +415,8 @@ inline void lcd_clear_pixel(int x, int y)
         }
         return;
     }
-    unsigned bo = y * LCD_SCANLINE + (LCD_W - x);
-    if (bo/8 < sizeof(lcd_buffer))
-        lcd_buffer[bo / 8] &= ~(1 << (bo % 8));
+    surface s(lcd_buffer, LCD_W, LCD_H, LCD_SCANLINE);
+    s.fill(x, y, x, y, pattern::white);
 }
 
 inline void lcd_pixel(int x, int y, int val)
@@ -458,8 +516,8 @@ int lcd_for_calc(int what)
 }
 int lcd_get_buf_cleared()
 {
-    record(lcd, "get_buf_cleared returns %d", lcd_buf_cleared);
-    return lcd_buf_cleared;
+    record(lcd, "get_buf_cleared returns %d", lcd_buf_cleared_result);
+    return lcd_buf_cleared_result;
 }
 int lcd_lineHeight(disp_stat_t * ds)
 {
@@ -472,8 +530,8 @@ uint8_t * lcd_line_addr(int y)
         record(lcd_warning, "lcd_line_addr(%d), line is out of range", y);
         y = 0;
     }
-    unsigned offset = y * LCD_SCANLINE / 8;
-    return lcd_buffer + offset;
+    blitter::offset offset = y * LCD_SCANLINE * color::BPP / 32;
+    return (uint8_t *) (lcd_buffer + offset);
 }
 int lcd_toggleFontT(int nr)
 {
@@ -512,29 +570,43 @@ void lcd_print(disp_stat_t * ds, const char* fmt, ...)
 
 void lcd_forced_refresh()
 {
-    record(lcd, "Forced refresh");
-    lcd_needsupdate++;
+    record(lcd, "Forced refresh requested %u drawn %u",
+           lcd_refresh_requested, ui_refresh_count());
+    lcd_refresh_requested++;
+    ui_refresh();
 }
 void lcd_refresh()
 {
-    record(lcd_refresh, "Refresh %u", lcd_needsupdate);
-    lcd_needsupdate++;
+    record(lcd, "Normal refresh requested %u drawn %u",
+           lcd_refresh_requested, ui_refresh_count());
+    lcd_refresh_requested++;
+    ui_refresh();
 }
 void lcd_refresh_dma()
 {
-    record(lcd_refresh, "Refresh DMA %u", lcd_needsupdate);
-    lcd_needsupdate++;
+    record(lcd, "DMA refresh requested %u drawn %u",
+           lcd_refresh_requested, ui_refresh_count());
+    record(lcd_refresh, "Refresh DMA %u", lcd_refresh_requested);
+    lcd_refresh_requested++;
+    ui_refresh();
 }
 void lcd_refresh_wait()
 {
-    record(lcd_refresh, "Refresh wait %u", lcd_needsupdate);
-    lcd_needsupdate++;
+    record(lcd, "Wait refresh requested %u drawn %u",
+           lcd_refresh_requested, ui_refresh_count());
+    lcd_refresh_requested++;
+    ui_refresh();
 }
 void lcd_refresh_lines(int ln, int cnt)
 {
-    record(lcd_refresh, "Refresh lines %u (%d-%d) count %d",
-           lcd_needsupdate, ln, ln+cnt-1, cnt);
-    lcd_needsupdate += (ln >= 0 && cnt > 0);
+    record(lcd_refresh, "Refresh lines (%d-%d) count %d, requested %u drawn %u",
+           ln, ln+cnt-1, cnt,
+           lcd_refresh_requested, ui_refresh_count());
+    if (ln >= 0 && cnt > 0)
+    {
+        lcd_refresh_requested++;
+        ui_refresh();
+    }
 }
 void lcd_setLine(disp_stat_t * ds, int ln_nr)
 {
@@ -552,7 +624,7 @@ void lcd_setXY(disp_stat_t * ds, int x, int y)
 void lcd_set_buf_cleared(int val)
 {
     record(lcd, "Set buffer cleared %d", val);
-    lcd_buf_cleared = val;
+    lcd_buf_cleared_result = val;
 }
 void lcd_switchFont(disp_stat_t * ds, int nr)
 {
@@ -603,7 +675,7 @@ int lcd_textWidth(disp_stat_t * ds, const char* text)
     while ((c = *p++))
     {
         c -= first;
-        if (c >= 0 && c < count)
+        if (c < count)
         {
             uint off = offs[c];
             width += data[off + 0] + data[off + 2] + xspc;
@@ -748,11 +820,15 @@ void run_help_file_style(const char * help_file, user_style_fn_t *user_style_fn)
 }
 void start_buzzer_freq(uint32_t freq)
 {
-    record(dmcp_error, "start_buzzer");
+    record(dmcp, "start_buzzer %u.%03uHz", freq / 1000, freq % 1000);
+    if (!tests::running || noisy_tests)
+        ui_start_buzzer(freq);
 }
 void stop_buzzer()
 {
-    record(dmcp_notyet, "stop_buzzer not implemented");
+    record(dmcp, "stop_buzzer");
+    if (!tests::running || noisy_tests)
+        ui_stop_buzzer();
 }
 
 int sys_free_mem()
@@ -763,7 +839,7 @@ int sys_free_mem()
 
 void sys_delay(uint32_t ms_delay)
 {
-    QThread::msleep(ms_delay);
+    ui_ms_sleep(ms_delay);
 }
 
 static struct timer
@@ -774,14 +850,15 @@ static struct timer
 
 void sys_sleep()
 {
-    while (key_empty())
+    while (!test_command && key_empty())
     {
         uint32_t now = sys_current_ms();
         for (int i = 0; i < 4; i++)
             if (timers[i].enabled && int(timers[i].deadline - now) < 0)
-                return;
-        QThread::msleep(20);
+                goto done;
+        ui_ms_sleep(tests::running ? 1 : 20);
     }
+done:
     CLR_ST(STAT_SUSPENDED | STAT_OFF | STAT_PGM_END);
 }
 
@@ -822,13 +899,27 @@ void wait_for_key_press()
 {
     wait_for_key_release(-1);
     while (key_empty() || !key_pop())
+    {
+        // Avoid refreshing the screen
+        if (test_command == tests::KEYSYNC)
+        {
+            record(tests_rpl, "Blocking screen refresh from wait_for_keypress");
+            test_command = 0;
+        }
+        else if (test_command)
+        {
+            record(tests_rpl, "Waiting for key interrupted by command %u",
+                   test_command);
+            break;
+        }
         sys_sleep();
+    }
 }
+
 void wait_for_key_release(int tout)
 {
-    record(dmcp_notyet, "wait_for_key_release not implemented");
     while (!key_empty() && key_pop())
-        sys_sleep();
+       sys_sleep();
 }
 
 int file_selection_screen(const char   *title,
@@ -845,37 +936,10 @@ int file_selection_screen(const char   *title,
     if (*base_dir == '/' || *base_dir == '\\')
         base_dir++;
 
-    QString path;
-    bool done = false;
+    ret = ui_file_selector(title, base_dir, ext,
+                           sel_fn, data,
+                           disp_new, overwrite_check);
 
-    postToThread([&]{ // the functor captures parent and text by value
-        path =
-            disp_new
-            ? QFileDialog::getSaveFileName(nullptr,
-                                           title,
-                                           base_dir,
-                                           QString("*") + QString(ext),
-                                           nullptr,
-                                           overwrite_check
-                                           ? QFileDialog::Options()
-                                           : QFileDialog::DontConfirmOverwrite)
-            : QFileDialog::getOpenFileName(nullptr,
-                                           title,
-                                           base_dir,
-                                           QString("*") + QString(ext));
-        std::cout << "Selected path: " << path.toStdString() << "\n";
-        done = true;
-    });
-
-    while (!done)
-        sys_sleep();
-
-    std::cout << "Got path: " << path.toStdString() << "\n";
-    QFileInfo fi(path);
-    QString name = fi.fileName();
-    ret = sel_fn(path.toStdString().c_str(),
-                 name.toStdString().c_str(),
-                 data);
     return ret;
 }
 
@@ -944,15 +1008,14 @@ FRESULT f_unlink(const TCHAR *path)
     return FR_NOT_ENABLED;
 }
 
-
 void disp_disk_info(const char *hdr)
 {
+    ui_draw_message(hdr);
 }
 
 void set_reset_state_file(const char * str)
 {
-    QSettings settings;
-    settings.setValue("state", str);
+    ui_save_setting("state", str);
     record(dmcp, "Setting saved state: %s", str);
 }
 
@@ -960,11 +1023,8 @@ void set_reset_state_file(const char * str)
 char *get_reset_state_file()
 {
     static char result[256];
-    QSettings settings;
-    QString file = settings.value("state").toString();
     result[0] = 0;
-    if (!file.isNull())
-        strncpy(result, file.toStdString().c_str(), sizeof(result));
+    ui_read_setting("state", result, sizeof(result));
     record(dmcp, "Saved state: %+s", result);
     return result;
 }
@@ -993,15 +1053,26 @@ void rtc_read(tm_t * tm, dt_t *dt)
     struct tm utm;
     localtime_r(&now, &utm);
 
+    struct timeval tv;
+    gettimeofday(&tv, nullptr);
+
     dt->year = 1900 + utm.tm_year;
-    dt->month = utm.tm_mon;
+    dt->month = utm.tm_mon + 1;
     dt->day = utm.tm_mday;
+
 
     tm->hour = utm.tm_hour;
     tm->min = utm.tm_min;
     tm->sec = utm.tm_sec;
-    tm->csec = 0;
-    tm->dow = utm.tm_wday;
+    tm->csec = tv.tv_usec / 10000;
+    tm->dow = (utm.tm_wday + 6) % 7;
+}
+
+void rtc_write(tm_t * tm, dt_t *dt)
+{
+    record(dmcp_error, "Writing RTC %u/%u/%u %u:%u:%u (ignored)",
+           dt->day, dt->month, dt->year,
+           tm->hour, tm->min, tm->sec);
 }
 
 
@@ -1018,5 +1089,15 @@ cstring get_month_shortcut(int month)
         "Jan", "Feb", "Mar", "Apr", "May", "Jun",
         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
     };
-    return name[month];
+    return name[month - 1];
+}
+
+
+int check_create_dir(const char * dir)
+{
+    struct stat st;
+    if (stat(dir, &st) == 0)
+        if (st.st_mode & S_IFDIR)
+            return 0;
+    return mkdir(dir, 0777);
 }

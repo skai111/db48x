@@ -38,17 +38,17 @@ enum precedence
     LOWEST              = 1,    // Lowest precedence (when parsing parentheses)
     COMPLEX             = 3,    // Complex numbers
 
-    LOGICAL             = 12,    // and, or, xor
-    RELATIONAL          = 14,    // <, >, =, etc
-    ADDITIVE            = 16,    // +, -
-    MULTIPLICATIVE      = 18,    // *, /
-    POWER               = 20,    // ^
+    LOGICAL             = 10,    // and, or, xor
+    RELATIONAL          = 12,    // <, >, =, etc
+    ADDITIVE            = 14,    // +, -
+    MULTIPLICATIVE      = 16,    // *, /
+    POWER               = 28,    // ^
 
-    UNKNOWN             = 30,   // Unknown operator
-    PARENTHESES         = 40,   // Parentheses
-    FUNCTION            = 50,   // Functions, e.g. f(x)
-    FUNCTION_POWER      = 60,   // X²
-    SYMBOL              = 70,   // Names
+    FUNCTIONAL          = 30,   // Unknown operator
+    FUNCTION            = 40,   // Functions, e.g. f(x)
+    FUNCTION_POWER      = 50,   // X²
+    SYMBOL              = 60,   // Names
+    PARENTHESES         = 70,   // Parentheses
 };
 
 #endif // PRECEDENCE_H

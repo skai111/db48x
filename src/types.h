@@ -31,8 +31,6 @@
 
 #include <cstdint>
 #include <cstddef>
-#include <bid_conf.h>
-#include <bid_functions.h>
 
 
 // ============================================================================
@@ -53,13 +51,9 @@ typedef unsigned           unicode;
 // Indicate that an argument may be unused
 #define UNUSED          __attribute__((unused))
 
-// Why, oh why does the library represent FP types as integers?
-struct bid128  { BID_UINT128 value; };
-struct bid64   { BID_UINT64  value; };
-struct bid32   { BID_UINT32  value; };
+#define COMPILE_TIME_ASSERT(x)   extern int CompileTimeAssert(int[!!(x)-1])
 
-#define COMPILE_TIME_ASSERT(x)          extern int CompileTimeAssert(int[!!(x)-1])
-
+#define INLINE  __attribute__((always_inline))
 
 template <typename value_type>
 struct save
@@ -67,18 +61,19 @@ struct save
 //   Save a value and reset it to what it was on scope exit
 // ----------------------------------------------------------------------------
 {
-    save(value_type &ref, value_type value): ref(ref), value(ref)
+    save(value_type &ref, value_type value): ref(ref), saved(ref)
     {
         ref = value;
     }
     ~save()
     {
-        ref = value;
+        ref = saved;
     }
-
-private:
     value_type  &ref;
-    value_type  value;
+    value_type  saved;
 };
+
+extern void debug_printf(int row, cstring format, ...);
+extern void debug_wait(int delay);
 
 #endif // TYPES_H

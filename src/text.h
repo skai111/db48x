@@ -62,8 +62,28 @@ struct text : algebraic
             *p++ = *s++;
     }
 
+    text(id type, gcutf8 source, size_t len, size_t quotes): algebraic(type)
+    {
+        utf8 s = (utf8) source;
+        byte *p = (byte *) payload();
+        p = leb128(p, len - quotes);
+        while (len--)
+        {
+            *p = *s++;
+            if (*p != '"' || *s != '"')
+                p++;
+        }
+    }
+
     static size_t required_memory(id i, gcutf8 UNUSED str, size_t len)
     {
+        return leb128size(i) + leb128size(len) + len;
+    }
+
+    static size_t required_memory(id i, gcutf8 UNUSED str,
+                                  size_t len, size_t quotes)
+    {
+        len -= quotes;
         return leb128size(i) + leb128size(len) + len;
     }
 
@@ -103,6 +123,7 @@ struct text : algebraic
         return (utf8) p;
     }
 
+    size_t utf8_characters() const;
     text_p import() const;      // Import text containing << or >> or ->
 
     // Iterator, built in a way that is robust to garbage collection in loops
@@ -132,9 +153,9 @@ struct text : algebraic
         {
             if (index < size)
             {
-                utf8 p = first.Safe() + index;
+                utf8 p = +first + index;
                 p = utf8_next(p);
-                index = p - first.Safe();
+                index = p - +first;
             }
 
             return *this;
@@ -145,31 +166,30 @@ struct text : algebraic
             ++(*this);
             return prev;
         }
-        bool operator==(iterator other) const
+        bool operator==(const iterator &other) const
         {
-            return
-                index == other.index &&
-                first.Safe() == other.first.Safe() &&
-                size == other.size;
+            return index == other.index &&
+                   +first == +other.first &&
+                   size == other.size;
         }
-        bool operator!=(iterator other) const
+        bool operator!=(const iterator &other) const
         {
             return !(*this == other);
         }
         value_type operator*() const
         {
-            return index < size ? utf8_codepoint(first.Safe() + index) : 0;
+            return index < size ? utf8_codepoint(+first + index) : 0;
         }
 
         text_g as_text() const
         {
             if (index < size)
             {
-                utf8 p = first.Safe() + index;
+                utf8 p = +first+ index;
                 utf8 n = utf8_next(p);
                 return text::make(p, n - p);
             }
-            return text::make(utf8(""), 0);
+            return nullptr;
         }
 
     public:
@@ -207,6 +227,10 @@ struct text : algebraic
         return iterator(this, index).as_text();
     }
 
+    bool compile_and_run() const;
+    // ------------------------------------------------------------------------
+    //   Compile and run the text
+    // ------------------------------------------------------------------------
 
 public:
     OBJECT_DECL(text);
@@ -218,5 +242,9 @@ public:
 // Some operators on texts
 text_g operator+(text_r x, text_r y);
 text_g operator*(text_r x, uint y);
+
+COMMAND_DECLARE(CharToUnicode,1);
+COMMAND_DECLARE(TextToUnicode,1);
+COMMAND_DECLARE(UnicodeToText,1);
 
 #endif // TEXT_H

@@ -1,4 +1,4 @@
-# DB48X on DM42
+# DB48X: A modern implementation of RPL
 
 The DB48X project intends to rebuild and improve the user experience of the
 HP48 family of calculators, notably their "Reverse Polish Lisp" (RPL)
@@ -18,14 +18,14 @@ like the ARM-based
 [HP50 and related machines (HP49, HP48Gii, etc)](https://en.wikipedia.org/wiki/HP_49/50_series),
 and the [HP Prime](https://en.wikipedia.org/wiki/HP_Prime)
 (at least the G1, since the G2 seems a bit more locked down), maybe others.
-The basis for that work can be found in the [DB48X](../db48x) project.
+The basis for that work can be found in the [DB48X](https://github.com/c3d/db48x) project.
 
-This project was presented at [FOSDEM 2023][fosdem]
+This project was presented at [FOSDEM 2023][fosdem23] and [FOSDEM 2024][fosdem24]
 
-[fosdem]: https://fosdem.org/2023/schedule/event/reversepolishlisp/
+[fosdem23]: https://fosdem.org/2023/schedule/event/reversepolishlisp/
+[fosdem24]: https://fosdem.org/2024/schedule/event/fosdem-2024-1990-how-much-math-can-you-fit-in-700k-/
 
-[![Watch the video](https://img.youtube.com/vi/ea_ybeslGpA/maxresdefault.jpg)](https://youtu.be/ea_ybeslGpA)
-
+[![FOSDEM 2024 video](http://img.youtube.com/vi/WU5Dg1mPkl8/0.jpg)](https://www.youtube.com/watch?v=WU5Dg1mPkl8&list=PLz1qkflzABy-Cs1R07zGB8A9K5Yjolmlf "FOSDEM 2024 video")
 
 ## Why name the project DB48X?
 
@@ -63,14 +63,14 @@ patches. To run these tests, pass the `-T` option to the simulator, or hit the
 
 ## Built-in documentation
 
-The calculator features an extensive [built-in documentation](doc/) that uses
-a restricted version of [Markdown](https://www.markdownguide.org). You access
-that built-in help by [holding a key down](doc/0-Overview.md#help), or using
-the [`Help` command](doc/commands/system.md#help)
+The calculator features an extensive [built-in documentation](help/db48x.md)
+that uses a restricted version of [Markdown](https://www.markdownguide.org).
+You access that built-in help by [holding a key down](help/db48x.md#help), or
+using the [`Help` command](doc/commands/system.md#help)
 
-* [Design overview](doc/0-Overview.md#design-overview)
-* [Keyboard interaction](doc/0-Overview.md#keyboard-interaction)
-* [Soft menus](doc/0-Overview.md#soft-menus)
+* [Design overview](help/db48x.md#design-overview)
+* [Keyboard interaction](help/db48x.md#keyboard-interaction)
+* [Soft menus](help/db48x.md#soft-menus)
 
 
 ## Other documentation

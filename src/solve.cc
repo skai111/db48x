@@ -4,7 +4,7 @@
 //
 //   File Description:
 //
-//
+//     Numerical root finder
 //
 //
 //
@@ -32,7 +32,8 @@
 #include "algebraic.h"
 #include "arithmetic.h"
 #include "compare.h"
-#include "equation.h"
+#include "equations.h"
+#include "expression.h"
 #include "functions.h"
 #include "integer.h"
 #include "recorder.h"
@@ -49,42 +50,53 @@ COMMAND_BODY(Root)
 //   Numerical solver
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(3))
-        return ERROR;
-
-    object_g eq = rt.stack(2);
+    object_g eqobj    = rt.stack(2);
     object_g variable = rt.stack(1);
-    object_g guess = rt.stack(0);
-    if (!eq || !variable || !guess)
+    object_g guess    = rt.stack(0);
+    if (!eqobj || !variable || !guess)
         return ERROR;
 
     record(solve,
            "Solving %t for variable %t with guess %t",
-           eq.Safe(), variable.Safe(), guess.Safe());
+           +eqobj, +variable, +guess);
 
     // Check that we have a variable name on stack level 1 and
     // a proram or equation on level 2
     symbol_g name = variable->as_quoted<symbol>();
-    id eqty = eq->type();
-    if (eqty != ID_program && eqty != ID_equation)
+    id eqty = eqobj->type();
+    if (eqty == ID_equation)
+    {
+        eqobj = equation_p(+eqobj)->value();
+        if (!eqobj)
+            return ERROR;
+        eqty = eqobj->type();
+    }
+    if (eqty != ID_program && eqty != ID_expression)
         name = nullptr;
     if (!name)
     {
         rt.type_error();
         return ERROR;
     }
-    if (eqty == ID_equation)
-        eq = equation_p(eq.Safe())->as_difference_for_solve();
+    if (eqty == ID_expression)
+        eqobj = expression_p(+eqobj)->as_difference_for_solve();
 
     // Drop input parameters
     rt.drop(3);
 
+    if (!eqobj->is_program())
+    {
+        rt.invalid_equation_error();
+        return ERROR;
+    }
+
     // Actual solving
+    program_g eq = program_p(+eqobj);
     if (algebraic_g x = solve(eq, name, guess))
     {
         size_t nlen = 0;
         gcutf8 ntxt = name->value(&nlen);
-        object_g top = tag::make(ntxt, nlen, x.Safe());
+        object_g top = tag::make(ntxt, nlen, +x);
         if (rt.push(top))
             return rt.error() ? ERROR : OK;
     }
@@ -94,7 +106,7 @@ COMMAND_BODY(Root)
 
 
 
-algebraic_p solve(object_g eq, symbol_g name, object_g guess)
+algebraic_p solve(program_g eq, symbol_g name, object_g guess)
 // ----------------------------------------------------------------------------
 //   The core of the solver
 // ----------------------------------------------------------------------------
@@ -105,8 +117,8 @@ algebraic_p solve(object_g eq, symbol_g name, object_g guess)
     object::id gty = guess->type();
     if (object::is_real(gty) || object::is_complex(gty))
     {
-        lx = algebraic_p(guess.Safe());
-        hx = algebraic_p(guess.Safe());
+        lx = algebraic_p(+guess);
+        hx = algebraic_p(+guess);
         y = integer::make(1000);
         hx = hx->is_zero() ? inv::run(y) : hx + hx / y;
     }
@@ -118,24 +130,26 @@ algebraic_p solve(object_g eq, symbol_g name, object_g guess)
             return nullptr;
     }
     x = lx;
-    record(solve, "Initial range %t-%t", lx.Safe(), hx.Safe());
+    record(solve, "Initial range %t-%t", +lx, +hx);
+
+    // We will run programs, do not save stack, etc.
+    settings::PrepareForProgramEvaluation wilLRunPrograms;
 
     // Set independent variable
-    save<symbol_g *> iref(equation::independent, &name);
-    int              prec = -Settings.solveprec;
-    algebraic_g      eps = rt.make<decimal128>(object::ID_decimal128,
-                                               prec, true);
+    save<symbol_g *> iref(expression::independent, &name);
+    int              prec = Settings.SolverPrecision();
+    algebraic_g      eps = decimal::make(1, -prec);
 
     bool is_constant = true;
     bool is_valid = false;
-    uint max = Settings.maxsolve;
+    uint max = Settings.SolverIterations();
     for (uint i = 0; i < max && !program::interrupted(); i++)
     {
         bool           jitter = false;
 
         // Evaluate equation
         y = algebraic::evaluate_function(eq, x);
-        record(solve, "[%u] x=%t y=%t", i, x.Safe(), y.Safe());
+        record(solve, "[%u] x=%t y=%t", i, +x, +y);
         if (!y)
         {
             // Error on last function evaluation, try again
@@ -153,7 +167,7 @@ algebraic_p solve(object_g eq, symbol_g name, object_g guess)
             if (y->is_zero() || smaller_magnitude(y, eps))
             {
                 record(solve, "[%u] Solution=%t value=%t",
-                       i, x.Safe(), y.Safe());
+                       i, +x, +y);
                 return x;
             }
 
@@ -225,12 +239,12 @@ algebraic_p solve(object_g eq, symbol_g name, object_g guess)
                     if ((ly * hy)->is_negative(false))
                     {
                         record(solve, "[%u] Cross solution=%t value=%t",
-                               i, x.Safe(), y.Safe());
+                               i, +x, +y);
                     }
                     else
                     {
                         record(solve, "[%u] Minimum=%t value=%t",
-                               i, x.Safe(), y.Safe());
+                               i, +x, +y);
                         rt.no_solution_error();
                     }
                     return x;
@@ -243,34 +257,28 @@ algebraic_p solve(object_g eq, symbol_g name, object_g guess)
                 {
                     record(solve,
                            "[%u] unmoving %t between %t and %t",
-                           hy.Safe(), lx.Safe(), hx.Safe());
+                           +hy, +lx, +hx);
                     jitter = true;
                 }
                 else
                 {
                     record(solve, "[%u] Moving to %t - %t / %t",
-                           i, lx.Safe(), dy.Safe(), dx.Safe());
+                           i, +lx, +dy, +dx);
                     is_constant = false;
                     x = lx - y * dx / dy;
                 }
             }
 
             // Check if there are unresolved symbols
-            if (x->is_strictly_symbolic())
+            if (x->is_symbolic())
             {
                 rt.invalid_function_error();
                 return x;
             }
 
             // If we are starting to use really big numbers, approximate
-            if (x->is_big())
-            {
-                if (!algebraic::to_decimal(x))
-                {
-                    rt.invalid_function_error();
-                    return x;
-                }
-            }
+            if (!algebraic::to_decimal_if_big(x))
+                return x;
         }
 
         // If we have some issue improving things, shake it a bit
@@ -280,7 +288,7 @@ algebraic_p solve(object_g eq, symbol_g name, object_g guess)
             if (x->is_complex())
                 dx = polar::make(integer::make(997 * s * i),
                                  integer::make(421 * s * i * i),
-                                 settings::DEGREES);
+                                 object::ID_Deg);
             else
                 dx = integer::make(0x1081 * s * i);
             dx = dx * eps;
@@ -290,12 +298,12 @@ algebraic_p solve(object_g eq, symbol_g name, object_g guess)
                 x = x + x * dx;
             if (!x)
                 return nullptr;
-            record(solve, "Jitter x=%t", x.Safe());
+            record(solve, "Jitter x=%t", +x);
         }
     }
 
     record(solve, "Exited after too many loops, x=%t y=%t lx=%t ly=%t",
-           x.Safe(), y.Safe(), lx.Safe(), ly.Safe());
+           +x, +y, +lx, +ly);
 
     if (!is_valid)
         rt.invalid_function_error();

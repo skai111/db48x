@@ -32,14 +32,13 @@
 #include "command.h"
 #include "compare.h"
 #include "conditionals.h"
-#include "decimal-32.h"
-#include "decimal-64.h"
-#include "decimal128.h"
+#include "decimal.h"
 #include "integer.h"
 #include "locals.h"
 #include "parser.h"
 #include "renderer.h"
 #include "runtime.h"
+#include "types.h"
 #include "user_interface.h"
 #include "utf8.h"
 
@@ -50,6 +49,8 @@
 RECORDER(loop, 16, "Loops");
 RECORDER(loop_error, 16, "Errors processing loops");
 
+// The payload(o) optimization won't work otherwise
+COMPILE_TIME_ASSERT((object::ID_DoUntil < 128) == (object::ID_ForStep < 128));
 
 
 SIZE_BODY(loop)
@@ -83,6 +84,31 @@ loop::loop(id type, object_g body, symbol_g name)
 }
 
 
+object::result loop::evaluate_condition(id type, bool (runtime::*method)(bool))
+// ----------------------------------------------------------------------------
+//   Evaluate the stack condition and call runtime method
+// ----------------------------------------------------------------------------
+{
+    if (object_p cond = rt.pop())
+    {
+        // Evaluate expressions in conditionals
+        if (cond->is_program())
+        {
+            if (program::defer(type) && program::run_program(cond) == OK)
+                return OK;
+        }
+        else
+        {
+            int truth = cond->as_truth(true);
+            if (truth >= 0)
+                if ((rt.*method)(truth))
+                    return OK;
+        }
+    }
+    return ERROR;
+}
+
+
 SIZE_BODY(conditional_loop)
 // ----------------------------------------------------------------------------
 //   Compute size for a conditional loop
@@ -104,25 +130,6 @@ conditional_loop::conditional_loop(id type, object_g first, object_g second)
     byte *p = (byte *) payload() + fsize;
     size_t ssize = second->size();
     memmove(p, byte_p(second), ssize);
-}
-
-
-
-object::result conditional_loop::condition(bool &value)
-// ----------------------------------------------------------------------------
-//   Check if the stack is a true condition
-// ----------------------------------------------------------------------------
-{
-    if (object_p cond = rt.pop())
-    {
-        int truth = cond->as_truth(true);
-        if (truth >= 0)
-        {
-            value = (bool) truth;
-            return OK;
-        }
-    }
-    return ERROR;
 }
 
 
@@ -172,11 +179,12 @@ object::result loop::object_parser(parser  &p,
             }
 
             // Check if we have the separator
-            size_t remaining = max - size_t(utf8(src) - utf8(p.source));
-            if (len <= remaining
+            size_t   done   = utf8(src) - utf8(p.source);
+            size_t   length = max > done ? max - done : 0;
+            if (len <= length
                 && strncasecmp(cstring(utf8(src)), sep, len) == 0
-                && (len >= remaining ||
-                    command::is_separator(utf8(src) + len)))
+                && (len >= length ||
+                    is_separator(utf8(src) + len)))
             {
                 if (loopvar && sep != open)
                 {
@@ -196,10 +204,10 @@ object::result loop::object_parser(parser  &p,
             if (sep == close1 && close2)
             {
                 size_t len2 = strlen(close2);
-                if (len2 <= remaining
+                if (len2 <= length
                     && strncasecmp(cstring(utf8(src)), close2, len2) == 0
-                    && (len2 >= remaining ||
-                        command::is_separator(utf8(src) + len2)))
+                    && (len2 >= length ||
+                        is_separator(utf8(src) + len2)))
                 {
                     if (loopvar && sep != open)
                     {
@@ -215,8 +223,8 @@ object::result loop::object_parser(parser  &p,
             }
 
             // Parse an object
-            size_t   done   = utf8(src) - utf8(p.source);
-            size_t   length = max > done ? max - done : 0;
+            done   = utf8(src) - utf8(p.source);
+            length = max > done ? max - done : 0;
             object_g obj    = object::parse(src, length);
             if (!obj)
                 return ERROR;
@@ -336,37 +344,43 @@ intptr_t loop::object_renderer(renderer &r,
     // Isolate condition and body
     object_g first  = object_p(p);
     object_g second = middle ? first->skip() : nullptr;
-    auto     format = Settings.command_fmt;
+    auto     format = Settings.CommandDisplayMode();
 
     // Write the header, e.g. "DO"
-    r.put('\n');
+    r.wantCR();
     r.put(format, utf8(open));
 
     // Render name if any
     if (name)
     {
-        r.put(' ');
+        r.wantSpace();
         r.put(name, namesz);
     }
 
     // Ident condition or first body
     r.indent();
+    r.wantCR();
 
     // Emit the first object (e.g. condition in do-until)
     first->render(r);
+    r.wantCR();
 
     // Emit the second object if there is one
     if (middle)
     {
         // Emit separator after condition
         r.unindent();
+        r.wantCR();
         r.put(format, utf8(middle));
         r.indent();
+        r.wantCR();
         second->render(r);
+        r.wantCR();
     }
 
     // Emit closing separator
     r.unindent();
+    r.wantCR();
     r.put(format, utf8(close));
     r.wantCR();
 
@@ -407,7 +421,7 @@ INSERT_BODY(DoUntil)
 //   Insert a do-until loop in the editor
 // ----------------------------------------------------------------------------
 {
-    return ui.edit(utf8("do  until  end"), ui.PROGRAM, 3);
+    return ui.edit(utf8("do \t until  end"), ui.PROGRAM);
 }
 
 
@@ -416,26 +430,27 @@ EVAL_BODY(DoUntil)
 //   Evaluate a do..until..end loop
 // ----------------------------------------------------------------------------
 //   In this loop, the body comes first
+//   We evaluate it by pushing the following on the call stack:
+//   - The loop object (which may be used for repetition)
+//   - A 'conditional' object
+//   - The condition (which will be evaluated after the body)
+//   - The body (which will evaluate next)
+//
+// the condition, then the body for evaluation,
+//   which causes the body to be ev
 {
-    byte    *p    = (byte *) o->payload();
+    byte    *p    = (byte *) payload(o);
     object_g body = object_p(p);
     object_g cond = body->skip();
-    result   r    = OK;
 
-    while (!interrupted() && r == OK)
-    {
-        r = body->evaluate();
-        if (r != OK)
-            break;
-        r = cond->evaluate();
-        if (r != OK)
-            break;
-        bool test = false;
-        r = o->condition(test);
-        if (r != OK || test)
-            break;
-    }
-    return r;
+    // We loop until the condition becomes true
+    if (rt.run_conditionals(nullptr, o) &&
+        defer(ID_conditional)           &&
+        cond->defer()                   &&
+        body->defer())
+        return OK;
+
+    return ERROR;
 }
 
 
@@ -471,7 +486,7 @@ INSERT_BODY(WhileRepeat)
 //   Insert a while loop in the editor
 // ----------------------------------------------------------------------------
 {
-    return ui.edit(utf8("while  repeat  end"), ui.PROGRAM, 6);
+    return ui.edit(utf8("while \t repeat  end"), ui.PROGRAM);
 }
 
 
@@ -481,23 +496,17 @@ EVAL_BODY(WhileRepeat)
 // ----------------------------------------------------------------------------
 //   In this loop, the condition comes first
 {
-    byte    *p    = (byte *) o->payload();
+    byte    *p    = (byte *) payload(o);
     object_g cond = object_p(p);
     object_g body = cond->skip();
-    result   r    = OK;
 
-    while (!interrupted() && r == OK)
-    {
-        r = cond->evaluate();
-        if (r != OK)
-            break;
-        bool test = false;
-        r = condition(test);
-        if (r != OK || !test)
-            break;
-        r = body->evaluate();
-    }
-    return r;
+    // We loop while the condition is true
+    if (rt.run_conditionals(o, body)            &&
+        defer(ID_while_conditional)             &&
+        cond->defer())
+        return OK;
+
+    return ERROR;
 }
 
 
@@ -535,166 +544,50 @@ INSERT_BODY(StartNext)
 //   Insert a start-next loop in the editor
 // ----------------------------------------------------------------------------
 {
-    return ui.edit(utf8("start  next"), ui.PROGRAM, 6);
+    return ui.edit(utf8("start \t next"), ui.PROGRAM);
 }
 
 
-object::result loop::counted(object_g body, bool stepping, bool named)
+static object::result counted_loop(object::id type, object_p o)
 // ----------------------------------------------------------------------------
-//   Evaluate a counted loop
+//   Place the correct loop on the run stack
 // ----------------------------------------------------------------------------
 {
-    object::result r      = object::OK;
-    object_p       finish = rt.stack(0);
-    object_p       start  = rt.stack(1);
+    byte    *p    = (byte *) object::payload(o);
 
-    // If stack is empty, exit
-    if (!start || !finish)
-        return ERROR;
-    rt.drop(2);
+    // Fetch loop initial and last steps
+    object_g last  = rt.pop();
+    object_g first = rt.pop();
 
-    // Negative integer or real value needed
-    algebraic_p astep   = nullptr;
-    bool        skip    = false;
-
-    // Check that we have integers
-    integer_p ifinish = finish->as<integer>();
-    integer_p istart = start->as<integer>();
-    if (istart && ifinish)
+    // Check if we need a local variable
+    if (type >= object::ID_for_next_conditional)
     {
-        // We have an integer-only loop, go the fast route
-        ularge incr = 1;
-        ularge cnt  = istart->value<ularge>();
-        ularge last = ifinish->value<ularge>();
+        // For debugging or conversion to text, ensure we track names
+        locals_stack stack(p);
 
-        while (!interrupted() && r == OK)
-        {
-            // For named loops, store that in the local variable 0
-            if (named)
-            {
-                integer_g ival = integer::make(cnt);
-                rt.local(0, integer_p(ival));
-            }
+        // Skip name
+        if (p[0] != 1)
+            record(loop_error, "Evaluating for-next loop with %u locals", p[0]);
+        p += 1;
+        size_t namesz = leb128<size_t>(p);
+        p += namesz;
 
-            r = body->evaluate();
-            if (r != OK)
-                break;
+        // Get start value as local
+        if (!rt.push(first))
+            return object::ERROR;
+        rt.locals(1);
 
-            // Check if we have a 'step' variant
-            if (stepping)
-            {
-                object_p step = rt.pop();
-                if (!step)
-                    return ERROR;
-
-                // Check if the type forces us to exit the integer loop
-                id ty = step->type();
-                if (ty == ID_integer)
-                {
-                    // Normal case
-                    integer_p istep = integer_p(step);
-                    incr            = istep->value<ularge>();
-                }
-                else if (is_real(ty))
-                {
-                    // Switch to slower "algebraic" loop
-                    algebraic_g stp = algebraic_p(step);
-                    algebraic_g sta = integer::make(cnt);
-                    algebraic_g fin = integer::make(last);
-
-                    // Skip first execution since we did it here
-                    skip = true;
-
-                    // No GC beyond this point
-                    astep = stp;
-                    start = sta;
-                    finish = fin;
-                    break;
-                }
-                else
-                {
-                    rt.type_error();
-                    return ERROR;
-                }
-            }
-            cnt += incr;
-            if (cnt > last)
-                break;
-
-        }
-
-        if (!astep)
-            return r;
-    }
-    else if (start->is_real() && finish->is_real())
-    {
-        // Need to be a bit careful with GC here
-        object_g    sta = start;
-        object_g    fin = finish;
-        algebraic_g stp = integer::make(1);
-        if (!stp)
-            return ERROR;
-
-        // No GC beyond this point
-        astep = stp;
-        start = sta;
-        finish = fin;
-    }
-    else
-    {
-        // Bad input, need to error out
-        rt.type_error();
-        return ERROR;
+        // Pop local after execution
+        if (!rt.run_push_data(nullptr, object_p(1)))
+            return object::ERROR;
     }
 
-    // Case where we need a slower loop
-    if (astep)
-    {
-        // Now we need GC-safe pointers
-        algebraic_g cnt       = algebraic_p(start);
-        algebraic_g last      = algebraic_p(finish);
-        algebraic_g zero      = integer::make(0);
-        algebraic_g step      = astep;
-        if (!zero)
-            return ERROR;
+    object_g body = object_p(p);
+    if (body->defer() && rt.run_push_data(first, last) &&
+        object::defer(type) && body->defer())
+        return object::OK;
 
-        while (!interrupted() && r == OK)
-        {
-            if (skip)
-            {
-                skip = false;
-            }
-            else
-            {
-                // For named loops, store that in the local variable 0
-                if (named)
-                    rt.local(0, cnt);
-
-                r = body->evaluate();
-                if (r != OK)
-                    break;
-
-                // Check if we have a 'step' variant
-                if (stepping)
-                {
-                    step = algebraic_g(algebraic_p(rt.pop()));
-                    if (!step)
-                        return ERROR;
-                }
-            }
-
-            // Increment and check end of loop
-            cnt = cnt + step;
-            bool countdown = stepping && (step < zero)->as_truth() == 1;
-            algebraic_g test = countdown ? cnt < last : cnt > last;
-            if (test->as_truth())
-                break;
-
-         }
-    }
-
-
-    return r;
+    return object::ERROR;
 }
 
 
@@ -703,9 +596,7 @@ EVAL_BODY(StartNext)
 //   Evaluate a for..next loop
 // ----------------------------------------------------------------------------
 {
-    byte    *p    = (byte *) o->payload();
-    object_p body = object_p(p);
-    return counted(body, false);
+    return counted_loop(ID_start_next_conditional, o);
 }
 
 
@@ -739,7 +630,7 @@ INSERT_BODY(StartStep)
 //   Insert a start-step loop in the editor
 // ----------------------------------------------------------------------------
 {
-    return ui.edit(utf8("start  step"), ui.PROGRAM, 6);
+    return ui.edit(utf8("start \t step"), ui.PROGRAM);
 }
 
 
@@ -748,9 +639,7 @@ EVAL_BODY(StartStep)
 //   Evaluate a for..step loop
 // ----------------------------------------------------------------------------
 {
-    byte    *p    = (byte *) o->payload();
-    object_p body = object_p(p);
-    return counted(body, true);
+    return counted_loop(ID_start_step_conditional, o);
 }
 
 
@@ -797,7 +686,7 @@ RENDER_BODY(ForNext)
 //   Renderer for for-next loop
 // ----------------------------------------------------------------------------
 {
-    locals_stack locals(o->payload());
+    locals_stack locals(payload(o));
     return o->object_renderer(r, "for", nullptr, "next", true);
 }
 
@@ -807,41 +696,7 @@ INSERT_BODY(ForNext)
 //   Insert a for-next loop in the editor
 // ----------------------------------------------------------------------------
 {
-    return ui.edit(utf8("for  next"), ui.PROGRAM, 4);
-}
-
-
-object::result ForNext::counted(object_p o, bool stepping)
-// ----------------------------------------------------------------------------
-//   Evaluate a `for` counted loop
-// ----------------------------------------------------------------------------
-{
-    byte *p = (byte *) o->payload();
-
-    // For debugging or conversion to text, ensure we track names
-    locals_stack stack(p);
-
-    // Skip name
-    if (p[0] != 1)
-        record(loop_error, "Evaluating for-next loop with %u locals", p[0]);
-    p += 1;
-    size_t namesz = leb128<size_t>(p);
-    p += namesz;
-
-    // Get start value as local
-    object_p start = rt.stack(1);
-    if (!start)
-        return ERROR;
-    if (!rt.push(start))
-        return ERROR;
-
-    // Evaluate loop itself with one local created during loop
-    object_p body = object_p(p);
-    rt.locals(1);
-    result r = loop::counted(body, stepping, true);
-    rt.unlocals(1);
-    return r;
-
+    return ui.edit(utf8("for \t next"), ui.PROGRAM);
 }
 
 
@@ -850,7 +705,7 @@ EVAL_BODY(ForNext)
 //   Evaluate a for..next loop
 // ----------------------------------------------------------------------------
 {
-    return counted(o, false);
+    return counted_loop(ID_for_next_conditional, o);
 }
 
 
@@ -875,7 +730,7 @@ RENDER_BODY(ForStep)
 //   Renderer for for-step loop
 // ----------------------------------------------------------------------------
 {
-    locals_stack locals(o->payload());
+    locals_stack locals(payload(o));
     return o->object_renderer(r, "for", nullptr, "step", true);
 }
 
@@ -885,7 +740,7 @@ INSERT_BODY(ForStep)
 //   Insert a for-step loop in the editor
 // ----------------------------------------------------------------------------
 {
-    return ui.edit(utf8("for  step"), ui.PROGRAM, 4);
+    return ui.edit(utf8("for \t step"), ui.PROGRAM);
 }
 
 
@@ -894,5 +749,150 @@ EVAL_BODY(ForStep)
 //   Evaluate a for..step loop
 // ----------------------------------------------------------------------------
 {
-    return counted(o, true);
+    return counted_loop(ID_for_step_conditional, o);
+}
+
+
+
+// ============================================================================
+//
+//   Conditional - Runtime selector for loops
+//
+// ============================================================================
+//   In order to avoid C++ stack usage, we evaluate conditional loops by
+//   pushing on the run stack the true and false loops, and selecting which
+//   branch to evaluate by evaluating `conditional`. If the stack is true,
+//   then it picks the first one pushed. Otherwise, it picks the second one.
+//   One of the two paths can be empty to terminate evaluation.
+//   It can also be the original loop to repeat
+
+PARSE_BODY(conditional)
+// ----------------------------------------------------------------------------
+//   A conditional can never be parsed
+// ----------------------------------------------------------------------------
+{
+    return SKIP;
+}
+
+
+RENDER_BODY(conditional)
+// ----------------------------------------------------------------------------
+//   Display for debugging purpose
+// ----------------------------------------------------------------------------
+{
+    r.put("<conditional>");
+    return r.size();
+}
+
+
+EVAL_BODY(conditional)
+// ----------------------------------------------------------------------------
+//  Picks which branch to choose at runtime
+// ----------------------------------------------------------------------------
+{
+    return loop::evaluate_condition(ID_conditional, &runtime::run_select);
+}
+
+
+RENDER_BODY(while_conditional)
+// ----------------------------------------------------------------------------
+//   Display for debugging purpose
+// ----------------------------------------------------------------------------
+{
+    r.put("<while-repeat>");
+    return r.size();
+}
+
+
+EVAL_BODY(while_conditional)
+// ----------------------------------------------------------------------------
+//  Picks which branch of a while loop to choose at runtime
+// ----------------------------------------------------------------------------
+{
+    return loop::evaluate_condition(ID_while_conditional,
+                                    &runtime::run_select_while);
+}
+
+
+RENDER_BODY(start_next_conditional)
+// ----------------------------------------------------------------------------
+//   Display for debugging purpose
+// ----------------------------------------------------------------------------
+{
+    r.put("<start-next>");
+    return r.size();
+}
+
+
+EVAL_BODY(start_next_conditional)
+// ----------------------------------------------------------------------------
+//  Picks which branch of a start next to choose at runtime
+// ----------------------------------------------------------------------------
+{
+    if (rt.run_select_start_step(false, false))
+        return OK;
+    return ERROR;
+}
+
+
+RENDER_BODY(start_step_conditional)
+// ----------------------------------------------------------------------------
+//   Display for debugging purpose
+// ----------------------------------------------------------------------------
+{
+    r.put("<start-step>");
+    return r.size();
+}
+
+
+EVAL_BODY(start_step_conditional)
+// ----------------------------------------------------------------------------
+//  Picks which branch of a start step to choose at runtime
+// ----------------------------------------------------------------------------
+{
+    if (rt.run_select_start_step(false, true))
+        return OK;
+    return ERROR;
+}
+
+
+RENDER_BODY(for_next_conditional)
+// ----------------------------------------------------------------------------
+//   Display for debugging purpose
+// ----------------------------------------------------------------------------
+{
+    r.put("<for-next>");
+    return r.size();
+}
+
+
+EVAL_BODY(for_next_conditional)
+// ----------------------------------------------------------------------------
+//  Picks which branch of a start next to choose at runtime
+// ----------------------------------------------------------------------------
+{
+    if (rt.run_select_start_step(true, false))
+        return OK;
+    return ERROR;
+}
+
+
+RENDER_BODY(for_step_conditional)
+// ----------------------------------------------------------------------------
+//   Display for debugging purpose
+// ----------------------------------------------------------------------------
+{
+    r.put("<for-step>");
+    return r.size();
+}
+
+
+EVAL_BODY(for_step_conditional)
+// ----------------------------------------------------------------------------
+//  Picks which branch of a start next to choose at runtime
+// ----------------------------------------------------------------------------
+{
+    if (rt.run_select_start_step(true, true))
+        return OK;
+    return ERROR;
 }

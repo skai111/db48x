@@ -8,7 +8,8 @@ The calculator has a number of user-configurable settings:
 * [Decimal separator](#decimal-separator-settings)
 * [Precision](#precision-settings)
 * [Base](#base-settings)
-* [Menus appearance](#menus-appearance)
+* [User interface](#user-interface)
+* [Compatibility](#compatibility)
 
 The current preferences can be retrieved and saved using the `Modes` command.
 
@@ -61,6 +62,27 @@ while `12 SignificantDisplay` should approximate the HP48 standard mode using
 
 Select the maximum exponent before switching to scientific notation. The default value is 9, meaning that display uses scientific notation for exponents outside of -9..9.
 
+## MinimumSignificantDigits
+
+Select the minimum number of significant digits before switching to scientific
+notation in `FIX` and `SIG` mode. The default value is `3`, meaning that at
+least 3 significant digits will be shown.
+
+A value of 0 is similar to how HP calculators before the HP Prime perform. For
+example, with `2 FIX`, the value `0.055` will display as `0.06`, and `0.0055`
+will display as `0.01`.
+
+A higher value will switch to scienfic mode to show at least the given number of
+digits. For instance, with `2 FIX`, if the value is `1`, then `0.055` will still
+display as `0.06` but `0.0055` will display as `5.50E-3`. If the value is `2`,
+then `0.055` will display as `5.5E-2`. A setting of `1` correspond to what the
+HP Prime does.
+
+A value of `-1` indicates that you do not want `FIX` mode to ever go to
+scientific notation for negative exponents. In that case, `0.00055` will display
+as `0.00`. This corresponds to how older HP calculators render numbers.
+
+
 ## TrailingDecimal
 
 Display a trailing decimal separator to distinguish decimal from integer types. With this setting, `1.0` will display as `1.`. This can be disabled with [NoTrailingDecimal](#NoTrailingDecimal).
@@ -77,6 +99,22 @@ Display the exponent in scientific mode using a fancy rendering that is visually
 ## ClassicExponent
 
 Display the exponent in scientific mode in a way reminiscent of classical HP48 calculators, for example `1.23E-4`.
+
+## MixedFractions
+
+Display fractions as mixed fractions when necessary, e.g. `3/2` will show up as `1 1/2`.
+
+## ImproperFractions
+
+Display fractions as improper fractions, e.g. `3/2` will show up as `3/2` and not `1 1/2`.
+
+## SmallFractions
+
+Show fractions using smaller characters, for example `¹²/₄₃`
+
+## BigFractions
+
+Show fractions using regular characters, for example `12/43`
 
 # Angle settings
 
@@ -108,6 +146,23 @@ Select grads as the angular unit. A full circle is 400 grads.
 Select multiples of π as the angular unit. A full circle is 2π radians,
 shown as a multiple of π.
 
+## SetAngleUnits
+
+When this setting is active, inverse trigonometric functoins `asin`, `acos` and
+`atan` return a unit value with a unit corresponding to the current `AngleMode`.
+This makes it possible to have values on the stack that preserve the angle mode
+they were computed with. The opposite setting is `NoAngleUnits`.
+
+Note that the `sin`, `cos` and `tan` will copmute their value according to the
+unit irrespective of this setting. In other words, `30_° SIN` will always give
+`0.5`, even when computed in `Rad` or `Grad` mode,
+
+## NoAngleUnits
+
+This is the opposite setting to `SetAngleUnits`. Inverse trigonometric functions
+behave like on the original HP-48 calculator, and return a numerical value that
+depends on the current angle mode.
+
 
 # Command display
 
@@ -124,7 +179,15 @@ DB48X has four command spelling modes:
 * [Lowercase](#LowerCase): Display `sto`
 * [Uppercase](#UpperCase): Display `STO`
 * [Capitalized](#Capitalized): Display `Sto`
-* [Long form](#LongForm): Display `Store`
+* [LongForm](#LongForm): Display `Store`
+
+There are four parallel settings for displaying a variable name such as `varName`:
+
+* [LowercaseNames](#LowerCaseNames): Display as `varname`
+* [UppercaseNames](#UpperCaseNames): Display as `VARNAME`
+* [CapitalizedNames](#CapitalizedNames): Display as `VarName`
+* [LongFormNames](#LongFormNames): Display as `varName`
+
 
 ## LowerCase
 
@@ -142,6 +205,22 @@ Display comands using the short form capitalized, for example `Sto`.
 
 Display comands using the long form, for example `Store`.
 
+## LowerCaseNames
+
+Display names using the short form in lower case, for example `varName` will show as `varname`.
+
+## UpperCase
+
+Display names using the short form in upper case, for example `varName` will show as `VARNAME`.
+
+## Capitalized
+
+Display names using the short form capitalized, for example `varName` will show as `VarName`.
+
+## LongForm
+
+Display names using the long form, for example `varName` will show as `varName`.
+
 # Decimal separator settings
 
 The decimal separator can be either a dot (`1.23`) or a comma (`1,23`).
@@ -158,15 +237,13 @@ Select the comma as a decimal separator, e.g.  `1,23`
 
 ## Precision
 
-Set the default computation precision, given as a number of decimal digits. For example, `7 Precision` will ensure at least 7 decimal digits for compuation, and `1.0 3 /` will compute `0.3333333` in that case.
+Set the default computation precision, given as a number of decimal digits. For
+example, `7 Precision` will ensure at least 7 decimal digits for compuation, and
+`1.0 3 /` will compute `0.3333333` in that case.
 
-In the current implementation, this selects one of three decimal formats:
-
-* The `decimal32` for up to 7 digits mantissa and an exponents up to 96
-* The `decimal64` for up to 16 digits mantissa and an exponents up to 384
-* The `decimal128` for up to 34 digits mantissa and an exponents up to 6144
-
-The intent in the long run is to allow arbitrary precision like in newRPL.
+DB48X supports an arbitrary precision for decimal numbers, limited only by
+memory and the size of built-in constants needed for the computation of
+transcendental functions.
 
 
 # Base settings
@@ -198,13 +275,24 @@ Selects base 16
 
 Select an arbitrary base for computations
 
-## StoreWordSize (STWS)
+## WordSize (STWS)
 
-Store the word size for binary computations
+Store the current [word size](#wordsize) in bits. The word size is used for
+operations on based numbers. The value must be greater than 1, and the number of
+bits is limited only by memory and performance.
 
-## WordSize (RCWS)
+## RecallWordSize (RCWS)
 
-Recall the word size for binary computations
+Return the current [word size](#wordsize) in bits.
+
+## STWS
+
+`STWS` is a compatibility spelling for the [WordSize](#wordsize) command.
+
+## RCWS
+
+`RCWS` is a compatibility spelling for the [RecallWordSize](#recallwordsize)
+command.
 
 ## MaxRewrites
 
@@ -214,15 +302,21 @@ Defines the maximum number of rewrites in an equation.
 'B+A' rewrite` can never end, since it keeps rewriting terms. This setting
 indicates how many attempts at rewriting will be done before erroring out.
 
-## MaxBigNumBits
+## MaxNumberBits
 
-Define the maxmimum number of bits for a large integer.
+Define the maxmimum number of bits for numbers.
 
 Large integer operations can take a very long time, notably when displaying them
 on the stack. With the default value of 1024 bits, you can compute `100!` but
 computing `200!` will result in an error, `Number is too big`. You can however
-compute it seting a higher value for `MaxBigNumBits`, for example
-`2048 MaxBigNumBits`.
+compute it seting a higher value for `MaxNumberBits`, for example
+`2048 MaxNumberBits`.
+
+This setting applies to integer components in a number. In other words, it
+applies separately for the numerator and denominator in a fraction, or for the
+real and imaginary part in a complex number. A complex number made of two
+fractions can therefore take up to four times the number of bits specified by
+this setting.
 
 ## ToFractionIterations (→QIterations, →FracIterations)
 
@@ -236,11 +330,12 @@ Define the maximum number of digits of precision converting a decimal value to a
 fraction. For example, `2 →FracDigits 3.1415926 →Frac` will give `355/113`.
 
 
-# Menus appearance
+# User interface
 
-Soft-key menus appearance can be customized. Menus can show on one or three
-rows, with 18 (shifted) or 6 (flat) functions per page, and there are two
-possible visual themes for the labels, rounded or square.
+Various user-interface aspects can be customized, including the appearance of
+Soft-key menus. Menus can show on one or three rows, with 18 (shifted) or 6
+(flat) functions per page, and there are two possible visual themes for the
+labels, rounded or square.
 
 ## ThreeRowsMenus
 
@@ -263,6 +358,151 @@ Display menus using rounded black or white tabs.
 
 Display menus using square white tabs.
 
+## CursorBlinkRate
+
+Set the cursor blink rate in millisecond, between 50ms (20 blinks per second)
+and 5000ms (blinking every 5 seconds).
+
+## ShowBuiltinUnits
+
+Show built-in units in the `UnitsMenu` even when a units file was loaded.
+
+## HideBuiltinUnits
+
+Hide built-in units in the `UnitsMenu` when a units file was loaded.
+The built-in units will still show up if the units file fails to load.
+
+## LinearFitSums
+
+When this setting is active, statistics functions that return sums, such as
+`ΣXY` or `ΣX²`, operate without any adjustment to the data, i.e. as if the
+fitting model in `ΣParameters` was `LinearFit`.
+
+## CurrentFitSums
+
+When this setting is active, statistics functions that return sums, such as
+`ΣXY` or `ΣX²`, will adjust their input according to the current fitting model
+in special variable `ΣParameters`, in the same way as required for
+`LinearRegression`.
+
+## DetailedTypes
+
+The `Type` command returns detailed DB48X type values, which can distinguish
+between all DB48X object types, e.g. distinguish between polar and rectangular
+objects, or the three internal representations for decimal numbers. Returned
+values are all negative, which distinguishes them from RPL standard values, and
+makes it possible to write code that accepts both the compatible and detailed
+values.
+
+This is the opposite of [CompatibleTypes](#compatibletypes).
+
+## CompatibleTypes
+
+The `Type` command returns values as close to possible to the values documented
+on page 3-262 of the HP50G advanced reference manual. This is the opposite of
+[NativeTypes](#nativetypes).
+
+
+## MultiLineResult
+
+Show the result (level 1 of the stack) using multiple lines.
+This is the opposite of [SingleLineResult](#singlelineresult).
+Other levels of the stack are controled by [MultiLineStack](#multilinestack)
+
+## SingleLineResult
+
+Show the result (level 1 of the stack) on a single line.
+This is the opposite of [MultiLineResult](#multilineresult).
+Other levels of the stack are controled by [SingleLineStack](#singlelinestack)
+
+## MultiLineStack
+
+Show the levels of the stack after the first one using multiple lines.
+This is the opposite of [SingleLineStack](#singlelinestack).
+Other levels of the stack are controled by [MultiLineResult](#multilineresult)
+
+## SingleLineStack
+
+Show the levels of the stack after the first one on a single line
+This is the opposite of [MultiLineStack](#multilinestack).
+Other levels of the stack are controled by [SingleLineResult](#singlelineresult)
+
+## GraphicResultDisplay
+
+Display the first level of the stack (result) using a graphical representations
+for objects such as expressions or matrices. Note that enabling this setting may
+increase CPU utilization and reduce battery life compared to text-only
+rendering.
+
+This is the opposite of [TextResultDisplay](#textresultdisplay)
+
+## TextResultDisplay
+
+Display the first level of the stack (result) using a text-only representations.
+
+This is the opposite of [TextResultDisplay](#textresultdisplay)
+
+## GraphicStackDisplay
+
+Display the stack levels above the first one using a graphical representations
+for objects such as expressions or matrices. Note that enabling this setting may
+increase CPU utilization and reduce battery life compared to text-only
+rendering.
+
+This is the opposite of [TextStackDisplay](#textstackdisplay)
+
+## TextStacktDisplay
+
+Display the stack levels above the first one using a text-only representations.
+
+This is the opposite of [GraphicStackDisplay](#graphicstackdisplay)
+
+## AutoScaleStack
+
+When using [graphic result display](#graphicresultdisplay), automatically scale
+down the font size in order to make stack elements fit. Enabling this setting
+may increase CPU utilization and reduce battery life compared to fixed-size
+rendering.
+
+This is the opposite of [NoStackAutoScale](#nostackautoscale).
+
+
+## NoStackAutoScale
+
+When using [graphic result display](#graphicresultdisplay), do not automatically
+scale down the font size in order to make stack elements fit.
+
+This is the opposite of [AutoScaleStack](#autoscalestack).
+
+## MaximumShowWidth (MaxW)
+
+Maximum number of horizontal pixels used to display an object with
+[Show](#show).
+
+## MaximumShowHeight (MaxH)
+
+Maximum number of vertical pixels used to display an object with [Show](#show).
+
+## EditorWrapColumn
+
+Column at which the editor will start wrapping long lines of code.
+Wrapping occurs at the end of an object, not in the middle of it.
+
+## TabWidth
+
+Width of a tab in the editor, in pixels.
+
+# Compatibility
+
+Various settings control the compatibility of DB48X with various classes of HP calculators.
+
+## NumberedVariables
+
+This flag enables numbered variables similar to what existed on earlier RPN calculators. For example, when the setting is active, `2.5 0 STO` stores the value 2.5 in numbered register `0`.
+
+## NoNumberedVariables
+
+This flag disables numbered variables, behaving closer to the way RPL calculators work. For example, when the setting is active, `2.5 0 STO` generates an `Invalid name` error.
 
 # States
 

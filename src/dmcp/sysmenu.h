@@ -32,7 +32,7 @@
 #include "types.h"
 
 extern "C" {
-#include <dmcp.h>
+#include "dmcp.h"
 }
 
 enum menu_item
@@ -42,6 +42,7 @@ enum menu_item
 {
     MI_DB48_SETTINGS = 1,       // Application settings
     MI_DB48_ABOUT,              // Display the "About" dialog
+    MI_DB48_FLASH,              // Silent flash for beep
 
     MI_48STATE,                 // Menu for 48 state load and save
     MI_48STATE_CLEAN,           // Restart with a clean state
@@ -78,5 +79,10 @@ void                  power_off();
 void                  system_setup();
 void                  refresh_dirty();
 void                  redraw_lcd(bool force);
+
+#if SIMULATOR
+void                  process_test_key(int key);
+void                  process_test_commands();
+#endif
 
 #endif // SYSMENU_H

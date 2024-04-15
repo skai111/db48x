@@ -83,11 +83,13 @@ struct fraction : algebraic
     bignum_g denominator() const;
     integer_g numerator(int) const;
     integer_g denominator(int) const;
+    ularge numerator_value() const;
+    ularge denominator_value() const;
 
     bool is_zero() const { return numerator()->is_zero(); }
     bool is_one()  const { return (numerator() - denominator())->is_zero(); }
 
-    uint32_t as_uint32() const
+    ularge as_unsigned() const
     {
         return numerator()->value<ularge>() / denominator()->value<ularge>();
     }
@@ -100,6 +102,7 @@ public:
     HELP_DECL(fraction);
     EVAL_DECL(fraction);
     RENDER_DECL(fraction);
+    GRAPH_DECL(fraction);
     PREC_DECL(MULTIPLICATIVE);
 };
 
@@ -145,7 +148,7 @@ struct big_fraction : fraction
     bignum_g numerator() const;
     bignum_g denominator() const;
 
-    uint32_t as_uint32() const
+    ularge as_unsigned() const
     {
         return numerator()->value<ularge>() / denominator()->value<ularge>();
     }

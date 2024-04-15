@@ -31,10 +31,12 @@
 
 #include "file.h"
 #include "runtime.h"
+#include "settings.h"
 
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <wctype.h>
 
 renderer::~renderer()
@@ -47,50 +49,98 @@ renderer::~renderer()
 }
 
 
+bool renderer::put(unicode code)
+// ----------------------------------------------------------------------------
+//   Render a unicode character
+// ----------------------------------------------------------------------------
+{
+    byte buffer[4];
+    size_t rendered = utf8_encode(code, buffer);
+    return put(buffer, rendered);
+}
+
+
+bool renderer::put(cstring s)
+// ----------------------------------------------------------------------------
+//   Put a null-terminated string
+// ----------------------------------------------------------------------------
+{
+    for (char c = *s++; c; c = *s++)
+        if (!put(c))
+            return false;
+    return true;
+}
+
+
+bool renderer::put(cstring s, size_t len)
+// ----------------------------------------------------------------------------
+//   Put a length-based string
+// ----------------------------------------------------------------------------
+{
+    for (size_t i = 0; i < len; i++)
+        if (!put(s[i]))
+            return false;
+    return true;
+}
+
+
 bool renderer::put(char c)
 // ----------------------------------------------------------------------------
 //   Write a single character
 // ----------------------------------------------------------------------------
 {
-    if (sign)
-    {
-        sign = false;
-        if (c != '-' && c != '+')
-            put('+');
-    }
-
     if (written >= length)
         return false;
 
+    // Check if this is a space or \n
+    bool spc = isspace(c);
+    bool cr  = c == '\n';
 
-    // Render flat for stack display: collect all spaces in one
-    if (flat)
+    // If not inside a text, check whitespace formatting
+    if (!txt)
     {
-        if (isspace(c))
+        // Render flat for stack display: collect all spaces in one
+        if (stk && !mlstk)
         {
-            if (space || cr)
+            if (spc)
+            {
+                if (gotSpace || gotCR)
+                    return true;
+                c = ' ';
+            }
+            gotSpace = spc;
+        }
+
+        if (spc && !cr && edit)
+            if (uint maxcol = Settings.EditorWrapColumn())
+                if (column > maxcol)
+                    needCR = true;;
+
+        // Check if we need ot emit a CR
+        if (needCR)
+        {
+            needCR = false;
+            if (!put('\n'))
+                return false;
+
+            // Do not emit a space right after a \n
+            if (spc)
                 return true;
-            c = ' ';
-            space = true;
         }
-        else
+
+        // Check if we need to emit a space
+        if (needSpace)
         {
-            space = false;
+            if (spc && !cr)
+                return true;
+
+            needSpace = false;
+            if (!cr && !put(' '))
+                return false;
         }
     }
-    if (c == ' ' && (cr || nl))
-    {
-        cr = false;
-        return true;
-    }
 
-    if (!isspace(c) && nl)
-    {
-        nl = false;
-        if (!put('\n'))
-            return false;
-    }
-
+    // Actually write the target character
     if (saving)
     {
         saving->put(c);
@@ -108,19 +158,25 @@ bool renderer::put(char c)
         *p = c;
         written++;
     }
-    if (c == '\n')
+
+    if (cr)
     {
-        nl = false;
+        needCR = false;
+        needSpace = false;
+        column = 0;
         if (!txt)
+        {
             for (uint i = 0; i < tabs; i++)
                 if (!put('\t'))
                     return false;
-        cr = true;
+        }
     }
-    else if (!isspace(c))
+    else
     {
-        cr = false;
+        column++;
     }
+    gotCR = cr;
+    gotSpace = spc;
 
     if (c == '"')
         txt = !txt;
@@ -128,33 +184,67 @@ bool renderer::put(char c)
 }
 
 
-bool renderer::put(settings::commands format, utf8 text)
+static unicode db48x_to_lower(unicode cp)
+// ----------------------------------------------------------------------------
+//   Case conversion to lowercase ignoring special DB48X characters
+// ----------------------------------------------------------------------------
+{
+    if (cp == L'Σ' || cp == L'∏' || cp == L'∆')
+        return cp;
+    return towlower(cp);
+}
+
+
+static unicode db48x_to_upper(unicode cp)
+// ----------------------------------------------------------------------------
+//   Case conversion to uppercase ignoring special DB48X characters
+// ----------------------------------------------------------------------------
+{
+    if (cp == L'∂' || cp ==  L'ρ' || cp == L'π' ||
+        cp == L'μ' || cp == L'θ' || cp == L'ε')
+        return cp;
+    return towupper(cp);
+}
+
+
+bool renderer::put(object::id format, utf8 text, size_t len)
 // ----------------------------------------------------------------------------
 //   Render a command with proper capitalization
 // ----------------------------------------------------------------------------
 {
     bool result = true;
+
+    if (edit)
+        if (utf8_codepoint(text) == settings::SPACE_UNIT)
+            return put('_');
+
     switch(format)
     {
-    case settings::commands::LOWERCASE:
-        for (utf8 s = text; *s; s = utf8_next(s))
-            result = put(unicode(towlower(utf8_codepoint(s))));
+    case object::ID_LowerCaseNames:
+    case object::ID_LowerCase:
+        for (utf8 s = text; size_t(s - text) < len &&  *s; s = utf8_next(s))
+            result = put(unicode(db48x_to_lower(utf8_codepoint(s))));
         break;
 
-    case settings::commands::UPPERCASE:
-        for (utf8 s = text; *s; s = utf8_next(s))
-            result = put(unicode(towupper(utf8_codepoint(s))));
+    case object::ID_UpperCaseNames:
+    case object::ID_UpperCase:
+
+        for (utf8 s = text; size_t(s - text) < len && *s; s = utf8_next(s))
+            result = put(unicode(db48x_to_upper(utf8_codepoint(s))));
         break;
 
-    case settings::commands::CAPITALIZED:
-        for (utf8 s = text; *s; s = utf8_next(s))
+    case object::ID_CapitalizedNames:
+    case object::ID_Capitalized:
+        for (utf8 s = text; size_t(s - text) < len &&  *s; s = utf8_next(s))
             result = put(unicode(s == text
-                                 ? towupper(utf8_codepoint(s))
-                                 : towlower(utf8_codepoint(s))));
+                                 ? db48x_to_upper(utf8_codepoint(s))
+                                 : utf8_codepoint(s)));
         break;
 
-    case settings::commands::LONG_FORM:
-        for (cstring p = cstring(text); *p; p++)
+    default:
+    case object::ID_LongFormNames:
+    case object::ID_LongForm:
+        for (cstring p = cstring(text); size_t(utf8(p) - text) < len && *p; p++)
             result = put(*p);
         break;
     }
@@ -163,71 +253,53 @@ bool renderer::put(settings::commands format, utf8 text)
 }
 
 
-
 size_t renderer::printf(const char *format, ...)
 // ----------------------------------------------------------------------------
 //   Write a formatted string
 // ----------------------------------------------------------------------------
 {
-    if (saving)
+    if (written >= length)
+        return 0;
+
+    // Write in the scratchpad
+    char buf[80];
+    va_list va;
+    va_start(va, format);
+    size_t size = vsnprintf(buf, sizeof(buf), format, va);
+    va_end(va);
+
+    if (size < sizeof(buf))
     {
-        va_list va;
-        va_start(va, format);
-        char buf[80];
-        size_t remaining = length - written;
-        if (remaining > sizeof(buf))
-            remaining = sizeof(buf);
-        int size = vsnprintf(buf, remaining, format, va);
-        va_end(va);
-        if (size > 0)
-            if (saving->write(buf, size))
-                written += size;
+        // Common case: it fits in 80-bytes buffer, write directly
+        put(buf, size);
         return size;
     }
-    else if (target)
-    {
-        // Fixed target: write directly there
-        if (written >= length)
-            return 0;
 
-        va_list va;
-        va_start(va, format);
-        size_t remaining = length - written;
-        size_t size = vsnprintf(target + written, remaining, format, va);
-        va_end(va);
-        written += size;
+    size_t max = length - written;
+    if (max > size)
+        max = size;
+    byte *p = rt.allocate(max);
+    if (!p)
+        return 0;
+
+    va_start(va, format);
+    size = vsnprintf((char *) p, max, format, va);
+    va_end(va);
+
+    if (max > size)
+        max = size;
+
+    // If writing to some specific target, move data there
+    if (saving || target)
+    {
+        put((char *) p, max);
+        rt.free(max);
         return size;
     }
-    else
-    {
-        // Write in the scratchpad
-        char buf[32];
-        va_list va;
-        va_start(va, format);
-        size_t size = vsnprintf(buf, sizeof(buf), format, va);
-        va_end(va);
 
-        // Check if we can allocate enough for the output
-        byte *p = rt.allocate(size);
-        if (!p)
-            return 0;
-
-        if (size < sizeof(buf))
-        {
-            // Common case: it fits in 32-bytes buffer, allocate directly
-            memcpy(p, buf, size);
-        }
-        else
-        {
-            // Uncommon case: re-run vsnprintf in the allocated buffer
-            va_list va;
-            va_start(va, format);
-            size = vsnprintf((char *) p, size, format, va);
-            va_end(va);
-        }
-        written += size;
-        return size;
-    }
+    // Just update the pointer (this is a bit wrong for \n or anything in there)
+    written += max;
+    return size;
 }
 
 

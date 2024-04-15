@@ -27,37 +27,48 @@
 //   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // ****************************************************************************
 
-#include <QtGui>
-#include <QtCore>
-#include <QFileDialog>
-#include <QFile>
-#include <QFileInfo>
-#include <QMessageBox>
-#include <QKeyEvent>
-#include <QStandardPaths>
-
-#include <dmcp.h>
-#include <target.h>
-
 #include "sim-window.h"
-#include "sim-rpl.h"
-#include "ui_sim-window.h"
-#include "recorder.h"
 
+#include "dmcp.h"
+#include "recorder.h"
+#include "sim-dmcp.h"
+#include "sim-rpl.h"
+#include "target.h"
+#include "tests.h"
+#include "ui_sim-window.h"
+
+#include <iostream>
+#include <QAudioDevice>
+#include <QAudioFormat>
+#include <QAudioOutput>
+#include <QAudioSink>
+#include <QFile>
+#include <QFileDialog>
+#include <QFileInfo>
+#include <QKeyEvent>
+#include <QMediaDevices>
+#include <QMessageBox>
+#include <QStandardPaths>
+#include <QtCore>
+#include <QtGui>
+#include <QtMath>
 
 RECORDER(sim_keys, 16, "Recorder keys from the simulator");
+RECORDER(sim_audio, 16, "Recorder keys from the simulator");
 
 extern bool run_tests;
 extern bool db48x_keyboard;
-extern bool shiftHeld;
-extern bool altHeld;
+extern bool shift_held;
+extern bool alt_held;
 MainWindow *MainWindow::mainWindow = nullptr;
+qreal MainWindow::devicePixelRatio = 1.0;
 
 MainWindow::MainWindow(QWidget *parent)
 // ----------------------------------------------------------------------------
 //    The main window of the simulator
 // ----------------------------------------------------------------------------
-    : QMainWindow(parent), ui(), rpl(this), tests(this), highlight()
+    : QMainWindow(parent), ui(), rpl(this), tests(this), highlight(),
+      devices(new QMediaDevices(this)), generator(), audio()
 {
     mainWindow = this;
 
@@ -71,9 +82,13 @@ MainWindow::MainWindow(QWidget *parent)
     ui.screen->setAttribute(Qt::WA_AcceptTouchEvents);
     ui.screen->installEventFilter(this);
     if (db48x_keyboard)
-        ui.keyboard->setStyleSheet("border-image: url(:/bitmap/keyboard-db48x.png) 0 0 0 0 stretch stretch;");
+        ui.keyboard->setStyleSheet("border-image: "
+                                   "url(:/bitmap/keyboard-db48x.png) "
+                                   "0 0 0 0 stretch stretch;");
     else
-        ui.keyboard->setStyleSheet("border-image: url(:/bitmap/keyboard.png) 0 0 0 0 stretch stretch;");
+        ui.keyboard->setStyleSheet("border-image: "
+                                   "url(:/bitmap/keyboard.png) "
+                                   "0 0 0 0 stretch stretch;");
 
     highlight = new Highlight(ui.keyboard);
     highlight->setGeometry(0,0,0,0);
@@ -85,12 +100,20 @@ MainWindow::MainWindow(QWidget *parent)
                      highlight, SLOT(keyResizeSlot(const QRect &)));
 
     qreal dpratio = qApp->primaryScreen()->devicePixelRatio();
-    resize(210 * dpratio, 390 * dpratio);
+    dpratio *= devicePixelRatio;
+    resize(210 * dpratio, 370 * dpratio);
+
+    // Audio setup
+    connect(devices, &QMediaDevices::audioOutputsChanged,
+            this, &MainWindow::updateAudioDevices);
+    initializeAudio(devices->defaultAudioOutput(), 0);
 
     rpl.start();
-
     if (run_tests)
+    {
+        ui_ms_sleep(1000);      // In case we are loading a file
         tests.start();
+    }
 }
 
 MainWindow::~MainWindow()
@@ -98,7 +121,8 @@ MainWindow::~MainWindow()
 //  Destroy the main window
 // ----------------------------------------------------------------------------
 {
-    key_push(-1);
+    key_push(tests::EXIT_PGM);
+    record(sim_audio, "Deleting audio");
 }
 
 
@@ -168,6 +192,8 @@ const int keyMap[] =
     Qt::Key_F4,         KB_F4,
     Qt::Key_F5,         KB_F5,
     Qt::Key_F6,         KB_F6,
+
+    Qt::Key_F8,         KEY_SCREENSHOT,
 
     Qt::Key_0,          KB_0,
     Qt::Key_1,          KB_1,
@@ -355,30 +381,52 @@ void MainWindow::keyPressEvent(QKeyEvent * ev)
             tests.onlyCurrent = k == Qt::Key_F11;
             tests.start();
         }
+        else
+        {
+            tests.terminate();
+            tests.wait();
+            fprintf(stderr, "\n\n\nTests interrupted\n");
+        }
     }
 
     if (k == Qt::Key_F10)
     {
         db48x_keyboard = !db48x_keyboard;
-        if (db48x_keyboard)
-            ui.keyboard->setStyleSheet("border-image: url(:/bitmap/keyboard-db48x.png) 0 0 0 0 stretch stretch;");
-        else
-            ui.keyboard->setStyleSheet("border-image: url(:/bitmap/keyboard.png) 0 0 0 0 stretch stretch;");
+        cstring name = db48x_keyboard
+            ? ("border-image: url(:/bitmap/keyboard-db48x.png) "
+               "0 0 0 0 stretch stretch;")
+            : ("border-image: url(:/bitmap/keyboard.png) "
+               "0 0 0 0 stretch stretch;");
+        ui.keyboard->setStyleSheet(name);
+    }
+
+    if (k == Qt::Key_F9)
+    {
+        const int header_h = 22;
+        screenshot("screens/screenshot-", 0, header_h, LCD_W, LCD_H - header_h);
+        ev->accept();
+        return;
+    }
+
+    if (k == Qt::Key_F8)
+    {
+        key_push(tests::SAVE_PGM);
+        return;
     }
 
     if (k == Qt::Key_Shift)
     {
-        shiftHeld = true;
+        shift_held = true;
     }
     else if (k == Qt::Key_Alt)
     {
-        altHeld = true;
+        alt_held = true;
     }
     else if (k >= Qt::Key_A && k <= Qt::Key_Z)
     {
-        if (shiftHeld)
+        if (shift_held)
             key_push(KEY_UP);
-        else if (altHeld)
+        else if (alt_held)
             key_push(KEY_DOWN);
     }
 
@@ -411,9 +459,9 @@ void MainWindow::keyReleaseEvent(QKeyEvent * ev)
     int k = ev->key();
     record(sim_keys, "Key release %d", k);
     if (k == Qt::Key_Shift)
-        shiftHeld = false;
+        shift_held = false;
     else if (k == Qt::Key_Alt)
-        altHeld = false;
+        alt_held = false;
 
     for (int i = 0; keyMap[i] != 0; i += 2)
     {
@@ -489,7 +537,8 @@ bool MainWindow::eventFilter(QObject * obj, QEvent * ev)
             return true;
         }
 
-        if (ev->type() == QEvent::MouseButtonPress)
+        if (ev->type() == QEvent::MouseButtonPress ||
+            ev->type() == QEvent::MouseButtonDblClick)
         {
             QMouseEvent *me = static_cast < QMouseEvent * >(ev);
 #if QT_VERSION < 0x060000
@@ -527,4 +576,470 @@ bool MainWindow::eventFilter(QObject * obj, QEvent * ev)
     }
 
     return false;
+}
+
+
+void MainWindow::screenshot(cstring basename, int x, int y, int w, int h)
+// ----------------------------------------------------------------------------
+//   Save a simulator screenshot under the "SCREEN" directory
+// ----------------------------------------------------------------------------
+{
+    QPixmap &screen = MainWindow::theScreen();
+    QPixmap img = screen.copy(x, y, w, h);
+    QDateTime today = QDateTime::currentDateTime();
+    QString name = basename;
+    name += today.toString("yyyyMMdd-hhmmss");
+    name += ".png";
+    img.save(name, "PNG");
+}
+
+
+
+// ============================================================================
+//
+//   AudioGenerator: Generate audio output on demand
+//
+// ============================================================================
+
+AudioGenerator::AudioGenerator(const QAudioFormat &format,
+                               qint64              durationUs,
+                               uint                freq)
+// ----------------------------------------------------------------------------
+//   Constructor for the audio generator
+// ----------------------------------------------------------------------------
+    : freq(freq)
+{
+    if (format.isValid())
+        generateData(format, durationUs, freq);
+}
+
+
+void AudioGenerator::start()
+// ----------------------------------------------------------------------------
+//   Start generating samples
+// ----------------------------------------------------------------------------
+{
+    open(QIODevice::ReadOnly);
+}
+
+
+void AudioGenerator::stop()
+// ----------------------------------------------------------------------------
+//   Stop generating samples
+// ----------------------------------------------------------------------------
+{
+    pos = 0;
+    close();
+}
+
+
+template <typename Data>
+static inline void generate(char  *buffer,
+                            size_t frames,
+                            uint   channels,
+                            uint   freq,
+                            uint   sampleRate,
+                            double scale,
+                            double offset)
+// ----------------------------------------------------------------------------
+//  Generate data to a sample buffer
+// ----------------------------------------------------------------------------
+{
+    Data  *ptr  = (Data *) buffer;
+    double amp = 0.5;
+    double rate = (2 * M_PI / 1000) * freq / sampleRate;
+    scale *= amp;
+    for (size_t f = 0; f < frames; f++)
+    {
+        double x = sin(rate * (f % sampleRate));
+        // x *= sin(0.125 * rate * (f % sampleRate));
+        x = x > 0 ? 1 : -1;
+        x = x * scale + offset;
+        Data sample = Data(x);
+        for (uint c = 0; c < channels; c++)
+            *ptr++ = sample;
+    }
+}
+
+
+void AudioGenerator::generateData(const QAudioFormat &format,
+                                  qint64              durationUs,
+                                  uint                 freq)
+// ----------------------------------------------------------------------------
+//    Generating data for the samples
+// ----------------------------------------------------------------------------
+{
+    uint   frameBytes   = format.bytesPerFrame();
+    uint   channels     = format.channelCount();
+    qint64 frames       = format.framesForDuration(durationUs);
+    size_t bytes        = frames * frameBytes;
+    int    sampleRate   = format.sampleRate();
+    auto   sampleFormat = format.sampleFormat();
+
+    buffer.resize(bytes);
+    char *start = buffer.data();
+
+    switch (sampleFormat)
+    {
+    default:
+    case QAudioFormat::UInt8:
+        generate<quint8>(start, frames, channels, freq, sampleRate, 255./2, 255./2);
+        break;
+    case QAudioFormat::Int16:
+        generate<qint16>(start, frames, channels, freq, sampleRate, 32767, 0);
+        break;
+    case QAudioFormat::Int32:
+        generate<qint32>(start, frames, channels, freq, sampleRate,
+                     std::numeric_limits<qint32>::max(), 0);
+        break;
+    case QAudioFormat::Float:
+        generate<float>(start, frames, channels, freq, sampleRate, 1.0, 0.0);
+        break;
+    }
+}
+
+
+qint64 AudioGenerator::readData(char *data, qint64 len)
+// ----------------------------------------------------------------------------
+//   Read data from the buffer
+// ----------------------------------------------------------------------------
+{
+    qint64 total = 0;
+    if (!buffer.isEmpty())
+    {
+        while (len - total > 0)
+        {
+            qint64 chunk = qMin((buffer.size() - pos), len - total);
+            memcpy(data + total, buffer.constData() + pos, chunk);
+            pos = (pos + chunk) % buffer.size();
+            total += chunk;
+        }
+    }
+    return total;
+}
+
+
+qint64 AudioGenerator::writeData(const char *data, qint64 len)
+// ----------------------------------------------------------------------------
+//   We don't write data in our use case
+// ----------------------------------------------------------------------------
+{
+    Q_UNUSED(data);
+    Q_UNUSED(len);
+
+    return 0;
+}
+
+
+qint64 AudioGenerator::bytesAvailable() const
+// ----------------------------------------------------------------------------
+//   Return number of bytes available in the generator
+// ----------------------------------------------------------------------------
+{
+    return buffer.size() + QIODevice::bytesAvailable();
+}
+
+
+void MainWindow::initializeAudio(const QAudioDevice &deviceInfo, uint freq)
+// ----------------------------------------------------------------------------
+//   Audio setup for the simulator
+// ----------------------------------------------------------------------------
+{
+    QAudioFormat format = deviceInfo.preferredFormat();
+    const int    durationUs = 1000000 /* microseconds */;
+
+    if (audio)
+        audio->stop();
+    audio.reset(new QAudioSink(deviceInfo, format));
+    generator.reset(new AudioGenerator(format, durationUs, freq));
+    generator->start();
+    audio->setVolume(0);
+    audio->start(generator.data());
+}
+
+
+void MainWindow::startBuzzer(uint frequency)
+// ----------------------------------------------------------------------------
+//   Start a buzzer
+// ----------------------------------------------------------------------------
+{
+    record(sim_audio, "Start buzzer %d.%02d Hz, creating samples",
+           frequency / 100, frequency % 100);
+
+    initializeAudio(devices->defaultAudioOutput(), frequency);
+    audio->setVolume(1);
+    switch (audio->state())
+    {
+
+    case QAudio::SuspendedState:
+    case QAudio::StoppedState:
+    case QAudio::IdleState:
+        audio->resume();
+        break;
+    default:
+    case QAudio::ActiveState:
+        // no-op
+        break;
+    }
+    playing = true;
+}
+
+
+void MainWindow::stopBuzzer()
+// ----------------------------------------------------------------------------
+//   Start a buzzer
+// ----------------------------------------------------------------------------
+{
+    record(sim_audio, "Stop buzzer, audio state is %d", audio->state());
+    switch (audio->state())
+    {
+    default:
+    case QAudio::SuspendedState:
+    case QAudio::StoppedState:
+    case QAudio::IdleState:
+        // No-op
+        break;
+    case QAudio::ActiveState:
+        audio->suspend();
+        break;
+    }
+    playing = false;
+}
+
+
+void MainWindow::updateAudioDevices()
+// ----------------------------------------------------------------------------
+//   Audio devices changed, restart without changing the frequency
+// ----------------------------------------------------------------------------
+{
+    initializeAudio(devices->defaultAudioOutput(), generator->frequency());
+}
+
+
+// ============================================================================
+//
+//   Interface with DMCP and the test harness
+//
+// ============================================================================
+
+void ui_refresh()
+// ----------------------------------------------------------------------------
+//   Request a refresh of the LCD
+// ----------------------------------------------------------------------------
+{
+    SimScreen::update_pixmap();
+    postToThread([&] { SimScreen::refresh_lcd(); });
+}
+
+
+uint ui_refresh_count()
+// ----------------------------------------------------------------------------
+//   Return the number of times the display was actually udpated
+// ----------------------------------------------------------------------------
+{
+    return SimScreen::redraw_count();
+}
+
+
+void ui_screenshot()
+// ----------------------------------------------------------------------------
+//   Take a screen snapshot
+// ----------------------------------------------------------------------------
+{
+    MainWindow::screenshot();
+}
+
+
+void ui_push_key(int k)
+// ----------------------------------------------------------------------------
+//   Update display when pushing a key
+// ----------------------------------------------------------------------------
+{
+    MainWindow::theMainWindow()->pushKey(k);
+}
+
+
+void ui_ms_sleep(uint ms_delay)
+// ----------------------------------------------------------------------------
+//   Suspend the current thread for the given interval in milliseconds
+// ----------------------------------------------------------------------------
+{
+    QThread::msleep(ms_delay);
+}
+
+
+int ui_file_selector(const char *title,
+                     const char *base_dir,
+                     const char *ext,
+                     file_sel_fn callback,
+                     void       *data,
+                     int         disp_new,
+                     int         overwrite_check)
+// ----------------------------------------------------------------------------
+//  File selector function
+// ----------------------------------------------------------------------------
+{
+    QString path;
+    bool done = false;
+
+    postToThread([&]{ // the functor captures parent and text by value
+        path =
+            disp_new
+            ? QFileDialog::getSaveFileName(nullptr,
+                                           title,
+                                           base_dir,
+                                           QString("*") + QString(ext),
+                                           nullptr,
+                                           overwrite_check
+                                           ? QFileDialog::Options()
+                                           : QFileDialog::DontConfirmOverwrite)
+            : QFileDialog::getOpenFileName(nullptr,
+                                           title,
+                                           base_dir,
+                                           QString("*") + QString(ext));
+        std::cout << "Selected path: " << path.toStdString() << "\n";
+        done = true;
+    });
+
+    while (!done)
+        sys_sleep();
+
+    std::cout << "Got path: " << path.toStdString() << "\n";
+    QFileInfo fi(path);
+    QString name = fi.fileName();
+    int ret = callback(path.toStdString().c_str(),
+                       name.toStdString().c_str(),
+                       data);
+    return ret;
+}
+
+
+void ui_save_setting(const char *name, const char *value)
+// ----------------------------------------------------------------------------
+//  Save some settings
+// ----------------------------------------------------------------------------
+{
+    QSettings settings;
+    settings.setValue(name, value);
+}
+
+
+size_t ui_read_setting(const char *name, char *value, size_t maxlen)
+// ----------------------------------------------------------------------------
+//  Save some settings
+// ----------------------------------------------------------------------------
+{
+    QSettings settings;
+    QString current = settings.value(name).toString();
+    if (current.isNull())
+        return 0;
+    if (value)
+        strncpy(value, current.toStdString().c_str(), maxlen);
+    return current.length();
+}
+
+
+uint last_battery_ms = 0;
+uint battery = 1000;
+bool charging = false;
+
+uint ui_battery()
+// ----------------------------------------------------------------------------
+//   Return the battery voltage
+// ----------------------------------------------------------------------------
+{
+    uint now = sys_current_ms();
+    if (last_battery_ms < now - 1000)
+        last_battery_ms = now - 1000;
+
+    if (charging)
+    {
+        battery += (1000 - battery) * (now - last_battery_ms) / 6000;
+        if (battery >= 990)
+            charging = false;
+    }
+    else
+    {
+        battery -= (now - last_battery_ms) / 10;
+        uint v = battery * (BATTERY_VMAX - BATTERY_VMIN) / 1000 + BATTERY_VMIN;
+        if (v < BATTERY_VLOW)
+            charging = true;
+    }
+
+    last_battery_ms = now;
+    return battery;
+}
+
+
+bool ui_charging()
+// ----------------------------------------------------------------------------
+//   Return true if USB-powered or not
+// ----------------------------------------------------------------------------
+{
+    return charging;
+}
+
+
+void ui_start_buzzer(uint frequency)
+// ----------------------------------------------------------------------------
+//   Start buzzer at given frequency
+// ----------------------------------------------------------------------------
+{
+    MainWindow *main = MainWindow::theMainWindow();
+    if (main->buzzerPlaying())
+        ui_stop_buzzer();
+
+    postToThread([&] { main->startBuzzer(frequency); });
+
+    while (!main->buzzerPlaying())
+        sys_delay(20);
+}
+
+
+void ui_stop_buzzer()
+// ----------------------------------------------------------------------------
+//  Stop buzzer in simulator
+// ----------------------------------------------------------------------------
+{
+    MainWindow *main = MainWindow::theMainWindow();
+    postToThread([&] { main->stopBuzzer(); });
+    while (main->buzzerPlaying())
+        sys_delay(20);
+}
+
+
+int ui_wrap_io(file_sel_fn callback, const char *path, void *data, bool)
+// ----------------------------------------------------------------------------
+//   Wrap I/Os into thread safety / file sync
+// ----------------------------------------------------------------------------
+{
+    cstring name = path;
+    for (cstring p = path; *p; p++)
+        if (*p == '/' || *p == '\\')
+            name = p + 1;
+    return callback(path, name, data);
+}
+
+
+bool tests::image_match(cstring file, int x, int y, int w, int h, bool force)
+// ----------------------------------------------------------------------------
+//   Check if the screen matches a given file
+// ----------------------------------------------------------------------------
+{
+    QPixmap &screen = MainWindow::theScreen();
+    QPixmap img = screen.copy(x, y, w, h);
+    QPixmap data;
+    QString name = force ? "images/bad/" : "images/";
+    name += file;
+    name += ".png";
+#ifdef CONFIG_COLOR
+    name = "color-" + name;
+#endif // CONFIG_COLOR
+    QFileInfo reference(name);
+    if (force || !reference.exists() || !data.load(name, "PNG"))
+    {
+        img.save(name, "PNG");
+        return true;
+    }
+    return data.toImage() == img.toImage();
 }

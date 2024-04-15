@@ -1,4 +1,9 @@
-# Menus, Flags and System Settings
+# Flags
+
+Flags are truth value that can be controled and tested by the user.
+User flags are identified by a natural number. There are `MaxFlags` user flags (default is 128).
+System flags are identified by a settings name or a negative integer.
+
 
 ## SETLOCALE
 Change the separator symbols
@@ -8,130 +13,50 @@ Change the separator symbols
 Change the display format for numbers
 
 
-## SF
-Set a flag
+## SetFlag (SF)
 
+Set a user or system flag.
 
-## CF
-Clear a flag
+`33 SF` sets user flag 0.
+`'MixedFractions' SetFlag` enables the `MixedFractions` setting.
 
+## ClearFlag (CF)
 
-## FCTEST
-Test if a flag is clear
+Clear a user or system flag
 
+## FlipFlag
 
-## FSTEST
+Invert a user or system flag
+
+## TestFlagSet (FS?)
+
 Test if a flag is set
 
+## TestFlagClear (FC?)
 
-## FCTESTCLEAR
+Test if a flag is clear
+
+## TestFlagClearThenClear (FC?C)
+
 Test if a flag is clear, then clear it
 
+## TestFlagSetThenClear (FS?C)
 
-## FSTESTCLEAR
 Test if a flag is set, then clear it
 
+## TestFlagClearThenSet (FC?S)
 
-## TMENU
-Display the given menu on the active menu area
+Test if a flag is clear, then set it
 
+## TestFlagSetThenSet (FS?S)
 
-## TMENULST
-Display the given menu on the menu area the user used last
+Test if a flag is set, then set it
 
+## FlagsToBinary (RCLF)
 
-## TMENUOTHR
-Display the given menu on the menu are the user did not use last
-
-
-## MENUSWAP
-Swap the contents of menu areas 1 and 2
+Recall all system flags as a binary number.
 
 
-## MENUBK
-Display the previous menu on the active menu area
+## BinaryToFlags (STOF)
 
-
-## MENUBKLST
-Display the previous menu on the area the user used last
-
-
-## MENUBKOTHR
-Display the previous menu on the area the user did not use last
-
-
-## RCLMENU
-Recall the active menu
-
-
-## RCLMENULST
-Recall the menu the user used last
-
-
-## RCLMENUOTHR
-Recall the menu the user did not use last
-
-
-## DEG
-Set the angle mode flags to degrees
-
-
-## GRAD
-Set the angle mode flags to grads (gons)
-
-
-## RAD
-Set the angle mode flags to radians
-
-
-## DMS
-Set the angle mode to DMS (as DD.MMSS)
-
-
-## ASNKEY
-Assign a custom definition to a key
-
-
-## DELKEY
-Remove a custom key definition
-
-
-## STOKEYS
-Store and replace all custom key definitions
-
-
-## RCLKEYS
-Recall the list of all custom key definitions
-
-
-
-## TYPEE
-Get extended type information from an object
-
-
-## GETLOCALE
-Get the current separator symbols
-
-
-## GETNFMT
-Recall the current display format for numbers
-
-
-## RCLF
-Recall all system flags
-
-
-## STOF
-Store and replace all system flags
-
-
-## VTYPE
-Get type information on the contents of a variable
-
-
-## VTYPEE
-Get extended type information on the contents of a variable
-
-
-## FMTSTR
-Do →STR using a specific numeric format
+Store and replace all system flags from a binary number

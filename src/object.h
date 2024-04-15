@@ -53,17 +53,15 @@
 //    either as commands (performing an action when evaluated) or as data types
 //    (putting themselves on the runtime stack when evaluated).
 //
-//    All handlers must respond to a fixed number of "opcodes", which are
-//    reserved identifiers in ids.tbl. These opcodes also correspond do
-//    user-accessible commands that apply to objects. They include:
-//
-//    - EVAL:   Evaluates the object
-//    - SIZE:   Compute the size of the object
-//    - PARSE:  Try to parse an object of the type (see note)
-//    - RENDER: Render an object as text
-//    - HELP:   Return the name of the help topic associated to the object
-//
-//    Note: PARSE is the only opcode that does not take an object as user_interface
+//    Handlers are function pointers in a table that (except for `parse()`)
+//    take an object as input and process it. The most important function is
+//    `evaluate()`, which will evaluate an object like the `Evaluate` command.
+//    An important variant is `execute()`, which executes programs. That
+//    function does not call itself recursively. If it needs to call another
+//    it calls the runtime's `call()` function, so that we manage the RPL call
+//    using RPL garbage-collected memory. This is important to allow for a deep
+//    evaluation of RPL objects. Without that approach, recursive evaluation
+//    on the C++ call stack would limit us to about 40 levels of RPL calls.
 //
 //    The handler is not exactly equivalent to the user command.
 //    It may present an internal interface that is more convenient for C code.
@@ -181,10 +179,9 @@ struct object
     typedef result      (*parse_fn)(parser &p);
     typedef utf8        (*help_fn)(object_p o);
     typedef result      (*evaluate_fn)(object_p o);
-    typedef result      (*execute_fn)(object_p o);
     typedef size_t      (*render_fn)(object_p o, renderer &r);
     typedef grob_p      (*graph_fn)(object_p o, grapher &g);
-    typedef result      (*insert_fn)(object_p o, user_interface &i);
+    typedef result      (*insert_fn)(object_p o);
     typedef bool        (*menu_fn)(object_p o, menu_info &m);
     typedef unicode     (*menu_marker_fn)(object_p o);
 
@@ -193,33 +190,31 @@ struct object
     //   Operations that can be run on an object
     // ------------------------------------------------------------------------
     {
-        cstring         name;            // Basic (compatibility) name
-        cstring         fancy;           // Fancy name
-        size_fn         size;            // Compute object size in bytes
-        parse_fn        parse;           // Parse an object
-        help_fn         help;            // Return help topic
-        evaluate_fn     evaluate;        // Evaluate the object
-        execute_fn      execute;         // Execute the object
-        render_fn       render;          // Render the object as text
-        graph_fn        graph;           // Render the object as a grob
-        insert_fn       insert;          // Insert object in editor
-        menu_fn         menu;            // Build menu entries
-        menu_marker_fn  menu_marker;     // Show marker
-        uint            arity;           // Number of input arguments
-        uint            precedence;      // Precedence in equations
-        bool            is_type      :1; // Is a data type
-        bool            is_integer   :1; // Is an integer type
-        bool            is_based     :1; // Is a based integer type
-        bool            is_bignum    :1; // Is a bignum type
-        bool            is_fraction  :1; // Is a fraction type
-        bool            is_real      :1; // Is a real type (excludes based ints)
-        bool            is_decimal   :1; // Is a decimal type
-        bool            is_complex   :1; // Is a complex (but not real) type
-        bool            is_command   :1; // Is an RPL command
-        bool            is_symbolic  :1; // Is a symbol or an equation
-        bool            is_algebraic :1; // Algebraic functions (in equations)
-        bool            is_immediate :1; // Commands that execute immediately
+        size_fn         size;           // Compute object size in bytes
+        parse_fn        parse;          // Parse an object
+        help_fn         help;           // Return help topic
+        evaluate_fn     evaluate;       // Evaluate the object
+        render_fn       render;         // Render the object as text
+        graph_fn        graph;          // Render the object as a grob
+        insert_fn       insert;         // Insert object in editor
+        menu_fn         menu;           // Build menu entries
+        menu_marker_fn  menu_marker;    // Show marker
+        uint            arity;          // Number of input arguments
+        uint            precedence;     // Precedence in equations
     };
+
+
+    struct spelling
+    // ------------------------------------------------------------------------
+    //   One of the possible spellings for a commands
+    // ------------------------------------------------------------------------
+    {
+        id              type;           // Type of the command
+        cstring         name;           // Name for the command
+    };
+    static const spelling spellings[];
+    static const size_t   spelling_count;
+
 
 
     // ========================================================================
@@ -237,13 +232,18 @@ struct object
     }
 
 
+#ifdef DM42
+#  pragma GCC push_options
+#  pragma GCC optimize("-O3")
+#endif // DM42
+
     id type() const
     // ------------------------------------------------------------------------
     //   Return the type of the object
     // ------------------------------------------------------------------------
     {
         byte *ptr = (byte *) this;
-        id ty = (id) leb128<uint16_t>(ptr);
+        id ty = (id) leb128_u16(ptr);
         if (ty > NUM_IDS)
         {
             object_error(ty, this);
@@ -317,19 +317,16 @@ struct object
     //  Evaluate an object by calling the handler
     // ------------------------------------------------------------------------
     {
-        record(eval, "Evaluating %+s %p", name(), this);
+        record(eval, "Evaluating %t", this);
         return ops().evaluate(this);
     }
 
 
-    result execute() const
+    bool defer() const;
+    static bool defer(id type);
     // ------------------------------------------------------------------------
-    //   Execute the object, i.e. run programs and equations
+    //   Deferred evaluation of an object
     // ------------------------------------------------------------------------
-    {
-        record(eval, "Executing %+s %p", name(), this);
-        return ops().execute(this);
-    }
 
 
     size_t render(renderer &r) const
@@ -337,9 +334,28 @@ struct object
     //   Render the object into an existing renderer
     // ------------------------------------------------------------------------
     {
-        record(render, "Rendering %+s %p into %p", name(), this, &r);
+        record(render, "Rendering %p into %p", this, &r);
         return ops().render(this, r);
     }
+
+
+    grob_p graph(grapher &g) const
+    // ------------------------------------------------------------------------
+    //   Render the object into an existing grapher
+    // ------------------------------------------------------------------------
+    {
+        record(render, "Graphing %+s %p into %p", name(), this, &g);
+        return ops().graph(this, g);
+    }
+
+    grob_p graph() const;
+    // ------------------------------------------------------------------------
+    //   Render like for the `Show` command
+    // ------------------------------------------------------------------------
+
+#ifdef DM42
+#  pragma GCC pop_options
+#endif
 
 
     size_t render(char *output, size_t length) const;
@@ -352,16 +368,6 @@ struct object
     // ------------------------------------------------------------------------
     //   Render the object into the scratchpad, then move into the editor
     // ------------------------------------------------------------------------
-
-
-    grob_p graph(grapher &g) const
-    // ------------------------------------------------------------------------
-    //   Render the object into an existing grapher
-    // ------------------------------------------------------------------------
-    {
-        record(render, "Graphing %+s %p into %p", name(), this, &g);
-        return ops().graph(this, g);
-    }
 
 
     text_p as_text(bool edit = true, bool eq = false) const;
@@ -379,6 +385,24 @@ struct object
     }
 
 
+    program_p as_program() const
+    // ------------------------------------------------------------------------
+    //   Return the value as a program
+    // ------------------------------------------------------------------------
+    {
+        return is_program() ? program_p(this) : nullptr;
+    }
+
+
+    algebraic_p as_real() const
+    // ------------------------------------------------------------------------
+    //   Check if something is a real number
+    // ------------------------------------------------------------------------
+    {
+        return is_real() ? algebraic_p(this) : nullptr;
+    }
+
+
     grob_p as_grob() const;
     // ------------------------------------------------------------------------
     //   Return the object as a pixel graphic object
@@ -387,23 +411,38 @@ struct object
 
     uint32_t as_uint32(uint32_t def = 0, bool err = true) const;
     int32_t  as_int32 (int32_t  def = 0, bool err = true)  const;
+    uint64_t as_uint64(uint64_t def = 0, bool err = true) const;
+    int64_t  as_int64 (int64_t  def = 0, bool err = true)  const;
     // ------------------------------------------------------------------------
     //   Return the object as an integer, possibly erroring out for bad type
     // ------------------------------------------------------------------------
 
 
     object_p at(size_t index, bool err = true) const;
+    object_p at(object_p index) const;
     // ------------------------------------------------------------------------
     //   Extract a subobject at given index, works for list, array and text
     // ------------------------------------------------------------------------
 
 
-    result insert(user_interface &i) const
+    object_p at(object_p index, object_p value) const;
+    // ------------------------------------------------------------------------
+    //   Set a subobject at given index, works for list, array and text
+    // ------------------------------------------------------------------------
+
+
+    bool next_index(object_p *index) const;
+    // ------------------------------------------------------------------------
+    //   Find the next index for the current object, returns true if wraps
+    // ------------------------------------------------------------------------
+
+
+    result insert() const
     // ------------------------------------------------------------------------
     //   Insert in the editor at cursor position, with possible offset
     // ------------------------------------------------------------------------
     {
-        return ops().insert(this, i);
+        return ops().insert(this);
     }
 
 
@@ -441,22 +480,28 @@ struct object
     }
 
 
-    static utf8 name(id i)
+    static utf8 alias(id i, uint index);
     // ------------------------------------------------------------------------
-    //   Return the name for a given ID
+    //   Return the nth alias for a given ID
     // ------------------------------------------------------------------------
-    {
-        return utf8(i < NUM_IDS ? handler[i].name : "<invalid ID>");
-    }
 
 
-    static utf8 fancy(id i)
+    static utf8 name(id i);
+    // ------------------------------------------------------------------------
+    //   Return the name for a given ID with current style
+    // ------------------------------------------------------------------------
+
+
+    static utf8 fancy(id i);
     // ------------------------------------------------------------------------
     //   Return the fancy name for a given ID
     // ------------------------------------------------------------------------
-    {
-        return utf8(i < NUM_IDS ? handler[i].fancy : "<Invalid ID>");
-    }
+
+
+    static utf8 old_name(id i);
+    // ------------------------------------------------------------------------
+    //   Return the fancy name for a given ID
+    // ------------------------------------------------------------------------
 
 
     utf8 name() const
@@ -493,76 +538,78 @@ struct object
     //
     // ========================================================================
 
-    static bool is_type(id ty)
-    // -------------------------------------------------------------------------
-    //   Check if a type is for an RPL data type
-    // -------------------------------------------------------------------------
+#ifdef DM42
+#  pragma GCC push_options
+#  pragma GCC optimize("-O3")
+#endif
+
+    struct id_map
+    // ------------------------------------------------------------------------
+    //   Used to isolate the type range checking names
+    // ------------------------------------------------------------------------
     {
-        return handler[ty].is_type;
+        enum ids
+        // --------------------------------------------------------------------
+        //  Createa a local name matching the class name
+        // --------------------------------------------------------------------
+        {
+#define ID(i)   i,
+#include "ids.tbl"
+        NUM_IDS
+        };
+
+
+        template <ids first, ids last>
+        static INLINE bool in_range(id ty)
+        // --------------------------------------------------------------------
+        //   Check if a  given type is in the given range
+        // --------------------------------------------------------------------
+        {
+            return ids(ty) >= first && ids(ty) <= last;
+        }
+
+        template <ids first, ids last, ids more, ids ...rest>
+        static INLINE bool in_range(id ty)
+        // --------------------------------------------------------------------
+        //   Check if a  given type is in the given ranges
+        // --------------------------------------------------------------------
+        {
+            return (ids(ty) >= first && ids(ty) <= last)
+                || in_range<more, rest...>(ty);
+        }
+
+#define ID(x)
+#define ID_RANGE(name, ...)                                             \
+        static INLINE bool name(id ty)                                  \
+        /* ------------------------------------------------------- */   \
+        /*   Range-based type checking (faster than memory reads)  */   \
+        /* ------------------------------------------------------- */   \
+        {                                                               \
+            return in_range<__VA_ARGS__>(ty);                           \
+        }
+#include "ids.tbl"
+
+    };
+
+#define ID(x)
+#define ID_RANGE(name, ...)                                             \
+    static INLINE bool name(id ty)                                      \
+    /* ------------------------------------------------------- */       \
+    /*   Range-based type checking (faster than memory reads)  */       \
+    /* ------------------------------------------------------- */       \
+    {                                                                   \
+        return id_map::name(ty);                                        \
+    }                                                                   \
+                                                                        \
+                                                                        \
+    INLINE bool name() const                                            \
+    /* ------------------------------------------------------- */       \
+    /*   Range-based type checking (faster than memory reads)  */       \
+    /* ------------------------------------------------------- */       \
+    {                                                                   \
+        return id_map::name(type());                                    \
     }
-
-
-    bool is_type() const
-    // -------------------------------------------------------------------------
-    //   Check if an object is an integer
-    // -------------------------------------------------------------------------
-    {
-        return is_type(type());
-    }
-
-
-    static bool is_integer(id ty)
-    // -------------------------------------------------------------------------
-    //   Check if a type is an integer
-    // -------------------------------------------------------------------------
-    {
-        return handler[ty].is_integer;
-    }
-
-
-    bool is_integer() const
-    // -------------------------------------------------------------------------
-    //   Check if an object is an integer
-    // -------------------------------------------------------------------------
-    {
-        return is_integer(type());
-    }
-
-
-    static bool is_based(id ty)
-    // -------------------------------------------------------------------------
-    //   Check if a type is a based integer
-    // -------------------------------------------------------------------------
-    {
-        return handler[ty].is_based;
-    }
-
-
-    bool is_based() const
-    // -------------------------------------------------------------------------
-    //   Check if an object is a based integer
-    // -------------------------------------------------------------------------
-    {
-        return is_based(type());
-    }
-
-
-    static bool is_bignum(id ty)
-    // -------------------------------------------------------------------------
-    //   Check if a type is a big integer
-    // -------------------------------------------------------------------------
-    {
-        return handler[ty].is_bignum;
-    }
-
-
-    bool is_bignum() const
-    // -------------------------------------------------------------------------
-    //   Check if an object is a big integer
-    // -------------------------------------------------------------------------
-    {
-        return is_bignum(type());
-    }
+#include "ids.tbl"
 
 
     bool is_big() const;
@@ -571,31 +618,12 @@ struct object
     // ------------------------------------------------------------------------
 
 
-    static bool is_fraction(id ty)
-    // -------------------------------------------------------------------------
-    //   Check if a type is a fraction
-    // -------------------------------------------------------------------------
-    {
-        return handler[ty].is_fraction;
-    }
-
-
-    bool is_fraction() const
-    // -------------------------------------------------------------------------
-    //   Check if an object is an integer
-    // -------------------------------------------------------------------------
-    {
-        return is_fraction(type());
-    }
-
-
     static bool is_fractionable(id ty)
     // -------------------------------------------------------------------------
     //   Check if a type is a fraction or a non-based integer
     // -------------------------------------------------------------------------
     {
-        return handler[ty].is_fraction ||
-            (handler[ty].is_integer && handler[ty].is_real);
+        return is_fraction(ty) || (is_integer(ty) && is_real(ty));
     }
 
 
@@ -608,102 +636,12 @@ struct object
     }
 
 
-    static bool is_decimal(id ty)
-    // -------------------------------------------------------------------------
-    //   Check if a type is a decimal
-    // -------------------------------------------------------------------------
-    {
-        return handler[ty].is_decimal;
-    }
-
-
-    bool is_decimal() const
-    // -------------------------------------------------------------------------
-    //   Check if an object is a decimal
-    // -------------------------------------------------------------------------
-    {
-        return is_decimal(type());
-    }
-
-
-    static  bool is_real(id ty)
-    // -------------------------------------------------------------------------
-    //   Check if a type is a real number
-    // -------------------------------------------------------------------------
-    {
-        return handler[ty].is_real;
-    }
-
-
-    bool is_real() const
-    // -------------------------------------------------------------------------
-    //   Check if an object is a real number
-    // -------------------------------------------------------------------------
-    {
-        return is_real(type());
-    }
-
-
-    static  bool is_complex(id ty)
-    // -------------------------------------------------------------------------
-    //   Check if a type is a complex number
-    // -------------------------------------------------------------------------
-    {
-        return handler[ty].is_complex;
-    }
-
-
-    bool is_complex() const
-    // -------------------------------------------------------------------------
-    //   Check if an object is a complex number
-    // -------------------------------------------------------------------------
-    {
-        return is_complex(type());
-    }
-
-
-    static bool is_command(id ty)
-    // ------------------------------------------------------------------------
-    //    Check if a type denotes a command
-    // ------------------------------------------------------------------------
-    {
-        return handler[ty].is_command;
-    }
-
-
-    bool is_command() const
-    // ------------------------------------------------------------------------
-    //   Check if an object is a command
-    // ------------------------------------------------------------------------
-    {
-        return is_command(type());
-    }
-
-
-    static bool is_immediate(id ty)
-    // ------------------------------------------------------------------------
-    //    Check if a type denotes an immediate command (e.g. menus)
-    // ------------------------------------------------------------------------
-    {
-        return handler[ty].is_immediate;
-    }
-
-
-    bool is_immediate() const
-    // ------------------------------------------------------------------------
-    //   Check if an object is an immediate command (e.g. menus)
-    // ------------------------------------------------------------------------
-    {
-        return is_immediate(type());
-    }
-
-
     static bool is_algebraic_number(id ty)
     // ------------------------------------------------------------------------
     //   Check if something is a number (real or complex)
     // ------------------------------------------------------------------------
    {
-        return is_real(ty) || is_complex(ty);
+       return is_real(ty) || is_complex(ty) || is_unit(ty);
     }
 
 
@@ -716,57 +654,21 @@ struct object
     }
 
 
-    static bool is_symbolic(id ty)
+    static bool is_symbolic_arg(id ty)
     // ------------------------------------------------------------------------
     //    Check if a type denotes a symbolic argument (symbol, equation, number)
     // ------------------------------------------------------------------------
     {
-        return handler[ty].is_symbolic || is_algebraic_number(ty);
+        return is_symbolic(ty) || is_algebraic_number(ty);
     }
 
 
-    bool is_symbolic() const
+    bool is_symbolic_arg() const
     // ------------------------------------------------------------------------
     //   Check if an object is a symbolic argument
     // ------------------------------------------------------------------------
     {
-        return is_symbolic(type());
-    }
-
-
-    static bool is_strictly_symbolic(id ty)
-    // ------------------------------------------------------------------------
-    //    Check if a type denotes a symbol or equation
-    // ------------------------------------------------------------------------
-    {
-        return handler[ty].is_symbolic;
-    }
-
-
-    bool is_strictly_symbolic() const
-    // ------------------------------------------------------------------------
-    //   Check if an object is a symbol or equation
-    // ------------------------------------------------------------------------
-    {
-        return is_strictly_symbolic(type());
-    }
-
-
-    static bool is_algebraic_function(id ty)
-    // ------------------------------------------------------------------------
-    //    Check if a type denotes an algebraic function
-    // ------------------------------------------------------------------------
-    {
-        return handler[ty].is_algebraic;
-    }
-
-
-    bool is_algebraic_function() const
-    // ------------------------------------------------------------------------
-    //   Check if an object is an algebraic function
-    // ------------------------------------------------------------------------
-    {
-        return is_algebraic_function(type());
+        return is_symbolic_arg(type());
     }
 
 
@@ -775,7 +677,7 @@ struct object
     //    Check if a type denotes an algebraic value or function
     // ------------------------------------------------------------------------
     {
-        return is_algebraic_function(ty) || is_symbolic(ty);
+        return is_algebraic_fn(ty) || is_symbolic_arg(ty);
     }
 
 
@@ -799,21 +701,32 @@ struct object
     }
 
 
-    static bool is_plot(id ty)
+    static bool is_algebraic_or_list(id ty)
     // ------------------------------------------------------------------------
-    //   Check if a type name denotes a plot type
+    //    Check if a type denotes an algebraic value or function
     // ------------------------------------------------------------------------
     {
-        return ty >= ID_Function && ty <= ID_Parametric;
+        return is_algebraic(ty) || ty == ID_list || ty == ID_array;
     }
 
 
-    bool is_plot() const
+    bool is_algebraic_or_list() const
     // ------------------------------------------------------------------------
-    //   Check if an object is a plot type
+    //   Check if an object is an algebraic function
     // ------------------------------------------------------------------------
     {
-        return is_plot(type());
+        return is_algebraic_or_list(type());
+    }
+
+
+    algebraic_p as_algebraic_or_list() const
+    // ------------------------------------------------------------------------
+    //   Return an object as an algebraic if possible, or nullptr
+    // ------------------------------------------------------------------------
+    {
+        if (is_algebraic_or_list())
+            return algebraic_p(this);
+        return nullptr;
     }
 
 
@@ -857,6 +770,10 @@ struct object
         return nullptr;
     }
 
+#ifdef DM42
+#  pragma GCC pop_options
+#endif
+
 
     object_p as_quoted(id ty = ID_symbol) const;
     template<typename T>
@@ -890,10 +807,20 @@ struct object
     // ------------------------------------------------------------------------
 
 
-    bool is_same_as(object_p other) const;
+
+    int compare_to(object_p other) const;
+    // ------------------------------------------------------------------------
+    //   Compare two objects and return a signed comparison
+    // ------------------------------------------------------------------------
+
+
+    bool is_same_as(object_p other) const
     // ------------------------------------------------------------------------
     //   Compare two objects
     // ------------------------------------------------------------------------
+    {
+        return compare_to(other) == 0;
+    }
 
 
     object_p child(uint index = 0) const;
@@ -908,6 +835,12 @@ struct object
     // ------------------------------------------------------------------------
 
 
+    static object_p static_object(id i);
+    // ------------------------------------------------------------------------
+    //   Get a static pointer for the given object (typically for commands)
+    // ------------------------------------------------------------------------
+
+
 
     // ========================================================================
     //
@@ -916,10 +849,16 @@ struct object
     // ========================================================================
 
 #define OBJECT_DECL(D)  static const id static_id = ID_##D;
+
+
 #define PARSE_DECL(D)   static result   do_parse(parser &p UNUSED)
 #define HELP_DECL(D)    static utf8     do_help(const D *o UNUSED)
-#define EVAL_DECL(D)    static result   do_evaluate(const D *o UNUSED)
-#define EXEC_DECL(D)    static result   do_execute(const D *o UNUSED)
+#define EVAL_DECL(D)                                                    \
+    static const D *static_self()                                       \
+    {                                                                   \
+        return (const D *) static_object(static_id);                    \
+    }                                                                   \
+    static result   do_evaluate(const D *o UNUSED = static_self())
 #define SIZE_DECL(D)    static size_t   do_size(const D *o UNUSED)
 #define RENDER_DECL(D)  static size_t   do_render(const D *o UNUSED,renderer &r UNUSED)
 #define GRAPH_DECL(D)   static grob_p   do_graph(const D *o UNUSED,grapher &g UNUSED)
@@ -933,7 +872,6 @@ struct object
     PARSE_DECL(object);
     HELP_DECL(object);
     EVAL_DECL(object);
-    EXEC_DECL(object);
     SIZE_DECL(object);
     RENDER_DECL(object);
     GRAPH_DECL(object);
@@ -953,7 +891,7 @@ struct object
 protected:
     static const dispatch   handler[NUM_IDS];
 
-#if SIMULATOR
+#if DEBUG
 public:
     cstring debug() const;
 #endif
@@ -962,7 +900,6 @@ public:
 #define PARSE_BODY(D)   object::result D::do_parse(parser &p UNUSED)
 #define HELP_BODY(D)    utf8           D::do_help(const D *o UNUSED)
 #define EVAL_BODY(D)    object::result D::do_evaluate(const D *o UNUSED)
-#define EXEC_BODY(D)    object::result D::do_execute(const D *o UNUSED)
 #define SIZE_BODY(D)    size_t         D::do_size(const D *o UNUSED)
 #define RENDER_BODY(D)  size_t         D::do_render(const D *o UNUSED, renderer &r UNUSED)
 #define GRAPH_BODY(D)   grob_p         D::do_graph(const D *o UNUSED, grapher &g UNUSED)

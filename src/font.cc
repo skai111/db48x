@@ -29,12 +29,12 @@
 
 #include "font.h"
 
+#include "dmcp.h"
 #include "parser.h"
 #include "recorder.h"
 #include "renderer.h"
 #include "runtime.h"
 
-#include <dmcp.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -43,6 +43,7 @@ RECORDER(sparse_fonts,  16, "Information about sparse fonts");
 RECORDER(dense_fonts,   16, "Information about dense fonts");
 RECORDER(dmcp_fonts,    16, "Information about DMCP fonts");
 RECORDER(fonts_error,   16, "Information about fonts");
+RECORDER(font_cache,    16, "Font cache data");
 
 
 static const byte dmcpFontRPL[]
@@ -80,6 +81,7 @@ const dmcp_font_p SkrMono18x24     = (dmcp_font_p) (dmcpFontRPL + 24);
 
 font_p EditorFont;
 font_p StackFont;
+font_p ReducedFont;
 font_p HeaderFont;
 font_p CursorFont;
 font_p ErrorFont;
@@ -103,6 +105,7 @@ void font_defaults()
 
     GENERATED_FONT(EditorFont);
     GENERATED_FONT(HelpFont);
+    GENERATED_FONT(ReducedFont);
     GENERATED_FONT(StackFont);
 
     HeaderFont       = LibMonoFont10x17;
@@ -114,7 +117,7 @@ void font_defaults()
     HelpItalicFont   = HelpFont;
     HelpCodeFont     = LibMonoFont11x18;
     HelpTitleFont    = StackFont;
-    HelpSubTitleFont = HelpFont;
+    HelpSubTitleFont = ReducedFont;
 }
 
 
@@ -127,107 +130,119 @@ struct font_cache
     using fint  = font::fint;
     using fuint = font::fuint;
 
+    enum { MAX_GLYPHS = 128 };
+
+    font_cache(): cache((data *) malloc(sizeof(data) * MAX_GLYPHS)), size(0) { }
+    ~font_cache() { free(cache); }
+
+
     struct data
     // ------------------------------------------------------------------------
     //   Data in the cache
     // ------------------------------------------------------------------------
     {
-        void set(byte_p bitmap, fint x, fint y, fuint w, fuint h, fuint a)
+        void set(font_p  font,
+                 unicode codepoint,
+                 byte_p  bitmap,
+                 fint    x,
+                 fint    y,
+                 fuint   w,
+                 fuint   h,
+                 fuint   advance)
         {
-            this->bitmap = bitmap;
-            this->x = x;
-            this->y = y;
-            this->w = w;
-            this->h = h;
-            this->advance = a;
+            this->font      = font;
+            this->codepoint = codepoint;
+            this->bitmap    = bitmap;
+            this->x         = x;
+            this->y         = y;
+            this->w         = w;
+            this->h         = h;
+            this->advance   = advance;
         }
 
-        byte_p bitmap;          // Bitmap data for glyph
-        fint   x;               // X position (meaning depends on font type)
-        fint   y;               // Y position (meaning depends on font type)
-        fuint  w;               // Width (meaning depends on font type)
-        fuint  h;               // Height (meaning depends on font type)
-        fuint  advance;         // Advance to next character
-    };
+        font_p  font;      // Font being cached
+        byte_p  bitmap;    // Bitmap data for glyph
+        unicode codepoint; // Codepoint in that font
+        fint    x;         // X position (meaning depends on font type)
+        fint    y;         // Y position (meaning depends on font type)
+        fuint   w;         // Width (meaning depends on font type)
+        fuint   h;         // Height (meaning depends on font type)
+        fuint   advance;   // Advance to next character
+    } __attribute((packed))__;
 
-    font_cache(): fobj(), first(0), last(0), cache() {}
 
-    font_p cachedFont()
+    data *lookup(font_p font, unicode codepoint)
     // ------------------------------------------------------------------------
-    //   Return the currently cached font
+    //   Lookup data in the LRU cache
     // ------------------------------------------------------------------------
     {
-        return fobj;
-    }
-
-    fint firstCodePoint()
-    // ------------------------------------------------------------------------
-    //   Return first cached code point
-    // ------------------------------------------------------------------------
-    {
-        return first;
-    }
-
-
-    fint lastCodePoint()
-    // ------------------------------------------------------------------------
-    //   Return last cached code point
-    // ------------------------------------------------------------------------
-    {
-        return last;
-    }
-
-
-    data *range(font_p f, fuint firstCP, fuint lastCP)
-    // ------------------------------------------------------------------------
-    //   Set the currently cached range in the font
-    // ------------------------------------------------------------------------
-    {
-        if (f != fobj || firstCP != first || lastCP != last)
+        if (size)
         {
-            fuint count = lastCP - firstCP;
-            fobj = f;
-            first = firstCP;
-            last = lastCP;
-            cache = (data *) realloc(cache, count * sizeof(data));
-            data *ecache = cache + count;
-            for (data *p = cache; p < ecache; p++)
-                p->set(nullptr, 0, 0, 0, 0, 0);
+            size_t count = size < MAX_GLYPHS ? size : size_t(MAX_GLYPHS);
+            data  *last  = cache + (size + ~0) % MAX_GLYPHS;
+            data  *d     = last;
+            for (size_t i = 0; i < count; i++)
+            {
+                if (d->font == font && d->codepoint == codepoint)
+                {
+                    // Bring it back to front for faster lookup next
+                    if (i > 0)
+                        std::swap(*d, *last);
+                    return last;
+                }
+                if (d-- < cache)
+                    d = cache + count - 1;
+            }
         }
-        return cache;
-    }
-
-    data *get(fint glyph) const
-    // ------------------------------------------------------------------------
-    //  Return cached data
-    // ------------------------------------------------------------------------
-    {
-        if (glyph >= first && glyph < last)
-            return cache + glyph - first;
         return nullptr;
     }
 
 
-    bool set(fint glyph, byte_p bm, fint x, fint y, fuint w, fuint h, fuint a)
+    data *insert(font_p  font,
+                 unicode codepoint,
+                 byte_p  bitmap,
+                 fint    x,
+                 fint    y,
+                 fuint   w,
+                 fuint   h,
+                 fuint   advance)
     // ------------------------------------------------------------------------
-    //   Set the offset of the glyph in the font
+    //   Insert a new entry in the cache
     // ------------------------------------------------------------------------
     {
-        if (glyph >= first && glyph < last)
-        {
-            data *p = cache + glyph - first;
-            p->set(bm, x, y, w, h, a);
-            return true;
-        }
-        return false;
+        data *last = cache + (size++ % MAX_GLYPHS);
+        last->set(font, codepoint, bitmap, x, y, w, h, advance);
+        return last;
     }
 
 private:
-    font_p fobj;
-    fuint   first;
-    fuint   last;
     data  *cache;
+    size_t size;
 } FontCache;
+
+
+bool font::glyph(unicode codepoint, glyph_info &g) const
+// ----------------------------------------------------------------------------
+//   Dynamic dispatch to the available font classes
+// ----------------------------------------------------------------------------
+{
+    if (codepoint == '\t')
+    {
+        bool result = glyph(' ', g);
+        g.advance = Settings.TabWidth();
+        return result;
+    }
+
+    switch(type())
+    {
+    case ID_sparse_font: return ((sparse_font *)this)->glyph(codepoint, g);
+    case ID_dense_font:  return ((dense_font *)this)->glyph(codepoint, g);
+    case ID_dmcp_font:   return ((dmcp_font *)this)->glyph(codepoint, g);
+    default:
+        record(fonts_error, "Unexpectd font type %d", type());
+    }
+    return false;
+}
 
 
 font::fuint sparse_font::height()
@@ -254,9 +269,7 @@ bool sparse_font::glyph(unicode codepoint, glyph_info &g) const
     fuint             height = leb128<fuint>(p);
 
     // Check if cached
-    font_cache::data *data = FontCache.cachedFont() == this
-        ? FontCache.get(codepoint)
-        : nullptr;
+    font_cache::data *data = FontCache.lookup(this, codepoint);
 
     record(sparse_fonts, "Looking up %u, got cache %p", codepoint, data);
     while (!data)
@@ -275,15 +288,8 @@ bool sparse_font::glyph(unicode codepoint, glyph_info &g) const
             return false;
         }
 
-        fuint lastCP = firstCP + numCPs;
-        bool  in = codepoint >= firstCP && codepoint < lastCP;
-
         // Initialize cache for range of current code point
-        font_cache::data *cache = in
-            ? FontCache.range(this, firstCP, lastCP)
-            : nullptr;
-        if (cache)
-            record(sparse_fonts, "Caching in %p", cache);
+        fuint lastCP = firstCP + numCPs;
         for (fuint cp = firstCP; cp < lastCP; cp++)
         {
             fint  x = leb128<fint>(p);
@@ -291,16 +297,9 @@ bool sparse_font::glyph(unicode codepoint, glyph_info &g) const
             fuint w = leb128<fuint>(p);
             fuint h = leb128<fuint>(p);
             fuint a = leb128<fuint>(p);
-            if (cache)
-            {
-                cache->set(p, x, y, w, h, a);
-                if (cp == codepoint)
-                {
-                    record(sparse_fonts, "Cache data is at %p", cache);
-                    data = cache;
-                }
-                cache++;
-            }
+            if (cp == codepoint)
+                data = FontCache.insert(this, codepoint, p, x, y, w, h, a);
+
             size_t sparseBitmapBits = w * h;
             size_t sparseBitmapBytes = (sparseBitmapBits + 7) / 8;
             p += sparseBitmapBytes;
@@ -358,14 +357,11 @@ bool dense_font::glyph(unicode codepoint, glyph_info &g) const
     byte_p            bitmap     = p;
 
     // Check if cached
-    font_cache::data *data = FontCache.cachedFont() == this
-        ? FontCache.get(codepoint)
-        : nullptr;
+    font_cache::data *data = FontCache.lookup(this, codepoint);
 
     // Scan the font data
     fint   x          = 0;
     size_t bitmapSize = (height * width + 7) / 8;
-
     p += bitmapSize;
     while (!data)
     {
@@ -377,26 +373,16 @@ bool dense_font::glyph(unicode codepoint, glyph_info &g) const
         if ((!firstCP && !numCPs) || firstCP > codepoint)
         {
             record(dense_fonts, "Code point %u not found", codepoint);
-             return false;
+            return false;
         }
 
         fuint lastCP = firstCP + numCPs;
-        bool in = codepoint >= firstCP && codepoint < lastCP;
-
-        // Initialize cache for range of current code point
-        font_cache::data *cache = in
-            ? FontCache.range(this, firstCP, lastCP)
-            : nullptr;
         for (fuint cp = firstCP; cp < lastCP; cp++)
         {
             fuint cw = leb128<fuint>(p);
-            if (cache)
-            {
-                cache->set(bitmap, x, 0, cw, height, cw);
-                if (cp == codepoint)
-                    data = cache;
-                cache++;
-            }
+            if (cp == codepoint)
+                data = FontCache.insert(this, cp,
+                                        bitmap, x, 0, cw, height, cw);
             x += cw;
         }
     }

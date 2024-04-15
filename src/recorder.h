@@ -34,11 +34,13 @@
 
 RECORDER_DECLARE(assert_error);
 
+void assertion_failed(const char *);
+
 #define ASSERT(x)                                               \
     do                                                          \
     {                                                           \
         if (!(x))                                               \
-            record(assert_error, "Assertion failed: " #x);      \
+            assertion_failed(#x);                               \
     } while(0)
 
 #else

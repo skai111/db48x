@@ -28,7 +28,11 @@
 // ****************************************************************************
 
 #include "fraction.h"
+
 #include "algebraic.h"
+#include "expression.h"
+#include "grob.h"
+
 
 RECORDER(fraction, 16, "Fractions");
 
@@ -77,14 +81,61 @@ EVAL_BODY(fraction)
 //   Evaluate either as a fraction or decimal
 // ----------------------------------------------------------------------------
 {
-    if (Settings.numeric)
+    if (Settings.NumericalResults())
     {
         algebraic_g x = o;
-        if (algebraic::real_promotion(x))
-            if (rt.push(x.Safe()))
+        if (algebraic::decimal_promotion(x))
+            if (rt.push(+x))
                 return OK;
     }
     return rt.push(o) ? OK : ERROR;
+}
+
+
+GRAPH_BODY(fraction)
+// ----------------------------------------------------------------------------
+//   Render a fraction in graphical mode
+// ----------------------------------------------------------------------------
+{
+    using font_id = settings::font_id;
+
+    font_id font = g.font;
+    if (Settings.SmallFractions())
+        font = settings::smaller_font(font);
+    save<font_id> fsave(g.font, font);
+    fraction_g obj = o;
+
+    // Render numerator and denominator
+    bignum_g num = obj->numerator();
+    bignum_g den = obj->denominator();
+    if (!num || !den)
+        return nullptr;
+
+    grob_g ipart = nullptr;
+    if (Settings.MixedFractions())
+    {
+        bignum_g quo, rem;
+        if (bignum::quorem(num, den, bignum::ID_bignum, &quo, &rem))
+        {
+            if (!quo->is_zero())
+            {
+                save<font_id> isave(g.font, fsave.saved);
+                ipart = quo->graph(g);
+                num = rem;
+            }
+        }
+    }
+    grob_g numg = num->graph(g);
+    grob_g deng = den->graph(g);
+    numg = expression::ratio(g, numg, deng);
+    if (ipart && numg)
+        numg = expression::prefix(g, 0, ipart, g.voffset, numg);
+    if (obj->is_negative())
+    {
+        g.font = fsave.saved;
+        numg = expression::prefix(g, 0, "-", g.voffset, numg);
+    }
+    return numg;
 }
 
 
@@ -133,8 +184,8 @@ bignum_g fraction::denominator() const
         return big_fraction_p(this)->denominator();
 
     byte_p p = payload();
-    size_t nv = leb128<ularge>(p);
-    size_t dv = leb128<ularge>(p) + 0 * nv;
+    ularge nv = leb128<ularge>(p);
+    ularge dv = leb128<ularge>(p) + 0 * nv;
     return rt.make<bignum>(ID_bignum, dv);
 }
 
@@ -145,9 +196,7 @@ integer_g fraction::numerator(int) const
 // ----------------------------------------------------------------------------
 {
     id ty = (type() == ID_neg_fraction) ? ID_neg_integer : ID_integer;
-    byte_p p = payload();
-    ularge nv = leb128<ularge>(p);
-    return rt.make<integer>(ty, nv);
+    return rt.make<integer>(ty, numerator_value());
 }
 
 
@@ -156,10 +205,30 @@ integer_g fraction::denominator(int) const
 //   Return the denominator as an integer (always positive)
 // ----------------------------------------------------------------------------
 {
+    return rt.make<integer>(ID_integer, denominator_value());
+}
+
+
+ularge fraction::numerator_value() const
+// ----------------------------------------------------------------------------
+//   Return the numerator as a native number
+// ----------------------------------------------------------------------------
+{
     byte_p p = payload();
-    size_t nv = leb128<ularge>(p);
-    size_t dv = leb128<ularge>(p) + 0 * nv;
-    return rt.make<integer>(ID_integer, dv);
+    ularge nv = leb128<ularge>(p);
+    return nv;
+}
+
+
+ularge fraction::denominator_value() const
+// ----------------------------------------------------------------------------
+//   Return the denominator as a native number
+// ----------------------------------------------------------------------------
+{
+    byte_p p = payload();
+    leb128<ularge>(p);
+    ularge dv = leb128<ularge>(p);
+    return dv;
 }
 
 

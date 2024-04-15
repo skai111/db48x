@@ -28,8 +28,10 @@
 // ****************************************************************************
 
 #include "array.h"
+
 #include "arithmetic.h"
 #include "functions.h"
+#include "grob.h"
 
 
 RECORDER(matrix, 16, "Determinant computation");
@@ -70,6 +72,69 @@ HELP_BODY(array)
 }
 
 
+GRAPH_BODY(array)
+// ----------------------------------------------------------------------------
+//   Render an array graphically
+// ----------------------------------------------------------------------------
+{
+    using pixsize   = grob::pixsize;
+    array_g a       = o;
+    if (!a)
+        return nullptr;
+
+    size_t rows = 0;
+    size_t cols = 0;
+    bool   mat  = false;
+    bool   vec  = false;
+    if (a->is_matrix(&rows, &cols))
+    {
+        mat = rows > 0 && cols > 0;
+    }
+    else if (a->is_vector(&cols))
+    {
+        vec = true;
+        rows = 1;
+        if (Settings.VerticalVectors())
+        {
+            rows = cols;
+            cols = 1;
+        }
+    }
+
+    // Fallback if we don't have a proper matrix or vector, e.g. non-rect
+    if (!mat && !vec)
+        return object::do_graph(a, g);
+
+    grob_g result = a->graph(g, rows, cols, mat);
+    if (!result)
+        return nullptr;
+    grob::surface rs = result->pixels();
+    pixsize gw = rs.width();
+    pixsize gh = rs.height();
+
+    // Dimensions of border and adjust
+    coord   xl = 0;
+    coord   xr = coord(gw) - 2;
+    coord   yt = 0;
+    coord   yb = coord(gh) - 4;
+    pixsize bw = mat ? 4 : 2;
+
+
+    // Add the borders
+    for (coord y = 1; y < yb; y++)
+    {
+        rs.fill(xl,    y, xl+bw,   y, g.foreground);
+        rs.fill(xr-bw, y, xr,      y, g.foreground);
+    }
+    rs.fill(xl,      yt, xl+2*bw, yt+1, g.foreground);
+    rs.fill(xr-2*bw, yt, xr,      yt+1, g.foreground);
+    rs.fill(xl,      yb, xl+2*bw, yb+1, g.foreground);
+    rs.fill(xr-2*bw, yb, xr,      yb+1, g.foreground);
+
+    return result;
+}
+
+
 
 // ============================================================================
 //
@@ -80,7 +145,7 @@ HELP_BODY(array)
 //   When they return true, these operations push all elements on the stack
 //
 
-bool array::is_vector(size_t *size) const
+bool array::is_vector(size_t *size, bool push) const
 // ----------------------------------------------------------------------------
 //   Check if this is a vector, and if so, push all elements on stack
 // ----------------------------------------------------------------------------
@@ -94,7 +159,7 @@ bool array::is_vector(size_t *size) const
             id oty = obj->type();
             if (oty == ID_array || oty == ID_list)
                 result = false;
-            else if (!rt.push(obj))
+            else if (push && !rt.push(obj))
                 result = false;
             if (!result)
                 break;
@@ -109,7 +174,7 @@ bool array::is_vector(size_t *size) const
 }
 
 
-bool array::is_matrix(size_t *rows, size_t *cols) const
+bool array::is_matrix(size_t *rows, size_t *cols, bool push) const
 // ----------------------------------------------------------------------------
 //   Check if this is a vector, and if so, push all elements on stack
 // ----------------------------------------------------------------------------
@@ -129,7 +194,7 @@ bool array::is_matrix(size_t *rows, size_t *cols) const
             if (result)
             {
                 size_t rcol = 0;
-                result = array_p(robj)->is_vector(&rcol);
+                result = array_p(robj)->is_vector(&rcol, push);
                 if (result && first)
                     c = rcol;
                 else if (rcol != c)
@@ -151,6 +216,52 @@ bool array::is_matrix(size_t *rows, size_t *cols) const
         }
     }
     return result;
+}
+
+
+list_p array::dimensions(bool expand) const
+// ----------------------------------------------------------------------------
+//   Return the dimensions of the array
+// ----------------------------------------------------------------------------
+{
+    size_t rows = 0, columns = 0;
+    size_t depth = rt.depth();
+    if (is_vector(&columns, expand))
+    {
+        integer_g cobj = integer::make(columns);
+        if (cobj)
+            return list::make(cobj);
+    }
+    else if (is_matrix(&rows, &columns, expand))
+    {
+        integer_g robj = integer::make(rows);
+        integer_g cobj = integer::make(columns);
+        if (robj && cobj)
+            return list::make(robj, cobj);
+    }
+    rt.drop(rt.depth() - depth);
+    return nullptr;
+}
+
+
+bool array::expand() const
+// ----------------------------------------------------------------------------
+//   Expand the array
+// ----------------------------------------------------------------------------
+{
+    if (list_p dims = dimensions(true))
+        if (rt.push(dims))
+            return true;
+    return false;
+}
+
+
+array_p array::wrap(object_p o)
+// ----------------------------------------------------------------------------
+//   Wrap object in a single-item arrray
+// ----------------------------------------------------------------------------
+{
+    return array_p(list::make(ID_array, byte_p(o), o->size()));
 }
 
 
@@ -489,12 +600,12 @@ algebraic_g array::determinant() const
                         goto err;
                     mjka = aa * mjka - ba * tka;
                     record(matrix, "  m[%u,%u] is now %t", j, k, mjk);
-                    rt.stack(px + ~ixjk, mjka.Safe());
+                    rt.stack(px + ~ixjk, +mjka);
                 }
 
                 // Compute total
                 tot = tot ? tot * aa : aa;
-                record(matrix, " tot[%u]=%t", j, tot.Safe());
+                record(matrix, " tot[%u]=%t", j, +tot);
             }
 
 #if SIMULATOR
@@ -523,7 +634,7 @@ algebraic_g array::determinant() const
             if (!diaga)
                 goto err;
             det = det ? det * diaga : diaga;
-            record(matrix, "Diag %u det=%t", i, det.Safe());
+            record(matrix, "Diag %u det=%t", i, +det);
             if (!det)
                 goto err;
         }
@@ -533,7 +644,7 @@ algebraic_g array::determinant() const
         det = det / tot;
         if (neg)
             det = -det;
-        record(matrix, "Result det=%t", det.Safe());
+        record(matrix, "Result det=%t", +det);
         return det;
     }
     else
@@ -672,7 +783,7 @@ array_g array::invert() const
         // Create an identity matrix of the right size
         for (size_t i = 0; i < n; i++)
             for (size_t j = 0; j < n; j++)
-                if (!rt.push(i == j ? one.Safe() : zero.Safe()))
+                if (!rt.push(i == j ? +one: +zero))
                     goto err;
 
         dump_matrix("Inverse of %u x %u matrix", n, n);
@@ -786,9 +897,9 @@ array_g array::invert() const
                         if (!mjka || !mika)
                             goto err;
                         mjka = aa * mjka - ca * mika;
-                        rt.stack(p + ~ojk, mjka.Safe());
+                        rt.stack(p + ~ojk, +mjka);
                         record(matrix, "%+s[%u,%u] is now %t",
-                               mat ? "t" : "m", j, k, mjka.Safe());
+                               mat ? "t" : "m", j, k, +mjka);
                     }
                     record(matrix, "Matrix %+s row %u done", mat?"t":"m", j);
                 }
@@ -810,7 +921,7 @@ array_g array::invert() const
                     if (!mika)
                         goto err;
                     mika = mika / aa;
-                    rt.stack(p + ~oik, mika.Safe());
+                    rt.stack(p + ~oik, +mika);
                 }
             }
             dump_matrix("After making diagonal of row %u unity", i);
@@ -843,7 +954,7 @@ array_g array::invert() const
                         if (!mika || !mjka)
                             goto err;
                         mjka = mjka  - za * mika;
-                        rt.stack(p + ~ojk, mjka.Safe());
+                        rt.stack(p + ~ojk, +mjka);
                     }
                 }
             }
@@ -939,20 +1050,17 @@ COMMAND_BODY(det)
 //   Implement the 'det' command
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
+    if (object_p obj = rt.top())
     {
-        if (object_p obj = rt.top())
+        if (array_p arr = obj->as<array>())
         {
-            if (array_p arr = obj->as<array>())
-            {
-                if (algebraic_g det = arr->determinant())
-                    if (rt.top(det))
-                        return OK;
-            }
-            else
-            {
-                rt.type_error();
-            }
+            if (algebraic_g det = arr->determinant())
+                if (rt.top(det))
+                    return OK;
+        }
+        else
+        {
+            rt.type_error();
         }
     }
 
@@ -1026,7 +1134,7 @@ array_g array::do_matrix(array_r x, array_r y,
         for (size_t c = 0; c < cx; c++)
         {
             algebraic_g e = vec(c, cx, cy);
-            if (!e || !rt.append(e->size(), byte_p(e.Safe())))
+            if (!e || !rt.append(e->size(), byte_p(+e)))
                 goto err;
         }
 
@@ -1079,12 +1187,12 @@ array_g array::do_matrix(array_r x, array_r y,
                 for (size_t c = 0; c < cr; c++)
                 {
                     algebraic_g e = mat(r, c, rx, cx, ry, cy);
-                    if (!e || !rt.append(e->size(), byte_p(e.Safe())))
+                    if (!e || !rt.append(e->size(), byte_p(+e)))
                         goto err;
                 }
                 row = object_p(list::make(ty, sr.scratch(), sr.growth()));
             }
-            if (!row || !rt.append(row->size(), byte_p(row.Safe())))
+            if (!row || !rt.append(row->size(), byte_p(+row)))
                 goto err;
         }
 

@@ -32,7 +32,7 @@ The project has the following pre-requisites:
 * Simulator builds require `g++` or `clang`, as well as Qt6 (Qt5 is likely to
   work as well).
 
-  * Fedora: `dnf install qt-devel qt6-qtbase-devel qt6-qtdeclarative-devel`
+  * Fedora: `dnf install qt-devel qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qtmultimedia-devel`
 
   * MacOS: `brew install qt`
 

@@ -66,7 +66,9 @@ struct derived : comparison                                             \
                                                                         \
     EVAL_DECL(derived)                                                  \
     {                                                                   \
-        rt.command(fancy(ID_##derived));                                \
+        rt.command(o);                                                  \
+        if (!rt.args(ARITY))                                            \
+            return ERROR;                                               \
         return comparison::evaluate<derived>();                         \
     }                                                                   \
     static bool make_result(int cmp)    { return condition; }           \
@@ -96,8 +98,8 @@ template <> object::result comparison::evaluate<same>();
 COMPARISON_DECLARE(same, cmp == 0);
 
 // Truth results
-COMMAND_DECLARE_SPECIAL(True,  algebraic, ); // Evaluate as self
-COMMAND_DECLARE_SPECIAL(False, algebraic, ); // Evaluate as self
+COMMAND_DECLARE_SPECIAL(True,  algebraic, 0, ); // Evaluate as self
+COMMAND_DECLARE_SPECIAL(False, algebraic, 0, ); // Evaluate as self
 
 
 

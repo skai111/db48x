@@ -28,29 +28,72 @@
 // ****************************************************************************
 
 #include "util.h"
-#include <dmcp.h>
 
-void beep(int frequency, int duration)
+#include "dmcp.h"
+#include "program.h"
+#include "settings.h"
+#include "target.h"
+
+
+void invert_screen()
+// ----------------------------------------------------------------------------
+//   Invert the screen and refresh it
+// ----------------------------------------------------------------------------
+{
+    Screen.invert();
+    lcd_refresh_lines(0, LCD_H);
+}
+
+
+bool exit_key_pressed()
+// ----------------------------------------------------------------------------
+//   Check if exit key is pressed
+// ----------------------------------------------------------------------------
+{
+    save<bool> nohalt(program::halted, false);
+    return program::interrupted();
+}
+
+
+void beep(uint frequency, uint duration)
 // ----------------------------------------------------------------------------
 //   Emit a short beep
 // ----------------------------------------------------------------------------
 {
-    start_buzzer_freq(frequency * 1000);
-    sys_delay(duration);
-    stop_buzzer();
+    bool beeping = Settings.BeepOn();
+    bool flash = Settings.SilentBeepOn();
+
+    if (beeping)
+        start_buzzer_freq(frequency * 1000);
+    if (flash)
+        invert_screen();
+    while (duration > 20 && !exit_key_pressed())
+    {
+        sys_delay(20);
+        duration -= 20;
+    }
+    if (duration && duration <= 20)
+        sys_delay(duration);
+    if (beeping)
+        stop_buzzer();
+    if (flash)
+        invert_screen();
 }
 
 
-void click(int frequency)
+void click(uint frequency)
 // ----------------------------------------------------------------------------
 //   A very short beep
 // ----------------------------------------------------------------------------
 {
+    bool silent = Settings.SilentBeepOn();
+    Settings.SilentBeepOn(false);
     beep(frequency, 10);
+    Settings.SilentBeepOn(silent);
 }
 
 
-void screenshot()
+bool screenshot()
 // ----------------------------------------------------------------------------
 //  Take a screenshot
 // ----------------------------------------------------------------------------
@@ -62,8 +105,20 @@ void screenshot()
     {
         // Was error just wait for confirmation
         wait_for_key_press();
+        return false;
     }
 
     // End click
     click(8000);
+
+    return true;
+}
+
+
+void assertion_failed(const char *msg)
+// ----------------------------------------------------------------------------
+//   Function to make it easier to put a breakpoint somewhere
+// ----------------------------------------------------------------------------
+{
+    record(assert_error, "Assertion failed: %s", msg);
 }

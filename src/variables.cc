@@ -29,8 +29,11 @@
 
 #include "variables.h"
 
+#include "bignum.h"
 #include "command.h"
-#include "equation.h"
+#include "constants.h"
+#include "expression.h"
+#include "files.h"
 #include "integer.h"
 #include "list.h"
 #include "locals.h"
@@ -55,7 +58,7 @@ PARSE_BODY(directory)
     size_t len = strlen(label);
     if (len <= maxlen
         && strncasecmp(ref, label, len) == 0
-        && command::is_separator(utf8(ref + len)))
+        && is_separator(utf8(ref + len)))
     {
         gcutf8 body = utf8(ref + len);
         maxlen -= len;
@@ -110,7 +113,7 @@ PARSE_BODY(directory)
 }
 
 
-bool directory::render_name(symbol_p name, object_p obj, void *arg)
+bool directory::render_name(object_p name, object_p obj, void *arg)
 // ----------------------------------------------------------------------------
 //    Render an item in the directory
 // ----------------------------------------------------------------------------
@@ -138,12 +141,12 @@ RENDER_BODY(directory)
 }
 
 
-EXEC_BODY(directory)
+object::result directory::enter() const
 // ----------------------------------------------------------------------------
 //   Enter directory when executing a directory
 // ----------------------------------------------------------------------------
 {
-    if (rt.enter(o))
+    if (rt.enter(this))
     {
         ui.menu_refresh(ID_VariablesMenu);
         return OK;
@@ -163,6 +166,54 @@ bool directory::store(object_g name, object_g value)
     int         delta   = 0;                    // Change in directory size
     directory_g thisdir = this;                 // Can move because of GC
 
+    // If this is a quoted name, extract it
+    if (object_p quoted = name->as_quoted(ID_object))
+        name = quoted;
+
+    // Deal with all special cases
+    id nty = name->type();
+    switch (nty)
+    {
+    case ID_local:
+        // Deal with local variables
+        return rt.local(local_p(+name)->index(), value);
+
+    case ID_text:
+    {
+        // Deal with storing to file
+        files_g disk = files::make("data");
+        return disk->store(text_p(+name), value);
+    }
+
+    // Special names that are allowed as variable names
+    case ID_StatsData:
+    case ID_StatsParameters:
+    case ID_Equation:
+    case ID_PlotParameters:
+        break;
+
+    case ID_symbol:
+        break;
+
+#define ID(n)
+#define SETTING(Name, Low, High, Init)          \
+    case ID_##Name:
+#define FLAG(Enable, Disable)                   \
+    case ID_##Enable:                           \
+    case ID_##Disable:
+#include "ids.tbl"
+        return settings::store(nty, value);
+
+    case ID_integer:
+        if (Settings.NumberedVariables())
+            break;
+        // Fall-through
+    default:
+        rt.invalid_name_error();
+        return false;
+    }
+
+    // Normal case
     if (object_g existing = lookup(name))
     {
         // Replace an existing entry
@@ -176,7 +227,7 @@ bool directory::store(object_g name, object_g value)
         }
 
         // Clone any value in the stack that points to the existing value
-        rt.clone_global(evalue);
+        rt.clone_global(evalue, es);
 
         // Move memory above storage if necessary
         if (vs != es)
@@ -195,18 +246,20 @@ bool directory::store(object_g name, object_g value)
         size_t  vs        = value->size();
         size_t  requested = vs + ns;
         byte_p  p         = payload();
-        size_t  old       = leb128<size_t>(p);
+        size_t  dirsize   = leb128<size_t>(p);
         gcbytes body      = p;
         if (rt.available(requested) < requested)
             return false;               // Out of memory
 
-        // Move memory above end of directory
-        object_p end = object_p(body.Safe() + old);
-        rt.move_globals(end + requested, end);
+        // Move memory from directory up
+        object_p start = object_p(+body);
+        if (Settings.StoreAtEnd())
+            start += dirsize;
+        rt.move_globals(start + requested, start);
 
         // Copy name and value at end of directory
-        memmove((byte *) end, (byte *) name, ns);
-        memmove((byte *) end + ns, (byte *) value, vs);
+        memmove((byte *) start, (byte *) name, ns);
+        memmove((byte *) start + ns, (byte *) value, vs);
 
         // Compute new size of the directory
         delta = requested;
@@ -222,6 +275,24 @@ bool directory::store(object_g name, object_g value)
 }
 
 
+bool directory::update(object_p name, object_p value)
+// ----------------------------------------------------------------------------
+//   Update an existing value
+// ----------------------------------------------------------------------------
+{
+    // Strip quote if any
+    if (object_p quoted = name->as_quoted(ID_object))
+        name = quoted;
+
+    // Check if this exists somewhere, if so update it with new value
+    directory *dir = nullptr;
+    for (uint depth = 0; (dir = rt.variables(depth)); depth++)
+        if (dir->recall(name))
+            return dir->store(name, value);
+    return false;
+}
+
+
 void directory::adjust_sizes(directory_r thisdir, int delta)
 // ----------------------------------------------------------------------------
 //   Ajust the size for this directory and all enclosing ones
@@ -233,7 +304,7 @@ void directory::adjust_sizes(directory_r thisdir, int delta)
     while (directory_g dir = rt.variables(depth++))
     {
         // Start modifying only if we find this directory in path
-        if (dir.Safe() == thisdir.Safe())
+        if (+dir== thisdir.Safe())
             found = true;
         if (found)
         {
@@ -262,6 +333,7 @@ object_p directory::lookup(object_p ref) const
     byte_p p = payload();
     size_t size = leb128<size_t>(p);
     size_t rsize = ref->size();
+    bool   issym = ref->type() == ID_symbol;
 
     while (size)
     {
@@ -269,8 +341,21 @@ object_p directory::lookup(object_p ref) const
         size_t ns = name->size();
         if (name == ref)          // Optimization when name is from directory
             return name;
-        if (ns == rsize && strncasecmp(cstring(name), cstring(ref), rsize) == 0)
-            return name;
+        if (ns == rsize)
+        {
+            if (issym)
+            {
+                // Regular symbols: case insensitive comparison
+                if (strncasecmp(cstring(name), cstring(ref), rsize) == 0)
+                    return name;
+            }
+            else
+            {
+                // Special symbols, e.g. ΣData
+                if (memcmp(cstring(name), cstring(ref), rsize) == 0)
+                    return name;
+            }
+        }
 
         p += ns;
         object_p value = (object_p) p;
@@ -293,7 +378,7 @@ object_p directory::lookup(object_p ref) const
 }
 
 
-object_p directory::recall(symbol_p ref) const
+object_p directory::recall(object_p ref) const
 // ----------------------------------------------------------------------------
 //   If the referenced object exists in directory, return associated value
 // ----------------------------------------------------------------------------
@@ -305,42 +390,147 @@ object_p directory::recall(symbol_p ref) const
 }
 
 
-object_p directory::recall_all(symbol_p name)
+object_p directory::recall_all(object_p name, bool report_missing)
 // ----------------------------------------------------------------------------
 //   If the referenced object exists in directory, return associated value
 // ----------------------------------------------------------------------------
 {
-    // Check independent / dependent values for plotting
-    if (equation::independent && name->is_same_as(*equation::independent))
-        return *equation::independent_value;
-    if (equation::dependent && name->is_same_as(*equation::dependent))
-        return *equation::dependent_value;
+    // Strip quote if any
+    if (object_p quoted = name->as_quoted(ID_object))
+        name = quoted;
+
+    // Deal with all special cases
+    id nty = name->type();
+    switch (nty)
+    {
+    case ID_local:
+        // Deal with local variables
+        return rt.local(local_p(name)->index());
+
+    case ID_text:
+    {
+        // Deal with storing to file
+        files_g disk = files::make("data");
+        return disk->recall(text_p(name));
+    }
+
+    case ID_constant:
+        return constant_p(name)->value();
+
+    // Special names that are allowed as variable names
+    case ID_StatsData:
+    case ID_StatsParameters:
+    case ID_Equation:
+    case ID_PlotParameters:
+        break;
+
+    case ID_symbol:
+    {
+        // Check independent / dependent values for plotting
+        symbol_p s = symbol_p(name);
+        if (expression::independent && s->is_same_as (*expression::independent))
+            return *expression::independent_value;
+        if (expression::dependent && s->is_same_as(*expression::dependent))
+            return *expression::dependent_value;
+        break;
+    }
+
+#define ID(n)
+#define SETTING(Name, Low, High, Init)          \
+    case ID_##Name:
+#define FLAG(Enable, Disable)                   \
+    case ID_##Enable:                           \
+    case ID_##Disable:
+#include "ids.tbl"
+        return settings::recall(nty);
+
+    case ID_integer:
+        if (Settings.NumberedVariables())
+            break;
+        // Fall-through
+    default:
+        rt.invalid_name_error();
+        return nullptr;
+    }
 
     directory *dir = nullptr;
     for (uint depth = 0; (dir = rt.variables(depth)); depth++)
         if (object_p value = dir->recall(name))
             return value;
+    if (report_missing)
+        rt.undefined_name_error();
     return nullptr;
 }
 
 
-size_t directory::purge(object_p ref)
+size_t directory::purge(object_p name)
 // ----------------------------------------------------------------------------
 //    Purge a name (and associated value) from the directory
 // ----------------------------------------------------------------------------
 {
     directory_g thisdir = this;
 
-    if (object_g name = lookup(ref))
+    // Deal with all special cases
+    id nty = name->type();
+    switch (nty)
+    {
+    case ID_local:
+        // Deal with local variables
+        rt.type_error();
+        return 0;
+
+    case ID_text:
+    {
+        // Deal with storing to file
+        files_g disk = files::make("data");
+        return disk->purge(text_p(name));
+    }
+
+    // Special names that are allowed as variable names
+    case ID_StatsData:
+    case ID_StatsParameters:
+    case ID_Equation:
+    case ID_PlotParameters:
+        break;
+
+    case ID_symbol:
+        break;
+
+#define ID(n)
+#define SETTING(Name, Low, High, Init)          \
+    case ID_##Name:
+#define FLAG(Enable, Disable)                   \
+    case ID_##Enable:                           \
+    case ID_##Disable:
+#include "ids.tbl"
+        return settings::purge(nty);
+
+    case ID_integer:
+        if (Settings.NumberedVariables())
+            break;
+        // Fall-through
+    default:
+        rt.invalid_name_error();
+        return 0;
+    }
+
+    name = lookup(name);
+    if (name)
     {
         size_t   ns     = name->size();
         object_p value  = name + ns;
+        if (rt.is_active_directory(value))
+        {
+            rt.purge_active_directory_error();
+            return 0;
+        }
         size_t   vs     = value->size();
         size_t   purged = ns + vs;
         object_p header = (object_p) payload();
         object_p body   = header;
         size_t   old    = leb128<size_t>(body); // Old size of directory
 
+        rt.clone_global(value, vs);
         rt.move_globals(name, name + purged);
 
         if (old < purged)
@@ -363,6 +553,19 @@ size_t directory::purge(object_p ref)
 }
 
 
+size_t directory::purge_all(object_p name)
+// ----------------------------------------------------------------------------
+//   Purge objects from
+// ----------------------------------------------------------------------------
+{
+    size_t     result = 0;
+    directory *dir    = nullptr;
+    for (uint depth = 0; (dir = rt.variables(depth)); depth++)
+        result += dir->purge(name);
+    return result;
+}
+
+
 size_t directory::enumerate(enumeration_fn callback, void *arg) const
 // ----------------------------------------------------------------------------
 //   Process all the variables in turn, return number of true values
@@ -375,10 +578,10 @@ size_t directory::enumerate(enumeration_fn callback, void *arg) const
 
     while (size)
     {
-        symbol_p name = (symbol_p) p;
+        object_p name = object_p(p);
         size_t   ns   = name->size();
         p += ns;
-        object_p value = (object_p) p;
+        object_p value = object_p(p);
         size_t   vs    = value->size();
         p += vs;
 
@@ -386,7 +589,8 @@ size_t directory::enumerate(enumeration_fn callback, void *arg) const
         if (ns + vs > size)
         {
             record(directory_error,
-                   "Malformed directory during enumeration (ns=%u vs=%u size=%u)",
+                   "Malformed directory during enumeration "
+                   "(ns=%u vs=%u size=%u)",
                    ns, vs, size);
             return 0;     // Malformed directory, quick exit
         }
@@ -404,6 +608,70 @@ size_t directory::enumerate(enumeration_fn callback, void *arg) const
 }
 
 
+bool directory::find(uint index, object_p &nref, object_p &vref) const
+// ----------------------------------------------------------------------------
+//   Return the name of the n-th element in directory
+// ----------------------------------------------------------------------------
+{
+    object_p p     = object_p(payload());
+    size_t   size  = leb128<size_t>(p);
+    object_p name  = nullptr;
+    object_p value = nullptr;
+
+    index++;
+    while (index && size)
+    {
+        name = p;
+        size_t   ns   = name->size();
+        p += ns;
+        value = p;
+        size_t   vs    = value->size();
+        p += vs;
+
+        // Defensive coding against malformed directorys
+        if (ns + vs > size)
+        {
+            record(directory_error,
+                   "Malformed directory searching name (ns=%u vs=%u size=%u)",
+                   ns, vs, size);
+            return false;     // Malformed directory, quick exit
+        }
+
+        size -= (ns + vs);
+        index--;
+    }
+    if (index)
+        name = value = nullptr;
+    nref = name;
+    vref = value;
+    return index == 0;
+}
+
+
+object_p directory::name(uint index) const
+// ----------------------------------------------------------------------------
+//   Return name at given index
+// ----------------------------------------------------------------------------
+{
+    object_p name, value;
+    if (find(index, name, value))
+        return name;
+    return nullptr;
+}
+
+
+object_p directory::value(uint index) const
+// ----------------------------------------------------------------------------
+//   Return name at given index
+// ----------------------------------------------------------------------------
+{
+    object_p name, value;
+    if (find(index, name, value))
+        return value;
+    return nullptr;
+}
+
+
 
 // ============================================================================
 //
@@ -416,9 +684,6 @@ COMMAND_BODY(Sto)
 //   Store a global variable into current directory
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(2))
-        return ERROR;
-
     directory *dir = rt.variables(0);
     if (!dir)
     {
@@ -427,30 +692,12 @@ COMMAND_BODY(Sto)
     }
 
     // Check that we have two objects in the stack
-    object_p x = rt.stack(0);
-    object_p y = rt.stack(1);
-    if (x && y)
+    object_p name = rt.stack(0);
+    object_p value = rt.stack(1);
+    if (name && value && dir->store(name, value))
     {
-        if (local_p loc = x->as_quoted<local>())
-        {
-            size_t index = loc->index();
-            if (rt.local(index, y))
-                return OK;
-            return ERROR;
-        }
-        symbol_p name = x->as_quoted<symbol>();
-        if (!name)
-        {
-            rt.invalid_name_error();
-            return ERROR;
-        }
-
-        if (dir->store(name, y))
-        {
-            rt.drop();
-            rt.drop();
-            return OK;
-        }
+        rt.drop(2);
+        return OK;
     }
 
     // Otherwise, return an error
@@ -463,39 +710,133 @@ COMMAND_BODY(Rcl)
 //   Recall a global variable from current directory
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return ERROR;
-
-    object_p x = rt.stack(0);
-    if (!x)
-        return ERROR;
-    if (local_p loc = x->as_quoted<local>())
-    {
-        size_t index = loc->index();
-        if (object_g obj = rt.local(index))
-            if (rt.push(obj))
-                return OK;
-        return ERROR;
-    }
-    symbol_p name = x->as_quoted<symbol>();
+    object_p name = rt.stack(0);
     if (!name)
-    {
-        rt.invalid_name_error();
         return ERROR;
-    }
 
     // Lookup all directorys, starting with innermost one
-    if (object_p value = directory::recall_all(name))
-    {
-        if (rt.top(value))
-            return OK;
-        return ERROR;       // Out of memory, cannot happen?
-    }
+    if (object_p value = directory::recall_all(name, true))
+        return rt.top(value) ? OK : ERROR;
 
     // Otherwise, return an error
-    rt.undefined_name_error();
     return ERROR;
 }
+
+
+static object::result store_op(object::id op)
+// ----------------------------------------------------------------------------
+//   Store with a given operation
+// ----------------------------------------------------------------------------
+{
+    directory *dir = rt.variables(0);
+    if (!dir)
+    {
+        rt.no_directory_error();
+        return object::ERROR;
+    }
+
+    object_g name = rt.stack(0);
+    object_g value = rt.stack(1);
+    if (!name || !value)
+        return object::ERROR;
+    object_g existing = directory::recall_all(name, true);
+    if (!existing)
+        return object::ERROR;
+    rt.stack(1, existing);
+    rt.stack(0, value);
+    object_p cmd = object::static_object(op);
+    if (object::result res = cmd->evaluate())
+        return res;
+    value = rt.pop();
+    if (value && dir->store(name, value))
+        return object::OK;
+    return object::ERROR;
+}
+
+
+COMMAND_BODY(StoreAdd)          { return store_op(ID_add); }
+COMMAND_BODY(StoreSub)          { return store_op(ID_sub); }
+COMMAND_BODY(StoreMul)          { return store_op(ID_mul); }
+COMMAND_BODY(StoreDiv)          { return store_op(ID_div); }
+
+
+static object::result store_op(object::id op, object_p cstval)
+// ----------------------------------------------------------------------------
+//   Store with a given operation
+// ----------------------------------------------------------------------------
+{
+    directory *dir = rt.variables(0);
+    if (!dir)
+    {
+        rt.no_directory_error();
+        return object::ERROR;
+    }
+
+    object_g name = rt.stack(0);
+    object_g value = cstval;
+    if (!name || !value)
+        return object::ERROR;
+    object_g existing = directory::recall_all(name, true);
+
+    if (!existing)
+        return object::ERROR;
+    rt.stack(0, existing);
+    rt.push(value);
+    object_p cmd = object::static_object(op);
+    if (object::result res = cmd->evaluate())
+        return res;
+    value = rt.top();
+    if (value && dir->store(name, value))
+        return object::OK;
+    return object::ERROR;
+}
+
+
+COMMAND_BODY(Increment)
+// ----------------------------------------------------------------------------
+//   Increment the given variable
+// ----------------------------------------------------------------------------
+{
+    return store_op(ID_add, integer::make(1));
+}
+
+
+COMMAND_BODY(Decrement)
+// ----------------------------------------------------------------------------
+//   Decrement the given variable
+// ----------------------------------------------------------------------------
+{
+    return store_op(ID_sub, integer::make(1));
+}
+
+
+static object::result recall_op(object::id op)
+// ----------------------------------------------------------------------------
+//   Store with a given operation
+// ----------------------------------------------------------------------------
+{
+    directory *dir = rt.variables(0);
+    if (!dir)
+    {
+        rt.no_directory_error();
+        return object::ERROR;
+    }
+
+    object_g name = rt.stack(0);
+    if (!name)
+        return object::ERROR;
+    object_g existing = directory::recall_all(name, true);
+    if (!existing || !rt.top(existing))
+        return object::ERROR;
+    object_p cmd = object::static_object(op);
+    return cmd->evaluate();
+}
+
+
+COMMAND_BODY(RecallAdd)         { return recall_op(ID_add); }
+COMMAND_BODY(RecallSub)         { return recall_op(ID_sub); }
+COMMAND_BODY(RecallMul)         { return recall_op(ID_mul); }
+COMMAND_BODY(RecallDiv)         { return recall_op(ID_div); }
 
 
 COMMAND_BODY(Purge)
@@ -503,29 +844,16 @@ COMMAND_BODY(Purge)
 //   Purge a global variable from current directory
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return ERROR;
-    object_p x = rt.stack(0);
-    if (!x)
-        return ERROR;
-    symbol_g name = x->as_quoted<symbol>();
+    object_p name = rt.stack(0);
     if (!name)
-    {
-        rt.invalid_name_error();
         return ERROR;
-    }
-    rt.pop();
-
-    // Lookup all directorys, starting with innermost one
-    directory *dir = rt.variables(0);
-    if (!dir)
-    {
-        rt.no_directory_error();
-        return ERROR;
-    }
+    if (object_p quoted = name->as_quoted(ID_object))
+        name = quoted;
 
     // Purge the object (HP48 doesn't error out if name does not exist)
-    dir->purge(name);
+    if (directory *dir = rt.variables(0))
+        dir->purge(name);
+    rt.drop();
     return OK;
 }
 
@@ -535,8 +863,6 @@ COMMAND_BODY(PurgeAll)
 //   Purge a global variable from current directory and enclosing directories
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return ERROR;
     object_p x = rt.stack(0);
     if (!x)
         return ERROR;
@@ -563,8 +889,6 @@ COMMAND_BODY(Mem)
 // ----------------------------------------------------------------------------
 //    The HP48 manual specifies that mem performs garbage collection
 {
-    if (!rt.args(0))
-        return ERROR;
     rt.gc();
     run<FreeMemory>();
     return OK;
@@ -576,13 +900,10 @@ COMMAND_BODY(GarbageCollect)
 //   Run the garbage collector
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(0))
-    {
-        size_t saved = rt.gc();
-        integer_p result = rt.make<integer>(ID_integer, saved);
-        if (rt.push(result))
-            return OK;
-    }
+    size_t saved = rt.gc();
+    integer_p result = rt.make<integer>(ID_integer, saved);
+    if (rt.push(result))
+        return OK;
     return  ERROR;
 }
 
@@ -592,13 +913,10 @@ COMMAND_BODY(FreeMemory)
 //   Return amount of free memory (available without garbage collection)
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(0))
-    {
-        size_t available = rt.available();
-        integer_p result = rt.make<integer>(ID_integer, available);
-        if (rt.push(result))
-            return OK;
-    }
+    size_t available = rt.available();
+    integer_p result = rt.make<integer>(ID_integer, available);
+    if (rt.push(result))
+        return OK;
     return ERROR;
 }
 
@@ -608,13 +926,10 @@ COMMAND_BODY(SystemMemory)
 //   Return the amount of memory that is seen as free by the system
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(0))
-    {
-        size_t mem = sys_free_mem();
-        integer_p result = rt.make<integer>(ID_integer, mem);
-        if (rt.push(result))
-            return OK;
-    }
+    size_t mem = sys_free_mem();
+    integer_p result = rt.make<integer>(ID_integer, mem);
+    if (rt.push(result))
+        return OK;
     return ERROR;
 }
 
@@ -624,8 +939,6 @@ COMMAND_BODY(home)
 //   Return the home directory
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(0))
-        return ERROR;
     rt.updir(~0U);
     ui.menu_refresh(ID_VariablesMenu);
     return OK;
@@ -637,17 +950,15 @@ COMMAND_BODY(CurrentDirectory)
 //   Return the current directory as an object
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(0))
-    {
-        directory_p dir = rt.variables(0);
-        if (rt.push(dir))
-            return OK;
-    }
+    directory_p dir = rt.variables(0);
+    if (rt.push(dir))
+        return OK;
+
     return ERROR;
 }
 
 
-static bool path_callback(symbol_p name, object_p obj, void *arg)
+static bool path_callback(object_p name, object_p obj, void *arg)
 // ----------------------------------------------------------------------------
 //   Find the directory in enclosing directory
 // ----------------------------------------------------------------------------
@@ -696,11 +1007,9 @@ COMMAND_BODY(path)
 //   Build a path with the list of paths
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(0))
-        if (list_p list = directory::path())
-            if (rt.push(list))
-                return OK;
-
+    if (list_p list = directory::path())
+        if (rt.push(list))
+            return OK;
     return ERROR;
 }
 
@@ -710,9 +1019,6 @@ COMMAND_BODY(crdir)
 //   Create a directory
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(1))
-        return ERROR;
-
     directory *dir = rt.variables(0);
     if (!dir)
     {
@@ -747,8 +1053,6 @@ COMMAND_BODY(updir)
 //   Go up one directory
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(0))
-        return ERROR;
     rt.updir();
     ui.menu_refresh(ID_VariablesMenu);
     return OK;
@@ -779,7 +1083,7 @@ MENU_BODY(VariablesMenu)
 // ----------------------------------------------------------------------------
 {
     uint  nitems = count_variables();
-    items_init(mi, nitems, 1);
+    items_init(mi, nitems, 3, 1);
     list_variables(mi);
     return OK;
 }
@@ -800,39 +1104,48 @@ uint VariablesMenu::count_variables()
 }
 
 
-static bool evaluate_variable(symbol_p name, object_p value, void *arg)
+static bool evaluate_variable(object_p name, object_p value, void *arg)
 // ----------------------------------------------------------------------------
 //   Add a variable to evaluate in the menu
 // ----------------------------------------------------------------------------
 {
+    symbol_p disp = name->as<symbol>();
+    if (!disp)
+        disp = name->as_symbol(true);
     menu::info &mi = *((menu::info *) arg);
     if (value->as<directory>())
         mi.marker = L'◥';
-    menu::items(mi, name, menu::ID_VariablesMenuExecute);
+    menu::items(mi, disp, menu::ID_VariablesMenuExecute);
 
     return true;
 }
 
 
-static bool recall_variable(symbol_p name, object_p UNUSED value, void *arg)
+static bool recall_variable(object_p name, object_p UNUSED value, void *arg)
 // ----------------------------------------------------------------------------
 //   Add a variable to evaluate in the menu
 // ----------------------------------------------------------------------------
 //   For a name X, we create an object « 'Name' RCL »
 {
+    symbol_p disp = name->as<symbol>();
+    if (!disp)
+        disp = name->as_symbol(true);
     menu::info &mi = *((menu::info *) arg);
-    menu::items(mi, name, menu::ID_VariablesMenuRecall);
+    menu::items(mi, disp, menu::ID_VariablesMenuRecall);
     return true;
 }
 
 
-static bool store_variable(symbol_p name, object_p UNUSED value, void *arg)
+static bool store_variable(object_p name, object_p UNUSED value, void *arg)
 // ----------------------------------------------------------------------------
 //   Add a variable to evaluate in the menu
 // ----------------------------------------------------------------------------
 {
+    symbol_p disp = name->as<symbol>();
+    if (!disp)
+        disp = name->as_symbol(true);
     menu::info &mi = *((menu::info *) arg);
-    menu::items(mi, name, menu::ID_VariablesMenuStore);
+    menu::items(mi, disp, menu::ID_VariablesMenuStore);
     return true;
 }
 
@@ -873,56 +1186,42 @@ void VariablesMenu::list_variables(info &mi)
 }
 
 
-static object::result insert_cmd(int key, cstring before, cstring after)
-// ----------------------------------------------------------------------------
-//   Insert the name associated with the key if editing
-// ----------------------------------------------------------------------------
-{
-    if (symbol_p name = ui.label(key - KEY_F1))
-    {
-        uint     cursor = ui.cursorPosition();
-        size_t   length = 0;
-        utf8     text   = name->value(&length);
-
-        cursor += rt.insert(cursor, utf8(before));
-        cursor += rt.insert(cursor, text, length);
-        cursor += rt.insert(cursor, utf8(after));
-
-        ui.cursorPosition(cursor);
-
-        return object::OK;
-    }
-    return object::ERROR;
-}
-
-
 COMMAND_BODY(VariablesMenuExecute)
 // ----------------------------------------------------------------------------
 //   Recall a variable from the VariablesMenu
 // ----------------------------------------------------------------------------
 {
     int key = ui.evaluating;
-    if (rt.editing())
-        return insert_cmd(key, "", " ");
-
     if (key >= KEY_F1 && key <= KEY_F6)
     {
-        if (symbol_p name = ui.label(key - KEY_F1))
+        if (directory *dir = rt.variables(0))
         {
-            if (directory *dir = rt.variables(0))
+            uint     index = key - KEY_F1 + 5 * ui.page();
+            object_p name, value;
+            if (dir->find(index, name, value))
             {
-                if (object_p value = dir->recall(name))
+                if (symbol_p sym = name->as_symbol(true))
                 {
                     size_t sz = 0;
-                    utf8 help = name->value(&sz);
+                    utf8 help = sym->value(&sz);
                     ui.draw_user_command(help, sz);
-                    return value->execute();
                 }
+                return program::run(value);
             }
         }
     }
 
     return ERROR;
+}
+
+
+INSERT_BODY(VariablesMenuExecute)
+// ----------------------------------------------------------------------------
+//   Insert the name of a variable
+// ----------------------------------------------------------------------------
+{
+    int key = ui.evaluating;
+    return ui.insert_softkey(key, " ", " ", false);
 }
 
 
@@ -932,17 +1231,28 @@ COMMAND_BODY(VariablesMenuRecall)
 // ----------------------------------------------------------------------------
 {
     int key = ui.evaluating;
-    if (rt.editing())
-        return insert_cmd(key, "'", "' Recall ");
-
     if (key >= KEY_F1 && key <= KEY_F6)
-        if (symbol_p name = ui.label(key - KEY_F1))
-            if (directory *dir = rt.variables(0))
-                if (object_p value = dir->recall(name))
-                    if (rt.push(value))
-                        return OK;
+    {
+        if (directory *dir = rt.variables(0))
+        {
+            uint index = key - KEY_F1 + 5 * ui.page();
+            if (object_p value = dir->value(index))
+                if (rt.push(value))
+                    return OK;
+        }
+    }
 
     return ERROR;
+}
+
+
+INSERT_BODY(VariablesMenuRecall)
+// ----------------------------------------------------------------------------
+//   Insert the name of a variable with `Recall` after it
+// ----------------------------------------------------------------------------
+{
+    int key = ui.evaluating;
+    return ui.insert_softkey(key, " '", "' Recall ", false);
 }
 
 
@@ -952,15 +1262,270 @@ COMMAND_BODY(VariablesMenuStore)
 // ----------------------------------------------------------------------------
 {
     int key = ui.evaluating;
-    if (rt.editing())
-        return insert_cmd(key, "'", "' Store ");
-
     if (key >= KEY_F1 && key <= KEY_F6)
-        if (symbol_p name = ui.label(key - KEY_F1))
-            if (directory *dir = rt.variables(0))
+    {
+        if (directory *dir = rt.variables(0))
+        {
+            uint index = key - KEY_F1 + 5 * ui.page();
+            if (object_p name = dir->name(index))
                 if (object_p value = rt.pop())
                     if (dir->store(name, value))
                         return OK;
+        }
+    }
+    return ERROR;
+}
 
+
+INSERT_BODY(VariablesMenuStore)
+// ----------------------------------------------------------------------------
+//   Insert the name of a variable with `Store` after it
+// ----------------------------------------------------------------------------
+{
+    int key = ui.evaluating;
+    return ui.insert_softkey(key, " '", "' Store ", false);
+}
+
+
+
+// ============================================================================
+//
+//   Flag commands
+//
+// ============================================================================
+
+static byte  *flags      = nullptr;
+static size_t flags_size = 0;
+
+static byte *init_flags()
+// ----------------------------------------------------------------------------
+//  Reinitialize the flags
+// ----------------------------------------------------------------------------
+{
+    size_t maxflags = Settings.MaxFlags();
+    maxflags = (maxflags + 7) / 8;
+    if (!flags || flags_size != maxflags)
+    {
+        flags = (byte *) realloc(flags, maxflags);
+        if (flags)
+        {
+            memset(flags + flags_size, 0, maxflags - flags_size);
+            flags_size = maxflags;
+        }
+    }
+    if (!flags)
+        rt.out_of_memory_error();
+    return flags;
+}
+
+
+struct flag_conversion
+// ----------------------------------------------------------------------------
+//   Conversion between HP system flags and DB48X settings
+// ----------------------------------------------------------------------------
+// These are documented in section C-1 of the HP50G advanced reference manual
+{
+    int         index;
+    object::id  setting;
+};
+
+
+static flag_conversion flag_conversions[] =
+// ----------------------------------------------------------------------------
+//   Conversion between HP and DB48X values
+// ----------------------------------------------------------------------------
+{
+    {   -1,     object::ID_PrincipalSolution            },
+    {   -2,     object::ID_NumericalConstants           },
+    {   -3,     object::ID_NumericalResults             },
+    {   -4,     object::ID_CarefulEvaluation            },
+    {  -20,     object::ID_UnderflowError               },
+    {  -21,     object::ID_OverflowError                },
+    {  -22,     object::ID_InfinityValue                },
+    {  -23,     object::ID_NegativeUnderflowIndicator   },
+    {  -24,     object::ID_PositiveUnderflowIndicator   },
+    {  -25,     object::ID_OverflowIndicator            },
+    {  -26,     object::ID_InfiniteResultIndicator      },
+    {  -29,     object::ID_NoPlotAxes                   },
+    {  -29,     object::ID_NoPlotAxes                   },
+    {  -31,     object::ID_NoCurveFilling               },
+    {  -40,     object::ID_ShowTime                     },
+    {  -41,     object::ID_Time24H                      },
+    {  -42,     object::ID_DayBeforeMonth               },
+    {  -51,     object::ID_DecimalComma                 },
+    {  -52,     object::ID_MultiLineResult              },
+    {  -55,     object::ID_NoLastArguments              },
+    {  -56,     object::ID_BeepOff                      },
+    {  -64,     object::ID_IndexWrapped                 },
+    {  -65,     object::ID_MultiLineStack               },
+    {  -97,     object::ID_VerticalLists                },
+    {  -98,     object::ID_VerticalVectors              },
+    { -103,     object::ID_ComplexResults               },
+};
+
+
+static object::result do_flag(bool read, bool test, bool write, bool set)
+// ----------------------------------------------------------------------------
+//   RPL command for changing flag
+// ----------------------------------------------------------------------------
+{
+    object_p   arg     = rt.top();
+    object::id aty     = arg->type();
+    bool       value   = false;
+    bool       builtin = false;
+    bool       flip    = !read && !write;
+
+    // Check built-in flags
+    if (object_p quoted = arg->as_quoted(object::ID_object))
+    {
+        arg = quoted;
+        aty = arg->type();
+    }
+    if (int32_t index = arg->as_int32(0, false))
+    {
+        if (index < 0)
+        {
+            if (index < -128)
+            {
+                rt.domain_error();
+                return object::ERROR;
+            }
+            uint max = sizeof(flag_conversions) / sizeof(*flag_conversions);
+            for (uint i = 0; i < max; i++)
+            {
+                if (flag_conversions[i].index == index)
+                {
+                    aty = flag_conversions[i].setting;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (read && Settings.flag(aty, &value))
+        builtin = true;
+    if (write && Settings.flag(aty, set))
+        builtin = true;
+    if (builtin)
+    {
+        rt.drop();
+        if (read)
+        {
+            if (!test)
+                value = !value;
+            object::id rty = value ? object::ID_True : object::ID_False;
+            object_p value = command::static_object(rty);
+            if (!rt.push(value))
+                return object::ERROR;
+        }
+        return object::OK;
+    }
+
+    // Normal numeric flags
+    int32_t index = arg->as_int32(0, true);
+    if (rt.error())
+        return object::ERROR;
+
+    // System flags that were not recognized
+    if (index < 0)
+    {
+        rt.unsupported_flag_error();
+        return object::ERROR;
+    }
+
+    size_t maxflags = Settings.MaxFlags();
+    if (size_t(index) > maxflags)
+    {
+        rt.index_error();
+        return object::ERROR;
+    }
+
+    // Allocate memory for the flags if necessary
+    if (!init_flags())
+        return object::ERROR;
+    byte *fp = flags + index / 8;
+    byte bits = 1 << (index % 8);
+    value = *fp & bits;
+    if (flip)
+    {
+        set = !value;
+        write = true;
+    }
+    if (write)
+        *fp = (*fp & ~bits) | (set ? bits : 0);
+    rt.drop();
+    if (read)
+    {
+        if (!test)
+            value = !value;
+        object::id rty = value ? object::ID_True : object::ID_False;
+        object_p value = command::static_object(rty);
+        if (!rt.push(value))
+            return object::ERROR;
+    }
+    return object::OK;
+}
+
+
+COMMAND_BODY(SetFlag)                   { return do_flag(false, false, true,  true);  }
+COMMAND_BODY(ClearFlag)                 { return do_flag(false, false, true,  false); }
+COMMAND_BODY(FlipFlag)                  { return do_flag(false, false, false, false); }
+COMMAND_BODY(TestFlagSet)               { return do_flag(true,  true,  false, false); }
+COMMAND_BODY(TestFlagClear)             { return do_flag(true,  false, false, false); }
+COMMAND_BODY(TestFlagClearThenClear)    { return do_flag(true,  false, true,  false); }
+COMMAND_BODY(TestFlagClearThenSet)      { return do_flag(true,  false, true,  true); }
+COMMAND_BODY(TestFlagSetThenClear)      { return do_flag(true,  true,  true,  false); }
+COMMAND_BODY(TestFlagSetThenSet)        { return do_flag(true,  true,  true,  true); }
+
+COMMAND_BODY(FlagsToBinary)
+// ----------------------------------------------------------------------------
+//   Create a big integer from the flags
+// ----------------------------------------------------------------------------
+{
+    size_t maxflags = Settings.MaxFlags();
+    object::id type = ID_based_bignum;
+    if (!init_flags())
+        return object::ERROR;
+    bignum_p binary = rt.make<bignum>(type, byte_p(flags), (maxflags+7)/8);
+    if (binary && rt.push(binary))
+        return OK;
+    return ERROR;
+}
+
+
+COMMAND_BODY(BinaryToFlags)
+// ----------------------------------------------------------------------------
+//   Store a binary value into the flags
+// ----------------------------------------------------------------------------
+{
+    if (rt.args(1))
+    {
+        object_p value = rt.top();
+        if (value->is_integer())
+        {
+            bignum_g big;
+            if (value->is_bignum())
+                big = bignum_p(value);
+            else
+                big = rt.make<bignum>(integer_g(integer_p(value)));
+            size_t sz = 0;
+            byte_p data = big->value(&sz);
+            size_t maxflags = Settings.MaxFlags();
+            if (sz * 8 > maxflags)
+                sz = (maxflags + 7) / 8;
+
+            if (!init_flags())
+                return object::ERROR;
+            memcpy(flags, data, sz);
+            if (sz < maxflags / 8)
+                memset(flags + sz, 0, (maxflags + 7) / 8 - sz);
+            if (rt.drop())
+                return OK;
+        }
+        else
+        {
+            rt.type_error();
+        }
+    }
     return ERROR;
 }

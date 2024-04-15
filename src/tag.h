@@ -48,7 +48,7 @@ struct tag : object
         while (len--)
             *p++ = *s++;
         len = obj->size();
-        memmove(p, obj.Safe(), len);
+        memmove(p, +obj, len);
     }
 
     static size_t required_memory(id i, gcutf8 UNUSED label, size_t len, object_g obj)
@@ -98,17 +98,24 @@ struct tag : object
         return object_p(p);
     }
 
+    static object_p strip(object_p obj)
+    {
+        if (obj)
+            while (tag_p tobj = obj->as<tag>())
+                obj = tobj->tagged_object();
+        return obj;
+    }
+
 public:
     OBJECT_DECL(tag);
     PARSE_DECL(tag);
     SIZE_DECL(tag);
     HELP_DECL(tag);
     RENDER_DECL(tag);
-    EXEC_DECL(tag);
 };
 
-COMMAND_DECLARE(dtag);
-COMMAND_DECLARE(ToTag);
-COMMAND_DECLARE(FromTag);
+COMMAND_DECLARE(dtag,1);
+COMMAND_DECLARE(ToTag,2);
+COMMAND_DECLARE(FromTag,1);
 
 #endif // TAG_H

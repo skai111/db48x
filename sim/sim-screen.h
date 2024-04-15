@@ -31,11 +31,6 @@
 
 #include <QGraphicsView>
 #include <QGraphicsPixmapItem>
-#include <QTimer>
-
-
-extern volatile int lcd_needsupdate;
-extern uint8_t lcd_buffer[];
 
 class SimScreen : public QGraphicsView
 // ----------------------------------------------------------------------------
@@ -54,23 +49,25 @@ public:
     QPen                 bgPen;
     QPen                 fgPen;
 
-    QTimer               screenTimer;
     QGraphicsScene       screen;
     QGraphicsPixmapItem *mainScreen;
     QPixmap              mainPixmap;
 
-    int                  lcd_update;
+    uint                 redraws;
+
+    static SimScreen    *theScreen;
 
   public:
     explicit SimScreen(QWidget *parent = 0);
     ~SimScreen();
 
-public:
-    void                 setPixel(int x, int y, int on);
-    void                 setScale(qreal _scale);
-
-public slots:
-    void update();
+  public:
+    void        setScale(qreal _scale);
+    void        updatePixmap();
+    void        refreshScreen();
+    static void update_pixmap() { theScreen->updatePixmap(); }
+    static void refresh_lcd()   { theScreen->refreshScreen(); }
+    static uint redraw_count()  { return theScreen->redraws; }
 };
 
 #endif // SIMSCREEN_H

@@ -29,10 +29,9 @@
 
 #include "compare.h"
 
-#include "decimal-32.h"
-#include "decimal-64.h"
-#include "decimal128.h"
-#include "equation.h"
+#include "decimal.h"
+#include "expression.h"
+#include "hwfp.h"
 #include "integer.h"
 #include "locals.h"
 
@@ -63,27 +62,26 @@ bool comparison::compare(int *cmp, algebraic_r x, algebraic_r y)
 // ----------------------------------------------------------------------------
 {
     // Check if we had some error earlier, if so propagate
-    if (!x.Safe() || !y.Safe())
+    if (!x || !y)
         return false;
+
     id xt = x->type();
     id yt = y->type();
 
     /* Integer types */
-    bool ok = false;
-
     if (is_integer(xt) && is_integer(yt))
     {
         // Check if this is a bignum comparison
         if (is_bignum(xt) || is_bignum(yt))
         {
-            algebraic_g xa = algebraic_p(x.Safe());
-            algebraic_g ya = algebraic_p(y.Safe());
+            algebraic_g xa = algebraic_p(+x);
+            algebraic_g ya = algebraic_p(+y);
             if (!is_bignum(xt))
                 xt = bignum_promotion(xa);
             if (!is_bignum(yt))
                 yt = bignum_promotion(ya);
-            bignum_g xb = bignum_p(xa.Safe());
-            bignum_g yb = bignum_p(ya.Safe());
+            bignum_g xb = bignum_p(+xa);
+            bignum_g yb = bignum_p(+ya);
             int cmpval = bignum::compare(xb, yb);
             *cmp = cmpval < 0 ? -1 : cmpval > 0 ? 1 : 0;
             return true;
@@ -108,63 +106,51 @@ bool comparison::compare(int *cmp, algebraic_r x, algebraic_r y)
     }
 
     /* Real data types */
-    algebraic_g xa = algebraic_p(x.Safe());
-    algebraic_g ya = algebraic_p(y.Safe());
-    if (!ok && real_promotion(xa, ya))
+    algebraic_g xa = algebraic_p(+x);
+    algebraic_g ya = algebraic_p(+y);
+    if (hwfp_promotion(xa, ya))
     {
-        /* Here, x and y have the same type, a decimal type */
-        int rlt = 0;
-        int rgt = 0;
-        xt = xa->type();
-        switch(xt)
+        // Here we have two identical hardware floats types
+        if (hwfloat_p xf = xa->as<hwfloat>())
         {
-        case ID_decimal32:
+            hwfloat_p yf = hwfloat_p(+ya);
+            float xv = xf->value();
+            float yv = yf->value();
+            *cmp = (xv > yv) - (xv < yv);
+            return true;
+        }
+        else
         {
-            bid32 xv = decimal32_p(object_p(xa))->value();
-            bid32 yv = decimal32_p(object_p(ya))->value();
-            bid32_quiet_unordered(&rlt, &xv.value, &yv.value);
-            if (rlt)
-                return false;
-            bid32_quiet_less(&rlt, &xv.value, &yv.value);
-            bid32_quiet_greater(&rgt, &xv.value, &yv.value);
-            break;
+            hwdouble_p xd = xa->as<hwdouble>();
+            hwdouble_p yd = ya->as<hwdouble>();
+            double xv = xd->value();
+            double yv = yd->value();
+            *cmp = (xv > yv) - (xv < yv);
+            return true;
         }
-        case ID_decimal64:
-        {
-            bid64 xv = decimal64_p(object_p(xa))->value();
-            bid64 yv = decimal64_p(object_p(ya))->value();
-            bid64_quiet_unordered(&rlt, &xv.value, &yv.value);
-            if (rlt)
-                return false;
-            bid64_quiet_less(&rlt, &xv.value, &yv.value);
-            bid64_quiet_greater(&rgt, &xv.value, &yv.value);
-            break;
-        }
-        case ID_decimal128:
-        {
-            bid128 xv = decimal128_p(object_p(xa))->value();
-            bid128 yv = decimal128_p(object_p(ya))->value();
-            bid128_quiet_unordered(&rlt, &xv.value, &yv.value);
-            if (rlt)
-                return false;
-            bid128_quiet_less(&rlt, &xv.value, &yv.value);
-            bid128_quiet_greater(&rgt, &xv.value, &yv.value);
-            break;
-        }
-        default:
-            return false;
-        }
-        *cmp = rgt - rlt;
+
+        decimal_g xd = decimal_p(+xa);
+        decimal_g yd = decimal_p(+ya);
+        *cmp = decimal::compare(xd, yd);
+        return true;
+    }
+    if (decimal_promotion(xa, ya))
+    {
+        /* Here, x and y have a decimal type */
+        decimal_g xd = decimal_p(+xa);
+        decimal_g yd = decimal_p(+ya);
+        *cmp = decimal::compare(xd, yd);
         return true;
     }
 
-    if (!ok && xt == ID_text && yt == ID_text)
+    if (((xt == ID_text && yt == ID_text) ||
+         (xt == ID_symbol && yt == ID_symbol)))
     {
         // Lexical comparison
         size_t xl = 0;
         size_t yl = 0;
-        utf8 xs = text_p(object_p(x.Safe()))->value(&xl);
-        utf8 ys = text_p(object_p(y.Safe()))->value(&yl);
+        utf8 xs = text_p(object_p(+x))->value(&xl);
+        utf8 ys = text_p(object_p(+y))->value(&yl);
         size_t l = xl < yl ? xl : yl;
 
         // REVISIT: Unicode sorting?
@@ -181,7 +167,62 @@ bool comparison::compare(int *cmp, algebraic_r x, algebraic_r y)
         return true;
     }
 
-    // All other cases are errors
+    if (((xt == ID_list && yt == ID_list) ||
+         (xt == ID_array && yt == ID_array)))
+    {
+        list_p xl = list_p(+x);
+        list_p yl = list_p(+y);
+        list::iterator xi = xl->begin();
+        list::iterator xe = xl->end();
+        list::iterator yi = yl->begin();
+        list::iterator ye = yl->end();
+
+        // Lexicographic comparison of arrays and lists
+        while(xi != xe && yi != ye)
+        {
+            object_p xo = *xi++;
+            object_p yo = *yi++;
+            if (xo->is_algebraic() && yo->is_algebraic())
+            {
+                algebraic_g xa = algebraic_p(xo);
+                algebraic_g ya = algebraic_p(yo);
+                if (compare(cmp, xa, ya))
+                    if (*cmp)
+                        return true;
+            }
+            else if (int d = xo->compare_to(yo))
+            {
+                *cmp = d;
+                return true;
+            }
+        }
+        *cmp = (xi != xe) - (yi != ye);
+        return true;
+    }
+
+    if (xt == ID_True || xt == ID_False)
+    {
+        int xtruth = xt == ID_True;
+        int ytruth = y->as_truth(false);
+        if (ytruth >= 0)
+        {
+            *cmp = xtruth - ytruth;
+            return true;
+        }
+    }
+    if (yt == ID_True || yt == ID_False)
+    {
+        int xtruth = x->as_truth(false);
+        int ytruth = yt == ID_True;
+        if (xtruth >= 0)
+        {
+            *cmp = xtruth - ytruth;
+            return true;
+        }
+    }
+
+    // All other cases are type errors
+    rt.type_error();
     return false;
 }
 
@@ -191,9 +232,6 @@ object::result comparison::compare(comparison_fn comparator, id op)
 //   Compare items from the stack
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(2))
-        return  ERROR;
-
     object_p x = rt.stack(1);
     object_p y = rt.stack(0);
     if (!x || !y)
@@ -206,11 +244,26 @@ object::result comparison::compare(comparison_fn comparator, id op)
 
     algebraic_g xa = algebraic_p(x);
     algebraic_g ya = algebraic_p(y);
-    algebraic_g ra = compare(comparator, op, xa, ya);
+
+    // Convert arguments to numeric if necessary
+    if (Settings.NumericalResults())
+    {
+        (void) to_decimal(xa, true);          // May fail silently
+        (void) to_decimal(ya, true);
+    }
+    if (!xa || !ya)
+        return ERROR;
+
+    algebraic_g ra;
+    if (xa->is_symbolic() || ya->is_symbolic())
+        ra = expression::make(op, xa, ya);
+    else
+        ra = compare(comparator, op, xa, ya);
+
 
     if (ra)
         if (rt.drop(2))
-            if (rt.push(ra.Safe()))
+            if (rt.push(+ra))
                 return OK;
 
     return ERROR;
@@ -234,7 +287,7 @@ algebraic_g comparison::compare(comparison_fn comparator,
     }
 
     // Otherwise, need to build an equation with the comparison
-    equation_p eq = equation::make(op, x, y);
+    expression_p eq = expression::make(op, x, y);
     return eq;
 }
 
@@ -352,23 +405,21 @@ template object::result comparison::evaluate<TestNE>();
 
 COMMAND_BODY(True)
 // ----------------------------------------------------------------------------
-//   Evaluate as self
+//   Evaluate as a static (non-GC) version of True
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(0))
-        if (rt.push(command::static_object(ID_True)))
-            return OK;
+    if (rt.push(True::static_self()))
+        return OK;
     return ERROR;
 }
 
 COMMAND_BODY(False)
 // ----------------------------------------------------------------------------
-//   Evaluate as self
+//   Evaluate as a static (non-GC) version of False
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(0))
-        if (rt.push(command::static_object(ID_False)))
-            return OK;
+    if (rt.push(False::static_self()))
+        return OK;
     return ERROR;
 }
 

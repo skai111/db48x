@@ -32,42 +32,44 @@
 #include "types.h"
 #include <cstdint>
 
+
+#ifdef DM42
+#  pragma GCC push_options
+#  pragma GCC optimize("-O3")
+#endif // DM42
+
 template <typename Int = uint, typename Data>
 inline Int leb128(Data *&p)
 // ----------------------------------------------------------------------------
 //   Return the leb128 value at pointer
 // ----------------------------------------------------------------------------
 {
-    byte    *bp     = (byte *) p;
-    Int      result = 0;
-    unsigned shift  = 0;
-    bool     sign   = false;
+    const bool is_signed = Int(~0ULL) < Int(0);
+    byte      *bp        = (byte *) p;
+    Int        result    = 0;
+    unsigned   shift     = 0;
     do
     {
         result |= Int(*bp & 0x7F) << shift;
-        sign = *bp & 0x40;
         shift += 7;
     } while (*bp++ & 0x80);
     p = (Data *) bp;
-    if (Int(~0ULL) < Int(0) && sign)
-        result |= Int(~0ULL) << (shift - 1);
+    if (is_signed && (bp[-1] & 0x40))
+        result |= Int(~0ULL << (shift - 1));
     return result;
 }
 
 
-template<>
-inline uint16_t leb128<uint16_t, byte>(byte *&bp)
+inline INLINE uint16_t leb128_u16(byte *bp)
 // ----------------------------------------------------------------------------
 //   Return the leb128 value at pointer
 // ----------------------------------------------------------------------------
 {
-    if (bp[0] < 0x80)
-        return *bp++;
-    uint16_t b1 = *bp++ & 0x7F;
-    uint16_t b2 = *bp++ << 7;
-    return b1 | b2;
+    uint16_t b1 = *bp;
+    if (b1 < 0x80)
+        return b1;
+    return (b1 & 0x7F) | (uint16_t(bp[1]) << 7);
 }
-
 
 
 template<typename Data, typename Int = uint>
@@ -76,12 +78,16 @@ inline Data *leb128(Data *p, Int value)
 //   Write the LEB value at pointer
 // ----------------------------------------------------------------------------
 {
+    const bool is_signed = Int(~0ULL) < Int(0);
     byte *bp = (byte *) p;
     do
     {
         *bp++ = (value & 0x7F) | 0x80;
         value = Int(value >> 7);
-    } while (value != 0 && (Int(~0ULL) > Int(0) || value != Int(~0ULL)));
+    } while ((!is_signed && value != 0) ||
+             (is_signed
+              && (value != Int(~0ULL) || (~bp[-1] & 0x40))
+              && (value != 0          || ( bp[-1] & 0x40))));
     bp[-1] &= ~0x80;
     return (Data *) bp;
 }
@@ -93,12 +99,18 @@ inline size_t leb128size(Int value)
 //   Compute the size required for a given integer value
 // ----------------------------------------------------------------------------
 {
-    size_t result = 0;
+    const bool is_signed = Int(~0ULL) < Int(0);
+    size_t     result    = 0;
+    bool       signbit   = false;
     do
     {
+        signbit = value & 0x40;
         value = Int(value >> 7);
         result++;
-    } while (value && (Int(~0ULL) > Int(0) || value != Int(~0ULL)));
+    } while ((!is_signed && value != 0) ||
+             (is_signed
+              && (value != Int(~0ULL)   || !signbit)
+              && (value != 0            ||  signbit)));
     return result;
 }
 
@@ -126,5 +138,9 @@ inline Data *leb128skip(Data *ptr)
     while ((*p++) & 0x80);
     return (Data *) p;
 }
+
+#ifdef DM42
+#  pragma GCC pop_options
+#endif // DM42
 
 #endif // LEB128_H

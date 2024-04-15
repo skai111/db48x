@@ -33,8 +33,8 @@
 #include "command.h"
 #include "symbol.h"
 
-algebraic_p solve(object_g eq, symbol_g name, object_g guess);
+algebraic_p solve(program_g eq, symbol_g name, object_g guess);
 
-COMMAND_DECLARE(Root);
+COMMAND_DECLARE(Root,3);
 
 #endif // SOLVE_H

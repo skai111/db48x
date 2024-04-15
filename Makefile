@@ -1,14 +1,14 @@
 #######################################
-# target
+# Target
 ######################################
-TARGET = DB48X
+TARGET = db48x
 PLATFORM = dmcp
 VARIANT = dm42
 SDK = dmcp/dmcp
 PGM = pgm
 
 ######################################
-# building variables
+# Building variables
 ######################################
 OPT=release
 # Alternatives (on the command line)
@@ -18,15 +18,17 @@ OPT=release
 # OPT=faster	-O3
 # OPT=fastest	-O4 -Ofast
 # Experimentally, O2 performs best on DM42
-# (see https://github.com/c3d/DB48X-on-DM42/issues/66)
+# (see https://github.com/c3d/db48x/issues/66)
 
 # Warning: macOSX only
 MOUNTPOINT=/Volumes/$(VARIANT)/
-EJECT=hdiutil eject $(MOUNTPOINT)
+EJECT=sync; sync; sync; hdiutil eject $(MOUNTPOINT)
+PRODUCT_NAME=$(shell echo $(TARGET) | tr "[:lower:]" "[:upper:]")
+PRODUCT_MACHINE=$(shell echo $(VARIANT) | tr "[:lower:]" "[:upper:]")
 
 
 #######################################
-# pathes
+# Pathes
 #######################################
 # Build path
 BUILD = build/$(VARIANT)/$(OPT)
@@ -37,6 +39,9 @@ TOOLS = tools
 
 # CRC adjustment
 CRCFIX = $(TOOLS)/forcecrc32/forcecrc32
+
+# Decimal mantissa encoding
+DECIMIZE = $(TOOLS)/decimize/decimize
 
 FLASH=$(BUILD)/$(TARGET)_flash.bin
 QSPI =$(BUILD)/$(TARGET)_qspi.bin
@@ -57,11 +62,11 @@ all: $(TARGET).$(PGM) help/$(TARGET).md
 
 dm32:	dm32-all
 dm32-%:
-	$(MAKE) PLATFORM=dmcp SDK=dmcp5/dmcp PGM=pg5 VARIANT=dm32 TARGET=DB50X $*
+	$(MAKE) PLATFORM=dmcp SDK=dmcp5/dmcp PGM=pg5 VARIANT=dm32 TARGET=db50x $*
 
 # installation steps
 COPY=cp
-install: install-pgm install-qspi install-help
+install: install-pgm install-qspi install-help install-demo install-config
 	$(EJECT)
 	@echo "# Installed $(VERSION)"
 install-fast: install-pgm
@@ -71,11 +76,18 @@ install-pgm: all
 install-qspi: all
 	$(COPY) $(QSPI) $(MOUNTPOINT)
 install-help: help/$(TARGET).md
+	mkdir -p $(MOUNTPOINT)help/
 	$(COPY) help/$(TARGET).md $(MOUNTPOINT)help/
+install-demo:
+	mkdir -p $(MOUNTPOINT)state/
+	$(COPY) state/*.48S $(MOUNTPOINT)state/
+install-config:
+	mkdir -p $(MOUNTPOINT)config/
+	$(COPY) config/*.csv $(MOUNTPOINT)config/
 
-sim: sim/simulator.mak
-	cd sim; make -f $(<F)
-sim/simulator.mak: sim/simulator.pro Makefile $(VERSION_H)
+sim: sim/$(TARGET).mak
+	cd sim; $(MAKE) -f $(<F) TARGET=$(shell awk '/^TARGET/ { print $$3; }' sim/$(TARGET).mak)
+sim/$(TARGET).mak: sim/$(TARGET).pro Makefile $(VERSION_H)
 	cd sim; qmake $(<F) -o $(@F) CONFIG+=$(QMAKE_$(OPT))
 
 sim:	sim/gcc111libbid.a	\
@@ -83,20 +95,28 @@ sim:	sim/gcc111libbid.a	\
 	help/$(TARGET).md	\
 	fonts/EditorFont.cc	\
 	fonts/StackFont.cc	\
+	fonts/ReducedFont.cc	\
 	fonts/HelpFont.cc	\
 	keyboard		\
 	.ALWAYS
 
-clangdb: sim/simulator.mak .ALWAYS
-	cd sim && rm -f *.o && compiledb make -f simulator.mak && mv compile_commands.json ..
+clangdb: sim/$(TARGET).mak .ALWAYS
+	cd sim && rm -f *.o && compiledb make -f $(TARGET).mak && mv compile_commands.json ..
 
-keyboard: sim/keyboard-db48x.png Keyboard-Layout.png Keyboard-Cutout.png
+cmp-% compare-%:
+	compare images/$*.png images/bad/$*.png -compose src $*.png || true
+	open $*.png images/bad/$*.png images/$*.png
+
+
+keyboard: Keyboard-Layout.png Keyboard-Cutout.png sim/keyboard-db48x.png help/keyboard.png doc/keyboard.png
 Keyboard-Layout.png: DB48X-Keys/DB48X-Keys.001.png
 	cp $< $@
 Keyboard-Cutout.png: DB48X-Keys/DB48X-Keys.002.png
 	cp $< $@
 sim/keyboard-db48x.png: DB48X-Keys/DB48X-Keys.001.png
 	convert $< -crop 698x878+151+138 $@
+%/keyboard.png: sim/keyboard-db48x.png
+	cp $< $@
 
 QMAKE_debug=debug
 QMAKE_release=release
@@ -107,14 +127,14 @@ QMAKE_fastest=release
 
 TTF2FONT=$(TOOLS)/ttf2font/ttf2font
 $(TTF2FONT): $(TTF2FONT).cpp $(TOOLS)/ttf2font/Makefile src/ids.tbl
-	cd $(TOOLS)/ttf2font; $(MAKE)
+	cd $(TOOLS)/ttf2font; $(MAKE) TARGET=
 sim/gcc111libbid.a: sim/gcc111libbid-$(shell uname)-$(shell uname -m).a
 	cp $< $@
 
 dist: all
 	cp $(BUILD)/$(TARGET)_qspi.bin  .
 	tar cvfz $(TARGET)-v$(VERSION).tgz $(TARGET).$(PGM) $(TARGET)_qspi.bin \
-		help/*.md STATE/*.48S
+		help/*.md state/*.48S config/*.csv
 	@echo "# Distributing $(VERSION)"
 
 $(VERSION_H): $(BUILD)/version-$(VERSION).h
@@ -129,10 +149,37 @@ fonts/EditorFont.cc: $(TTF2FONT) $(BASE_FONT)
 	$(TTF2FONT) -s 48 -S 80 -y -10 EditorFont $(BASE_FONT) $@
 fonts/StackFont.cc: $(TTF2FONT) $(BASE_FONT)
 	$(TTF2FONT) -s 32 -S 80 -y -8 StackFont $(BASE_FONT) $@
+fonts/ReducedFont.cc: $(TTF2FONT) $(BASE_FONT)
+	$(TTF2FONT) -s 24 -S 80 -y -5 ReducedFont $(BASE_FONT) $@
 fonts/HelpFont.cc: $(TTF2FONT) $(BASE_FONT)
 	$(TTF2FONT) -s 18 -S 80 -y -3 HelpFont $(BASE_FONT) $@
 help/$(TARGET).md: $(wildcard doc/*.md doc/calc-help/*.md doc/commands/*.md)
-	mkdir -p help && cat $^ | sed -e 's/DB48X/$(TARGET)/g' > $@
+	mkdir -p help && \
+	cat $^ | \
+	sed -e '/<!--- $(PRODUCT_MACHINE) --->/,/<!--- !$(PRODUCT_MACHINE) --->/s/$(PRODUCT_MACHINE)/KEEP_IT/g' | \
+	sed -e '/<!--- DM.* --->/,/<!--- !DM.* --->/d' | \
+	sed -e '/<!--- KEEP_IT --->/d' | \
+	sed -e '/<!--- !KEEP_IT --->/d' | \
+	sed -e 's/KEEP_IT/$(PRODUCT_MACHINE)/g' | \
+	sed -e 's/DB48X/$(PRODUCT_NAME)/g' \
+            -e 's/DM42/$(PRODUCT_MACHINE)/g' > $@
+	cp doc/*.png help/
+	mkdir -p help/img
+	rsync -av --delete doc/img/*.png help/img/
+
+check-ids: help/$(TARGET).md
+	@for I in $$(cpp -xc++ -D'ID(n)=n' src/ids.tbl | 		\
+		   sed -e 's/##//g' | sed -e 's/^#.*//g');		\
+	do								\
+	  if  ! grep -q $$I src/ignored_menus.csv ; then		\
+	    grep -q "ID_$$I" src/menu.cc || 				\
+	      echo "$$I not in menus";					\
+	  fi;								\
+	  if  ! grep -q $$I src/ignored_help.csv ; then			\
+	    grep -q "^#.*[[:<:]]$$I[[:>:]]" help/$(TARGET).md ||	\
+	      echo "$$I not in help";					\
+	  fi;								\
+	done
 
 debug-%:
 	$(MAKE) $* OPT=debug
@@ -165,66 +212,63 @@ C_INCLUDES += -Isrc/$(VARIANT) -Isrc/$(PLATFORM) -Isrc -Iinc
 # C sources
 C_SOURCES +=
 
-# Floating point sizes
-DECIMAL_SIZES=32 64
-DECIMAL_SOURCES=$(DECIMAL_SIZES:%=src/decimal-%.cc)
-
 # C++ sources
 CXX_SOURCES +=				\
 	src/$(PLATFORM)/target.cc	\
 	src/$(PLATFORM)/sysmenu.cc	\
 	src/$(PLATFORM)/main.cc		\
-	src/user_interface.cc		\
-	src/file.cc			\
-	src/stack.cc			\
-	src/util.cc			\
-	src/renderer.cc			\
-	src/settings.cc			\
-	src/runtime.cc			\
-	src/object.cc			\
-	src/command.cc			\
-	src/compare.cc			\
-	src/logical.cc			\
-	src/integer.cc			\
-	src/bignum.cc			\
-	src/fraction.cc			\
-	src/complex.cc			\
-	src/decimal128.cc		\
-	$(DECIMAL_SOURCES)		\
-	src/text.cc		        \
-	src/comment.cc		        \
-	src/symbol.cc			\
+	fonts/EditorFont.cc		\
+	fonts/HelpFont.cc		\
+	fonts/ReducedFont.cc		\
+	fonts/StackFont.cc		\
 	src/algebraic.cc		\
 	src/arithmetic.cc		\
-	src/functions.cc		\
-	src/variables.cc		\
-	src/locals.cc			\
-	src/catalog.cc			\
-	src/menu.cc			\
-	src/list.cc			\
-	src/program.cc			\
-	src/equation.cc			\
 	src/array.cc			\
-	src/loops.cc			\
+	src/bignum.cc			\
+	src/catalog.cc			\
+	src/characters.cc		\
+	src/command.cc			\
+	src/comment.cc		        \
+	src/compare.cc			\
+	src/complex.cc			\
 	src/conditionals.cc		\
+	src/constants.cc		\
+	src/datetime.cc			\
+	src/decimal.cc			\
+	src/equations.cc		\
+	src/expression.cc		\
+	src/file.cc			\
+	src/files.cc			\
 	src/font.cc			\
-	src/tag.cc			\
+	src/fraction.cc			\
+	src/functions.cc		\
 	src/graphics.cc			\
 	src/grob.cc			\
-	src/plot.cc			\
-	src/solve.cc			\
+	src/hwfp.cc			\
+	src/integer.cc			\
 	src/integrate.cc		\
-	fonts/HelpFont.cc		\
-	fonts/EditorFont.cc		\
-	fonts/StackFont.cc
-
-
-
-# Generate the sized variants of decimal128
-src/decimal-%.cc: src/decimal128.cc src/decimal-%.h
-	sed -e s/decimal128.h/decimal-$*.h/g -e s/128/$*/g $< > $@
-src/decimal-%.h: src/decimal128.h
-	sed -e s/128/$*/g -e s/leb$*/leb128/g $< > $@
+	src/library.cc			\
+	src/list.cc			\
+	src/locals.cc			\
+	src/logical.cc			\
+	src/loops.cc			\
+	src/menu.cc			\
+	src/object.cc			\
+	src/plot.cc			\
+	src/program.cc			\
+	src/renderer.cc			\
+	src/runtime.cc			\
+	src/settings.cc			\
+	src/solve.cc			\
+	src/stack.cc			\
+	src/stats.cc			\
+	src/symbol.cc			\
+	src/tag.cc			\
+	src/text.cc		        \
+	src/unit.cc			\
+	src/user_interface.cc		\
+	src/util.cc			\
+	src/variables.cc
 
 # ASM sources
 #ASM_SOURCES += src/xxx.s
@@ -241,14 +285,17 @@ DEFINES += \
 	DECIMAL_GLOBAL_EXCEPTION_FLAGS_ACCESS_FUNCTIONS \
 	$(DEFINES_$(OPT)) \
 	$(DEFINES_$(VARIANT)) \
-	HELPFILE_NAME=\"/HELP/$(TARGET).md\"
+	HELPFILE_NAME=\"/help/$(TARGET).md\"
 DEFINES_debug=DEBUG
 DEFINES_release=RELEASE
 DEFINES_small=RELEASE
 DEFINES_fast=RELEASE
 DEFINES_faster=RELEASE
 DEFINES_fastes=RELEASE
-DEFINES_dm32 = DM32
+DEFINES_dm32 = 	DM32 				\
+		CONFIG_FIXED_BASED_OBJECTS	\
+		DEOPTIMIZE_CATALOG
+
 DEFINES_dm42 = DM42
 
 C_DEFS += $(DEFINES:%=-D%)
@@ -258,7 +305,7 @@ LIBS += lib/gcc111libbid_hard.a
 
 # Recorder and dependencies
 recorder/config.h: recorder/recorder.h recorder/Makefile
-	cd recorder && $(MAKE)
+	cd recorder && $(MAKE) TARGET=
 $(BUILD)/recorder.o $(BUILD)/recorder_ring.o: recorder/config.h
 
 # ---
@@ -294,9 +341,9 @@ CFLAGS += -Wno-misleading-indentation
 DBGFLAGS = $(DBGFLAGS_$(OPT))
 DBGFLAGS_debug = -g
 
-CFLAGS_debug += -O0 -DDEBUG
+CFLAGS_debug += -Os -DDEBUG
 CFLAGS_release += $(CFLAGS_release_$(VARIANT))
-CFLAGS_release_dm42 = -Os
+CFLAGS_release_dm42 = -O2
 CFLAGS_release_dm32 = -O2
 CFLAGS_small += -Os
 CFLAGS_fast += -O2
@@ -360,8 +407,14 @@ $(TARGET).$(PGM): $(BUILD)/$(TARGET).elf Makefile $(CRCFIX)
 	$(SIZE) $<
 	wc -c $@
 
+DECIMAL_CONSTANTS=pi e
+DECIMAL_SOURCES=$(DECIMAL_CONSTANTS:%=src/decimal-%.h)
+src/decimal-%.h: src/decimal-%.txt $(DECIMIZE)
+	$(DECIMIZE) < $< > $@ decimal_$*
+
 $(OBJECTS): $(DECIMAL_SOURCES) $(VERSION_H)
-sim: $(DECIMAL_SOURCES)
+
+all sim: $(DECIMAL_SOURCES)
 
 $(BUILD)/%.hex: $(BUILD)/%.elf | $(BUILD)
 	$(HEX) $< $@
@@ -376,13 +429,15 @@ $(BUILD)/.exists:
 
 $(CRCFIX): $(CRCFIX).c $(dir $(CRCFIX))/Makefile
 	cd $(dir $(CRCFIX)); $(MAKE)
+$(DECIMIZE): $(DECIMIZE).cpp $(dir $(DECIMIZE))/Makefile
+	cd $(dir $(DECIMIZE)); $(MAKE)
 
 
 #######################################
 # clean up
 #######################################
 clean:
-	-rm -fR .dep build sim/*.o
+	-rm -fR .dep build sim/*.o sim/*/*.o
 
 
 #######################################

@@ -68,5 +68,4 @@ It invokes a context-dependent menu adapted to the top level of the stack.
 
 ## LastMenu
 
-The `LastMenu` function, which is the shifted function for the _ A _ key,
-returns back in the history of past visited menus.
+The `LastMenu` function (🟨 _A_), returns back in the history of past visited menus. The history contains up to 8 entries.

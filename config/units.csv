@@ -1,0 +1,356 @@
+"Quick"
+
+"in",	"254/10_mm"
+"mm",	"="
+"km/h",	"="
+"mph",	"="
+"km",	"="
+"mi",	"="
+
+"Money"
+
+"USD",          "1_USD"
+"EUR",          "1.07_USD"
+"GBP",          "1.24_USD"
+"CAD",          "0.73_USD"
+"AUD",          "0.65_USD"
+"CHF",          "1.11_USD"
+
+
+"Length"
+
+"m",	"1_m"
+"yd",	"9144/10000_m"
+"ft",	"3048/10000_m"
+"ftUS",	"1200/3937_m"
+"US",	"1_ftUS/ft"
+
+"cm",	"="
+"mm",	"="
+"in",	"254/10000_m"
+"mil",	"254/10000000_m"
+"μ",	"1_μm"
+
+"km",	"="
+"mi",	"5280_ft"
+"nmi",	"1852_m"
+"miUS",	"1_mi*US"
+"fur",	"660_ft"
+
+"ch",	"66_ft"
+"rd",	"1/4_ch"
+"cable",	"720_ft"
+"fath",	"6_ft"
+"league",	"3_mi"
+
+"Mpc",	"="
+"pc",	"30856775814913673_m"
+"au",	"149597870700_m"
+"lyr",	"31557600_ls"
+"ls",	"299792458_m"
+
+"mi",	"="
+"miUS",	"="
+"ft",	"="
+"ftUS",	"="
+"US",	"="
+
+"nmi",	"="
+"cable",	"="
+"li",	"1/100_ch"
+"acable",	"18532/100_m"
+"icable",	"1852/10_m"
+
+"Å",	"100_pm"
+"fermi",	"1_fm"
+"μm",	"="
+"nm",	"="
+
+"chain",	"1_ch"
+"fathom",	"1_fath"
+"furlong",	"1_fur"
+"link",	"1_li"
+"rod",	"1_rd"
+"pole",	"1_rd"
+"perch",	"1_rd"
+
+
+"Area"
+
+"m²",	"="
+"yd²",	"="
+"ft²",	"="
+"in²",	"="
+"cm²",	"="
+
+"km²",	"="
+"mi²",	"="
+"ha",	"="
+"a",	"100_m²"
+"acre",	"1_ac"
+
+"ac",	"10_ch²"
+"acUS",	"10_ch²*US²"
+"mi²",	"="
+"miUS²",	"="
+"US²",	"="
+
+"b",	"100_fermi²"
+"barn",	"1_b"
+"mm²",	"="
+"μm²",	"="
+"nm²",	"="
+
+
+"Volume"
+
+"m³",	"="
+"l",	"1_dm³"
+"gal",	"231_in³"
+"cm³",	"="
+"mm³",	"="
+
+"gal",	"="
+"qt",	"1/4_gal"
+"pt",	"1/8_gal"
+"cup",	"1/16_gal"
+"floz",	"1/32_qt"
+
+"m³",	"="
+"yd³",	"="
+"ft³",	"="
+"in³",	"="
+"cm³",	"="
+
+"gill",	"1/32_gal"
+"drqt",	"67200625/1000000_in³"
+"drgal",	"4_drqt"
+"bu",	"32_drqt"
+"pk",	"8_drqt"
+
+"galC",	"4546090_mm³"
+"galUK",	"4546092_mm³"
+"ptUK",	"1/2_galUK"
+"ozUK",	"1/40_galUK"
+"fbm",	"1_ft²*in"
+
+"tbsp",	"4_oz"
+"tsp",	"1/3_tbsp"
+"st",	"1_m³"
+"bbl",	"7056_in³"
+"crbl",	"5826_in³"
+
+
+"Time"
+
+"s",	"1_s"
+"min",	"60_s"
+"h",	"3600_s"
+"d",	"86400_s"
+"yr",	"36524219/100000_d"
+
+"Hz",	"1_s⁻¹"
+"kHz",	"="
+"MHz",	"="
+"GHz",	"="
+"rpm",	"1/60_Hz"
+
+"year",	"1_y"
+"day",	"1_d"
+"hour",	"1_h"
+"minute",	"1_min"
+"second",	"1_s"
+
+
+"Speed"
+
+"m/s",	"="
+"km/h",	"="
+"ft/s",	"="
+"mph",	"1_mi/h"
+"knot",	"1_nmi/h"
+
+"c",	"299792458_m/s"
+"ga",	"980665/100000_m/s^2"
+"G",	"1_ga"
+"kph",	"1_km/h"
+
+
+"Mass"
+
+"kg",	"="
+"g",	"1_g"
+"t",	"1000_kg"
+"ct",	"200_mg"
+"mol",	"1_mol"
+
+"lb",	"45359237/100000_g"
+"oz",	"1/16_lb"
+"dr",	"1/256_lb"
+"stone",	"14_lb"
+"grain",	"1/7000_lb"
+
+"qrUK",	"28_lb"
+"qrUS",	"25_lb"
+"cwtUK",	"112_lb"
+"cwtUS",	"100_lb"
+"gr",	"1_grain"
+
+"tonUK",	"20_cwtUK"
+"tonUS",	"20_cwtUS"
+"ton",	"1_tonUS"
+"slug",	"1_lbf*s^2/ft"
+"blob",	"12_slug"
+
+"dwt",	"24_grain"
+"ozt",	"20_dwt"
+"lbt",	"12_ozt"
+"dram",	"1_dr"
+"drachm",	"1_dr"
+
+"mole",	"1_mol"
+"carat",	"1_ct"
+"u",	"1.6605402E-27_kg"
+"Avogadro",	"6.02214076E23"
+
+
+"Force"
+
+"N",	"1_kg*m/s^2"
+"dyn",	"1/100000_N"
+"kip",	"1000_lbf"
+"lbf",	"44482216152605/10000000000000_N"
+"gf",	"980665/100000000_N"
+
+"pdl",	"138254954376/1000000000000_N"
+
+
+"Energy"
+
+"J",	"1_kg*m^2/s^2"
+"erg",	"1/10000000_J"
+"Kcal",	"="
+"cal",	"41868/10000_J"
+"Btu",	"1055.05585262_J"
+
+"calth",	"4184/1000_J"
+"cal4",	"4204/1000_J"
+"cal15",	"41855/10000_J"
+"cal20",	"4182/1000_J"
+"calmean",	"4190/1000_J"
+
+"therm",	"105506000_J"
+"eV",	"1.60217733E-19_J"
+
+
+"Power"
+
+"W",	"1_J/s"
+"kW",	"="
+"MW",	"="
+"GW",	"="
+"hp",	"745.699871582_W"
+
+
+"Envir"
+
+"K",	"1_K"
+"°C",	"1_K"
+"°R",	"9/5_K"
+"°F",	"9/5_K"
+"mbar",	"="
+
+"Pa",	"1_N/m^2"
+"atm",	"101325_Pa"
+"bar",	"100000_Pa"
+"psi",	"6894.75729317_Pa"
+"torr",	"1/760_atm"
+
+"ksi",	"1000_psi"
+"mmHg",	"1_torr"
+"inHg",	"1_in/mm*mmHg"
+"inH2O",	"249.0889_Pa"
+
+
+"Eng"
+
+"A",	"1_A"
+"V",	"1_kg*m^2/(A*s^3)"
+"C",	"1_A*s"
+"Ω",	"1_V/A"
+"F",	"1_C/V"
+
+"Fdy",	"96487_A*s"
+"H",	"1_ohm*s"
+"S",	"1_A/V"
+"T",	"1_V*s/m^2"
+"Wb",	"1_V*s"
+
+"mho",	"1_S"
+"ohm",	"1_Ω"
+
+"P",	"1/10_Pa*s"
+"St",	"1_cm^2/s"
+
+
+"Angle"
+
+"turn",	"1_turn"
+"°",	"1/360_turn"
+"grad",	"1/400_turn"
+"r",	"0.1591549430918953357688837633725144_turn"
+"πr",	"1/2_turn"
+
+"dms",  "1_°"
+"arcmin",	"1/60_°"
+"arcs",	"1/60_arcmin"
+"sr",	"1_sr"
+"pir",	"1/2_turn"
+
+
+"Lt/Rad"
+
+"cd",	"1_cd"
+"lm",	"1_cd*sr"
+"lx",	"1_lm/m^2"
+"fc",	"1_lm/ft^2"
+"flam",	"1_cd/ft^2*r/pir"
+
+"ph",	"10000_lx"
+"sb",	"10000_cd/m^2"
+"lam",	"1_cd/cm^2*r/pir"
+"nit",	"1_cd/m^2"
+"nt",	"1_cd/m^2"
+
+"Gy",	"1_m^2/s^2"
+"rad",	"1/100_m^2/s^2"
+"rem",	"1_rad"
+"Sv",	"1_Gy"
+"Bq",	"1_Hz"
+
+"Ci",	"37_GBq"
+"R",	"258_µC/kg"
+
+
+"Comp"
+
+"bit",	"1_bit"
+"byte",	"8_bit"
+"B",	"1_byte"
+"bps",	"1_bit/s"
+"baud",	"1_bps/SR"
+
+"Bd",	"1_baud"
+"mips",	"1_mips"
+"flops",	"1_flops"
+"SR",	"1"
+"dB",	"1_dB"
+
+
+"=Cycle"
+"in",           "mm"
+"mm",           "cm"
+"cm",           "in"
+"USD",          "EUR"
+"EUR",          "CHF"
+"CHF",          "USD"

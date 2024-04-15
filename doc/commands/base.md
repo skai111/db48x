@@ -8,8 +8,6 @@ Mapped to the _ R/S _ key
 
 `X` ▶ Result of `X` evaluation
 
-## Drop
-
 ## Negate (NEG)
 
 Negate the value in level 1.

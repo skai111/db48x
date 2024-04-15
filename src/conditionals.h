@@ -29,6 +29,7 @@
 //   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // ****************************************************************************
 
+#include "command.h"
 #include "loops.h"
 
 
@@ -63,7 +64,7 @@ struct IfThenElse : IfThen
         object_p after = p->skip()->skip();
         byte *tgt = (byte *) after;
         size_t iffs = iff->size();
-        memcpy(tgt, iff.Safe(), iffs);
+        memcpy(tgt, +iff, iffs);
     }
 
     static size_t required_memory(id i,
@@ -113,15 +114,111 @@ struct IfErrThenElse : IfThenElse
 };
 
 
+struct CaseStatement : conditional_loop
+// ----------------------------------------------------------------------------
+//   CASE conditional statement
+// ----------------------------------------------------------------------------
+{
+    CaseStatement(id type, object_g conditions, object_g rest)
+        : conditional_loop(type, conditions, rest) {}
+
+    OBJECT_DECL(CaseStatement);
+    PARSE_DECL(CaseStatement);
+    RENDER_DECL(CaseStatement);
+    EVAL_DECL(CaseStatement);
+    INSERT_DECL(CaseStatement);
+};
+
+
+struct CaseThen : conditional_loop
+// ----------------------------------------------------------------------------
+//   CASE conditional statement
+// ----------------------------------------------------------------------------
+{
+    CaseThen(id type, object_g condition, object_g body)
+        : conditional_loop(type, condition, body) {}
+
+    OBJECT_DECL(CaseThen);
+    PARSE_DECL(CaseThen);
+    RENDER_DECL(CaseThen);
+    EVAL_DECL(CaseThen);
+    INSERT_DECL(CaseThen);
+};
+
+
+struct CaseWhen : conditional_loop
+// ----------------------------------------------------------------------------
+//   CASE conditional statement
+// ----------------------------------------------------------------------------
+{
+    CaseWhen(id type, object_g value, object_g body)
+        : conditional_loop(type, value, body) {}
+
+    OBJECT_DECL(CaseWhen);
+    PARSE_DECL(CaseWhen);
+    RENDER_DECL(CaseWhen);
+    EVAL_DECL(CaseWhen);
+    INSERT_DECL(CaseWhen);
+};
+
+
+struct case_then_conditional : conditional
+// ----------------------------------------------------------------------------
+//   A non-parseable object used to mark the 'then' in a 'case' statement
+// ----------------------------------------------------------------------------
+{
+    case_then_conditional(id type): conditional(type) {}
+    OBJECT_DECL(case_then_conditional);
+    RENDER_DECL(case_then_conditional);
+    EVAL_DECL(case_then_conditional);
+};
+
+
+struct case_when_conditional : conditional
+// ----------------------------------------------------------------------------
+//   A non-parseable object used to mark case-when statements
+// ----------------------------------------------------------------------------
+{
+    case_when_conditional(id type): conditional(type) {}
+    OBJECT_DECL(case_when_conditional);
+    RENDER_DECL(case_when_conditional);
+    EVAL_DECL(case_when_conditional);
+};
+
+
+struct case_end_conditional : conditional
+// ----------------------------------------------------------------------------
+//   A non-parseable object used to mark the end of a 'case' statement
+// ----------------------------------------------------------------------------
+{
+    case_end_conditional(id type): conditional(type) {}
+    OBJECT_DECL(case_end_conditional);
+    RENDER_DECL(case_end_conditional);
+    EVAL_DECL(case_end_conditional);
+};
+
+
+struct case_skip_conditional : conditional
+// ----------------------------------------------------------------------------
+//   A non-parseable object used to skip to the end of a case statement
+// ----------------------------------------------------------------------------
+{
+    case_skip_conditional(id type): conditional(type) {}
+    OBJECT_DECL(case_skip_conditional);
+    RENDER_DECL(case_skip_conditional);
+    EVAL_DECL(case_skip_conditional);
+};
+
+
 // The stack-based forms
-COMMAND_DECLARE(IFT);
-COMMAND_DECLARE(IFTE);
+COMMAND_DECLARE(IFT,2);
+COMMAND_DECLARE(IFTE,3);
 
 // Saved error message
-COMMAND_DECLARE(errm);
-COMMAND_DECLARE(errn);
-COMMAND_DECLARE(err0);
-COMMAND_DECLARE(doerr);
+COMMAND_DECLARE(errm,0);
+COMMAND_DECLARE(errn,0);
+COMMAND_DECLARE(err0,0);
+COMMAND_DECLARE(doerr,1);
 
 
 #endif // CONDITIONALS_H

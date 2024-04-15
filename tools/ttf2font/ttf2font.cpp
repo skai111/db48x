@@ -311,8 +311,8 @@ void processFont(cstring fontName,
 
     // Start on the left of the dense bitmap
     int32_t   denseBitMapX = 0;
-    int32_t   firstCode    = 0;
-    int32_t   currentCode  = 0;
+    FT_ULong  firstCode    = 0;
+    FT_ULong  currentCode  = 0;
 
     // Find the ranges in the font
     ints     rangesFirst;
@@ -336,7 +336,7 @@ void processFont(cstring fontName,
             if (numCodes)
             {
                 if (verbose)
-                    printf("New glyph range at %u, had %u codes in %u..%u\n",
+                    printf("New glyph range at %u, had %u codes in %lu..%lu\n",
                            (int) charCode, numCodes, firstCode, currentCode);
                 rangesFirst.push_back(firstCode);
                 rangesCount.push_back(numCodes);
@@ -548,12 +548,23 @@ void processFont(cstring fontName,
     // Emit the headers
     bytes sparseHeader;
     sparseHeader += unsigned(ID_sparse_font);
+    if (sparseHeader.size() != 2)
+    {
+        fprintf(stderr,
+                "Invalid sparse header ID size %zu\n", sparseHeader.size());
+        exit(1);
+    }
     sparseHeader += sparse.size();
     sparse.insert(sparse.begin(), sparseHeader.begin(), sparseHeader.end());
 
     bytes denseHeader;
-    denseHeader.clear();
     denseHeader += unsigned(ID_dense_font);
+    if (denseHeader.size() != 2)
+    {
+        fprintf(stderr,
+                "Invalid dense header ID size %zu\n", denseHeader.size());
+        exit(1);
+    }
     denseHeader += dense.size();
     dense.insert(dense.begin(), denseHeader.begin(), denseHeader.end());
 
@@ -569,6 +580,7 @@ void processFont(cstring fontName,
             "\n"
             "#include \"font.h\"\n"
             "#include \"target.h\"\n"
+            "#include \"object.h\"\n"
             "\n",
             fontName, ttfName);
 
@@ -582,11 +594,16 @@ void processFont(cstring fontName,
                 "{\n",
                 fontName, denseSize);
 
-            for (uint b = 0; b < denseSize; b++)
-                fprintf(output, "%s0x%02X,",
-                        b % 16 == 0 ? "\n    " : " ",
-                        dense[b]);
-            fprintf(output, "\n};\n");
+        fprintf(output,
+                "    "
+                "byte(object::ID_dense_font) | 0x80, "
+                "byte(uint(object::ID_dense_font) >> 7), ");
+
+        for (uint b = 2; b < denseSize; b++)
+            fprintf(output, "%s0x%02X,",
+                    b % 16 == 0 ? "\n    " : " ",
+                    dense[b]);
+        fprintf(output, "\n};\n");
     }
 
     if (sparseSize <= denseSize || verbose)
@@ -599,11 +616,16 @@ void processFont(cstring fontName,
                 "{\n",
                 fontName, sparseSize);
 
-            for (uint b = 0; b < sparseSize; b++)
-                fprintf(output, "%s0x%02X,",
-                        b % 16 == 0 ? "\n    " : " ",
-                        sparse[b]);
-            fprintf(output, "\n};\n");
+        fprintf(output,
+                "    "
+                "byte(object::ID_sparse_font) | 0x80, "
+                "byte(uint(object::ID_sparse_font) >> 7), ");
+
+        for (uint b = 2; b < sparseSize; b++)
+            fprintf(output, "%s0x%02X,",
+                    b % 16 == 0 ? "\n    " : " ",
+                    sparse[b]);
+        fprintf(output, "\n};\n");
     }
 
     fclose(output);

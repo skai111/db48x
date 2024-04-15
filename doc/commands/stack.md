@@ -1,6 +1,7 @@
 # Stack manipulation
 
-## Clear
+## ClearStack (CLEAR)
+
 Remove all objects from the stack
 
 
@@ -10,6 +11,8 @@ Get the current stack depth
 
 ## Drop
 Remove an object from the stack
+
+`X` ▶
 
 
 ## Drop2
@@ -52,7 +55,7 @@ prior to program execution.
 Replicate one object N times and return N
 
 
-## NIP
+## Nip
 Remove object at level 2 on the stack
 
 
@@ -60,27 +63,27 @@ Remove object at level 2 on the stack
 Duplicate object at level 2 on the stack
 
 
-## PICK
+## Pick
 Duplicate object at position N on the stack
 
 
-## PICK3
+## Pick3
 Duplicate object at level 3 on the stack
 
 
-## ROLL
+## Roll
 Move object at level N to level 1
 
 
-## ROLLD
+## RollD
 Move object from level 1 to level N
 
 
-## ROT
+## Rot
 Move object from level 3 to level 1
 
 
-## SWAP
+## Swap
 Exchange objects in levels 1 and 2
 
 Mapped to _X⇆Y_ key
@@ -88,11 +91,11 @@ Mapped to _X⇆Y_ key
 `Y` `X` ▶ `X` `Y`
 
 
-## UNPICK
+## Unpick
 Move object from level 1 to level N.
 
 
-## UNROT
+## UnRot
 Move object from level 1 to level 3
 
 

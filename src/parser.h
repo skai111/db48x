@@ -49,7 +49,7 @@ struct parser
     parser(const parser &from, utf8 source, int precedence)
         : candidate(),
           source(source),
-          length(from.length - (source - from.source)),
+          length(from.length - (+source - +from.source)),
           end(), out(nullptr),
           precedence(precedence),
           child(true) {}

@@ -32,10 +32,9 @@
 #include "algebraic.h"
 #include "bignum.h"
 #include "complex.h"
-#include "decimal-32.h"
-#include "decimal-64.h"
-#include "decimal128.h"
+#include "decimal.h"
 #include "fraction.h"
+#include "hwfp.h"
 #include "runtime.h"
 
 
@@ -46,18 +45,42 @@ struct arithmetic : algebraic
 {
     arithmetic(id i): algebraic(i) {}
 
-    static bool real_promotion(algebraic_g &x, algebraic_g &y);
-    // -------------------------------------------------------------------------
-    //   Promote x or y to the largest of both types, return true if successful
-    // -------------------------------------------------------------------------
-
-    static bool real_promotion(algebraic_g &x, object::id type)
+    static bool decimal_promotion(algebraic_g &x, algebraic_g &y)
     {
-        return algebraic::real_promotion(x, type);
+        if (!x || !y || !x->is_real() || !y->is_real())
+            return false;
+        return decimal_promotion(x) && decimal_promotion(y);
     }
-    static id   real_promotion(algebraic_g &x)
+
+    static bool decimal_promotion(algebraic_g &x)
     {
-        return algebraic::real_promotion(x);
+        return algebraic::decimal_promotion(x);
+    }
+
+    static bool hwfp_promotion(algebraic_g &x, algebraic_g &y)
+    {
+        if (!x || !y || !x->is_real() || !y->is_real())
+            return false;
+        if (hwfp_promotion(x) && hwfp_promotion(y))
+        {
+            // It's possible for the two to have distinct types
+            if (hwfloat_p xf = x->as<hwfloat>())
+            {
+                if (y->type() != ID_hwfloat)
+                    x = hwdouble::make(xf->value());
+            }
+            else if (hwfloat_p yf = y->as<hwfloat>())
+            {
+                y = hwdouble::make(yf->value());
+            }
+            return x->type() == y->type();
+        }
+        return false;
+    }
+
+    static bool hwfp_promotion(algebraic_g &x)
+    {
+        return algebraic::hwfp_promotion(x);
     }
 
     static bool complex_promotion(algebraic_g &x, id type = ID_rectangular)
@@ -65,7 +88,6 @@ struct arithmetic : algebraic
         return algebraic::complex_promotion(x, type);
     }
     static bool complex_promotion(algebraic_g &x, algebraic_g &y);
-
 
     static fraction_p fraction_promotion(algebraic_g &x);
 
@@ -79,20 +101,20 @@ protected:
     typedef bool (*complex_fn)(complex_g &x, complex_g &y);
 
     // Function pointers used by generic evaluation code
-    typedef void (*bid128_fn)(BID_UINT128 *res, BID_UINT128 *x, BID_UINT128 *y);
-    typedef void (*bid64_fn) (BID_UINT64  *res, BID_UINT64  *x, BID_UINT64  *y);
-    typedef void (*bid32_fn) (BID_UINT32  *res, BID_UINT32  *x, BID_UINT32  *y);
+    typedef hwfloat_p (*hwfloat_fn)(hwfloat_r, hwfloat_r y);
+    typedef hwdouble_p (*hwdouble_fn)(hwdouble_r, hwdouble_r y);
+    typedef decimal_p (*decimal_fn)(decimal_r x, decimal_r y);
 
     // Structure holding the function pointers called by generic code
     struct ops
     {
-        bid128_fn      op128;
-        bid64_fn       op64;
-        bid32_fn       op32;
-        integer_fn     integer_ok;
-        bignum_fn      bignum_ok;
-        fraction_fn    fraction_ok;
-        complex_fn     complex_ok;
+        decimal_fn    decop;
+        hwfloat_fn    fop;
+        hwdouble_fn   dop;
+        integer_fn    integer_ok;
+        bignum_fn     bignum_ok;
+        fraction_fn   fraction_ok;
+        complex_fn    complex_ok;
         arithmetic_fn non_numeric;
     };
     typedef const ops &ops_t;
@@ -124,57 +146,74 @@ protected:
 };
 
 
-#define ARITHMETIC_DECLARE(derived, Precedence)                         \
+#define ARITHMETIC_DECLARE(derived, Precedence)                             \
 /* ----------------------------------------------------------------- */ \
 /*  Macro to define an arithmetic command                            */ \
 /* ----------------------------------------------------------------- */ \
-struct derived : arithmetic                                             \
-{                                                                       \
-    derived(id i = ID_##derived) : arithmetic(i) {}                     \
-                                                                        \
-    static bool integer_ok(id &xt, id &yt, ularge &xv, ularge &yv);     \
-    static bool bignum_ok(bignum_g &x, bignum_g &y);                    \
-    static bool fraction_ok(fraction_g &x, fraction_g &y);              \
-    static bool complex_ok(complex_g &x, complex_g &y);                 \
-    static constexpr auto bid32_op = bid32_##derived;                   \
-    static constexpr auto bid64_op = bid64_##derived;                   \
-    static constexpr auto bid128_op = bid128_##derived;                 \
-                                                                        \
-    OBJECT_DECL(derived)                                                \
-    ARITY_DECL(2);                                                      \
-    PREC_DECL(Precedence);                                              \
-    EVAL_DECL(derived)                                                  \
-    {                                                                   \
-        rt.command(fancy(ID_##derived));                                \
-        return arithmetic::evaluate<derived>();                         \
-    }                                                                   \
-    static algebraic_g run(algebraic_r x, algebraic_r y)                \
-    {                                                                   \
-        return evaluate(x, y);                                          \
-    }                                                                   \
-    static algebraic_p evaluate(algebraic_r x, algebraic_r y)           \
-    {                                                                   \
-        return arithmetic::evaluate<derived>(x,y);                      \
-    }                                                                   \
+struct derived : arithmetic                                         \
+{                                                                   \
+    derived(id i = ID_##derived) : arithmetic(i)                    \
+    {                                                               \
+    }                                                               \
+                                                                    \
+    static bool integer_ok(id &xt, id &yt, ularge &xv, ularge &yv); \
+    static bool bignum_ok(bignum_g &x, bignum_g &y);                \
+    static bool fraction_ok(fraction_g &x, fraction_g &y);          \
+    static bool complex_ok(complex_g &x, complex_g &y);             \
+    static constexpr decimal_fn decop = decimal::derived;           \
+    static constexpr auto       fop   = hwfloat::derived;           \
+    static constexpr auto       dop   = hwdouble::derived;          \
+                                                                    \
+    OBJECT_DECL(derived)                                            \
+    ARITY_DECL(2);                                                  \
+    PREC_DECL(Precedence);                                          \
+    EVAL_DECL(derived)                                              \
+    {                                                               \
+        rt.command(o);                                              \
+        if (!rt.args(2))                                            \
+            return ERROR;                                           \
+        return arithmetic::evaluate<derived>();                     \
+    }                                                               \
+    static algebraic_g run(algebraic_r x, algebraic_r y)            \
+    {                                                               \
+        return evaluate(x, y);                                      \
+    }                                                               \
+    static algebraic_p evaluate(algebraic_r x, algebraic_r y)       \
+    {                                                               \
+        return arithmetic::evaluate<derived>(x, y);                 \
+    }                                                               \
 }
 
 
-ARITHMETIC_DECLARE(add,   ADDITIVE);
-ARITHMETIC_DECLARE(sub,   ADDITIVE);
-ARITHMETIC_DECLARE(mul,   MULTIPLICATIVE);
-ARITHMETIC_DECLARE(div,   MULTIPLICATIVE);
-ARITHMETIC_DECLARE(mod,   MULTIPLICATIVE);
-ARITHMETIC_DECLARE(rem,   MULTIPLICATIVE);
-ARITHMETIC_DECLARE(pow,   POWER);
-ARITHMETIC_DECLARE(hypot, POWER);
-ARITHMETIC_DECLARE(atan2, POWER);
+ARITHMETIC_DECLARE(add,                 ADDITIVE);
+ARITHMETIC_DECLARE(sub,                 ADDITIVE);
+ARITHMETIC_DECLARE(mul,                 MULTIPLICATIVE);
+ARITHMETIC_DECLARE(div,                 MULTIPLICATIVE);
+ARITHMETIC_DECLARE(mod,                 MULTIPLICATIVE);
+ARITHMETIC_DECLARE(rem,                 MULTIPLICATIVE);
+ARITHMETIC_DECLARE(pow,                 POWER);
+ARITHMETIC_DECLARE(hypot,               POWER);
+ARITHMETIC_DECLARE(atan2,               POWER);
+ARITHMETIC_DECLARE(Min,                 FUNCTION);
+ARITHMETIC_DECLARE(Max,                 FUNCTION);
 
-void bid64_hypot(BID_UINT64 *pres, BID_UINT64 *px, BID_UINT64 *py);
-void bid32_hypot(BID_UINT32 *pres, BID_UINT32 *px, BID_UINT32 *py);
-void bid64_atan2(BID_UINT64 *pres, BID_UINT64 *px, BID_UINT64 *py);
-void bid32_atan2(BID_UINT32 *pres, BID_UINT32 *px, BID_UINT32 *py);
-void bid64_pow(BID_UINT64 *pres, BID_UINT64 *px, BID_UINT64 *py);
-void bid32_pow(BID_UINT32 *pres, BID_UINT32 *px, BID_UINT32 *py);
+
+struct Percent : arithmetic
+// ----------------------------------------------------------------------------
+//  Percentage commands
+// ----------------------------------------------------------------------------
+{
+    Percent(id i = ID_Percent) : arithmetic(i) {}
+
+    OBJECT_DECL(Percent)
+    ARITY_DECL(2);
+    PREC_DECL(MULTIPLICATIVE);
+    EVAL_DECL(Percent);
+};
+
+
+struct PercentChange : Percent {};
+struct PercentTotal  : Percent {};
 
 
 

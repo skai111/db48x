@@ -29,11 +29,19 @@
 
 #include "sim-screen.h"
 
+#include "dmcp.h"
+#include "sim-dmcp.h"
+
 #include <QBitmap>
 #include <QGraphicsPixmapItem>
 #include <QTimer>
-#include <dmcp.h>
 #include <target.h>
+
+
+SimScreen *SimScreen::theScreen = nullptr;
+
+// A copy of the LCD buffer
+pixword lcd_copy[sizeof(lcd_buffer) / sizeof(*lcd_buffer)];
 
 
 SimScreen::SimScreen(QWidget *parent)
@@ -41,23 +49,24 @@ SimScreen::SimScreen(QWidget *parent)
 //   Initialize the screen
 // ----------------------------------------------------------------------------
     : QGraphicsView(parent),
-      screen_width(LCD_W),
-      screen_height(LCD_H),
+      screen_width(SIM_LCD_W),
+      screen_height(SIM_LCD_H),
       scale(1),
+#ifndef CONFIG_COLOR
       bgColor(230, 230, 230),
+#else // CONFIG_COLOR
+      bgColor(255, 255, 255),
+#endif // CONFIG_COLOR
       fgColor(0, 0, 0),
       bgPen(bgColor),
       fgPen(fgColor),
-      screenTimer(new QTimer(this)),
-      mainPixmap(LCD_W, LCD_H)
+      mainPixmap(SIM_LCD_W, SIM_LCD_H),
+      redraws(0)
 {
-    connect(&screenTimer, SIGNAL(timeout()), this, SLOT(update()));
-    screenTimer.setSingleShot(true);
-    screenTimer.start(20);
-
     screen.clear();
     screen.setBackgroundBrush(QBrush(Qt::black));
 
+    mainPixmap.fill(bgColor);
     mainScreen = screen.addPixmap(mainPixmap);
     mainScreen->setOffset(0.0, 0.0);
 
@@ -67,7 +76,12 @@ SimScreen::SimScreen(QWidget *parent)
     scale = 1.0;
     setScale(4.0);
 
+    for (size_t i = 0; i < sizeof(lcd_copy) / sizeof(*lcd_copy); i++)
+        lcd_copy[i] = ~lcd_buffer[i];
+
     show();
+
+    theScreen = this;
 }
 
 
@@ -76,19 +90,6 @@ SimScreen::~SimScreen()
 //   SimScreen destructor
 // ----------------------------------------------------------------------------
 {
-}
-
-
-void SimScreen::setPixel(int x, int y, int on)
-// ----------------------------------------------------------------------------
-//    Set the given screen
-// ----------------------------------------------------------------------------
-{
-    // Pixels[offset]->setBrush(GrayBrush[color & 15]);
-    QPainter pt(&mainPixmap);
-    pt.setPen(on ? fgPen : bgPen);
-    pt.drawPoint(LCD_W - x, y);
-    pt.end();
 }
 
 
@@ -107,40 +108,58 @@ void SimScreen::setScale(qreal sf)
 }
 
 
-void SimScreen::update()
+void SimScreen::updatePixmap()
 // ----------------------------------------------------------------------------
-//   Refresh the screen
+//   Recompute the pixmap
 // ----------------------------------------------------------------------------
+//   This should be done on the RPL thread to get a consistent picture
 {
-    if (lcd_needsupdate != lcd_update)
-    {
-        lcd_update = lcd_needsupdate;
-    }
-    else
-    {
-        screenTimer.setSingleShot(true);
-        screenTimer.start(20);
-        return;
-    }
-
     // Monochrome screen
-    screen.setBackgroundBrush(QBrush(fgColor));
-    QPainter      pt(&mainPixmap);
-
-    for (int y = 0; y < LCD_H; y++)
+    QPainter pt(&mainPixmap);
+    pixword mask = ~(~0U << color::BPP);
+    surface s(lcd_buffer, LCD_W, LCD_H, LCD_SCANLINE);
+    for (int y = 0; y < SIM_LCD_H; y++)
     {
-        for (int x = 0; x < LCD_W; x++)
+        for (int xw = 0; xw < SIM_LCD_SCANLINE*color::BPP/32; xw++)
         {
-            unsigned bo = y * LCD_SCANLINE + x;
-            int on = (lcd_buffer[bo/8] >> (bo % 8)) & 1;
-            pt.setPen(on ? bgPen : fgPen);
-            pt.drawPoint(LCD_W - x, y);
+            unsigned woffs = y * (SIM_LCD_SCANLINE*color::BPP/32) + xw;
+            if (uint32_t diffs = lcd_copy[woffs] ^ lcd_buffer[woffs])
+            {
+                for (int bit = 0; bit < 32; bit += color::BPP)
+                {
+                    if ((diffs >> bit) & mask)
+                    {
+                        pixword bits = (lcd_buffer[woffs] >> bit) & mask;
+                        color col(bits);
+#ifdef CONFIG_COLOR
+                        QColor qcol(col.red(), col.green(), col.blue());
+#else
+                        QColor &qcol = bits ? bgColor : fgColor;
+#endif
+                        pt.setPen(qcol);
+
+                        coord xx = (xw * 32 + bit) / color::BPP;
+                        coord yy = y;
+                        s.horizontal_adjust(xx, xx);
+                        s.vertical_adjust(yy, yy);
+                        pt.drawPoint(xx, yy);
+                    }
+                }
+                lcd_copy[woffs] = lcd_buffer[woffs];
+            }
         }
     }
     pt.end();
+}
 
+
+void SimScreen::refreshScreen()
+// ----------------------------------------------------------------------------
+//   Transfer the pixmap to the screen
+// ----------------------------------------------------------------------------
+//   This must be done on the main screen
+{
     mainScreen->setPixmap(mainPixmap);
     QGraphicsView::update();
-    screenTimer.setSingleShot(true);
-    screenTimer.start(20);
+    redraws++;
 }

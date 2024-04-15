@@ -91,24 +91,34 @@ struct directory : list
     //    Store an object in the directory
     // ------------------------------------------------------------------------
 
-    object_p recall(symbol_p name) const;
+    static bool update(object_p name, object_p value);
     // ------------------------------------------------------------------------
-    //    Check if a name exists in the directory, return value pointer if it does
+    //    Update an existing name
     // ------------------------------------------------------------------------
 
-    static object_p recall_all(symbol_p name);
+    object_p recall(object_p name) const;
     // ------------------------------------------------------------------------
-    //    Check if a name exists in the directory, return value pointer if it does
+    //    Check if a name exists in the directory, return value ptr if it does
+    // ------------------------------------------------------------------------
+
+    static object_p recall_all(object_p name, bool report_missing);
+    // ------------------------------------------------------------------------
+    //    Check if a name exists in the directory, return value ptr if it does
     // ------------------------------------------------------------------------
 
     object_p lookup(object_p name) const;
     // ------------------------------------------------------------------------
-    //    Check if a name exists in the directory, return name pointer if it does
+    //    Check if a name exists in the directory, return name ptr if it does
     // ------------------------------------------------------------------------
 
     size_t purge(object_p name);
     // ------------------------------------------------------------------------
     //   Purge an entry from the directory, return purged size
+    // ------------------------------------------------------------------------
+
+    static size_t purge_all(object_p name);
+    // ------------------------------------------------------------------------
+    //   Purge an entry from the directory and parents
     // ------------------------------------------------------------------------
 
     size_t count() const
@@ -119,13 +129,29 @@ struct directory : list
         return enumerate(nullptr, nullptr);
     }
 
-    typedef bool (*enumeration_fn)(symbol_p name, object_p obj, void *arg);
+    object_p name(uint element) const;
+    // ------------------------------------------------------------------------
+    //   Return the n-th name in the directory
+    // ------------------------------------------------------------------------
+
+    object_p value(uint element) const;
+    // ------------------------------------------------------------------------
+    //   Return the n-th value in the directory
+    // ------------------------------------------------------------------------
+
+    bool find(uint element, object_p &name, object_p &value) const;
+    // ------------------------------------------------------------------------
+    //   Return the n-th value in the directory
+    // ------------------------------------------------------------------------
+
+
+    typedef bool (*enumeration_fn)(object_p name, object_p obj, void *arg);
     size_t enumerate(enumeration_fn callback, void *arg) const;
     // ------------------------------------------------------------------------
     //   Enumerate all the variables in the directory, return count of true
     // ------------------------------------------------------------------------
 
-    static bool render_name(symbol_p name, object_p obj, void *renderer_ptr);
+    static bool render_name(object_p name, object_p obj, void *renderer_ptr);
     // ------------------------------------------------------------------------
     //   Render an entry in the directory
     // ------------------------------------------------------------------------
@@ -135,34 +161,52 @@ struct directory : list
     //   Return the current directory path
     // ------------------------------------------------------------------------
 
+    result enter() const;
+    // ------------------------------------------------------------------------
+    //   Enter a directory
+    // ------------------------------------------------------------------------
+
+    bool is_valid_name(object_p obj) const;
+    // ------------------------------------------------------------------------
+    //   Check if something is a valid symbol
+    // ------------------------------------------------------------------------
 
 public:
     OBJECT_DECL(directory);
     PARSE_DECL(directory);
     RENDER_DECL(directory);
-    EXEC_DECL(directory);
 
 private:
     static void adjust_sizes(directory_r dir, int delta);
 };
 
 
-COMMAND_DECLARE(Sto);
-COMMAND_DECLARE(Rcl);
-COMMAND_DECLARE(Purge);
-COMMAND_DECLARE(PurgeAll);
+COMMAND_DECLARE(Sto, 2);
+COMMAND_DECLARE(Rcl, 1);
+COMMAND_DECLARE(StoreAdd, 2);
+COMMAND_DECLARE(StoreSub, 2);
+COMMAND_DECLARE(StoreMul, 2);
+COMMAND_DECLARE(StoreDiv, 2);
+COMMAND_DECLARE(RecallAdd, 2);
+COMMAND_DECLARE(RecallSub, 2);
+COMMAND_DECLARE(RecallMul, 2);
+COMMAND_DECLARE(RecallDiv, 2);
+COMMAND_DECLARE(Increment, 1);
+COMMAND_DECLARE(Decrement, 1);
+COMMAND_DECLARE(Purge,1);
+COMMAND_DECLARE(PurgeAll,1);
 
-COMMAND_DECLARE(Mem);
-COMMAND_DECLARE(FreeMemory);
-COMMAND_DECLARE(SystemMemory);
-COMMAND_DECLARE(GarbageCollect);
+COMMAND_DECLARE(Mem,0);
+COMMAND_DECLARE(FreeMemory,0);
+COMMAND_DECLARE(SystemMemory,0);
+COMMAND_DECLARE(GarbageCollect,0);
 
-COMMAND_DECLARE(home);             // Return to home directory
-COMMAND_DECLARE(CurrentDirectory); // Return the current directory object
-COMMAND_DECLARE(path);             // Return a list describing current path
-COMMAND_DECLARE(crdir);            // Create a directory in current directly
-COMMAND_DECLARE(updir);            // Move one directory up
-COMMAND_DECLARE(pgdir);            // Purge directory
+COMMAND_DECLARE(home,0);                // Return to home directory
+COMMAND_DECLARE(CurrentDirectory,0);    // Return the current directory
+COMMAND_DECLARE(path,0);                // Return a list describing current path
+COMMAND_DECLARE(crdir,1);               // Create a directory
+COMMAND_DECLARE(updir,0);               // Move one directory up
+COMMAND_DECLARE(pgdir,1);               // Purge directory
 
 
 struct VariablesMenu : menu
@@ -184,8 +228,28 @@ public:
     MENU_DECL(VariablesMenu);
 };
 
-COMMAND_DECLARE(VariablesMenuExecute);
-COMMAND_DECLARE(VariablesMenuRecall);
-COMMAND_DECLARE(VariablesMenuStore);
+COMMAND_DECLARE_INSERT(VariablesMenuExecute,-1);
+COMMAND_DECLARE_INSERT(VariablesMenuRecall,0);
+COMMAND_DECLARE_INSERT(VariablesMenuStore,1);
+
+
+
+// ============================================================================
+//
+//   Flag commands
+//
+// ============================================================================
+
+COMMAND_DECLARE(SetFlag,1);
+COMMAND_DECLARE(ClearFlag,1);
+COMMAND_DECLARE(FlipFlag,1);
+COMMAND_DECLARE(TestFlagSet,1);
+COMMAND_DECLARE(TestFlagClear,1);
+COMMAND_DECLARE(TestFlagClearThenClear,1);
+COMMAND_DECLARE(TestFlagClearThenSet,1);
+COMMAND_DECLARE(TestFlagSetThenClear,1);
+COMMAND_DECLARE(TestFlagSetThenSet,1);
+COMMAND_DECLARE(FlagsToBinary,0);
+COMMAND_DECLARE(BinaryToFlags,1);
 
 #endif // VARIABLES_H

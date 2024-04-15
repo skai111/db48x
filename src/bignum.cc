@@ -123,8 +123,7 @@ HELP_BODY(bignum)
 static size_t render_num(renderer &r,
                          bignum_p  num,
                          uint      base,
-                         cstring   fmt,
-                         bool      raw = false)
+                         cstring   fmt)
 // ----------------------------------------------------------------------------
 //   Convert an bignum value to the proper format
 // ----------------------------------------------------------------------------
@@ -135,23 +134,35 @@ static size_t render_num(renderer &r,
     // revert the digits in memory before writing
     if (r.file_save())
     {
-        renderer tmp(r.equation(), r.editing(), r.stack());
-        size_t result = render_num(tmp, num, base, fmt, true);
+        renderer tmp(r.expression(), r.editing(), r.stack());
+        size_t result = render_num(tmp, num, base, fmt);
         r.put(tmp.text(), result);
         return result;
     }
 
+    // Upper / lower rendering
+    bool upper = *fmt == '^';
+    bool lower = *fmt == 'v';
+    if (upper || lower)
+        fmt++;
+    if (!Settings.SmallFractions() || r.editing())
+        upper = lower = false;
+    static uint16_t fancy_upper_digits[10] =
+    {
+        L'⁰', L'¹', L'²', L'³', L'⁴',
+        L'⁵', L'⁶', L'⁷', L'⁸', L'⁹'
+    };
+    static uint16_t fancy_lower_digits[10] =
+    {
+        L'₀', L'₁', L'₂', L'₃', L'₄',
+        L'₅', L'₆', L'₇', L'₈', L'₉'
+    };
+
     // Check which kind of spacing to use
     bool based = *fmt == '#';
     bool fancy_base = based && r.stack();
-    uint spacing = based ? Settings.spacing_based : Settings.spacing_mantissa;
-    unicode space = based ? Settings.space_based : Settings.space;
-    if (raw)
-    {
-        fancy_base = false;
-        spacing = 0;
-        space = 0;
-    }
+    uint spacing = based ? Settings.BasedSpacing() : Settings.MantissaSpacing();
+    unicode space = based ? Settings.BasedSeparator() : Settings.NumberSeparator();
 
     // Copy the '#' or '-' sign
     if (*fmt)
@@ -178,7 +189,10 @@ static size_t render_num(renderer &r,
             printf("Ooops: digit=%u, base=%u\n", digit, base);
             bignum::quorem(n, b, bignum::ID_bignum, &quotient, &remainder);
         }
-        char c = (digit < 10) ? digit + '0' : digit + ('A' - 10);
+        unicode c = upper        ? fancy_upper_digits[digit]
+                  : lower        ? fancy_lower_digits[digit]
+                  : (digit < 10) ? digit + '0'
+                                 : digit + ('A' - 10);
         r.put(c);
         n = quotient;
 
@@ -191,20 +205,15 @@ static size_t render_num(renderer &r,
 
     // Revert the digits
     byte *dest  = (byte *) r.text();
-    bool multibyte = spacing && space > 0xFF;
+    bool multibyte = upper || lower || (spacing && space > 0xFF);
     utf8_reverse(dest + findex, dest + r.size(), multibyte);
 
     // Add suffix if there is one
     if (fancy_base)
     {
-        static uint16_t fancy_base_digits[10] =
-        {
-                L'₀', L'₁', L'₂', L'₃', L'₄',
-                L'₅', L'₆', L'₇', L'₈', L'₉'
-        };
         if (base / 10)
-            r.put(unicode(fancy_base_digits[base/10]));
-        r.put(unicode(fancy_base_digits[base%10]));
+            r.put(unicode(fancy_lower_digits[base/10]));
+        r.put(unicode(fancy_lower_digits[base%10]));
     }
     else if (*fmt)
         r.put(*fmt++);
@@ -279,8 +288,9 @@ RENDER_BODY(based_bignum)
 //   Render the hexadecimal bignum value into the given string buffer
 // ----------------------------------------------------------------------------
 {
-    return render_num(r, o, Settings.base, "#");
+    return render_num(r, o, Settings.Base(), "#");
 }
+
 
 
 // ============================================================================
@@ -394,22 +404,25 @@ bignum_g operator~(bignum_r x)
 }
 
 
-bignum_g bignum::add_sub(bignum_r yg, bignum_r xg, bool issub)
+bignum_g bignum::add_sub(bignum_r y, bignum_r x, bool issub)
 // ----------------------------------------------------------------------------
-//   Add the two bignum values, result has type of x
+//   Add the two bignum values
 // ----------------------------------------------------------------------------
 {
-    if (!xg.Safe() || !yg.Safe())
+    if (!x|| !y)
         return nullptr;
 
-    id yt = yg->type();
-    id xt = xg->type();
+    id       yt    = y->type();
+    id       xt    = x->type();
+    bool     based = is_based(xt) || is_based(yt);
+    bignum_g xg    = x;
+    bignum_g yg    = y;
 
     // Check if we have opposite signs
     bool samesgn = (xt == ID_neg_bignum) == (yt == ID_neg_bignum);
     if (samesgn == issub)
     {
-        int cmp = compare(yg, xg, true);
+        int cmp = based ? 0 : compare(yg, xg, true);
         if (cmp >= 0)
         {
             // abs Y > abs X: result has opposite type of X
@@ -488,7 +501,7 @@ bignum_g bignum::multiply(bignum_r yg, bignum_r xg, id ty)
     size_t wbits = wordsize(xt);
     size_t wbytes = (wbits + 7) / 8;
     size_t needed = xs + ys;
-    if (needed * 8 > Settings.maxbignum)
+    if (needed * 8 > Settings.MaxNumberBits())
     {
         rt.number_too_big_error();
         return nullptr;
@@ -548,7 +561,7 @@ bignum_g operator*(bignum_r y, bignum_r x)
 //   Multiplication of bignums
 // ----------------------------------------------------------------------------
 {
-    if (!x.Safe() || !y.Safe())
+    if (!x || !y)
         return nullptr;
     object::id xt = x->type();
     object::id yt = y->type();
@@ -676,7 +689,7 @@ bignum_g operator/(bignum_r y, bignum_r x)
 //   Perform long division of y by x
 // ----------------------------------------------------------------------------
 {
-    if (!x.Safe() || !y.Safe())
+    if (!x || !y)
         return nullptr;
     object::id yt = y->type();
     object::id xt = x->type();
@@ -693,7 +706,7 @@ bignum_g operator%(bignum_r y, bignum_r x)
 //  Perform long-remainder of y by x
 // ----------------------------------------------------------------------------
 {
-    if (!x.Safe() || !y.Safe())
+    if (!x || !y)
         return nullptr;
     object::id yt = y->type();
     bignum_g r = nullptr;
@@ -708,17 +721,16 @@ bignum_g bignum::pow(bignum_r yr, bignum_r xr)
 // ----------------------------------------------------------------------------
 //   Note that the case where x is negative should be filtered by caller
 {
-    if (!xr.Safe() || !yr.Safe())
+    if (!xr || !yr)
         return nullptr;
     bignum_g r  = bignum::make(1);
     size_t   xs = 0;
     byte_p   x  = xr->value(&xs);
     bignum_g y  = yr;
-
     for (size_t xi = 0; xi < xs; xi++)
     {
         byte xv = x[xi];
-        for (uint bit = 0; xv && bit < 8; bit++)
+        for (uint bit = 0; (xv || xi+1 < xs) && bit < 8; bit++)
         {
             if (xv & 1)
                 r = r * y;
@@ -731,17 +743,41 @@ bignum_g bignum::pow(bignum_r yr, bignum_r xr)
 }
 
 
+static size_t fraction_render(big_fraction_p o, renderer &r, bool negative)
+// ----------------------------------------------------------------------------
+//   Common code for positive and negative fractions
+// ----------------------------------------------------------------------------
+{
+    bignum_g n = o->numerator();
+    bignum_g d = o->denominator();
+    if (negative)
+        r.put('-');
+    if (r.stack() && Settings.MixedFractions())
+    {
+        bignum_g quo, rem;
+        if (bignum::quorem(n, d, bignum::ID_bignum, &quo, &rem))
+        {
+            if (!quo->is_zero())
+            {
+                render_num(r, quo, 10, "");
+                r.put(unicode(settings::SPACE_MEDIUM_MATH));
+                n = rem;
+            }
+        }
+    }
+    render_num(r, n, 10, "^");
+    r.put('/');
+    render_num(r, d, 10, "v");
+    return r.size();
+}
+
+
 RENDER_BODY(big_fraction)
 // ----------------------------------------------------------------------------
 //   Render the fraction as 'num/den'
 // ----------------------------------------------------------------------------
 {
-    bignum_g n = o->numerator();
-    bignum_g d = o->denominator();
-    render_num(r, n, 10, "");
-    r.put('/');
-    render_num(r, d, 10, "");
-    return r.size();
+    return fraction_render(o, r, false);
 }
 
 
@@ -750,9 +786,174 @@ RENDER_BODY(neg_big_fraction)
 //   Render the fraction as '-num/den'
 // ----------------------------------------------------------------------------
 {
-    bignum_g n = o->numerator();
-    bignum_g d = o->denominator();
-    render_num(r, n, 10, "-/");
-    render_num(r, d, 10, "");
-    return r.size();
+    return fraction_render(o, r, true);
+}
+
+
+
+// ============================================================================
+//
+//   Shift and rotate operations
+//
+// ============================================================================
+
+bignum_p bignum::shift(bignum_r xg, int bits, bool rotate, bool arith)
+// ----------------------------------------------------------------------------
+//   Perform a shift / rotate operation on a bignum
+// ----------------------------------------------------------------------------
+//   This uses the scratch pad AND can cause garbage collection
+//   Bits is signed like a memory offset, so bits>0 shifts left
+{
+    if (bits == 0)
+        return +xg;
+    if (!xg)
+        return nullptr;
+    size_t   xs     = 0;
+    byte_p   x      = xg->value(&xs);
+    id       xt     = xg->type();
+    size_t   ws = Settings.WordSize();
+    size_t   wbits  = (rotate || arith) ? ws : wordsize(xt);
+    size_t   wbytes = (wbits + 7) / 8;
+    size_t   abits  = bits < 0 ? 0 : bits;
+    size_t   needed = std::max(xs + (abits + 7) / 8, wbytes) ;
+    if (needed * 8 > Settings.MaxNumberBits())
+    {
+        rt.number_too_big_error();
+        return nullptr;
+    }
+    if (wbits)
+        needed = wbytes;
+    else
+        wbytes = needed;
+    byte *buffer = rt.allocate(needed); // May GC here
+    if (!buffer)
+        return nullptr; // Out of memory
+    x = xg->value(&xs); // Re-read after potential GC
+    byte *end = buffer + needed;
+
+    // Start with zeroes
+    for (uint i = 0; i < needed; i++)
+        buffer[i] = 0;
+
+    // Check if we shift by "too much"
+    bool done = false;
+    if (bits > int(ws) || bits < -int(ws))
+    {
+        // If we want to return 0, do so
+        done = (!rotate && !arith);
+        bits %= wbits;
+    }
+    if (!done)
+    {
+        // Process input data
+        size_t max = std::min(xs, needed);
+        int o = (bits / 8) % int(needed);
+
+        if (bits > 0)
+        {
+            // Shift left (we store data little endian)
+            uint lbits = bits % 8;
+            for (uint i = 0; i < max; i++)
+            {
+                uint xd = x[i] << lbits;
+                if (rotate || size_t(o) < needed)
+                    buffer[o % needed] |= byte(xd);
+                o++;
+                if (rotate || size_t(o) < needed)
+                    buffer[o % needed] |= byte(xd >> 8);
+            }
+        }
+        else
+        {
+            // Shift right
+            uint lbits = (-bits) % 8;
+            bool sbit = arith && xs >= wbytes && (x[xs-1]&(1<<((wbits-1) % 8)));
+            if (rotate)
+                o += needed;
+            o--;
+            for (uint i = 0; i < max; i++)
+            {
+                uint xd = (uint(x[i]) << 8) >> lbits;
+                if (o >= 0)
+                    buffer[o % needed] |= byte(xd);
+                o++;
+                if (o >= 0)
+                    buffer[o % needed] |= byte(xd>>8);
+            }
+            if (sbit)
+            {
+                byte *d = end - 1;
+                while (bits < -8)
+                {
+                    *d-- = 0xFF;
+                    bits += 8;
+                }
+                *d |= 0xFF << (8+bits);
+            }
+        }
+    }
+
+    // Drop highest zeros (this can reach i == 0 for value 0)
+    while (wbytes > 0 && buffer[wbytes - 1] == 0)
+        wbytes--;
+
+    // Check if we have a word size like 12 and we need to truncate result
+    if (wbytes == needed && (wbits % 8))
+        buffer[wbytes-1] &= byte(0xFFu >> (8 - wbits % 8));
+
+    // Create the resulting bignum
+    gcbytes buf = buffer;
+    bignum_g result = rt.make<bignum>(xt, buf, wbytes);
+    rt.free(needed);
+    return result;
+}
+
+
+bignum_g operator<<(bignum_r y, bignum_r x)
+// ----------------------------------------------------------------------------
+//   Shift left
+// ----------------------------------------------------------------------------
+{
+    if (!x || !y)
+        return nullptr;
+    uint shift = x->as_uint32(0, true);
+    if (rt.error())
+        return nullptr;
+    return bignum::shift(y, int(shift), false, false);
+}
+
+
+bignum_g operator>>(bignum_r y, bignum_r x)
+// ----------------------------------------------------------------------------
+//  Shift right (as an unsigned)
+// ----------------------------------------------------------------------------
+{
+    if (!x || !y)
+        return nullptr;
+    uint shift = x->as_uint32(0, true);
+    if (rt.error())
+        return nullptr;
+    return bignum::shift(y, -int(shift), false, false);
+}
+
+
+bignum_g operator<<(bignum_r y, uint x)
+// ----------------------------------------------------------------------------
+//   Shift left
+// ----------------------------------------------------------------------------
+{
+    if (!y)
+        return nullptr;
+    return bignum::shift(y, int(x), false, false);
+}
+
+
+bignum_g operator>>(bignum_r y, uint x)
+// ----------------------------------------------------------------------------
+//  Shift right (as an unsigned)
+// ----------------------------------------------------------------------------
+{
+    if (!y)
+        return nullptr;
+    return bignum::shift(y, -int(x), false, false);
 }

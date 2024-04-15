@@ -32,12 +32,15 @@
 #include "arithmetic.h"
 #include "bignum.h"
 #include "command.h"
+#include "decimal.h"
 #include "font.h"
 #include "functions.h"
 #include "integer.h"
 #include "menu.h"
 #include "renderer.h"
+#include "symbol.h"
 #include "user_interface.h"
+#include "variables.h"
 
 #include <cstdarg>
 #include <cstdlib>
@@ -47,12 +50,168 @@
 settings Settings;
 
 
+settings::settings() :
+// ----------------------------------------------------------------------------
+//    Initial values for all the settings
+// ----------------------------------------------------------------------------
+#define ID(id)
+#define FLAG(Enable, Disable)
+#define SETTING(Name,Low,High,Init)             Name##_bits(Init),
+#define SETTING_BITS(Name,Type,Bits,Low,High,Init)
+#include "ids.tbl"
+
+    // Define the packed bits settings
+#define ID(id)
+#define FLAG(Enable, Disable)
+#define SETTING(Name, Low, High, Init)
+#define SETTING_BITS(Name,Type,Bits,Low,High,Init)   Name##_bits(Init - Low),
+#include "ids.tbl"
+
+    // Define the flags
+#define ID(id)
+#define FLAG(Enable, Disable)                   Enable##_bit(false),
+#define SETTINGS(Name, Low, High, Init)
+#define SETTING_BITS(Name,Type,Bits,Low,High,Init)
+#include "ids.tbl"
+
+        reserved(false)
+{
+#ifdef CONFIG_COLOR
+    AlphaForeground             (pattern(200, 224, 224).bits);
+    LowerAlphaForeground        (pattern(200, 224, 255).bits);
+    LeftShiftForeground         (pattern(  0,   0,   0).bits);
+    RightShiftForeground        (pattern(  0,   0,   0).bits);
+    LeftShiftBackground         (pattern(255, 230, 128).bits);
+    RightShiftBackground        (pattern(128, 192, 255).bits);
+
+    ChargingForeground          (pattern(128, 192, 255).bits);
+    LowBatteryForeground        (pattern(192,  64,  64).bits);
+    HalfBatteryForeground       (pattern(255, 192,  64).bits);
+    BatteryLevelForeground      (pattern( 64, 192,  64).bits);
+    VoltageForeground           (HeaderBackground());
+
+    RunningIconForeground       (pattern(128, 192, 255).bits);
+    SteppingIconForeground      (pattern( 64, 255, 128).bits);
+    HaltedIconForeground        (pattern(255,  64,  64).bits);
+    GCIconForeground            (pattern(255, 192,  64).bits);
+
+    UserCommandBorder           (pattern(128, 128, 255).bits);
+    UserCommandBackground       (pattern(224, 224, 224).bits);
+
+    CursorBackground            (pattern(  0, 128,  64).bits);
+    CursorBorder                (pattern(  0,  64,   0).bits);
+    CursorForeground            (pattern(224, 255, 224).bits);
+    CursorAlphaBackground       (pattern(  0,  64, 128).bits);
+    CursorAlphaBorder           (pattern(  0,   0,  64).bits);
+    CursorAlphaForeground       (pattern(224, 224, 255).bits);
+    CursorSelBackground         (pattern(192, 224, 255).bits);
+
+    EditorBackground            (pattern(224, 240, 255).bits);
+
+    ResultForeground            (pattern( 32,  64,  32).bits);
+    StackForeground             (pattern( 96,  96, 128).bits);
+
+    StackLevelBackground        (pattern(240, 240, 240).bits);
+    StackLevelForeground        (pattern( 96,   0,   0).bits);
+
+    SelectionBackground         (pattern(255, 255, 128).bits);
+    SelectionForeground         (pattern( 24,  24, 128).bits);
+
+    ErrorBackground             (pattern(255, 240, 224).bits);
+    ErrorForeground             (pattern( 64,   0,   0).bits);
+    ErrorBorder                 (pattern(192,  64,  64).bits);
+#else
+    ChargingForeground          (pattern::gray50.bits);
+    LowBatteryForeground        (pattern::gray25.bits);
+    HalfBatteryForeground       (pattern::gray75.bits);
+    BatteryLevelForeground      (pattern::white.bits);
+    SearchBackground            (pattern::gray25.bits);
+
+    CursorSelBackground         (pattern::gray90.bits);
+#endif // CONFIG_COLOR
+}
 
 // ============================================================================
 //
 //   Save the current settings to a renderer
 //
 // ============================================================================
+
+static void format(settings UNUSED &s,
+                   renderer        &out,
+                   cstring          command,
+                   object::id       value)
+// ----------------------------------------------------------------------------
+//   Print ids as commands
+// ----------------------------------------------------------------------------
+{
+    out.printf("'%s' %s\n", command::fancy(value), command);
+}
+
+
+static void format(settings UNUSED &s,
+                   renderer        &out,
+                   cstring          command,
+                   unsigned         value)
+// ----------------------------------------------------------------------------
+//   By default, we print values as integers
+// ----------------------------------------------------------------------------
+{
+    out.printf("%u %s\n", value, command);
+}
+
+
+static void format(settings UNUSED &s,
+                   renderer        &out,
+                   cstring          command,
+                   int              value)
+// ----------------------------------------------------------------------------
+//   By default, we print values as integers
+// ----------------------------------------------------------------------------
+{
+    out.printf("%d %s\n", value, command);
+}
+
+
+static void format(settings UNUSED &s,
+                   renderer        &out,
+                   cstring          command,
+                   ularge           value)
+// ----------------------------------------------------------------------------
+//   When we have 64-bit values, print them in hex (Foreground / Background)
+// ----------------------------------------------------------------------------
+{
+    out.printf("16#%llX %s\n", value, command);
+}
+
+
+static void format(settings UNUSED &s, renderer &out, cstring command)
+// ----------------------------------------------------------------------------
+//   Case of SETTING_VALUE
+// ----------------------------------------------------------------------------
+{
+    out.printf("%s\n", command);
+}
+
+
+static void format(settings &s, renderer &out, object::id type, cstring command)
+// ----------------------------------------------------------------------------
+//   Case of SETTING_ENUM
+// ----------------------------------------------------------------------------
+{
+    switch (type)
+    {
+        // The FIX, SCI, ENG and SIG commands take an argument
+    case object::ID_Fix:
+    case object::ID_Sci:
+    case object::ID_Eng:
+    case object::ID_Sig:
+        out.printf("%u %s\n", s.DisplayDigits(), command);
+        break;
+    default: out.printf("%s\n", command); break;
+    }
+}
+
 
 void settings::save(renderer &out, bool show_defaults)
 // ----------------------------------------------------------------------------
@@ -61,156 +220,30 @@ void settings::save(renderer &out, bool show_defaults)
 {
     settings Defaults;
 
-    // Save current computation precision
-    if (precision != BID128_MAXDIGITS || show_defaults)
-        out.put("%u Precision\n", precision);
+#define ID(id)
 
-    // Save current display setting
-    switch(display_mode)
-    {
-    case NORMAL:
-        if (displayed == settings::STD_DISPLAYED)
-        {
-            if (show_defaults)
-                out.put("%STD\n");
-        }
-        else    out.printf("%u SIG\n", displayed); break;
-    case FIX:   out.printf("%u FIX\n", displayed); break;
-    case SCI:   out.printf("%u SCI\n", displayed); break;
-    case ENG:   out.printf("%u ENG\n", displayed); break;
-    }
+#define FLAG(Enable,Disable)                    \
+    if (Enable())                               \
+        out.put(#Enable "\n");                  \
+    else if (show_defaults)                     \
+        out.put(#Disable "\n");
 
-    // Save Decimal separator
-    if (decimal_mark == ',')
-        out.put("DecimalComma\n");
-    else if (show_defaults)
-        out.put("DecimalDot\n");
+#define SETTING(Name, Low, High, Init)                                  \
+    if (Name() != Defaults.Name() || show_defaults)                     \
+        format(*this, out, #Name, Name());
 
-    // Save preferred exponent display mode
-    if (exponent_mark != L'⁳' || !fancy_exponent)
-        out.put("ClassicExponent\n");
-    else if (show_defaults)
-        out.put("FancyExponent\n");
+#define SETTING_VALUE(Name, Alias, Base, Value)                         \
+    if (Base() == Value && (Value != Defaults.Base() || show_defaults)) \
+        format(*this, out, #Name);                                      \
+    else
 
-    // Save preferred expenent for switching to scientfiic mode
-    if (standard_exp != Defaults.standard_exp || show_defaults)
-        out.printf("%u StandardExponent\n", standard_exp);
+#define SETTING_ENUM(Name, Alias, Base)                          \
+    if (Base() == ID_##Name &&                                   \
+        (ID_##Name != Defaults.Base() || show_defaults))         \
+        format(*this, out, ID_##Name, #Name);                    \
+    else
 
-    // Save current angle mode
-    switch(angle_mode)
-    {
-    default:
-    case DEGREES:       if (show_defaults)      out.put("DEG\n"); break;
-    case RADIANS:                               out.put("RAD\n"); break;
-    case GRADS:                                 out.put("GRAD\n"); break;
-    case PI_RADIANS:                            out.put("PIRADIANS\n"); break;
-    }
-
-    // Save default base
-    if( base != Defaults.base || show_defaults)
-        out.printf("%u Base\n", base);
-
-    // Save default word size
-    if (wordsize != Defaults.wordsize || show_defaults)
-        out.printf("%u WordSize\n", wordsize);
-
-    // Save default command format
-    switch(command_fmt)
-    {
-    default:
-    case LONG_FORM:     if (show_defaults)      out.put("LongForm\n");    break;
-    case LOWERCASE:                             out.put("lowercase\n");   break;
-    case UPPERCASE:                             out.put("UPPERCASE\n");   break;
-    case CAPITALIZED:                           out.put("Capitalized\n"); break;
-    }
-
-    // Check if we want to show 1.0 as 1 and not 1.
-    if (!show_decimal)
-        out.put("NoTrailingDecimal\n");
-    else if (show_defaults)
-        out.put("TrailingDecimal\n");
-
-    // Font size
-    if (result_sz != Defaults.result_sz || show_defaults)
-        out.printf("%u ResultFontSize\n", result_sz);
-    if (stack_sz != Defaults.stack_sz || show_defaults)
-        out.printf("%u StackFontSize\n", result_sz);
-    if (editor_sz != Defaults.editor_sz || show_defaults)
-        out.printf("%u EditorFontSize\n", result_sz);
-    if (editor_ml_sz != Defaults.editor_ml_sz || show_defaults)
-        out.printf("%u EditorMultilineFontSize\n", result_sz);
-
-    // Number spacing
-    if (spacing_mantissa != Defaults.spacing_mantissa || show_defaults)
-        out.printf("%u MantissaSpacing\n", spacing_mantissa);
-    if (spacing_fraction != Defaults.spacing_fraction || show_defaults)
-        out.printf("%u FractionSpacing\n", spacing_fraction);
-    if (spacing_based != Defaults.spacing_based || show_defaults)
-        out.printf("%u BasedSpacing\n", spacing_based);
-
-    switch (space)
-    {
-    default:
-    case SPACE_DEFAULT:
-        if (show_defaults)
-                                out.put("NumberSpaces\n");      break;
-    case '.': case ',':         out.put("NumberDotOrComma\n");  break;
-    case L'’':                  out.put("NumberTicks\n");       break;
-    case '_':                   out.put("NumberUnderscore\n");  break;
-    }
-
-    switch (space_based)
-    {
-    default:
-    case SPACE_DEFAULT:
-        if (show_defaults)
-                                out.put("BasedSpaces\n");       break;
-    case '.': case ',':         out.put("BasedDotOrComma\n");   break;
-    case L'’':                  out.put("BasedTicks\n");        break;
-    case '_':                   out.put("BasedUnderscore\n");   break;
-    }
-
-    if (!auto_simplify)
-        out.put("NoAutoSimplify\n");
-    else if (show_defaults)
-        out.put("AutoSimplify\n");
-
-    if (numeric)
-        out.put("NumericResults\n");
-    else if (show_defaults)
-        out.put("SymbolicResults\n");
-
-    if (maxbignum != Defaults.maxbignum || show_defaults)
-        out.printf("%u MaxBigNumBits\n", maxbignum);
-    if (maxrewrites != Defaults.maxrewrites || show_defaults)
-        out.printf("%u MaxRewrites\n", maxbignum);
-    if (fraciter != Defaults.fraciter || show_defaults)
-        out.printf("%u ToFractionIterations\n", fraciter);
-    if (fracprec != Defaults.fracprec || show_defaults)
-        out.printf("%u ToFractionDigits\n", fracprec);
-
-    if (menu_single_ln)
-    {
-        if (menu_flatten)
-            out.put("FlatMenus\n");
-        else
-            out.put("SingleRowMenus\n");
-    }
-    else if (show_defaults)
-    {
-        out.put("ThreeRowsMenus\n");
-    }
-    if (menu_square)
-        out.put("SquareMenus\n");
-    else if (show_defaults)
-        out.put("RoundedMenus\n");
-
-    if (line_width != Defaults.line_width || show_defaults)
-        out.printf("%u LineWidth\n", line_width);
-    if (foreground.bits != Defaults.foreground.bits || show_defaults)
-        out.printf("#%llX foreground\n", foreground.bits);
-    if (background.bits != Defaults.background.bits || show_defaults)
-        out.printf("#%llX background\n", background.bits);
+#include "ids.tbl"
 
     // Save the current menu
     if (menu_p menu = ui.menu())
@@ -226,19 +259,16 @@ COMMAND_BODY(Modes)
 //   Return a program that restores the current modes
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(0))
-    {
-        renderer modes;
-        modes.put("«");
-        Settings.save(modes);
-        modes.put("»");
+    renderer modes;
+    modes.put("«");
+    Settings.save(modes);
+    modes.put("»");
 
-        size_t size = modes.size();
-        gcutf8 code = modes.text();
-        if (object_g program = object::parse(code, size))
-            if (rt.push(program))
-                return OK;
-    }
+    size_t size = modes.size();
+    gcutf8 code = modes.text();
+    if (object_g program = object::parse(code, size))
+        if (rt.push(program))
+            return OK;
     return ERROR;
 }
 
@@ -248,12 +278,17 @@ COMMAND_BODY(ResetModes)
 //   Reset the default modes
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(0))
-        return ERROR;
     Settings = settings();
     return OK;
 }
 
+
+
+// ============================================================================
+//
+//    Font management
+//
+// ============================================================================
 
 font_p settings::font(font_id size)
 // ----------------------------------------------------------------------------
@@ -262,22 +297,23 @@ font_p settings::font(font_id size)
 {
     switch (size)
     {
-    case EDITOR:        return EditorFont;
+    case EDITOR:        return ::EditorFont;
+    case REDUCED:       return ::ReducedFont;
     default:
-    case STACK:         return StackFont;
-    case HELP:          return HelpFont;
+    case STACK:         return ::StackFont;
+    case HELP:          return ::HelpFont;
 
-    case LIB17:         return LibMonoFont10x17;
-    case LIB18:         return LibMonoFont11x18;
-    case LIB20:         return LibMonoFont12x20;
-    case LIB22:         return LibMonoFont14x22;
-    case LIB25:         return LibMonoFont17x25;
-    case LIB28:         return LibMonoFont17x28;
+    case LIB17:         return ::LibMonoFont10x17;
+    case LIB18:         return ::LibMonoFont11x18;
+    case LIB20:         return ::LibMonoFont12x20;
+    case LIB22:         return ::LibMonoFont14x22;
+    case LIB25:         return ::LibMonoFont17x25;
+    case LIB28:         return ::LibMonoFont17x28;
 
-    case SKR18:         return SkrMono13x18;
-    case SKR24:         return SkrMono18x24;
+    case SKR18:         return ::SkrMono13x18;
+    case SKR24:         return ::SkrMono18x24;
 
-    case FREE42:        return Free42Font;
+    case FREE42:        return ::Free42Font;
     }
 }
 
@@ -289,952 +325,391 @@ font_p settings::cursor_font(font_id size)
 {
     switch (size)
     {
-    case EDITOR:        return StackFont;
+    case EDITOR:        return ::StackFont;
     default:
-    case STACK:         return LibMonoFont14x22;
-    case HELP:          return HelpFont;
+    case STACK:         return ::ReducedFont;
+    case REDUCED:       return ::LibMonoFont14x22;
+    case HELP:          return ::HelpFont;
 
-    case LIB17:         return LibMonoFont10x17;
-    case LIB18:         return LibMonoFont10x17;
-    case LIB20:         return LibMonoFont11x18;
-    case LIB22:         return LibMonoFont12x20;
-    case LIB25:         return LibMonoFont14x22;
-    case LIB28:         return LibMonoFont17x25;
+    case LIB17:         return ::LibMonoFont10x17;
+    case LIB18:         return ::LibMonoFont10x17;
+    case LIB20:         return ::LibMonoFont11x18;
+    case LIB22:         return ::LibMonoFont12x20;
+    case LIB25:         return ::LibMonoFont14x22;
+    case LIB28:         return ::LibMonoFont17x25;
 
     case SKR18:
-    case SKR24:         return SkrMono13x18;
+    case SKR24:         return ::SkrMono13x18;
 
-    case FREE42:        return Free42Font;
+    case FREE42:        return ::Free42Font;
     }
 }
 
+
+unicode settings::digit_separator(uint index)
+// ----------------------------------------------------------------------------
+//   Find the digit separator from
+// ----------------------------------------------------------------------------
+{
+    static unicode sep[] = { SPACE_DEFAULT, ',', L'’', '_' };
+    if (sep[index] == ',' && Settings.DecimalComma())
+        return '.';
+    return sep[index];
+}
 
 
 
 // ============================================================================
 //
-//    Commands to manipulate the settings
+//   Setting a value in settings
 //
 // ============================================================================
 
-static inline bool IsStd()
+template<>
+ularge setting_value<ularge>(object_p obj, ularge init)
 // ----------------------------------------------------------------------------
-//   Check if the current settings is Std
+//   Specialization for the ularge type
 // ----------------------------------------------------------------------------
 {
-    return Settings.display_mode == settings::NORMAL
-        && Settings.displayed == settings::STD_DISPLAYED;
+    return obj->as_uint64(init, true);
 }
 
 
-SETTINGS_COMMAND_BODY(Std, IsStd())
+template <>
+int setting_value<int>(object_p obj, int init)
 // ----------------------------------------------------------------------------
-//   Switch to standard display mode
+//   Specialization for signed integer values
 // ----------------------------------------------------------------------------
 {
-    Settings.displayed = settings::STD_DISPLAYED;
-    Settings.display_mode = settings::NORMAL;
-    return OK;
+    return int(obj->as_int32(init, true));
+}
+
+template <>
+int16_t setting_value<int16_t>(object_p obj, int16_t init)
+// ----------------------------------------------------------------------------
+//   Specialization for signed integer values
+// ----------------------------------------------------------------------------
+{
+    return int16_t(obj->as_int32(init, true));
+}
+
+template<>
+object::id setting_value<object::id>(object_p obj, object::id UNUSED init)
+// ----------------------------------------------------------------------------
+//   Specialization for the object::id type
+// ----------------------------------------------------------------------------
+{
+    if (object_p quote = obj->as_quoted(object::ID_object))
+        return quote->type();
+    return obj->type();
 }
 
 
-SETTINGS_COMMAND_LABEL(Std)
+EVAL_BODY(value_setting)
 // ----------------------------------------------------------------------------
-//   Return the label for Std
-// ----------------------------------------------------------------------------
-{
-    return "Std";
-}
-
-
-static uint integer_arg(uint min, uint max, bool base = false)
-// ----------------------------------------------------------------------------
-//   Get an integer argument from the stack
+//   Evaluate a value setting by invoking the base command
 // ----------------------------------------------------------------------------
 {
-    if (rt.args(1))
+    id ty   = o->type();
+
+    if (ty >= ID_Sig && ty <= ID_Eng)
     {
-        if (object_p arg = rt.top())
-        {
-            if (integer_p argint = arg->as<integer>())
-            {
-                uint value = argint->value<uint>();
-                if (value < min || value > max)
-                {
-                    if (value < min)        value = min;
-                    if (value > max)        value = max;
-                    if (base)
-                        rt.invalid_base_error();
-                    else
-                        rt.domain_error();
-                }
-                rt.pop();
-                return value;
-            }
-            else
-            {
-                rt.type_error();
-            }
-        }
+        using type = typeof(Settings.DisplayDigits());
+        type digits = Settings.DisplayDigits();
+        if (!validate(ty, digits, type(0), type(DB48X_MAXDIGITS)))
+            return ERROR;
+        Settings.DisplayDigits(digits);
     }
-    return min;
-}
-
-
-static object::result set_display_mode(settings::display mode)
-// ----------------------------------------------------------------------------
-//   Set a mode with a given number of digits
-// ----------------------------------------------------------------------------
-{
-    uint mindigits = mode == settings::NORMAL ? 1 : 0;
-    uint disp = integer_arg(mindigits, BID128_MAXDIGITS);
-    if (!rt.error())
+    else if (ty == ID_Std)
     {
-        Settings.displayed = disp;
-        Settings.display_mode = mode;
-        return object::OK;
+        Settings.DisplayDigits(settings().DisplayDigits());
     }
-    return object::ERROR;
-}
 
-
-static cstring get_display_mode(settings::display mode, cstring label)
-// ----------------------------------------------------------------------------
-//   Compute the label for display mode
-// ----------------------------------------------------------------------------
-{
-    if (Settings.display_mode == mode)
+    switch(ty)
     {
-        // We can share the buffer here since only one mode is active
-        static char buffer[8];
-        snprintf(buffer, sizeof(buffer), "%s %u", label, Settings.displayed);
-        return buffer;
-    }
-    return label;
-}
-
-
-SETTINGS_COMMAND_BODY(Fix, Settings.display_mode == settings::FIX)
-// ----------------------------------------------------------------------------
-//   Switch to fixed display mode
-// ----------------------------------------------------------------------------
-{
-    return set_display_mode(settings::FIX);
-}
-
-
-SETTINGS_COMMAND_LABEL(Fix)
-// ----------------------------------------------------------------------------
-//   Return the label for Fix mode
-// ----------------------------------------------------------------------------
-{
-    return get_display_mode(settings::FIX, "Fix");
-}
-
-
-SETTINGS_COMMAND_BODY(Sci, Settings.display_mode == settings::SCI)
-// ----------------------------------------------------------------------------
-//   Switch to scientific display mode
-// ----------------------------------------------------------------------------
-{
-    return set_display_mode(settings::SCI);
-}
-
-
-SETTINGS_COMMAND_LABEL(Sci)
-// ----------------------------------------------------------------------------
-//   Return the label for Fix mode
-// ----------------------------------------------------------------------------
-{
-    return get_display_mode(settings::SCI, "Sci");
-}
-
-
-SETTINGS_COMMAND_BODY(Eng, Settings.display_mode == settings::ENG)
-// ----------------------------------------------------------------------------
-//   Switch to engineering display mode
-// ----------------------------------------------------------------------------
-{
-    return set_display_mode(settings::ENG);
-}
-
-
-SETTINGS_COMMAND_LABEL(Eng)
-// ----------------------------------------------------------------------------
-//   Return the label for Eng mode
-// ----------------------------------------------------------------------------
-{
-    return get_display_mode(settings::ENG, "Eng");
-}
-
-
-SETTINGS_COMMAND_BODY(Sig,
-                      Settings.display_mode == settings::NORMAL
-                      && Settings.displayed != settings::STD_DISPLAYED
-                     )
-// ----------------------------------------------------------------------------
-//   Switch to significant display mode
-// ----------------------------------------------------------------------------
-{
-    return set_display_mode(settings::NORMAL);
-}
-
-
-SETTINGS_COMMAND_LABEL(Sig)
-// ----------------------------------------------------------------------------
-//   Return the label for Eng mode
-// ----------------------------------------------------------------------------
-{
-    return get_display_mode(settings::NORMAL, "Sig");
-}
-
-
-SETTINGS_COMMAND_NOLABEL(Deg,
-                         Settings.angle_mode == settings::DEGREES)
-// ----------------------------------------------------------------------------
-//   Switch to degrees
-// ----------------------------------------------------------------------------
-{
-    Settings.angle_mode = settings::DEGREES;
-    return OK;
-}
-
-
-SETTINGS_COMMAND_NOLABEL(Rad,
-                         Settings.angle_mode == settings::RADIANS)
-// ----------------------------------------------------------------------------
-//   Switch to radians
-// ----------------------------------------------------------------------------
-{
-    Settings.angle_mode = settings::RADIANS;
-    return OK;
-}
-
-
-SETTINGS_COMMAND_NOLABEL(Grad,
-                         Settings.angle_mode == settings::GRADS)
-// ----------------------------------------------------------------------------
-//   Switch to grads
-// ----------------------------------------------------------------------------
-{
-    Settings.angle_mode = settings::GRADS;
-    return OK;
-}
-
-
-SETTINGS_COMMAND_NOLABEL(PiRadians,
-                         Settings.angle_mode == settings::PI_RADIANS)
-// ----------------------------------------------------------------------------
-//   Switch to grads
-// ----------------------------------------------------------------------------
-{
-    Settings.angle_mode = settings::PI_RADIANS;
-    return OK;
-}
-
-
-SETTINGS_COMMAND_NOLABEL(LowerCase,
-                         Settings.command_fmt == settings::LOWERCASE)
-// ----------------------------------------------------------------------------
-//   Switch to lowercase command display
-// ----------------------------------------------------------------------------
-{
-    Settings.command_fmt = settings::LOWERCASE;
-    return OK;
-}
-
-
-SETTINGS_COMMAND_NOLABEL(UpperCase,
-                         Settings.command_fmt == settings::UPPERCASE)
-// ----------------------------------------------------------------------------
-//  Switch to uppercase command display
-// ----------------------------------------------------------------------------
-{
-    Settings.command_fmt = settings::UPPERCASE;
-    return OK;
-}
-
-
-SETTINGS_COMMAND_NOLABEL(Capitalized,
-                         Settings.command_fmt==settings::CAPITALIZED)
-// ----------------------------------------------------------------------------
-//  Switch to capitalized command display
-// ----------------------------------------------------------------------------
-{
-    Settings.command_fmt = settings::CAPITALIZED;
-    return OK;
-}
-
-
-SETTINGS_COMMAND_NOLABEL(LongForm,
-                         Settings.command_fmt==settings::LONG_FORM)
-// ----------------------------------------------------------------------------
-//   Switch to long-form command display
-// ----------------------------------------------------------------------------
-{
-    Settings.command_fmt = settings::LONG_FORM;
-    return OK;
-}
-
-
-SETTINGS_COMMAND_NOLABEL(DecimalDot, Settings.decimal_mark == '.')
-// ----------------------------------------------------------------------------
-//  Switch to decimal dot
-// ----------------------------------------------------------------------------
-{
-    Settings.decimal_mark = '.';
-    if (Settings.space == '.')
-        Settings.space = ',';
-    if (Settings.space_based == '.')
-        Settings.space_based = ',';
-    return OK;
-}
-
-
-SETTINGS_COMMAND_NOLABEL(DecimalComma, Settings.decimal_mark == ',')
-// ----------------------------------------------------------------------------
-//  Switch to decimal comma
-// ----------------------------------------------------------------------------
-{
-    Settings.decimal_mark = ',';
-    if (Settings.space == ',')
-        Settings.space = '.';
-    if (Settings.space_based == ',')
-        Settings.space_based = '.';
-    return OK;
-}
-
-
-SETTINGS_COMMAND_NOLABEL(TrailingDecimal, Settings.show_decimal)
-// ----------------------------------------------------------------------------
-//  Indicate that we want a trailing decimal separator
-// ----------------------------------------------------------------------------
-{
-    Settings.show_decimal = true;
-    return OK;
-}
-
-
-SETTINGS_COMMAND_NOLABEL(NoTrailingDecimal, !Settings.show_decimal)
-// ----------------------------------------------------------------------------
-//  Indicate that we don't want a traiing decimal separator
-// ----------------------------------------------------------------------------
-{
-    Settings.show_decimal = false;
-    return OK;
-}
-
-
-SETTINGS_COMMAND_BODY(Precision, 0)
-// ----------------------------------------------------------------------------
-//   Setting the precision
-// ----------------------------------------------------------------------------
-{
-    uint prec = integer_arg(0, BID128_MAXDIGITS);
-    if (!rt.error())
-    {
-        Settings.precision = prec;
-        return object::OK;
-    }
-    return object::ERROR;
-}
-
-
-SETTINGS_COMMAND_LABEL(Precision)
-// ----------------------------------------------------------------------------
-//   Return the label for the current precision
-// ----------------------------------------------------------------------------
-{
-    // We can share the buffer here since only one mode is active
-    static char buffer[12];
-    snprintf(buffer, sizeof(buffer), "Prec %u", Settings.precision);
-    return buffer;
-}
-
-
-SETTINGS_COMMAND_BODY(StandardExponent, 0)
-// ----------------------------------------------------------------------------
-//   Setting the maximum exponent before switching to scientific mode
-// ----------------------------------------------------------------------------
-{
-    uint exp = integer_arg(0, BID128_MAXDIGITS);
-    if (!rt.error())
-    {
-        Settings.standard_exp = exp;
-        return object::OK;
-    }
-    return object::ERROR;
-}
-
-
-SETTINGS_COMMAND_LABEL(StandardExponent)
-// ----------------------------------------------------------------------------
-//   Return the label for the current standard exponent
-// ----------------------------------------------------------------------------
-{
-    // We can share the buffer here since only one mode is active
-    static char buffer[12];
-    snprintf(buffer, sizeof(buffer), "Exp %u", Settings.standard_exp);
-    return buffer;
-}
-
-
-SETTINGS_COMMAND_NOLABEL(FancyExponent, Settings.fancy_exponent)
-// ----------------------------------------------------------------------------
-//   Setting the maximum exponent before switching to scientific mode
-// ----------------------------------------------------------------------------
-{
-    Settings.fancy_exponent = true;
-    Settings.exponent_mark = L'⁳';
-    return OK;
-}
-
-
-SETTINGS_COMMAND_NOLABEL(ClassicExponent, !Settings.fancy_exponent)
-// ----------------------------------------------------------------------------
-//   Setting the maximum exponent before switching to scientific mode
-// ----------------------------------------------------------------------------
-{
-    Settings.fancy_exponent = false;
-    Settings.exponent_mark = 'E';
-    return OK;
-}
-
-
-SETTINGS_COMMAND_BODY(Base, 0)
-// ----------------------------------------------------------------------------
-//   Setting the maximum exponent before switching to scientific mode
-// ----------------------------------------------------------------------------
-{
-    uint base = integer_arg(2, 36, true);
-    if (!rt.error())
-    {
-        Settings.base = base;
-        return object::OK;
-    }
-    return object::ERROR;
-}
-
-
-SETTINGS_COMMAND_LABEL(Base)
-// ----------------------------------------------------------------------------
-//   Return the label for the current base
-// ----------------------------------------------------------------------------
-{
-    // We can share the buffer here since only one mode is active
-    static char buffer[12];
-    snprintf(buffer, sizeof(buffer), "Base %u", Settings.base);
-    return buffer;
-}
-
-
-SETTINGS_COMMAND_NOLABEL(Bin, Settings.base == 2)
-// ----------------------------------------------------------------------------
-//   Select binary mode
-// ----------------------------------------------------------------------------
-{
-    Settings.base = 2;
-    return OK;
-}
-
-
-SETTINGS_COMMAND_NOLABEL(Oct, Settings.base == 8)
-// ----------------------------------------------------------------------------
-//   Select octal mode
-// ----------------------------------------------------------------------------
-{
-    Settings.base = 8;
-    return OK;
-}
-
-
-SETTINGS_COMMAND_NOLABEL(Dec, Settings.base == 10)
-// ----------------------------------------------------------------------------
-//   Select decimalmode
-// ----------------------------------------------------------------------------
-{
-    Settings.base = 10;
-    return OK;
-}
-
-
-SETTINGS_COMMAND_NOLABEL(Hex, Settings.base == 16)
-// ----------------------------------------------------------------------------
-//   Select hexadecimal mode
-// ----------------------------------------------------------------------------
-{
-    Settings.base = 16;
-    return OK;
-}
-
-
-SETTINGS_COMMAND_BODY(stws, 0)
-// ----------------------------------------------------------------------------
-//   Setting the word size for binary computations
-// ----------------------------------------------------------------------------
-{
-    uint ws = integer_arg(1, 16384);
-    if (!rt.error())
-    {
-        Settings.wordsize = ws;
-        return OK;
-    }
-    return object::ERROR;
-}
-
-
-SETTINGS_COMMAND_LABEL(stws)
-// ----------------------------------------------------------------------------
-//   Return the label for the current word size
-// ----------------------------------------------------------------------------
-{
-    static char buffer[16];
-    snprintf(buffer, sizeof(buffer), "WSz %zu", Settings.wordsize);
-    return buffer;
-}
-
-
-COMMAND_BODY(rcws)
-// ----------------------------------------------------------------------------
-//  Recall the current wordsize
-// ----------------------------------------------------------------------------
-{
-    if (rt.args(0))
-        if (object_g ws = integer::make(Settings.wordsize))
-            if (rt.push(ws))
-                return OK;
-    return ERROR;
-}
-
-
-#define FONT_SIZE_SETTING(id, field, label)             \
-SETTINGS_COMMAND_BODY(id, 0)                            \
-{                                                       \
-    uint fs = integer_arg(0, settings::NUM_FONTS-1);    \
-    if (!rt.error())                                    \
-    {                                                   \
-        Settings.field = settings::font_id(fs);         \
-        return OK;                                      \
-    }                                                   \
-    return object::ERROR;                               \
-}                                                       \
-                                                        \
-                                                        \
-static char id##_buffer[16];                            \
-SETTINGS_COMMAND_LABEL(id)                              \
-{                                                       \
-    snprintf(id##_buffer, sizeof(id##_buffer),          \
-             label " %u", Settings.field);              \
-    return id##_buffer;                                 \
-}
-
-
-FONT_SIZE_SETTING(ResultFontSize, result_sz, "Result")
-FONT_SIZE_SETTING(StackFontSize, stack_sz, "Stack")
-FONT_SIZE_SETTING(EditorFontSize, editor_sz, "Edit")
-FONT_SIZE_SETTING(EditorMultilineFontSize, editor_ml_sz, "BigEdit")
-
-
-#define SPACING_SIZE_SETTING(id, field, label)          \
-SETTINGS_COMMAND_BODY(id, 0)                            \
-{                                                       \
-    uint fs = integer_arg(0, BID128_MAXDIGITS);         \
-    if (!rt.error())                                    \
-    {                                                   \
-        Settings.field = settings::font_id(fs);         \
-        return OK;                                      \
-    }                                                   \
-    return object::ERROR;                               \
-}                                                       \
-                                                        \
-                                                        \
-static char id##_buffer[16];                            \
-SETTINGS_COMMAND_LABEL(id)                              \
-{                                                       \
-    snprintf(id##_buffer, sizeof(id##_buffer),          \
-             label " %u", Settings.field);              \
-    return id##_buffer;                                 \
-}
-
-
-SPACING_SIZE_SETTING(MantissaSpacing, spacing_mantissa, "Mant")
-SPACING_SIZE_SETTING(FractionSpacing, spacing_fraction, "Frac")
-SPACING_SIZE_SETTING(BasedSpacing,    spacing_based,    "Based")
-
-
-SETTINGS_COMMAND_NOLABEL(NumberSpaces,
-                         Settings.space == settings::SPACE_DEFAULT)
-// ----------------------------------------------------------------------------
-//   Select a space as number separator
-// ----------------------------------------------------------------------------
-{
-    Settings.space = settings::SPACE_DEFAULT;
-    return OK;
-}
-
-
-SETTINGS_COMMAND_NOLABEL(NumberDotOrComma,
-                         Settings.space == '.' || Settings.space == ',')
-// ----------------------------------------------------------------------------
-//   Select a dot or comma as number separator
-// ----------------------------------------------------------------------------
-{
-    Settings.space = Settings.decimal_mark == '.' ? ',' : '.';
-    return OK;
-}
-
-
-SETTINGS_COMMAND_NOLABEL(NumberTicks, Settings.space == L'’')
-// ----------------------------------------------------------------------------
-//   Select a tick as number separator
-// ----------------------------------------------------------------------------
-{
-    Settings.space = L'’';
-    return OK;
-}
-
-
-SETTINGS_COMMAND_NOLABEL(NumberUnderscore, Settings.space == '_')
-// ----------------------------------------------------------------------------
-//   Select an underscore as number separator
-// ----------------------------------------------------------------------------
-{
-    Settings.space = '_';
-    return OK;
-}
-
-
-SETTINGS_COMMAND_NOLABEL(BasedSpaces,
-                         Settings.space_based == settings::SPACE_DEFAULT)
-// ----------------------------------------------------------------------------
-//   Select a space as based number separator
-// ----------------------------------------------------------------------------
-{
-    Settings.space_based = settings::SPACE_DEFAULT;
-    return OK;
-}
-
-
-SETTINGS_COMMAND_NOLABEL(BasedDotOrComma,
-                         Settings.space_based == '.'
-                         || Settings.space_based == ',')
-// ----------------------------------------------------------------------------
-//   Select a dot or comma as based number separator
-// ----------------------------------------------------------------------------
-{
-    Settings.space_based = Settings.decimal_mark == '.' ? ',' : '.';
-    return OK;
-}
-
-
-SETTINGS_COMMAND_NOLABEL(BasedTicks, Settings.space_based == L'’')
-// ----------------------------------------------------------------------------
-//   Select a tick as based number separator
-// ----------------------------------------------------------------------------
-{
-    Settings.space_based = L'’';
-    return OK;
-}
-
-
-SETTINGS_COMMAND_NOLABEL(BasedUnderscore, Settings.space_based == '_')
-// ----------------------------------------------------------------------------
-//   Select an underscore as based number separator
-// ----------------------------------------------------------------------------
-{
-    Settings.space_based = '_';
-    return OK;
-}
-
-
-SETTINGS_COMMAND_NOLABEL(AutoSimplify, Settings.auto_simplify)
-// ----------------------------------------------------------------------------
-//   Enable automatic simplification of algebraic expressions
-// ----------------------------------------------------------------------------
-{
-    Settings.auto_simplify = true;
-    return OK;
-}
-
-
-SETTINGS_COMMAND_NOLABEL(NoAutoSimplify, !Settings.auto_simplify)
-// ----------------------------------------------------------------------------
-//   Disable automatic simplification of algebraic expressions
-// ----------------------------------------------------------------------------
-{
-    Settings.auto_simplify = false;
-    return OK;
-}
-
-
-SETTINGS_COMMAND_NOLABEL(NumericResults, Settings.numeric)
-// ----------------------------------------------------------------------------
-//   Compute only numeric results, e.g. 1/2 is turned to 0.5
-// ----------------------------------------------------------------------------
-{
-    Settings.numeric = true;
-    return OK;
-}
-
-
-SETTINGS_COMMAND_NOLABEL(SymbolicResults, !Settings.numeric)
-// ----------------------------------------------------------------------------
-//   Compute symbolic results, e.g. 1/2 stays as is
-// ----------------------------------------------------------------------------
-{
-    Settings.numeric = false;
-    return OK;
-}
-
-
-SETTINGS_COMMAND_BODY(MaxBigNumBits, false)
-// ----------------------------------------------------------------------------
-//   Select maximum size for big numbers
-// ----------------------------------------------------------------------------
-{
-    uint fs = integer_arg(0, 16384);
-    if (!rt.error())
-    {
-        Settings.maxbignum = fs;
-        return OK;
-    }
-    return object::ERROR;
-}
-
-
-SETTINGS_COMMAND_LABEL(MaxBigNumBits)
-// ----------------------------------------------------------------------------
-//   Return the label for big number size
-// ----------------------------------------------------------------------------
-{
-    static char buffer[16];
-    snprintf(buffer, sizeof(buffer), "BigNum %zu", Settings.maxbignum);
-    return buffer;
-}
-
-
-SETTINGS_COMMAND_BODY(MaxRewrites, false)
-// ----------------------------------------------------------------------------
-//   Select maximum number of equation rewrites in a single operation
-// ----------------------------------------------------------------------------
-{
-    uint fs = integer_arg(1, ~0U);
-    if (!rt.error())
-    {
-        Settings.maxrewrites = fs;
-        return OK;
-    }
-    return object::ERROR;
-}
-
-
-SETTINGS_COMMAND_LABEL(MaxRewrites)
-// ----------------------------------------------------------------------------
-//   Return the label for maximum number of rewrites
-// ----------------------------------------------------------------------------
-{
-    static char buffer[16];
-    snprintf(buffer, sizeof(buffer), "BigRwr %u", Settings.maxrewrites);
-    return buffer;
-}
-
-
-SETTINGS_COMMAND_BODY(ToFractionIterations, false)
-// ----------------------------------------------------------------------------
-//   Select maximum number of loops trying to compute fraction in ->Q
-// ----------------------------------------------------------------------------
-{
-    uint fs = integer_arg(1, 30);
-    if (!rt.error())
-    {
-        Settings.fraciter = fs;
-        return OK;
-    }
-    return object::ERROR;
-}
-
-SETTINGS_COMMAND_LABEL(ToFractionIterations)
-// ----------------------------------------------------------------------------
-//   Return the label for ->Q iterations
-// ----------------------------------------------------------------------------
-{
-    static char buffer[16];
-    snprintf(buffer, sizeof(buffer), "Iter %u", Settings.fraciter);
-    return buffer;
-}
-
-
-SETTINGS_COMMAND_BODY(ToFractionDigits, false)
-// ----------------------------------------------------------------------------
-//   Select maximum number of digits for the ->Q operation
-// ----------------------------------------------------------------------------
-{
-    uint fs = integer_arg(1, BID128_MAXDIGITS - 3);
-    if (!rt.error())
-    {
-        Settings.fracprec = fs;
-        return OK;
-    }
-    return object::ERROR;
-}
-
-
-SETTINGS_COMMAND_LABEL(ToFractionDigits)
-// ----------------------------------------------------------------------------
-//   Return the label for maximum number of rewrites
-// ----------------------------------------------------------------------------
-{
-    static char buffer[16];
-    snprintf(buffer, sizeof(buffer), "Digits %u", Settings.fracprec);
-    return buffer;
-}
-
-
-SETTINGS_COMMAND_BODY(SingleRowMenus,
-                      Settings.menu_single_ln && !Settings.menu_flatten)
-// ----------------------------------------------------------------------------
-//   Select a single-line menu with entries selected using shift
-// ----------------------------------------------------------------------------
-{
-    Settings.menu_single_ln = true;
-    Settings.menu_flatten = false;
-    ui.menu_refresh();
-    return OK;
-}
-
-
-SETTINGS_COMMAND_BODY(FlatMenus,
-                      Settings.menu_single_ln && Settings.menu_flatten)
-// ----------------------------------------------------------------------------
-//   Select a single-line menu with entries selected using next (F6) key
-// ----------------------------------------------------------------------------
-{
-    Settings.menu_single_ln = true;
-    Settings.menu_flatten = true;
-    ui.menu_refresh();
-    return OK;
-}
-
-
-SETTINGS_COMMAND_BODY(ThreeRowsMenus, !Settings.menu_single_ln)
-// ----------------------------------------------------------------------------
-//   Select a three-lines menu with shift and xshift entries
-// ----------------------------------------------------------------------------
-{
-    Settings.menu_single_ln = false;
-    Settings.menu_flatten = false;
-    ui.menu_refresh();
-    return OK;
-}
-
-
-SETTINGS_COMMAND_BODY(RoundedMenus, !Settings.menu_square)
-// ----------------------------------------------------------------------------
-//   Select rounded menu entries
-// ----------------------------------------------------------------------------
-{
-    Settings.menu_square = false;
-    ui.menu_refresh();
-    return OK;
-}
-
-
-SETTINGS_COMMAND_BODY(SquareMenus, Settings.menu_square)
-// ----------------------------------------------------------------------------
-//   Select square menu entries
-// ----------------------------------------------------------------------------
-{
-    Settings.menu_square = true;
-    ui.menu_refresh();
-    return OK;
-}
-
-
-SETTINGS_COMMAND_BODY(LineWidth, false)
-// ----------------------------------------------------------------------------
-//   Set the line width
-// ----------------------------------------------------------------------------
-{
-    uint width = integer_arg(0, 128);
-    if (!rt.error())
-    {
-        Settings.line_width = width;
-        return object::OK;
-    }
-    return object::ERROR;
-}
-
-
-SETTINGS_COMMAND_LABEL(LineWidth)
-// ----------------------------------------------------------------------------
-//   Line width label
-// ----------------------------------------------------------------------------
-{
-    static char buffer[16];
-    snprintf(buffer, sizeof(buffer), "LineW %u", uint(Settings.line_width));
-    return buffer;
-}
-
-
-static uint64_t pattern_arg()
-// ----------------------------------------------------------------------------
-//   Return a 64-bit argument value
-// ----------------------------------------------------------------------------
-{
-    if (object_p obj = rt.pop())
-    {
-        if (const based_integer *based = obj->as<based_integer>())
-            return based->value<uint64_t>();
-        if (const based_bignum *based = obj->as<based_bignum>())
-            return based->value<uint64_t>();
-        rt.type_error();
-    }
-    return ~0uLL;
-}
-
-
-SETTINGS_COMMAND_BODY(Foreground, false)
-// ----------------------------------------------------------------------------
-//   Set the pattern for foreground
-// ----------------------------------------------------------------------------
-{
-    uint64_t pat = pattern_arg();
-    if (rt.error())
+#define ID(i)
+#define SETTING_VALUE(Name, Alias, Base, Value)                 \
+        case ID_##Name:         Settings.Base(Value); break;
+#include "ids.tbl"
+
+    default:
+        rt.invalid_setting_error();
         return ERROR;
-    Settings.foreground.bits = pat;
+    }
+    update(ty);
     return OK;
 }
 
 
-SETTINGS_COMMAND_BODY(Background, false)
+bool settings::store(object::id name, object_p value)
 // ----------------------------------------------------------------------------
-//  Set the pattern for background
+//   Store settings and special variables such as ΣData
 // ----------------------------------------------------------------------------
 {
-    uint64_t pat = pattern_arg();
-    if (rt.error())
-        return ERROR;
-    Settings.background.bits = pat;
-    return OK;
+    switch(name)
+    {
+        // For all settings, 'store' is much like running it
+#define ID(n)
+#define SETTING(Name, Low, High, Init)          case ID_##Name:
+#include "ids.tbl"
+        if (rt.push(value))
+            return command::static_object(name)->evaluate() == object::OK;
+        return false;
+
+    default:
+        break;
+    }
+    return false;
 }
 
 
 
-SETTINGS_COMMAND_BODY(GraphicsStackDisplay, Settings.graph_stack)
+template <typename Value>
+static object_p object_from_value(Value value)
 // ----------------------------------------------------------------------------
-//  Select graphic rendering of the stack
+//   Convert
 // ----------------------------------------------------------------------------
 {
-    Settings.graph_stack = true;
-    return OK;
+    if (value < 0)
+        return neg_integer::make(-value);
+    return integer::make(value);
 }
 
 
-SETTINGS_COMMAND_BODY(TextStackDisplay, !Settings.graph_stack)
+template <>
+object_p object_from_value<object::id>(object::id value)
 // ----------------------------------------------------------------------------
-//  Select text-only rendering of the stack
+//   Return a static object for enum settings
 // ----------------------------------------------------------------------------
 {
-    Settings.graph_stack = false;
-    return OK;
+    return command::static_object(value);
+}
+
+
+object_p settings::recall(object::id name)
+// ----------------------------------------------------------------------------
+//   Recall the value of a setting
+// ----------------------------------------------------------------------------
+{
+    object::id rty = ID_object;
+    object_p   obj = nullptr;
+
+    switch (name)
+    {
+#define ID(i)
+#define FLAG(Enable, Disable)                           \
+    case ID_##Enable:                                   \
+        rty = Settings.Enable() ? ID_True : ID_False;   \
+        break;                                          \
+    case ID_##Disable:                                  \
+        rty = Settings.Disable() ? ID_True : ID_False;  \
+        break;
+
+#define SETTING(Name, Low, High, Init)                          \
+        case ID_##Name:                                         \
+            obj = object_from_value(Settings.Name());           \
+            break;
+#include "ids.tbl"
+
+    default:
+        return nullptr;
+    }
+
+    if (rty)
+        obj = command::static_object(rty);
+    return obj;
+}
+
+
+bool settings::purge(object::id name)
+// ----------------------------------------------------------------------------
+//   Purging a setting returns it to initial value
+// ----------------------------------------------------------------------------
+{
+    switch(name)
+    {
+        // For all settings, 'store' is much like running it
+#define ID(n)
+#define SETTING(Name, Low, High, Init)          \
+    case ID_##Name:                             \
+        Settings.Name(Init);                    \
+        break;
+#define FLAG(Enable, Disable)                   \
+    case ID_##Enable:                           \
+    case ID_##Disable:                          \
+        Settings.Disable();                     \
+        break;
+#include "ids.tbl"
+
+    default:
+        return false;
+    }
+    return true;
+}
+
+
+bool settings::flag(object::id name, bool value)
+// ----------------------------------------------------------------------------
+//   Setting a named flag
+// ----------------------------------------------------------------------------
+{
+    switch(name)
+    {
+        // For all settings, 'store' is much like running it
+#define ID(n)
+#define SETTING(Name, Low, High, Init)
+#define FLAG(Enable, Disable)                   \
+    case ID_##Enable:                           \
+        Settings.Enable(value);                 \
+        return true;                            \
+    case ID_##Disable:                          \
+        Settings.Disable(value);                \
+        return true;
+#include "ids.tbl"
+
+    default:
+        break;
+    }
+    return false;
+}
+
+
+bool settings::flag(object::id name, bool *value)
+// ----------------------------------------------------------------------------
+//   Reading a named flag
+// ----------------------------------------------------------------------------
+{
+    switch(name)
+    {
+        // For all settings, 'store' is much like running it
+#define ID(n)
+#define SETTING(Name, Low, High, Init)
+#define FLAG(Enable, Disable)                   \
+    case ID_##Enable:                           \
+        *value = Settings.Enable();             \
+        return true;                            \
+    case ID_##Disable:                          \
+        *value = Settings.Disable();            \
+        return true;
+#include "ids.tbl"
+
+    default:
+        break;
+    }
+    return false;
+}
+
+
+cstring setting::printf(cstring format, ...)
+// ----------------------------------------------------------------------------
+//   Render a setting using some specific format
+// ----------------------------------------------------------------------------
+{
+    va_list va;
+    va_start(va, format);
+    char   buf[80];
+    size_t size = vsnprintf(buf, sizeof(buf), format, va);
+    va_end(va);
+    symbol_p sym = symbol::make(utf8(buf), size);
+    return cstring(sym);
+}
+
+
+static cstring disp_name(object::id ty)
+// ----------------------------------------------------------------------------
+//   Avoid capitalizing the Std/Fix/Sig differently in menu
+// ----------------------------------------------------------------------------
+{
+    switch(ty)
+    {
+    default:
+    case object::ID_Std:        return "Std";
+    case object::ID_Sig:        return "Sig";
+    case object::ID_Fix:        return "Fix";
+    case object::ID_Sci:        return "Sci";
+    case object::ID_Eng:        return "Eng";
+    }
+}
+
+
+cstring setting::label(object::id ty)
+// ----------------------------------------------------------------------------
+//   Render the label for the given type
+// ----------------------------------------------------------------------------
+{
+    settings &s = Settings;
+    switch(ty)
+    {
+    case ID_Sig:
+        if (s.DisplayMode() == ID_Std)
+            return printf("%s %u", disp_name(ty), s.DisplayDigits());
+        // fallthrough
+        [[fallthrough]];
+    case ID_Fix:
+    case ID_Sci:
+    case ID_Eng:
+        if (ty == s.DisplayMode())
+            return printf("%s %u", disp_name(ty), s.DisplayDigits());
+        return disp_name(ty);
+
+    case ID_Base:
+        return printf("Base %u", s.Base());
+    case ID_WordSize:
+        return printf("%u bits", s.WordSize());
+    case ID_FractionIterations:
+        return printf("→QIt %u", s.FractionIterations());
+    case ID_FractionDigits:
+        return printf("→QPr %u", s.FractionDigits());
+    case ID_Precision:
+        return printf("Prec %u", s.Precision());
+    case ID_MantissaSpacing:
+        return printf("Mant %u", s.MantissaSpacing());
+    case ID_FractionSpacing:
+        return printf("Frac %u", s.FractionSpacing());
+    case ID_BasedSpacing:
+        return printf("Based %u", s.BasedSpacing());
+    case ID_StandardExponent:
+        return printf("Exp %u", s.StandardExponent());
+    case ID_MinimumSignificantDigits:
+        return printf("Dig %d", s.MinimumSignificantDigits());
+    case ID_ResultFont:
+        return printf("Result %u", s.ResultFont());
+    case ID_StackFont:
+        return printf("Stack %u", s.StackFont());
+    case ID_EditorFont:
+        return printf("Edit %u", s.EditorFont());
+    case ID_MultilineEditorFont:
+        return printf("MLEd %u", s.MultilineEditorFont());
+    case ID_CursorBlinkRate:
+        return printf("Blink %u", s.CursorBlinkRate());
+    case ID_MaxNumberBits:
+        return printf("Bits %u", s.MaxNumberBits());
+    case ID_MaxRewrites:
+        return printf("Rwr %u", s.MaxRewrites());
+    case ID_MaximumShowHeight:
+        return printf("ShowH %u", s.MaximumShowHeight());
+    case ID_MaximumShowWidth:
+        return printf("ShowW %u", s.MaximumShowWidth());
+    case ID_EditorWrapColumn:
+        return printf("EdWrap %u", s.EditorWrapColumn());
+    case ID_TabWidth:
+        return printf("Tab %u", s.TabWidth());
+    case ID_ErrorBeepFrequency:
+        return printf("Freq %u", s.ErrorBeepFrequency());
+    case ID_ErrorBeepDuration:
+        return printf("Dur %u", s.ErrorBeepDuration());
+    default:
+        break;
+    }
+    return cstring(object::fancy(ty));
+}
+
+
+COMMAND_BODY(RecallWordSize)
+// ----------------------------------------------------------------------------
+//   There is a dedicated rcws command
+// ----------------------------------------------------------------------------
+{
+    integer_p ws = integer::make(Settings.WordSize());
+    return (ws && rt.push(ws)) ? OK : ERROR;
 }

@@ -34,6 +34,7 @@
 #include "file.h"
 #include "object.h"
 #include "runtime.h"
+#include "target.h"
 #include "text.h"
 #include "types.h"
 
@@ -59,6 +60,7 @@ struct user_interface
         TEXT,                   // Alphanumeric entry, e.g. in strings
         PROGRAM,                // Keys like 'sin' show as 'sin' in the editor
         ALGEBRAIC,              // Keys like 'sin' show as 'sin()' in eqs
+        PARENTHESES,            // Space inserts a semi-colon in eqs
         POSTFIX,                // Keys like '!' or 'x²' are postfix in eqs
         INFIX,                  // Keys like '+' are treated as infix in eqs
         CONSTANT,               // Entities like ⅈ or π have no parentheses
@@ -75,24 +77,22 @@ struct user_interface
         NUM_PLANES      = 3,    // NONE, Shift and "extended" shift
         NUM_KEYS        = 46,   // Including SCREENSHOT, SH_UP and SH_DN
         NUM_SOFTKEYS    = 6,    // Number of softkeys
-        NUM_LABEL_CHARS = 12,   // Number of characters per menu label
         NUM_MENUS = NUM_PLANES * NUM_SOFTKEYS,
     };
 
     using result = object::result;
     using id     = object::id;
 
-    typedef blitter::coord coord;
-    typedef blitter::size  size;
-    typedef blitter::rect  rect;
-
+    using coord  = blitter::coord;
+    using size   = blitter::size;
+    using rect   = blitter::rect;
 
     bool        key(int key, bool repeating, bool transalpha);
     bool        repeating()     { return repeat; }
     void        assign(int key, uint plane, object_p code);
     object_p    assigned(int key, uint plane);
 
-    void        updateMode();
+    void        update_mode();
 
     void        menu(menu_p menu, uint page = 0);
     menu_p      menu();
@@ -101,16 +101,16 @@ struct user_interface
     void        page(uint p);
     uint        pages();
     void        pages(uint p);
-    uint        menuPlanes();
+    uint        menu_planes();
     void        menus(uint count, cstring labels[], object_p function[]);
     void        menu(uint index, cstring label, object_p function);
     void        menu(uint index, symbol_p label, object_p function);
     void        marker(uint index, unicode mark, bool alignLeft = false);
     bool        menu_refresh();
     bool        menu_refresh(object::id menu);
-    void        menuAutoComplete()      { autoComplete = true; }
+    void        menu_auto_complete()    { autoComplete = true; }
     symbol_p    label(uint index);
-    cstring     labelText(uint index);
+    cstring     label_text(uint index);
 
     void        draw_start(bool force, uint refresh = ~0U);
     void        draw_refresh(uint delay);
@@ -119,45 +119,54 @@ struct user_interface
     uint        draw_refresh()          { return nextRefresh; }
     rect        draw_dirty()            { return dirty; }
     void        draw_clean()            { dirty = rect(); }
-    bool        draw_graphics();
+    bool        draw_graphics(bool erase = false);
 
-    bool        draw_header();
-    bool        draw_annunciators();
+    bool        draw_header();          // Left part of header
+    bool        draw_battery();         // Rightmost part of header
+    bool        draw_annunciators();    // Left of battery
+    bool        draw_busy(unicode glyph, pattern col);
+    rect        draw_busy_background();
+    bool        draw_busy();
+    bool        draw_idle();
     bool        draw_editor();
     bool        draw_stack();
     bool        draw_error();
+    bool        draw_message(utf8 header, uint count, utf8 msg[]);
+    bool        draw_message(cstring header, cstring = 0, cstring = 0);
     bool        draw_help();
     bool        draw_command();
     void        draw_user_command(utf8 cmd, size_t sz);
+    bool        draw_stepping_object();
 
     bool        draw_menus();
-    bool        draw_battery();
     bool        draw_cursor(int show, uint ncursor);
-    bool        draw_busy();
-    bool        draw_idle();
-    bool        draw_busy_cursor(unicode glyph = L'▶');
-    bool        draw_gc();
 
     modes       editing_mode()          { return mode; }
     int         stack_screen_bottom()   { return stack; }
     int         menu_screen_bottom()    { return menuHeight; }
-    bool        showingHelp()           { return help + 1 != 0; }
-    uint        cursorPosition()        { return cursor; }
-    void        cursorPosition(uint pos){ cursor = pos; dirtyEditor = true; }
-    void        autoCompleteMenu()      { autoComplete = true; }
-    bool        currentWord(size_t &start, size_t &size);
-    bool        currentWord(utf8 &start, size_t &size);
+    bool        showing_help()          { return help + 1 != 0; }
+    uint        cursor_position()       { return cursor; }
+    void        cursor_position(uint p) { cursor = p; dirtyEditor = true; edRows = 0; }
+    bool        current_word(size_t &start, size_t &size);
+    bool        current_word(utf8 &start, size_t &size);
+    bool        at_end_of_number();
+    unicode     character_left_of_cursor();
+    bool        replace_character_left_of_cursor(symbol_p sym);
+    bool        replace_character_left_of_cursor(utf8 text, size_t len);
 
     uint        shift_plane()   { return xshift ? 2 : shift ? 1 : 0; }
     void        clear_help();
     void        clear_menu();
     object_p    object_for_key(int key);
-    void        edit(unicode c, modes m);
-    result      edit(utf8 s, size_t len, modes m, int off = 0);
-    result      edit(utf8 s, modes m, int off = 0);
+    int         evaluating_function_key() const;
+    void        edit(unicode c, modes m, bool autoclose = true);
+    result      edit(utf8 s, size_t len, modes m);
+    result      edit(utf8 s, modes m);
     bool        end_edit();
     void        clear_editor();
-    void        edit_history();
+    text_p      editor_save(text_r ed, bool rewinding = false);
+    text_p      editor_save(bool rewinding = false);
+    void        editor_history();
     bool        editor_select();
     bool        editor_word_left();
     bool        editor_word_right();
@@ -171,11 +180,20 @@ struct user_interface
     bool        editor_clear();
     bool        editor_selection_flip();
     size_t      insert(size_t offset, utf8 data, size_t len);
+    size_t      insert(size_t offset, unicode c);
     size_t      insert(size_t offset, byte c) { return insert(offset, &c, 1); }
+    size_t      insert(size_t offset, char c) { return insert(offset, byte(c)); }
     size_t      remove(size_t offset, size_t len);
+    result      insert_softkey(int key,
+                               cstring before, cstring after,
+                               bool midcursor);
+    result      insert_object(object_p obj,
+                              cstring bef="", cstring aft="",
+                              bool midcursor = false);
     void        load_help(utf8 topic, size_t len = 0);
 
 protected:
+    bool        handle_screen_capture(int key);
     bool        handle_shifts(int &key, bool talpha);
     bool        handle_help(int &key);
     bool        handle_editing(int key);
@@ -184,6 +202,7 @@ protected:
     bool        handle_digits(int key);
     bool        noHelpForKey(int key);
     bool        do_search(unicode with = 0, bool restart = false);
+
 
 public:
     int      evaluating;        // Key being evaluated
@@ -207,14 +226,19 @@ protected:
     int      edRow;             // Current editor row
     int      edColumn;          // Current editor column (in pixels)
     id       menuStack[HISTORY];// Current and past menus
+    uint     pageStack[HISTORY];// Current and past menus pages
     uint     menuPage;          // Current menu page
     uint     menuPages;         // Number of menu pages
     uint     menuHeight;        // Height of the menu
     uint     busy;              // Busy counter
+    coord    busy_left;         // Left column for busy area in header
+    coord    busy_right;        // Right column for busy area in header
+    coord    battery_left;      // Left column for battery in header
     uint     nextRefresh;       // Time for next refresh
     rect     dirty;             // Dirty rectangles
     object_g editing;           // Object being edited if any
-    uint     cmdIndex;          // Command index
+    uint     cmdIndex;          // Command index for next command to save
+    uint     cmdHistoryIndex;   // Command index for next command history
     text_g   history[HISTORY];  // Command-line history
     text_g   clipboard;         // Clipboard for copy/paste operations
     bool     shift        : 1;  // Normal shift active
@@ -241,6 +265,7 @@ protected:
     bool     autoComplete : 1;  // Menu is auto-complete
     bool     adjustSeps   : 1;  // Need to adjust separators
     bool     graphics     : 1;  // Displaying user-defined graphics screen
+    bool     dbl_release  : 1;  // Double release
 
 protected:
     // Key mappings
@@ -251,21 +276,20 @@ protected:
     file     helpfile;
     friend struct tests;
     friend struct runtime;
-};
+    };
+
+
+inline int user_interface::evaluating_function_key() const
+// ----------------------------------------------------------------------------
+//   Returns true if we are currently evaluating a function key
+// ----------------------------------------------------------------------------
+{
+    return evaluating >= KEY_F1 && evaluating <= KEY_F6 ? evaluating : 0;
+}
 
 
 enum { TIMER0, TIMER1, TIMER2, TIMER3 };
 
 extern user_interface ui;
-
-inline bool user_interface::draw_busy()
-// ----------------------------------------------------------------------------
-//    Draw the annunciators for Shift, Alpha, etc
-// ----------------------------------------------------------------------------
-{
-    if (busy++ % 0x200 == 0)
-        return draw_busy_cursor();
-    return false;
-}
 
 #endif // INPUT_H

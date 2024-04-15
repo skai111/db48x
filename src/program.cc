@@ -27,9 +27,15 @@
 // ****************************************************************************
 
 #include "program.h"
+
 #include "parser.h"
+#include "settings.h"
+#include "sysmenu.h"
+#include "tests.h"
+#include "variables.h"
 
 RECORDER(program, 16, "Program evaluation");
+
 
 
 // ============================================================================
@@ -43,27 +49,9 @@ EVAL_BODY(program)
 //   Normal evaluation from a program places it on stack
 // ----------------------------------------------------------------------------
 {
-    return rt.push(o) ? OK : ERROR;
-}
-
-
-EXEC_BODY(program)
-// ----------------------------------------------------------------------------
-//   Execution of a program evaluates all items in turn
-// ----------------------------------------------------------------------------
-{
-    result r = OK;
-
-    for (object_g obj : *o)
-    {
-        record(program, "Evaluating %+s at %p, size %u\n",
-               obj->fancy(), (object_p) obj, obj->size());
-        if (interrupted() || r != OK)
-            break;
-        r = obj->evaluate();
-    }
-
-    return r;
+    if (running)
+        return rt.push(o) ? OK : ERROR;
+    return o->run_program();
 }
 
 
@@ -105,21 +93,129 @@ program_p program::parse(utf8 source, size_t size)
 }
 
 
+#ifdef DM42
+#  pragma GCC push_options
+#  pragma GCC optimize("-O3")
+#endif // DM42
+
+object::result program::run(bool synchronous) const
+// ----------------------------------------------------------------------------
+//   Execute a program
+// ----------------------------------------------------------------------------
+//   The 'save_last_args' indicates if we save `LastArgs` at this level
+{
+    size_t   depth     = rt.call_depth();
+    bool     outer     = depth == 0 && !running;
+    object_p first     = objects();
+    object_p end       = skip();
+
+    record(program, "Run %p (%p-%p) %+s",
+           this, first, end, outer ? "outer" : "inner");
+
+    if (!rt.run_push(first, end))
+        return ERROR;
+    if (outer || synchronous)
+        return run_loop(depth);
+
+    return OK;
+}
+
+
+object::result program::run(object_p obj, bool sync)
+// ----------------------------------------------------------------------------
+//    Run a program as top-level
+// ----------------------------------------------------------------------------
+{
+    if (program_p prog = obj->as_program())
+        return prog->run(sync);
+    if (directory_p dir = obj->as<directory>())
+        return dir->enter();
+    return obj->evaluate();
+}
+
+#ifdef DM42
+#  pragma GCC pop_options
+#endif // DM42
+
+
+object::result program::run_loop(size_t depth)
+// ----------------------------------------------------------------------------
+//   Continue executing a program
+// ----------------------------------------------------------------------------
+//   The 'save_last_args' indicates if we save `LastArgs` at this level
+{
+    result   result    = OK;
+    bool     outer     = depth == 0 && !running;
+    bool     last_args =
+        outer ? Settings.SaveLastArguments() : Settings.ProgramLastArguments();
+
+    save<bool> save_running(running, true);
+    while (object_p obj = rt.run_next(depth))
+    {
+        if (interrupted())
+        {
+            obj->defer();
+            if (!halted)
+            {
+                result = ERROR;
+                rt.interrupted_error().command(obj);
+            }
+            break;
+        }
+        if (result == OK)
+        {
+            if (last_args)
+                rt.need_save();
+            result = obj->evaluate();
+        }
+
+        if (stepping)
+        {
+            ui.draw_busy(L'›', Settings.SteppingIconForeground());
+            halted = --stepping == 0;
+        }
+    }
+
+    return result;
+}
+
+
+bool program::interrupted()
+// ----------------------------------------------------------------------------
+//   Return true if the current program must be interrupted
+// ----------------------------------------------------------------------------
+{
+    reset_auto_off();
+    while (!key_empty())
+    {
+        int tail = key_tail();
+        if (tail == KEY_EXIT)
+        {
+            halted = true;
+            stepping = 0;
+            return true;
+        }
+#if SIMULATOR
+        int key = key_pop();
+        extern int last_key;
+        record(tests_rpl,
+               "Program runner popped key %d, last=%d", key, last_key);
+        process_test_key(key);
+#else
+        key_pop();
+#endif
+    }
+    return halted;
+}
+
+
+
 
 // ============================================================================
 //
 //    Block
 //
 // ============================================================================
-
-EVAL_BODY(block)
-// ----------------------------------------------------------------------------
-//   Normal evaluation of a block executes it
-// ----------------------------------------------------------------------------
-{
-    return do_execute(o);
-}
-
 
 PARSE_BODY(block)
 // ----------------------------------------------------------------------------
@@ -136,4 +232,143 @@ RENDER_BODY(block)
 // ----------------------------------------------------------------------------
 {
     return o->list_render(r, 0, 0);
+}
+
+
+EVAL_BODY(block)
+// ----------------------------------------------------------------------------
+//   Normal evaluation from a program places it on stack
+// ----------------------------------------------------------------------------
+{
+    return o->run_program();
+}
+
+
+
+// ============================================================================
+//
+//   Debugging
+//
+// ============================================================================
+
+bool program::running = false;
+bool program::halted = false;
+uint program::stepping = 0;
+
+
+COMMAND_BODY(Halt)
+// ----------------------------------------------------------------------------
+//   Set the 'halted' flag to interrupt the program
+// ----------------------------------------------------------------------------
+{
+    program::halted = true;
+    return OK;
+}
+
+
+COMMAND_BODY(Debug)
+// ----------------------------------------------------------------------------
+//   Take a program and evaluate it in halted mode
+// ----------------------------------------------------------------------------
+{
+    if (object_p obj = rt.top())
+    {
+        if (program_p prog = obj->as_program())
+        {
+            rt.pop();
+            program::halted = true;
+            prog->run_program();
+            return OK;
+        }
+        else
+        {
+            rt.type_error();
+        }
+    }
+    return ERROR;
+}
+
+
+COMMAND_BODY(SingleStep)
+// ----------------------------------------------------------------------------
+//   Single step an instruction
+// ----------------------------------------------------------------------------
+{
+    program::stepping = 1;
+    program::halted = false;
+    return program::run_loop(0);
+}
+
+
+COMMAND_BODY(StepOver)
+// ----------------------------------------------------------------------------
+//   Step over the next instruction
+// ----------------------------------------------------------------------------
+{
+    if (object_p next = rt.run_next(0))
+    {
+        size_t depth = rt.call_depth();
+        save<bool> no_halt(program::halted, false);
+        if (!next->defer())
+            return ERROR;
+        return program::run_loop(depth);
+    }
+    return OK;
+}
+
+
+COMMAND_BODY(StepOut)
+// ----------------------------------------------------------------------------
+//   Step over the next instruction
+// ----------------------------------------------------------------------------
+{
+    size_t depth = rt.call_depth();
+    if (depth > 2)
+    {
+        save<bool> no_halt(program::halted, false);
+        return program::run_loop(depth - 2);
+    }
+    return OK;
+}
+
+
+COMMAND_BODY(MultipleSteps)
+// ----------------------------------------------------------------------------
+//   Step multiple instructions
+// ----------------------------------------------------------------------------
+{
+    if (object_p obj = rt.top())
+    {
+        if (uint steps = obj->as_uint32())
+        {
+            rt.pop();
+            program::stepping = steps;
+            program::halted = false;
+            return program::run_loop(0);
+        }
+    }
+    return ERROR;
+}
+
+
+COMMAND_BODY(Continue)
+// ----------------------------------------------------------------------------
+//   Resume execution of the current program
+// ----------------------------------------------------------------------------
+{
+    program::halted = false;
+    return program::run_loop(0);
+}
+
+
+COMMAND_BODY(Kill)
+// ----------------------------------------------------------------------------
+//   Kill program execution
+// ----------------------------------------------------------------------------
+{
+    // Flush the current program
+    while (rt.run_next(0));
+    program::halted = false;
+    program::stepping = 0;
+    return OK;
 }

@@ -4,8 +4,8 @@
 /cscope.files
 /cscope.out
 /sim/.qmake.stash
-/sim/simulator.app/
-/sim/simulator.mak
+/sim/db48x.app/
+/sim/db48x.mak
 /sim/*.o
 /sim/ui_sim-window.h
 /sim/moc_predefs.h
@@ -16,7 +16,6 @@
 /tools/ttf2font/.logs/
 /tools/ttf2font/config.h
 /tools/ttf2font/ttf2font
-/help/DB48X.md
 /compile_commands.json
 /tools/forcecrc32/.build/
 /tools/forcecrc32/.logs/
@@ -27,5 +26,11 @@
 /.cache/
 /*.bin
 /*.tgz
-/DB50X.pg5
+/db50x.pg5
+/db48x.pgm
 /src/dmcp/version.h
+/tools/decimize/.build/
+/tools/decimize/.logs/
+/tools/decimize/decimize
+/tools/ttf2font/ttf2font-db48x
+/tools/ttf2font/ttf2font-db50x

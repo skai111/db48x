@@ -27,8 +27,8 @@
 //   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // ****************************************************************************
 
-#include <dmcp.h>
-#include <types.h>
+#include "dmcp.h"
+#include "types.h"
 
 uint8_t lib_mono_10x17_data[] =
 {

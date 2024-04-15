@@ -22,7 +22,7 @@
 //   DB48X is free software: you can redistribute it and/or modify
 //   it under the terms outlined in the LICENSE.txt file
 //
-//   DB48X is distributed in the hope that it will be useful,
+//   DB48X is distributed in the hope that it will be //useful,
 //   but WITHOUT ANY WARRANTY; without even the implied warranty of
 //   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // ****************************************************************************
@@ -37,6 +37,14 @@
 
 #include <cstdlib>
 #include <cstring>
+
+
+
+// ============================================================================
+//
+//   GROB: Graphic object, with stride, similar to HP48 GROB
+//
+// ============================================================================
 
 SIZE_BODY(grob)
 // ----------------------------------------------------------------------------
@@ -67,6 +75,7 @@ static void bitflip(byte *start, uint width, uint height, bool forward)
 // ----------------------------------------------------------------------------
 //    Invert the bits from left to right for HP48 compatibility
 // ----------------------------------------------------------------------------
+//    REVERSE_GROBS is set by target.h if the adjustments are necessary
 {
 #ifdef REVERSE_GROBS
     uint scan = (width + 7) / 8;
@@ -101,12 +110,14 @@ PARSE_BODY(grob)
 //  Parse a graphic object
 // ----------------------------------------------------------------------------
 {
-    utf8    src = p.source;
-    cstring s   = cstring(src);
-    cstring e   = s + p.length;
-    if (strncasecmp(s, "grob ", 5))
+    utf8    src    = p.source;
+    cstring s      = cstring(src);
+    cstring e      = s + p.length;
+    bool    grob   = strncasecmp(s, "grob ", 5) == 0;
+    bool    bitmap = strncasecmp(s, "bitmap ", 7) == 0;
+    if (!grob && !bitmap)
         return SKIP;
-    s += 5;
+    s += grob ? 5 : 7;
 
     pixsize w = strtoul(s, (char **) &s, 10);
     pixsize h = strtoul(s, (char **) &s, 10);
@@ -114,11 +125,11 @@ PARSE_BODY(grob)
     while (s < e && isspace(*s))
         s++;
 
-    grob_g g = grob::make(w, h, nullptr);
+    grob_g g = grob ? grob::make(w, h) : bitmap::make(w, h);
     if (!g)
         return ERROR;
 
-    size_t len = (w + 7) / 8 * h;
+    size_t len = grob::datasize(grob ? ID_grob : ID_bitmap, w, h);
     byte   b   = 0;
     byte * d = (byte *) g->pixels(nullptr, nullptr, nullptr);
     byte * d0 = d;
@@ -140,10 +151,11 @@ PARSE_BODY(grob)
     }
 
     // Flip the bits from right to left for HP48 compatibility
-    bitflip(d0, w, h, true);
+    if (grob)
+        bitflip(d0, w, h, true);
 
     p.end = s - cstring(src);
-    p.out = g.Safe();
+    p.out = +g;
 
     return OK;
 }
@@ -163,7 +175,7 @@ RENDER_BODY(grob)
     }
     else
     {
-        r.put(Settings.command_fmt, utf8("grob"));
+        r.put(Settings.CommandDisplayMode(), utf8("grob"));
         r.printf(" %u %u ", w, h);
 
         // Flip the bits from right to left for HP48 compatibility
@@ -181,16 +193,93 @@ RENDER_BODY(grob)
 }
 
 
+GRAPH_BODY(grob)
+ // ----------------------------------------------------------------------------
+//   Return a grob as itself in graphical stack rendering
+ // ----------------------------------------------------------------------------
+ {
+     // If not rendering for the stack, just return object as is
+     if (!g.stack)
+         return o;
+
+     using pixsize  = blitter::size;
+     grob_g  gobj   = o;
+     pixsize width = o->width() + 4;
+     pixsize height = o->height() + 4;
+     grob_g  result = g.grob(width, height);
+     if (!result)
+         return nullptr;
+     grob::surface dst    = result->pixels();
+     grob::surface src    = gobj->pixels();
+     rect          inside = dst.area();
+     inside.inset(2, 2);
+     dst.fill(pattern::gray50);
+     dst.fill(inside, g.background);
+     dst.copy(src, inside);
+
+     return result;
+ }
+
+
+// ============================================================================
+//
+//   Bitmap: Packed bitmap
+//
+// ============================================================================
+
+SIZE_BODY(bitmap)
+// ----------------------------------------------------------------------------
+//   Compute the size of a packed bitmap
+// ----------------------------------------------------------------------------
+{
+    byte_p  p = o->payload();
+    pixsize w = leb128<pixsize>(p);
+    pixsize h = leb128<pixsize>(p);
+    p += (w  * h + 7) / 8;
+    return ptrdiff(p, o);
+}
+
+
+RENDER_BODY(bitmap)
+// ----------------------------------------------------------------------------
+//  Render the graphic object
+// ----------------------------------------------------------------------------
+{
+    pixsize w = 0;
+    pixsize h = 0;
+    byte_p data = o->pixels(&w, &h);
+    if (r.stack())
+    {
+        r.printf("Bitmap %u x %u", w, h);
+    }
+    else
+    {
+        r.put(Settings.CommandDisplayMode(), utf8("bitmap"));
+        r.printf(" %u %u ", w, h);
+
+        size_t len = (w * h + 7) / 8;
+        while(len--)
+            r.printf("%02X", *data++);
+    }
+    return r.size();
+}
+
+
+
+// ============================================================================
+//
+//   Graphic commands
+//
+// ============================================================================
+
 object::result grob::command(grob::blitop op)
 // ----------------------------------------------------------------------------
 //   The shared code for GXor, GOr and GAnd
 // ----------------------------------------------------------------------------
 {
-    if (!rt.args(3))
-        return ERROR;
     if (object_p coords = rt.stack(1))
     {
-        PlotParameters ppar;
+        PlotParametersAccess ppar;
         coord x = ppar.pair_pixel_x(coords);
         coord y = ppar.pair_pixel_y(coords);
         object_p src = rt.stack(0);
@@ -201,19 +290,30 @@ object::result grob::command(grob::blitop op)
             if (grob_p sg = src->as<grob>())
             {
                 ui.draw_graphics();
-                surface srcs = sg->pixels();
-                grob_p dg = dst->as<grob>();
-                if (dg || dst->type() == ID_Pict)
+                grob::surface srcs = sg->pixels();
+                bool drawn = false;
+                point p(0,0);
+                rect drect = srcs.area();
+                drect.offset(x,y);
+                if (grob_p dg = dst->as<grob>())
                 {
-                    surface dsts = dg ? dg->pixels() : Screen;
-                    point p(0,0);
-                    rect drect = srcs.area();
-                    drect.offset(x,y);
-
-                    rt.drop(2 + (dg == nullptr));
+                    grob::surface dsts = dg->pixels();
+                    rt.drop(2);
                     blitter::blit<blitter::CLIP_ALL>(dsts, srcs,
                                                      drect, p,
                                                      op, pattern::white);
+                    drawn = true;
+                }
+                else if (dst->type() == ID_Pict)
+                {
+                    rt.drop(3);
+                    blitter::blit<blitter::CLIP_ALL>(Screen, srcs,
+                                                     drect, p,
+                                                     op, pattern::white);
+                    drawn = true;
+                }
+                if (drawn)
+                {
                     ui.draw_dirty(drect);
                     refresh_dirty();
                     return OK;
@@ -224,3 +324,23 @@ object::result grob::command(grob::blitop op)
     }
     return ERROR;
 }
+
+
+
+// ============================================================================
+//
+//   Black and white patterns
+//
+// ============================================================================
+
+#ifdef CONFIG_COLOR
+// Pre-built grob::patterns for shades of grey
+const grob::pattern grob::pattern::black   = grob::pattern(0, 0, 0);
+const grob::pattern grob::pattern::gray10  = grob::pattern(32, 32, 32);
+const grob::pattern grob::pattern::gray25  = grob::pattern(64, 64, 64);
+const grob::pattern grob::pattern::gray50  = grob::pattern(128, 128, 128);
+const grob::pattern grob::pattern::gray75  = grob::pattern(192, 192, 192);
+const grob::pattern grob::pattern::gray90  = grob::pattern(224, 224, 224);
+const grob::pattern grob::pattern::white   = grob::pattern(255, 255, 255);
+const grob::pattern grob::pattern::invert  = grob::pattern();
+#endif

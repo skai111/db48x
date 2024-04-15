@@ -35,6 +35,8 @@
 //        [... intermediate return addresses ...]
 //        [Pointer to return address 0]
 //      Returns
+//        [... Returns reserve]
+//      CallStack
 //        [Pointer to outermost directory in path]
 //        [ ... intermediate directory pointers ...]
 //        [Pointer to innermost directory in path]
@@ -76,17 +78,19 @@
 #include "recorder.h"
 #include "types.h"
 
-#include <cstdio>
-#include <cstring>
+#include <stdio.h>
+#include <string.h>
 
 
 struct object;                  // RPL object
 struct directory;               // Directory (storing global variables)
 struct symbol;                  // Symbols (references to a directory)
 struct text;
+struct algebraic;
 typedef const object *object_p;
 typedef const directory *directory_p;
 typedef const text *text_p;
+typedef const algebraic *algebraic_p;
 
 RECORDER_DECLARE(runtime);
 RECORDER_DECLARE(runtime_error);
@@ -156,7 +160,7 @@ struct runtime
     //   Clone an object into the temporaries area
     // ------------------------------------------------------------------------
 
-    object_p clone_global(object_p source);
+    object_p clone_global(object_p source, size_t sz);
     // ------------------------------------------------------------------------
     //   Clone values in the stack that point to a global we will change
     // ------------------------------------------------------------------------
@@ -185,6 +189,15 @@ struct runtime
     // -------------------------------------------------------------------------
     //    Clone all levels on the stack
     // -------------------------------------------------------------------------
+
+    void need_save()
+    // ------------------------------------------------------------------------
+    //   Indicate that we need to save arguments
+    // ------------------------------------------------------------------------
+    {
+        SaveArgs = true;
+    }
+
 
 
     // ========================================================================
@@ -215,7 +228,7 @@ struct runtime
     // ------------------------------------------------------------------------
 
 
-    text_p close_editor(bool convert = false);
+    text_p close_editor(bool convert = false, bool trailing_zero = true);
     // ------------------------------------------------------------------------
     //   Close the editor and encapsulate its content in a temporary string
     // ------------------------------------------------------------------------
@@ -282,7 +295,8 @@ struct runtime
     // ------------------------------------------------------------------------
 
 
-    void move(object_p to, object_p from, size_t sz, bool scratch=false);
+    void move(object_p to, object_p from,
+              size_t sz, size_t overscan = 0, bool scratch=false);
     // ------------------------------------------------------------------------
     //    Like memmove, but update pointers to objects
     // ------------------------------------------------------------------------
@@ -312,8 +326,11 @@ struct runtime
         operator byte  *() const                { return safe; }
         operator byte *&()                      { return safe; }
         byte *&Safe()                           { return safe; }
+        byte *&operator+()                      { return safe; }
+        byte *operator+() const                 { return safe; }
+        operator bool() const                   { return safe != nullptr; }
         operator bool()                         { return safe != nullptr; }
-        operator int()                          = delete;
+        operator int() const                    = delete;
         gcptr &operator =(const gcptr &o)       { safe = o.safe; return *this; }
         gcptr &operator++()                     { safe++; return *this; }
         gcptr &operator+=(size_t sz)            { safe += sz; return *this; }
@@ -346,6 +363,10 @@ struct runtime
         operator Obj *() const          { return (Obj *) safe; }
         operator Obj *&()               { return (Obj *&) safe; }
         const Obj *Safe() const         { return (const Obj *) safe; }
+        const Obj *operator+() const    { return (const Obj *) safe; }
+        const Obj *&operator+()         { return (const Obj * &) safe; }
+        operator bool() const           { return safe != nullptr; }
+        operator bool()                 { return safe != nullptr; }
         Obj *&Safe()                    { return (Obj *&) safe; }
         const Obj &operator *() const   { return *((Obj *) safe); }
         Obj &operator *()               { return *((Obj *) safe); }
@@ -466,15 +487,135 @@ struct runtime
     //
     // ========================================================================
 
-    void call(gcp<const object> callee);
+#ifdef DM42
+#  pragma GCC push_options
+#  pragma GCC optimize("-O3")
+#endif // DM42
+
+    enum { CALLS_BLOCK = 32 };
+
+    bool run_push_data(object_p next, object_p end)
     // ------------------------------------------------------------------------
-    //   Push the current object on the RPL stack
+    //   Push an object to call on the RPL stack
+    // ------------------------------------------------------------------------
+    {
+        if ((HighMem - Returns) % CALLS_BLOCK == 0)
+            if (!call_stack_grow(next, end))
+                return false;
+        *(--Returns) = end;
+        *(--Returns) = next;
+        return true;
+    }
+
+    bool run_push(object_p next, object_p end)
+    // ------------------------------------------------------------------------
+    //   Push an object to call on the RPL stack
+    // ------------------------------------------------------------------------
+    {
+        if (next < end || !next)    // Can be nullptr for conditionals
+        {
+            end = object_p(byte_p(end) - 1);
+            run_push_data(next, end);
+        }
+        return true;
+    }
+
+    inline object_p run_next(size_t depth)
+    // ------------------------------------------------------------------------
+    //   Pull the next object to execute from the RPL evaluation stack
+    // ------------------------------------------------------------------------
+    //   Getting proper inlining here is important for performance, but
+    //   that requires the definition of object::skip()
+#ifdef OBJECT_H
+    {
+        object_p *high = HighMem - depth;
+        while (Returns < high)
+        {
+            object_p next = Returns[0];
+            object_p end  = Returns[1] + 1;
+            if (next < end)
+            {
+                if (next)
+                {
+                    object_p nnext = next->skip();
+                    Returns[0] = nnext;
+                    if (nnext >= end)
+                    {
+                        Returns += 2;
+                        if ((HighMem - Returns) % CALLS_BLOCK == 0)
+                            call_stack_drop();
+                    }
+                    return next;
+                }
+                unlocals(size_t(end) - 1);
+            }
+
+            Returns += 2;
+            if ((HighMem - Returns) % CALLS_BLOCK == 0)
+                call_stack_drop();
+        }
+        return nullptr;
+    }
+#else // !OBJECT_H
+    // Don't have the definition of object::skip() - Simply mark as inline
+    ;
+#endif // OBJECT_H
+
+#ifdef DM42
+#  pragma GCC pop_options
+#endif // DM42
+
+    object_p run_stepping()
+    // ------------------------------------------------------------------------
+    //   Return the next instruction for single-stepping
+    // ------------------------------------------------------------------------
+    {
+        if (Returns < HighMem)
+            return Returns[0];
+        return nullptr;
+    }
+
+
+    bool run_conditionals(object_p trueC, object_p falseC, bool xeq = false);
+    // ------------------------------------------------------------------------
+    //   Push true and false paths on the evaluation stack
     // ------------------------------------------------------------------------
 
-    void ret();
+    bool run_select(bool condition);
     // ------------------------------------------------------------------------
-    //   Return from an RPL call
+    //   Select true or false case from run_conditionals
     // ------------------------------------------------------------------------
+
+    bool run_select_while(bool condition);
+    // ------------------------------------------------------------------------
+    //   Select true or false branch for while loops
+    // ------------------------------------------------------------------------
+
+    bool run_select_start_step(bool for_loop, bool has_step);
+    // ------------------------------------------------------------------------
+    //   Select the next branch in for-next, for-step, start-next or start-step
+    // ------------------------------------------------------------------------
+
+    bool run_select_case(bool condition);
+    // ------------------------------------------------------------------------
+    //   Select true or false case for case statement
+    // ------------------------------------------------------------------------
+
+
+    bool call_stack_grow(object_p &next, object_p &end);
+    void call_stack_drop();
+    // ------------------------------------------------------------------------
+    //  Manage the call stack in blocks
+    // ------------------------------------------------------------------------
+
+
+    size_t call_depth() const
+    // ------------------------------------------------------------------------
+    //   Return calldepth
+    // ------------------------------------------------------------------------
+    {
+        return HighMem - Returns;
+    }
 
 
 
@@ -535,6 +676,14 @@ struct runtime
     // ------------------------------------------------------------------------
     {
         return Args - Stack;
+    }
+
+    object_p *stack_base()
+    // ------------------------------------------------------------------------
+    //   Return the base of the stack for sorting purpose
+    // ------------------------------------------------------------------------
+    {
+        return Stack;
     }
 
 
@@ -636,7 +785,7 @@ struct runtime
     //   Current directory for global variables
     // ------------------------------------------------------------------------
     {
-        if (depth >= (uint) ((object_p *) Returns - Directories))
+        if (depth >= (uint) ((object_p *) CallStack - Directories))
             return nullptr;
         return (directory *) Directories[depth];
     }
@@ -646,7 +795,7 @@ struct runtime
     //   Return the home directory
     // ------------------------------------------------------------------------
     {
-        directory **home = (directory **) (Returns - 1);
+        directory **home = (directory **) (CallStack - 1);
         return *home;
     }
 
@@ -655,11 +804,11 @@ struct runtime
     //   Return number of directories
     // ------------------------------------------------------------------------
     {
-        size_t depth = (object_p *) Returns - Directories;
+        size_t depth = (object_p *) CallStack - Directories;
         return depth;
     }
 
-
+    bool is_active_directory(object_p obj) const;
     bool enter(directory_p dir);
     bool updir(size_t count = 1);
 
@@ -677,7 +826,7 @@ struct runtime
     // ------------------------------------------------------------------------
     {
         if (message)
-            record(errors, "Error [%s]", message);
+            record(errors, "Error [%+s]", message);
         else
             record(runtime, "Clearing error");
         Error = ErrorSave = message;
@@ -708,21 +857,22 @@ struct runtime
         return ErrorSave;
     }
 
-    runtime &source(utf8 spos)
+    runtime &source(utf8 spos, size_t len = 0)
     // ------------------------------------------------------------------------
     //   Set the source location for the current error
     // ------------------------------------------------------------------------
     {
         ErrorSource = spos;
+        ErrorSrcLen = len;
         return *this;
     }
 
-    runtime &source(cstring spos)
+    runtime &source(cstring spos, size_t len = 0)
     // ------------------------------------------------------------------------
     //   Set the source location for the current error
     // ------------------------------------------------------------------------
     {
-        return source(utf8(spos));
+        return source(utf8(spos), len);
     }
 
     utf8 source()
@@ -733,26 +883,24 @@ struct runtime
         return ErrorSource;
     }
 
-    runtime &command(utf8 cmd);
+    size_t source_length()
+    // ------------------------------------------------------------------------
+    //   Get the length of text for the problem
+    // ------------------------------------------------------------------------
+    {
+        return ErrorSrcLen;
+    }
+
+    runtime &command(const object *cmd);
     // ------------------------------------------------------------------------
     //   Set the faulting command
     // ------------------------------------------------------------------------
 
-    runtime &command(cstring cmd)
-    // ------------------------------------------------------------------------
-    //   Set the faulting command
-    // ------------------------------------------------------------------------
-    {
-        return command(utf8(cmd));
-    }
 
-    utf8 command()
+    text_p command() const;
     // ------------------------------------------------------------------------
-    //   Get the faulting command if there is one
+    //   Get the faulting command name
     // ------------------------------------------------------------------------
-    {
-        return ErrorCommand;
-    }
 
 
     bool is_user_command(utf8 cmd)
@@ -781,28 +929,41 @@ struct runtime
     //
     // ========================================================================
 
+    algebraic_p zero_divide(bool negative) const;
+    algebraic_p numerical_overflow(bool negative) const;
+    algebraic_p numerical_underflow(bool negative) const;
+    algebraic_p undefined_result() const;
+    // ------------------------------------------------------------------------
+    //   Return the value for a divide by zero, overflow and underflow
+    // ------------------------------------------------------------------------
+
+
 #define ERROR(name, msg)        runtime &name##_error();
 #include "errors.tbl"
+
+
 
 
 protected:
     utf8      Error;        // Error message if any
     utf8      ErrorSave;    // Last error message (for ERRM)
     utf8      ErrorSource;  // Source of the error if known
-    utf8      ErrorCommand; // Source of the error if known
-    object_p  Code;         // Currently executing code
+    size_t    ErrorSrcLen;  // Length of error in source
+    object_p  ErrorCommand; // Source of the error if known
     object_p  LowMem;       // Bottom of available memory
     object_p  Globals;      // End of global objects
     object_p  Temporaries;  // Temporaries (must be valid objects)
     size_t    Editing;      // Text editor (utf8 encoded)
     size_t    Scratch;      // Scratch pad (may be invalid objects)
     object_p *Stack;        // Top of user stack
-    object_p *Args;     // Start of save area for last arguments
+    object_p *Args;         // Start of save area for last arguments
     object_p *Undo;         // Start of undo stack
-    object_p *Locals;       // Start of locals, end of undo
-    object_p *Directories;  // Start of directories, end of returns
+    object_p *Locals;       // Start of locals
+    object_p *Directories;  // Start of directories
+    object_p *CallStack;    // Start of call stack (rounded 16 entries)
     object_p *Returns;      // Start of return stack, end of locals
     object_p *HighMem;      // End of available memory
+    bool      SaveArgs;     // Save arguents (LastArgs)
 
     // Pointers that are GC-adjusted
     static gcptr *GCSafe;
@@ -825,10 +986,10 @@ using object_r  = const object_g &;
 
 #define GCP(T)                                  \
     struct T;                                   \
-    typedef const T *T##_p;                     \
-    typedef gcp<T>   T##_g;                     \
-    typedef gcm<T>   T##_m;                     \
-    typedef const T##_g &T##_r;
+    typedef const T *           T##_p;          \
+    typedef gcp<T>              T##_g;          \
+    typedef gcm<T>              T##_m;          \
+    typedef const T##_g &       T##_r;
 
 
 // ============================================================================
@@ -867,8 +1028,7 @@ const Obj *runtime::make(typename Obj::id type, const
     // Find required memory for this object
     size_t size = Obj::required_memory(type, args...);
     record(runtime,
-           "Initializing object %p type %d %+s size %u",
-           Temporaries, type, Obj::object::name(type), size);
+           "Initializing object %p type %d size %u", Temporaries, type, size);
 
     // Check if we have room (may cause garbage collection)
     if (available(size) < size)
@@ -877,12 +1037,12 @@ const Obj *runtime::make(typename Obj::id type, const
     Temporaries = (object *) ((byte *) Temporaries + size);
 
     // Move the editor up (available() checked we have room)
-    move(Temporaries, (object_p) result, Editing + Scratch, true);
+    move(Temporaries, (object_p) result, Editing + Scratch, 1, true);
 
     // Initialize the object in place (may GC and move result)
     gcbytes ptr = (byte *) result;
     new(result) Obj(type, args...);
-    result = (Obj *) ptr.Safe();
+    result = (Obj *) +ptr;
 
 #ifdef SIMULATOR
     object_validate(type, (const object *) result, size);
@@ -915,12 +1075,16 @@ struct scribble
     }
     ~scribble()
     {
-        if (size_t added = growth())
-            rt.free(added);
+        clear();
     }
     void commit()
     {
         allocated = rt.allocated();
+    }
+    void clear()
+    {
+        if (size_t added = growth())
+            rt.free(added);
     }
     size_t growth()
     {
@@ -936,7 +1100,19 @@ private:
 };
 
 
-// User interface signal that a GC is in progress
-extern void draw_gc();
+struct stack_depth_restore
+// ----------------------------------------------------------------------------
+//   Restore the stack depth on exit
+// ----------------------------------------------------------------------------
+{
+    stack_depth_restore(): depth(rt.depth()) {}
+    ~stack_depth_restore()
+    {
+        size_t now = rt.depth();
+        if (now > depth)
+            rt.drop(now - depth);
+    }
+    size_t depth;
+};
 
 #endif // RUNTIME_H

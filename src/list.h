@@ -33,7 +33,7 @@
 //
 //   A list is a sequence of bytes containing:
 //   - The type ID
-//   - The UTF8-encoded length of the payload
+//   - The LEB128-encoded length of the payload
 //   - Each object in the list in turn
 //
 //   To save space, there is no explicit marker for the end of list
@@ -114,16 +114,21 @@ struct list : text
     static void copy(byte *p, const gcp<Arg> &arg)
     {
         size_t sz = arg->size();
-        memmove(p, arg.Safe(), sz);
+        memmove(p, +arg, sz);
     }
 
     template<typename Arg, typename ...Args>
     static void copy(byte *p, const gcp<Arg> &arg, const gcp<Args> &...args)
     {
         size_t sz = arg->size();
-        memmove(p, arg.Safe(), sz);
+        memmove(p, +arg, sz);
         p += sz;
         copy(p, args...);
+    }
+
+    object_p objects(size_t *size = nullptr) const
+    {
+        return object_p(value(size));
     }
 
     // Iterator, built in a way that is robust to garbage collection in loops
@@ -134,12 +139,12 @@ struct list : text
         typedef size_t difference_type;
 
         explicit iterator(list_p list, bool atend = false)
-            : first(object_p(list->value())),
-              size(list->length()),
+            : size(0),
+              first(list->objects(&size)),
               index(atend ? size : 0) {}
         explicit iterator(list_p list, size_t skip)
-            : first(object_p(list->value())),
-              size(list->length()),
+            : size(0),
+              first(list->objects(&size)),
               index(0)
         {
             while (skip && index < size)
@@ -148,14 +153,16 @@ struct list : text
                 skip--;
             }
         }
+        iterator() : size(0), first(), index(0) {}
 
     public:
         iterator& operator++()
         {
             if (index < size)
             {
-                object_p obj = first.Safe() + index;
+                object_p obj = +first + index;
                 size_t objsize = obj->size();
+                ASSERT(index + objsize <= size);
                 index += objsize;
             }
 
@@ -167,25 +174,25 @@ struct list : text
             ++(*this);
             return prev;
         }
-        bool operator==(iterator other) const
+        bool operator==(const iterator &other) const
         {
-            return !first.Safe() || !other.first.Safe() ||
-                (index == other.index &&
-                 first.Safe() == other.first.Safe() &&
-                 size == other.size);
+            return !first || !other.first ||
+                   (index == other.index &&
+                    +first == +other.first &&
+                    size == other.size);
         }
-        bool operator!=(iterator other) const
+        bool operator!=(const iterator &other) const
         {
             return !(*this == other);
         }
         value_type operator*() const
         {
-            return index < size ? first.Safe() + index : nullptr;
+            return index < size ? +first+ index : nullptr;
         }
 
     public:
-        object_g first;
         size_t   size;
+        object_g first;
         size_t   index;
     };
     iterator begin() const      { return iterator(this); }
@@ -204,24 +211,11 @@ struct list : text
     }
 
 
-    size_t expand() const
+    bool expand_without_size() const;
+    bool expand() const;
     // ------------------------------------------------------------------------
     //   Expand items to the stack, and return number of them
     // ------------------------------------------------------------------------
-    {
-        size_t result = 0;
-        for (object_p obj : *this)
-        {
-            if (!rt.push(obj))
-            {
-                if (result)
-                    rt.drop(result);
-                return 0;
-            }
-            result++;
-        }
-        return result;
-    }
 
 
     object_p operator[](size_t index) const
@@ -258,37 +252,81 @@ struct list : text
         return list->at(rest...);
     }
 
+    object_p    head() const;
+    list_p      tail() const;
+    // ------------------------------------------------------------------------
+    //   Return the head and tail of a list
+    // ------------------------------------------------------------------------
+
+
     // Apply an algebraic function to all elements in list
-    list_g map(algebraic_fn fn) const;
-    list_g map(arithmetic_fn fn, algebraic_r y) const;
-    list_g map(algebraic_r x, arithmetic_fn fn) const;
-    static list_g map(algebraic_fn fn, list_r x)
+    list_p map(object_p prg) const;
+    list_p map(algebraic_fn fn) const;
+    list_p map(arithmetic_fn fn, algebraic_r y) const;
+    list_p map(algebraic_r x, arithmetic_fn fn) const;
+    static list_p map(algebraic_fn fn, list_r x)
     {
         return x->map(fn);
     }
-    static list_g map(arithmetic_fn fn, list_r x, algebraic_r y)
+    static list_p map(arithmetic_fn fn, list_r x, algebraic_r y)
     {
         return x->map(fn, y);
     }
-    static list_g map(arithmetic_fn fn, algebraic_r x, list_r y)
+    static list_p map(arithmetic_fn fn, algebraic_r x, list_r y)
     {
         return y->map(x, fn);
     }
+
+    // Append data to a list
+    list_p append(list_p a) const;
+    list_p append(object_p o) const;
+
+    // Reduce and filter operations
+    object_p reduce(object_p prg) const;
+    list_p   filter(object_p prg) const;
+
+    // Build a list by combining two subsequent items
+    list_p   pair_map(object_p prg) const;
+    object_p map_as_object(object_p prg) const          { return map(prg);    }
+    object_p filter_as_object(object_p prg) const       { return filter(prg); }
 
 public:
     // Shared code for parsing and rendering, taking delimiters as input
     static result list_parse(id type, parser &p, unicode open, unicode close);
     intptr_t      list_render(renderer &r, unicode open, unicode close) const;
+    grob_p        graph(grapher &g, size_t rows, size_t cols, bool mat) const;
 
 public:
     OBJECT_DECL(list);
     PARSE_DECL(list);
     RENDER_DECL(list);
+    GRAPH_DECL(list);
     HELP_DECL(list);
 };
 typedef const list *list_p;
 
-COMMAND_DECLARE(Get);
+COMMAND_DECLARE(ToList,~1);
+COMMAND_DECLARE(FromList,1);
+COMMAND_DECLARE(Size,1);
+COMMAND_DECLARE(Get,2);
+COMMAND_DECLARE(Put,3);
+COMMAND_DECLARE(GetI,2);
+COMMAND_DECLARE(PutI,3);
+COMMAND_DECLARE(Sort,1);
+COMMAND_DECLARE(QuickSort,1);
+COMMAND_DECLARE(ReverseSort,1);
+COMMAND_DECLARE(ReverseQuickSort,1);
+COMMAND_DECLARE(ReverseList,1);
+COMMAND_DECLARE(Head,1);
+COMMAND_DECLARE(Tail,1);
+COMMAND_DECLARE(Map,2);
+COMMAND_DECLARE(Reduce,2);
+COMMAND_DECLARE(Filter,2);
+COMMAND_DECLARE(ListSum,1);
+COMMAND_DECLARE(ListProduct,1);
+COMMAND_DECLARE(ListDifferences,1);
+
+
 
 inline list_g operator+(list_r x, list_r y)
 // ----------------------------------------------------------------------------
@@ -297,7 +335,7 @@ inline list_g operator+(list_r x, list_r y)
 {
     text_r xt = (text_r) x;
     text_r yt = (text_r) y;
-    return list_p((xt + yt).Safe());
+    return list_p(+(xt + yt));
 }
 
 
@@ -307,7 +345,7 @@ inline list_g operator*(list_r x, uint y)
 // ----------------------------------------------------------------------------
 {
     text_r xt = (text_r) x;
-    return list_p((xt * y).Safe());
+    return list_p(+(xt * y));
 }
 
 #endif // LIST_H

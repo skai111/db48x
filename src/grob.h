@@ -45,6 +45,9 @@ struct grob : object
 // ----------------------------------------------------------------------------
 {
     using pixsize = blitter::size;
+    using surface = blitter::surface<blitter::mode::MONOCHROME_REVERSE>;
+    using pattern = blitter::pattern<blitter::mode::MONOCHROME_REVERSE>;
+
 
     grob(id type, pixsize w, pixsize h, gcbytes bits): object(type)
     // ------------------------------------------------------------------------
@@ -54,17 +57,35 @@ struct grob : object
         byte *p = (byte *) payload();
         p = leb128(p, w);
         p = leb128(p, h);
-        size_t datasize = (w + 7) / 8 * h;
-        if (byte_p s = bits)
-        {
-            while (datasize--)
-                *p++ = *s++;
-        }
-        else
-        {
-            while (datasize--)
-                *p++ = 0;
-        }
+        size_t ds = datasize(type, w, h);
+        byte_p s = bits;
+        while (ds--)
+            *p++ = *s++;
+    }
+
+
+
+    grob(id type, pixsize w, pixsize h): object(type)
+    // ------------------------------------------------------------------------
+    //   Graphic object constructor
+    // ------------------------------------------------------------------------
+    {
+        byte *p = (byte *) payload();
+        p = leb128(p, w);
+        p = leb128(p, h);
+        size_t ds = datasize(type, w, h);
+        while (ds--)
+            *p++ = 0;
+    }
+
+
+    static size_t required_memory(id type, pixsize w, pixsize h)
+    // ------------------------------------------------------------------------
+    //   Compute required grob memory for the given parameters
+    // ------------------------------------------------------------------------
+    {
+        size_t bodysize = bytesize(type, w, h);
+        return leb128size(type) + bodysize;
     }
 
 
@@ -76,12 +97,21 @@ struct grob : object
     //   Compute required grob memory for the given parameters
     // ------------------------------------------------------------------------
     {
-        size_t bodysize = bytesize(w, h);
-        return leb128size(type) + bodysize;
+        size_t bs = bytesize(type, w, h);
+        return leb128size(type) + bs;
     }
 
 
-    static grob_p make(pixsize w, pixsize h, byte_p bits = nullptr)
+    static grob_p make(pixsize w, pixsize h)
+    // ------------------------------------------------------------------------
+    //   Build a grob from the given parameters
+    // ------------------------------------------------------------------------
+    {
+        return rt.make<grob>(w, h);
+    }
+
+
+    static grob_p make(pixsize w, pixsize h, byte_p bits)
     // ------------------------------------------------------------------------
     //   Build a grob from the given parameters
     // ------------------------------------------------------------------------
@@ -90,13 +120,22 @@ struct grob : object
     }
 
 
-    static size_t bytesize(pixsize w, pixsize h)
+    static size_t bytesize(id type, pixsize w, pixsize h)
     // ------------------------------------------------------------------------
     //   Compute the number of bytes required for a bitmap
     // ------------------------------------------------------------------------
     {
-        size_t datasize = (w + 7) / 8 * h;
-        return leb128size(w) + leb128size(h) + datasize;
+        size_t ds = datasize(type, w, h);
+        return leb128size(w) + leb128size(h) + ds;
+    }
+
+
+    static size_t datasize(id type, pixsize w, pixsize h)
+    // ------------------------------------------------------------------------
+    //   Compute the number of bytes required for a bitmap
+    // ------------------------------------------------------------------------
+    {
+        return type == ID_grob ? (w + 7) / 8 * h : (w * h + 7) / 8;
     }
 
 
@@ -134,7 +173,7 @@ struct grob : object
         if (height)
             *height = h;
         if (datalen)
-            *datalen = (w + 7) / 8 * h;
+            *datalen = bytesize(type(), w, h);
         return p;
     }
 
@@ -144,10 +183,11 @@ struct grob : object
     //   Return a blitter surface for the grob
     // ------------------------------------------------------------------------
     {
-        pixsize w = 0;
-        pixsize h = 0;
-        byte_p bitmap = pixels(&w, &h);
-        return surface((pixword *) bitmap, w, h, (w+7)/8*8);
+        pixsize w        = 0;
+        pixsize h        = 0;
+        byte_p  bitmap   = pixels(&w, &h);
+        pixsize scanline = type() == ID_grob ? (w + 7) / 8 * 8 : w;
+        return surface((pixword *) bitmap, w, h, scanline);
     }
 
 
@@ -164,6 +204,40 @@ public:
     PARSE_DECL(grob);
     SIZE_DECL(grob);
     RENDER_DECL(grob);
+    GRAPH_DECL(grob);
+};
+
+
+struct bitmap : grob
+// ----------------------------------------------------------------------------
+//   DB48X optimized bitmap representation
+// ----------------------------------------------------------------------------
+{
+    bitmap(id ty, pixsize w, pixsize h, gcbytes bits) : grob(ty, w, h, bits) {}
+    bitmap(id type, pixsize w, pixsize h): grob(type, w, h) {}
+
+    static grob_p make(pixsize w, pixsize h)
+    // ------------------------------------------------------------------------
+    //   Build a grob from the given parameters
+    // ------------------------------------------------------------------------
+    {
+        return rt.make<bitmap>(w, h);
+    }
+
+
+    static grob_p make(pixsize w, pixsize h, byte_p bits)
+    // ------------------------------------------------------------------------
+    //   Build a grob from the given parameters
+    // ------------------------------------------------------------------------
+    {
+        return rt.make<bitmap>(w, h, bits);
+    }
+
+public:
+    OBJECT_DECL(bitmap);
+    // PARSE_DECL(bitmap) is managed by grob class
+    SIZE_DECL(bitmap);
+    RENDER_DECL(bitmap);
 };
 
 
@@ -174,23 +248,45 @@ struct grapher
 {
     using font_id = settings::font_id;
 
-    grapher(size    w  = LCD_W,
-            size    h  = LCD_H,
-            font_id f  = settings::EDITOR,
-            pattern fg = pattern::black,
-            pattern bg = pattern::white)
+    grapher(size          w     = LCD_W,
+            size          h     = LCD_H,
+            font_id       f     = settings::EDITOR,
+            grob::pattern fg    = grob::pattern::black,
+            grob::pattern bg    = grob::pattern::white,
+            bool          stack = false)
         : maxw(w),
           maxh(h),
+          voffset(0),
           font(f),
           foreground(fg),
-          background(bg)
+          background(bg),
+          stack(stack)
     {}
+    grapher(const grapher &other) = default;
 
-    size    maxw;
-    size    maxh;
-    font_id font;
-    pattern foreground;
-    pattern background;
+    grob_p grob(size w, size h)
+    {
+        if (w < maxw && h < maxh)
+            return grob::make(w, h);
+        return nullptr;
+    }
+
+    bool reduce_font()
+    {
+        font_id next = settings::smaller_font(font);
+        if (next == font)
+            return false;
+        font = next;
+        return true;
+    }
+
+    size          maxw;
+    size          maxh;
+    coord         voffset;
+    font_id       font;
+    grob::pattern foreground;
+    grob::pattern background;
+    bool          stack;
 };
 
 #endif // GROB_H

@@ -29,7 +29,7 @@
 
 #include "locals.h"
 
-#include "equation.h"
+#include "expression.h"
 #include "parser.h"
 #include "program.h"
 #include "renderer.h"
@@ -97,7 +97,8 @@ PARSE_BODY(locals)
         }
         if (!is_valid_as_name_initial(cp))
         {
-            rt.syntax_error().source(s).command("locals");
+            object_p cmd = symbol::make("Local variables block");
+            rt.missing_variable_error().source(s).command(cmd);
             return ERROR;
         }
 
@@ -132,7 +133,8 @@ PARSE_BODY(locals)
     // If we did not get a program after the names, fail
     if (!is_program_separator(cp))
     {
-        rt.syntax_error().command("locals").source(s);
+        object_p cmd = static_object(ID_locals);
+        rt.syntax_error().command(cmd).source(s);
         return ERROR;
     }
 
@@ -155,9 +157,9 @@ PARSE_BODY(locals)
     object::result result = ERROR;
     switch(cp)
     {
-    case L'«':  result = program ::do_parse(p); break;
-    case  '\'': result = equation::do_parse(p); break;
-    case '{':   result = list    ::do_parse(p); break;
+    case L'«':  result = program   ::do_parse(p); break;
+    case  '\'': result = expression::do_parse(p); break;
+    case '{':   result = list      ::do_parse(p); break;
     default:                                    break;
     }
     if (result != OK)
@@ -189,28 +191,29 @@ RENDER_BODY(locals)
 // ----------------------------------------------------------------------------
 {
     // Skip object size
-    gcbytes p = o->payload();
-    size_t  objsize = leb128<size_t>(p.Safe());
+    gcbytes p       = o->payload();
+    size_t  objsize = leb128<size_t>(+p);
     (void) objsize;
 
     // Create a local frame for rendering local names
     locals_stack frame(p);
 
     // Emit header
+    r.wantCR();
     r.put("→ ");
 
     // Loop on names
-    size_t names = leb128<size_t>(p.Safe());
+    size_t names = leb128<size_t>(+p);
     for (size_t n = 0; n < names; n++)
     {
-        size_t len = leb128<size_t>(p.Safe());
-        r.put(p.Safe(), len);
+        size_t len = leb128<size_t>(+p);
+        r.put(+p, len);
         r.put(n + 1 < names ? ' ' : '\n');
         p += len;
     }
 
     // Render object (which should be a program, an equation or a list)
-    object_p obj = object_p(p.Safe());
+    object_p obj = object_p(+p);
     return obj->render(r);
 }
 
@@ -221,29 +224,36 @@ EVAL_BODY(locals)
 // ----------------------------------------------------------------------------
 {
     object_g p   = object_p(o->payload());
-    size_t   len = leb128<size_t>(p.Safe());
-    (void) len;
+    size_t   len = leb128<size_t>(+p);
+    object_g end = p + len;
 
     // Copy local values from stack
-    size_t names   = leb128<size_t>(p.Safe());
+    size_t names   = leb128<size_t>(+p);
     if (!rt.locals(names))
         return ERROR;
+    if (!rt.run_push_data(nullptr, object_p(names)))
+    {
+        rt.unlocals(names);
+        return ERROR;
+    }
 
     // Skip names to get to program
     for (uint n = 0; n < names; n++)
     {
-        size_t nlen = leb128<size_t>(p.Safe());
+        size_t nlen = leb128<size_t>(+p);
         p += nlen;
     }
 
-    // Execute result
-    result res = p->execute();
-
-    // Remove locals
-    rt.unlocals(names);
-
-    // Return result from execution
-    return res;
+    // Defer execution of body to the caller
+    program_p prog = p->as_program();
+    if (!prog)
+    {
+        rt.malformed_local_program_error();
+        return ERROR;
+    }
+    if (!rt.run_push(prog->objects(), end))
+        return ERROR;
+    return OK;
 }
 
 
@@ -290,12 +300,12 @@ PARSE_BODY(local)
         if (gcbytes names = f->names())
         {
             // Check if name is found in local frame
-            size_t count = leb128<size_t>(names.Safe());
+            size_t count = leb128<size_t>(+names);
             for (size_t n = 0; n < count; n++)
             {
-                size_t nlen = leb128<size_t>(names.Safe());
+                size_t nlen = leb128<size_t>(+names);
                 if (nlen == len &&
-                    strncasecmp(cstring(names.Safe()), cstring(source), nlen) == 0)
+                    strncasecmp(cstring(+names), cstring(source), nlen) == 0)
                 {
                     // Found a local name, return it
                     gcutf8 text   = source;
@@ -320,14 +330,14 @@ RENDER_BODY(local)
 // ----------------------------------------------------------------------------
 {
     gcbytes p = o->payload();
-    uint index = leb128<uint>(p.Safe());
+    uint index = leb128<uint>(+p);
 
     for (locals_stack *f = locals_stack::current(); f; f = f->enclosing())
     {
         gcbytes names = f->names();
 
         // Check if name is found in local frame
-        size_t count = leb128<size_t>(names.Safe());
+        size_t count = leb128<size_t>(+names);
         if (index >= count)
         {
             // Name is beyond current frame, skip to next one
@@ -338,39 +348,28 @@ RENDER_BODY(local)
         // Skip earlier names in index
         for (size_t n = 0; n < index; n++)
         {
-            size_t len = leb128<size_t>(names.Safe());
+            size_t len = leb128<size_t>(+names);
             names += len;
         }
 
         // Emit name and exit
-        size_t len = leb128<size_t>(names.Safe());
-        r.put(names.Safe(), len);
+        size_t len = leb128<size_t>(+names);
+        r.put(+names, len);
         return r.size();
     }
 
     // We have not found the name, render bogus name
-    r.printf("InvalidLocalName%u", index);
+    r.printf("LocalVariable%u", index);
     return r.size();
 }
 
 
 EVAL_BODY(local)
 // ----------------------------------------------------------------------------
-//   Evaluate a local by fetching it from locals area and putting it on stack
+//   Evaluate a local by fetching it from locals area and evaluating it
 // ----------------------------------------------------------------------------
 {
-    if (object_g obj = o->recall())
-        return obj->execute();
-    return ERROR;
-}
-
-
-EXEC_BODY(local)
-// ----------------------------------------------------------------------------
-//   Execute a local by fetching it from locals and executing it
-// ----------------------------------------------------------------------------
-{
-    if (object_g obj = o->recall())
-        return obj->execute();
+    if (object_p obj = o->recall())
+        return program::run_program(obj);
     return ERROR;
 }

@@ -39,15 +39,12 @@
 RECORDER(options, 32, "Information about command line options");
 
 bool run_tests = false;
+bool noisy_tests = false;
 bool db48x_keyboard = true;
-uint memory_size = 40;           // Memory size in kilobytes
-extern uint wait_time;
-extern uint delay_time;
-
-
+uint memory_size = 100;           // Memory size in kilobytes
 
 size_t recorder_render_object(intptr_t tracing,
-                              const char *UNUSED format,
+                              const char *UNUSED /* format */,
                               char *buffer, size_t size,
                               uintptr_t arg)
 // ----------------------------------------------------------------------------
@@ -62,6 +59,8 @@ size_t recorder_render_object(intptr_t tracing,
         {
             char tmp[80];
             size_t sz =  value->render(tmp, sizeof(tmp)-1);
+            if (sz >= sizeof(tmp))
+                sz = sizeof(tmp)-1;
             tmp[sz] = 0;
             result = snprintf(buffer, size, "%p[%lu] %s[%s]",
                               (void *) value,
@@ -124,23 +123,63 @@ int main(int argc, char *argv[])
             case 't':
                 recorder_trace_set(argv[a]+2);
                 break;
+            case 'n':
+                noisy_tests = true;
+                break;
+
             case 'T':
                 run_tests = true;
+                // fall-through
+            case 'O':
+                if (argv[a][2])
+                {
+                    static bool first = true;
+                    if (first)
+                    {
+                        recorder_trace_set("est_.*=0");
+                        first = false;
+                    }
+                    char tname[256];
+                    if (strcmp(argv[a]+2, "all") == 0)
+                        strcpy(tname, "est_.*");
+                    else
+                        snprintf(tname, sizeof(tname)-1, "est_%s", argv[a]+2);
+                    recorder_trace_set(tname);
+                }
                 break;
+            case 'D':
+                if (argv[a][2])
+                    tests::dump_on_fail = argv[a]+2;
+                else if (a < argc)
+                    tests::dump_on_fail = argv[++a];
+                break;
+
             case 'k':
                 db48x_keyboard = true;
                 break;
             case 'w':
                 if (argv[a][2])
-                    wait_time = atoi(argv[a]+2);
+                    tests::default_wait_time = atoi(argv[a]+2);
                 else if (a < argc)
-                    wait_time = atoi(argv[++a]);
+                    tests::default_wait_time = atoi(argv[++a]);
                 break;
             case 'd':
                 if (argv[a][2])
-                    delay_time = atoi(argv[a]+2);
+                    tests::key_delay_time = atoi(argv[a]+2);
                 else if (a < argc)
-                    delay_time = atoi(argv[++a]);
+                    tests::key_delay_time = atoi(argv[++a]);
+                break;
+            case 'r':
+                if (argv[a][2])
+                    tests::refresh_delay_time = atoi(argv[a]+2);
+                else if (a < argc)
+                    tests::refresh_delay_time = atoi(argv[++a]);
+                break;
+            case 'i':
+                if (argv[a][2])
+                    tests::image_wait_time = atoi(argv[a]+2);
+                else if (a < argc)
+                    tests::image_wait_time = atoi(argv[++a]);
                 break;
             case 'm':
                 if (argv[a][2])
@@ -148,6 +187,13 @@ int main(int argc, char *argv[])
                 else if (a < argc)
                     memory_size = atoi(argv[++a]);
                 break;
+            case 's':
+                if (argv[a][2])
+                    MainWindow::devicePixelRatio = atof(argv[a]+2);
+                else if (a < argc)
+                    MainWindow::devicePixelRatio = atof(argv[++a]);
+                break;
+
             }
         }
     }

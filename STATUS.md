@@ -18,7 +18,7 @@
 - [x] Variables menu accessible with **RCL** key
 - [x] Complete interactive catalog of available functions
 - [x] RPL program evaluattion
-- [ ] RPL program single-stepping / debugging
+- [x] RPL program single-stepping / debugging
 - [x] Stack undo / redo
 - [X] Accelerated [blitter code with 8x8 patterns](https://github.com/c3d/db48x/blob/dm42/firmware/include/ggl.h)
 - [X] Unicode-capable [text drawing replacement](https://github.com/c3d/db48x/blob/dm42/firmware/sys/graphics.c)
@@ -26,7 +26,7 @@
 - [X] [Unicode fonts](https://github.com/c3d/db48x/blob/dm42/firmware/include/unifont.h)
       (e.g. derived from [WP43S](https://gitlab.com/wpcalculators/wp43) project)
 - [X] Larger font for editor (old geezer mode)
-- [ ] Objects in USB-accessible flash storage
+- [x] Objects in USB-accessible flash storage
 - [x] Calculator state load/save
 - [x] Global help from [generated markdown file](help/db48x.md)
 - [x] [Per-function help](https://github.com/c3d/db48x/blob/dm42/firmware/hal_keyboard.c#L116)
@@ -36,6 +36,8 @@
 - [ ] Polygon fill
 - [ ] RPL-controlled soft-menu system
 - [ ] Domain-specific features / customizaton from files on USB disk
+- [x] Single-key object format cycling
+- [x] Units and conversion customization from `units.csv` file
 
 
 ### Object system
@@ -60,9 +62,9 @@
 - [x] Based integers (arbitrary base between 2 and 36, e.g. `13#10231AC`)
 - [x] Arbitrary-size integers e.g. `123456789012345678901234567890`
 - [x] Fractions, e.g. `1/7`
-- [ [ Fraction formats, e.g. `22/7` vs `3 1/7` vs. `3,1428571429`
+- [x[ Fraction formats, e.g. `22/7` vs `3 1/7` vs. `3,1428571429`
 - [x] Decimal floating-point with fixed size (32, 64 and 128 bits)
-- [ ] Decimal floating-point with [arbitrary size](https://github.com/c3d/db48x/blob/dm42/newrpl/decimal.h)
+- [x] Decimal floating-point with arbitrary size
 - [x] Binary floating-point with arbitrary size
 - [ ] Hardware-accelerated 32-bit binary floating-point
 - [x] Text / strings, e.g. `"ABC"`
@@ -82,7 +84,7 @@
 - [ ] Vector graphics
 - [x] Tagged objects
 - [x] Algebraic expressions
-- [ ] Unit objects
+- [x] Unit objects
 - [x] Directories
 - [ ] Software libraries
 - [ ] Keymaps
@@ -115,10 +117,11 @@
 - [x] Exponentials and logarithms, e.g. `exp`, `ln`, ...
 - [x] Hyperbolic functions, e.g. `sinh`, `atanh`, ...
 - [ ] Probabilities functions, like `Factorial`, `Combinations`, etc.
-- [ ] Statistics functions, like `Σ+`, `Mean` or `Median`
+- [X] Statistics functions, like `Σ+`, `Mean` or `Median`
 - [ ] Special functions, like `Bessel`, `FastFourierTransforma`, etc
 - [ ] Constant tables with arbitrary precision from files on USB disk
 - [ ] Equation tables with explanatory graphics from files on USB disk
+- [x] Unit conversions
 
 
 ### Computations on complex numbers
@@ -174,6 +177,6 @@
 - [ ] Alarms
 - [ ] File system access
 - [ ] Printing
-- [ ] Plotting
+- [x] Plotting
 - [ ] Equation writer
 - [ ] Matrix writer

@@ -30,7 +30,7 @@
 // ****************************************************************************
 
 #include "blitter.h"
-#include <dmcp.h>
+#include "dmcp.h"
 
 enum target
 // ----------------------------------------------------------------------------
@@ -40,15 +40,26 @@ enum target
     BITS_PER_PIXEL = 1,
     LCD_W          = 400,
     LCD_H          = 240,
+#ifndef CONFIG_COLOR
     LCD_SCANLINE   = 416,
+#else
+    LCD_SCANLINE   = 400,
+#endif
+
 };
 
 // We need to reverse grobs during parsing and rendering
 #define REVERSE_GROBS
 
+#ifdef CONFIG_COLOR
+using surface = blitter::surface<blitter::mode::RGB_16BPP>;
+using color   = blitter::color  <blitter::mode::RGB_16BPP>;
+using pattern = blitter::pattern<blitter::mode::RGB_16BPP>;
+#else
 using surface = blitter::surface<blitter::mode::MONOCHROME_REVERSE>;
 using color   = blitter::color  <blitter::mode::MONOCHROME_REVERSE>;
 using pattern = blitter::pattern<blitter::mode::MONOCHROME_REVERSE>;
+#endif
 using coord   = blitter::coord;
 using size    = blitter::size;
 using rect    = blitter::rect;
@@ -187,5 +198,18 @@ extern surface Screen;
 #define KB_X                 29         //! X
 #define KB_Y                 30         //! Y
 #define KB_Z                 31         //! Z
+
+
+
+// ============================================================================
+//
+//    Battery configuration
+//
+// ============================================================================
+
+#define BATTERY_VMIN    2500    // Min battery on display
+#define BATTERY_VMAX    2930    // Max battery on display
+#define BATTERY_VLOW    2600    // Battery level where graying out
+#define BATTERY_VOFF    2550    // Battery level where going off
 
 #endif // TARGET_DM42_H

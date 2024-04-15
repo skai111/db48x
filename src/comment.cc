@@ -50,9 +50,6 @@ PARSE_BODY(comment)
     while (s < end && *s != '\n' && (*s != '@' || (remove && s[-1] != '@')))
         s++;
 
-    if (s < end)
-        s++;
-
     size_t parsed = s - source;
     size_t slen   = parsed - 1;
     gcutf8 txt    = source + 1;
@@ -71,10 +68,11 @@ RENDER_BODY(comment)
 {
     size_t  len = 0;
     utf8 txt = o->value(&len);
-    if (!r.hadCR())
-        r.put('\n');
+    r.wantCR();
+    settings::SaveEditorWrapColumn sew(0);
     r.put('@');
     r.put(txt, len);
+    r.wantCR();
     return r.size();
 }
 

@@ -31,9 +31,9 @@
 #include "main.h"
 
 #include "blitter.h"
-#include "equation.h"
+#include "dmcp.h"
+#include "expression.h"
 #include "font.h"
-#include "num.h"
 #include "program.h"
 #include "recorder.h"
 #include "stack.h"
@@ -46,13 +46,13 @@
 #  include "tests.h"
 #endif
 
+
 #include <algorithm>
 #include <cctype>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <dmcp.h>
 
 using std::max;
 using std::min;
@@ -63,6 +63,7 @@ int  last_key            = 0;
 
 RECORDER(main,          16, "Main RPL thread");
 RECORDER(main_error,    16, "Errors in the main RPL thread");
+RECORDER(tests_rpl,    256, "Test request processing on RPL");
 
 void refresh_dirty()
 // ----------------------------------------------------------------------------
@@ -78,7 +79,7 @@ void refresh_dirty()
         coord height = LCD_H - 1;
         top = max(coord(0), min(height, top));
         bottom = max(coord(0), min(height, bottom));
-        lcd_refresh_lines(top, bottom - top);
+        lcd_refresh_lines(top, bottom - top + 1);
     }
     ui.draw_clean();
 }
@@ -96,15 +97,17 @@ void redraw_lcd(bool force)
     // Draw the various components handled by the user interface
     ui.draw_start(force);
     ui.draw_header();
-    ui.draw_annunciators();
     ui.draw_battery();
+    ui.draw_annunciators();
     ui.draw_menus();
     if (!ui.draw_help())
     {
         ui.draw_editor();
-        ui.draw_cursor(true, ui.cursorPosition());
+        ui.draw_cursor(true, ui.cursor_position());
         ui.draw_stack();
-        ui.draw_command();
+        if (!ui.draw_stepping_object())
+            ui.draw_command();
+
     }
     ui.draw_error();
 
@@ -133,7 +136,7 @@ static void redraw_periodics()
 
     record(main, "Periodics %u", now);
     ui.draw_start(false);
-    ui.draw_cursor(false, ui.cursorPosition());
+    ui.draw_cursor(false, ui.cursor_position());
     ui.draw_header();
     ui.draw_battery();
     ui.draw_menus();
@@ -172,6 +175,25 @@ static void handle_key(int key, bool repeating, bool talpha)
 }
 
 
+void db48x_set_beep_mute(int val)
+// ----------------------------------------------------------------------------
+//   Set the beep flag (shared with firmware)
+// ----------------------------------------------------------------------------
+{
+    Settings.BeepOff(val);
+    Settings.SilentBeepOn(val);
+}
+
+
+int db48x_is_beep_mute()
+// ----------------------------------------------------------------------------
+//   Check the beep flag from our settings
+// ----------------------------------------------------------------------------
+{
+    return Settings.BeepOff();
+}
+
+
 extern uint memory_size;
 void program_init()
 // ----------------------------------------------------------------------------
@@ -181,11 +203,13 @@ void program_init()
     // Setup application menu callbacks
     run_menu_item_app = menu_item_run;
     menu_line_str_app = menu_item_description;
+    is_beep_mute = db48x_is_beep_mute;
+    set_beep_mute = db48x_set_beep_mute;
 
     // Setup default fonts
     font_defaults();
 
-#ifndef DEBUG
+#ifndef SIMULATOR
     // Give as much as memory as possible to the runtime
     // Experimentally, this is the amount of memory we need to leave free
     size_t size = sys_free_mem() - 10 * 1024;
@@ -196,36 +220,99 @@ void program_init()
     byte *memory = (byte *) malloc(size);
     rt.memory(memory, size);
 
-    // The following is just to link the same set of functions as DM42
-    if (memory == (byte *) program_init)
-    {
-        double      d = *memory;
-        BID_UINT64  a;
-        BID_UINT128 res;
-        binary64_to_bid64(&a, &d);
-        bid64_to_bid128(&res, &a);
-        num_add(&res, &res, &res);
-        num_sub(&res, &res, &res);
-        num_mul(&res, &res, &res);
-        num_div(&res, &res, &res);
-        num_div(&res, &res, &res);
-        num_sqrt(&res, &res);
-        num_log10(&res, &res);
-        num_log(&res, &res);
-        num_pow(&res, &res, &res);
-        num_mul(&res, &res, &res);
-        num_exp10(&res, &res);
-        num_exp(&res, &res);
-        num_sin(&res, &res);
-        num_cos(&res, &res);
-        num_tan(&res, &res);
-        num_asin(&res, &res);
-        num_acos(&res, &res);
-        num_atan(&res, &res);
-    }
-
     // Check if we have a state file to load
     load_system_state();
+}
+
+
+bool power_check(bool draw_off_image)
+// ----------------------------------------------------------------------------
+//   Check power state, returns true if we need to keep looping
+// ----------------------------------------------------------------------------
+// Status flags:
+// ST(STAT_PGM_END)   - Program should go to off state (set by auto off timer)
+// ST(STAT_SUSPENDED) - Program signals it is ready for off
+// ST(STAT_OFF)       - Program in off state (only [EXIT] key can wake it up)
+// ST(STAT_RUNNING)   - OS doesn't sleep in this mode
+{
+    // Already in off mode and suspended
+    if ((ST(STAT_PGM_END) && ST(STAT_SUSPENDED)) ||
+        // Go to sleep if no keys available
+        (!ST(STAT_PGM_END) && key_empty()))
+    {
+        CLR_ST(STAT_RUNNING);
+        sys_sleep();
+    }
+
+    // Wakeup in off state or going to sleep
+    if (ST(STAT_PGM_END) || ST(STAT_SUSPENDED))
+    {
+        if (!ST(STAT_SUSPENDED))
+        {
+            bool lowbat = read_power_voltage() < BATTERY_VOFF;
+
+            // Going to off mode
+            lcd_set_buf_cleared(0); // Mark no buffer change region
+            if (draw_off_image)
+                draw_power_off_image(0);
+            else
+                ui.draw_message("Switched off to conserve battery",
+                                "Press the ON/EXIT key to resume");
+            if (lowbat)
+            {
+                symbol_p cmd = symbol::make("Low power");
+                rt.command(cmd);
+                rt.error("Connect to USB / change battery");
+                ui.draw_error();
+                refresh_dirty();
+            }
+
+            sys_critical_start();
+            SET_ST(STAT_SUSPENDED);
+            LCD_power_off(0);
+            SET_ST(STAT_OFF);
+            sys_critical_end();
+        }
+        // Already in OFF -> just continue to sleep above
+        return true;
+    }
+
+    // Check power change or wakeup
+    if (ST(STAT_CLK_WKUP_FLAG))
+    {
+        CLR_ST(STAT_CLK_WKUP_FLAG);
+        return true;
+    }
+    if (ST(STAT_POWER_CHANGE))
+    {
+        CLR_ST(STAT_POWER_CHANGE);
+        return true;
+    }
+
+    // Well, we are woken-up
+    SET_ST(STAT_RUNNING);
+
+    // Get up from OFF state
+    if (ST(STAT_OFF))
+    {
+        LCD_power_on();
+
+        // Ensure that RTC readings after power off will be OK
+        rtc_wakeup_delay();
+
+        CLR_ST(STAT_OFF);
+
+        // Check if we need to redraw
+        if (lcd_get_buf_cleared())
+            redraw_lcd(true);
+        else
+            lcd_forced_refresh();
+    }
+
+    // We definitely reached active state, clear suspended flag
+    CLR_ST(STAT_SUSPENDED);
+
+    return false;
 }
 
 
@@ -233,11 +320,6 @@ extern "C" void program_main()
 // ----------------------------------------------------------------------------
 //   DMCP main entry point and main loop
 // ----------------------------------------------------------------------------
-// Status flags:
-// ST(STAT_PGM_END)   - Program should go to off state (set by auto off timer)
-// ST(STAT_SUSPENDED) - Program signals it is ready for off
-// ST(STAT_OFF)       - Program in off state (only [EXIT] key can wake it up)
-// ST(STAT_RUNNING)   - OS doesn't sleep in this mode
 {
     int  key        = 0;
     bool transalpha = false;
@@ -250,68 +332,9 @@ extern "C" void program_main()
     // Main loop
     while (true)
     {
-        // Already in off mode and suspended
-        if ((ST(STAT_PGM_END) && ST(STAT_SUSPENDED)) ||
-            // Go to sleep if no keys available
-            (!ST(STAT_PGM_END) && key_empty()))
-        {
-            CLR_ST(STAT_RUNNING);
-            sys_sleep();
-        }
-
-        // Wakeup in off state or going to sleep
-        if (ST(STAT_PGM_END) || ST(STAT_SUSPENDED))
-        {
-            if (!ST(STAT_SUSPENDED))
-            {
-                // Going to off mode
-                lcd_set_buf_cleared(0); // Mark no buffer change region
-                draw_power_off_image(0);
-
-                sys_critical_start();
-                SET_ST(STAT_SUSPENDED);
-                LCD_power_off(0);
-                SET_ST(STAT_OFF);
-                sys_critical_end();
-            }
-            // Already in OFF -> just continue to sleep above
+        // Check power state, and switch off if necessary
+        if (power_check(true))
             continue;
-        }
-
-        // Check power change or wakeup
-        if (ST(STAT_CLK_WKUP_FLAG))
-        {
-            CLR_ST(STAT_CLK_WKUP_FLAG);
-            continue;
-        }
-        if (ST(STAT_POWER_CHANGE))
-        {
-            CLR_ST(STAT_POWER_CHANGE);
-            continue;
-        }
-
-        // Well, we are woken-up
-        SET_ST(STAT_RUNNING);
-
-        // Get up from OFF state
-        if (ST(STAT_OFF))
-        {
-            LCD_power_on();
-
-            // Ensure that RTC readings after power off will be OK
-            rtc_wakeup_delay();
-
-            CLR_ST(STAT_OFF);
-
-            // Check if we need to redraw
-            if (lcd_get_buf_cleared())
-                redraw_lcd(true);
-            else
-                lcd_forced_refresh();
-        }
-
-        // We definitely reached active state, clear suspended flag
-        CLR_ST(STAT_SUSPENDED);
 
         // Key is ready -> clear auto off timer
         bool hadKey = false;
@@ -323,6 +346,23 @@ extern "C" void program_main()
             hadKey = true;
             record(main, "Got key %d", key);
 
+#if SIMULATOR
+            // Process test-harness commands
+            record(tests_rpl, "Processing key %d, last=%d, command=%u",
+                   key, last_key, test_command);
+            if (key == tests::EXIT_PGM || key == tests::SAVE_PGM)
+            {
+                cstring path = get_reset_state_file();
+                printf("Exit: saving state to %s\n", path);
+                if (path && *path)
+                    save_state_file(path);
+                if (key == tests::EXIT_PGM)
+                    break;
+            }
+#else // Real hardware
+#define read_key __sysfn_read_key
+#endif // SIMULATOR
+
             // Check transient alpha mode
             if (key == KEY_UP || key == KEY_DOWN)
             {
@@ -330,9 +370,6 @@ extern "C" void program_main()
             }
             else if (transalpha)
             {
-#ifndef SIMULATOR
-#define read_key __sysfn_read_key
-#endif // SIMULATOR
                 int k1, k2;
                 int r = read_key(&k1, &k2);
                 switch (r)
@@ -342,6 +379,7 @@ extern "C" void program_main()
                     break;
                 case 1:
                     transalpha = k1 == KEY_UP || k1 == KEY_DOWN;
+                    break;
                 case 2:
                     transalpha = k1 == KEY_UP || k1 == KEY_DOWN
                         ||       k2 == KEY_UP || k2 == KEY_DOWN;
@@ -349,25 +387,6 @@ extern "C" void program_main()
                 }
             }
 
-#if SIMULATOR
-            if (key == -1)
-            {
-                cstring path = get_reset_state_file();
-                printf("Exit: saving state to %s\n", path);
-                if (path && *path)
-                    save_state_file(path);
-                break;
-            }
-            if (key == tests::KEYSYNC)
-            {
-                record(main, "Key sync done %u from %u", keysync_sent, keysync_done);
-                redraw_lcd(true);
-                keysync_done = keysync_sent;
-                key = 0;
-                continue;
-            }
-
-#endif // SIMULATOR
         }
         bool repeating = sys_timer_timeout(TIMER0);
         if (repeating)
@@ -381,11 +400,8 @@ extern "C" void program_main()
         if (key >= 0 && hadKey)
         {
 #if SIMULATOR
-            if (key > 0)
-                last_key = key;
-            else if (last_key > 0)
-                last_key = -last_key;
-#endif
+            process_test_key(key);
+#endif // SIMULATOR
 
             record(main, "Handle key %d last %d", key, last_key);
             handle_key(key, repeating, transalpha);
@@ -405,44 +421,57 @@ extern "C" void program_main()
             if (sys_timer_timeout(TIMER1))
                 redraw_periodics();
         }
-    }
-}
-
-
-bool program::interrupted()
-// ----------------------------------------------------------------------------
-//   Return true if the current program must be interrupted
-// ----------------------------------------------------------------------------
-{
-    if (int h = ui.draw_busy())
-        lcd_refresh_lines(0, h);
-
-    while (!key_empty())
-    {
-        if (key_tail() == KEY_EXIT)
-            return true;
 #if SIMULATOR
-        int key = key_pop();
-        record(main, "Runner popped key %d, last=%d", key, last_key);
-        if (key == tests::KEYSYNC)
-            keysync_done = keysync_sent;
-        else if (key > 0)
-            last_key = key;
-        else if (last_key > 0)
-            last_key = -last_key;
-#else
-        key_pop();
-#endif
+        if (tests::running && test_command && key_empty())
+            process_test_commands();
+#endif // SIMULATOR
     }
-    return false;
 }
 
 
-void draw_gc()
+#if SIMULATOR
+void process_test_key(int key)
 // ----------------------------------------------------------------------------
-//   Indicate that a garbage collection is in progress
+//   Process commands from the test harness
 // ----------------------------------------------------------------------------
 {
-    if (ui.draw_gc())
-        refresh_dirty();
+    record(tests_rpl, "Process test key %d, last was %d, command %u",
+           key, last_key, test_command);
+    if (key > 0)
+        last_key = key;
+    else if (last_key > 0)
+        last_key = -last_key;
+    record(tests_rpl, "Set last_key to %d for key %d", last_key, key);
 }
+
+
+void process_test_commands()
+// ----------------------------------------------------------------------------
+//   Process commands from the test harness
+// ----------------------------------------------------------------------------
+{
+    record(tests_rpl, "Process test command %u with last key %d",
+           test_command, last_key);
+
+    if (test_command == tests::CLEARERR)
+    {
+        record(tests_rpl, "Clearing errors for tests");
+        rt.clear_error();
+    }
+    else if (test_command == tests::CLEAR)
+    {
+        record(tests_rpl, "Clearing editor and stack for tests");
+        rt.clear_error();
+        ui.clear_editor();
+        rt.drop(rt.depth());
+    }
+    else if (test_command == tests::KEYSYNC)
+    {
+        record(tests_rpl, "Key sync requested");
+    }
+    redraw_lcd(true);
+    record(tests_rpl, "Done redrawing LCD after command %u, last=%d",
+           test_command, last_key);
+    test_command = 0;
+}
+#endif // SIMULATOR

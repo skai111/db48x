@@ -41,55 +41,42 @@ struct renderer
 //  Arguments to the RENDER command
 // ----------------------------------------------------------------------------
 {
-    renderer(char *buffer = nullptr, size_t length = ~0U, bool flat = false)
-        : target(buffer), length(length), written(0), saving(), tabs(0),
-          edit(buffer == nullptr),
-          eq(false), flat(flat), space(false), sign(false),
-          cr(false), txt(false), nl(false) {}
-    renderer(bool equation, bool edit = false, bool flat = false)
-        : target(nullptr), length(~0U), written(0), saving(), tabs(0),
+    renderer(char *buf = nullptr, size_t len = ~0U,
+             bool stk = false, bool ml = false)
+        : target(buf), length(len), written(0), saving(), tabs(0), column(0),
+          edit(!stk && buf == nullptr),
+          expr(false), stk(stk), mlstk(ml), txt(false),
+          needSpace(false), gotSpace(false),
+          needCR(false), gotCR(false) {}
+    renderer(bool equation, bool edit = false, bool stk = false, bool ml = false)
+        : target(), length(~0U), written(0), saving(), tabs(0), column(0),
           edit(edit),
-          eq(equation), flat(flat), space(false), sign(false),
-          cr(false), txt(false), nl(false) {}
-    renderer(file *f)
-        : target(), length(~0U), written(0), saving(f), tabs(0),
+          expr(equation), stk(stk), mlstk(ml), txt(false),
+          needSpace(false), gotSpace(false),
+          needCR(false), gotCR(false) {}
+    renderer(file &f)
+        : target(), length(~0U), written(0), saving(&f), tabs(0), column(0),
           edit(true),
-          eq(false), flat(false), space(false), sign(false),
-          cr(false), txt(false), nl(false) {}
+          expr(false), stk(false), mlstk(false), txt(false),
+          needSpace(false), gotSpace(false),
+          needCR(false), gotCR(false) {}
     ~renderer();
 
-    bool put(char c);
-    bool put(cstring s)
-    {
-        for (char c = *s++; c; c = *s++)
-            if (!put(c))
-                return false;
-        return true;
-    }
-    bool put(cstring s, size_t len)
-    {
-        for (size_t i = 0; i < len; i++)
-            if (!put(s[i]))
-                return false;
-        return true;
-    }
-    bool put(unicode code)
-    {
-        byte buffer[4];
-        size_t rendered = utf8_encode(code, buffer);
-        return put(buffer, rendered);
-    }
+    bool   put(char c);
+    bool   put(cstring s);
+    bool   put(cstring s, size_t len);
+    bool   put(unicode code);
     bool   put(utf8 s)                  { return put(cstring(s)); }
     bool   put(utf8 s, size_t len)      { return put(cstring(s), len); }
-    bool   put(settings::commands fmt, utf8 s);
+    bool   put(object::id fmt, utf8 s, size_t len = ~0UL);
 
     bool   editing() const              { return edit; }
-    bool   equation() const             { return eq; }
-    bool   stack() const                { return flat; }
+    bool   expression() const           { return expr; }
+    bool   stack() const                { return stk; }
+    bool   multiline_stack() const      { return mlstk; }
     file * file_save() const            { return saving; }
-    size_t size() const                 { return written + sign; }
+    size_t size() const                 { return written; }
     void   clear()                      { written = 0; }
-    void   need_sign()                  { sign = true; }
     utf8   text() const;
 
     size_t printf(const char *format, ...);
@@ -97,47 +84,66 @@ struct renderer
     {
         tabs += i;
     }
-    bool   indent()
+    void   indent()
     {
         indent(1);
-        return put('\n');
     }
-    bool   unindent()
+    void   unindent()
     {
         indent(-1);
-        return put('\n');
-    }
-    bool   hadCR()
-    {
-        return cr;
     }
     void   wantCR()
     {
-        nl = true;
+        needCR = true;
+    }
+    void   wantSpace()
+    {
+        needSpace = true;
     }
     void   flush()
     {
-        if (nl)
+        if (needCR)
         {
-            nl = false;
-            put('\n');
+            needCR = false;
+            needSpace = false;
+            if (!gotCR)
+                put('\n');
         }
+        else if (needSpace)
+        {
+            needSpace = false;
+            if (!gotSpace)
+                put(' ');
+        }
+    }
+    void unwrite(size_t sz)
+    {
+        written -= sz;
+        if (!target)
+            rt.free(sz);
+    }
+    void reset_to(size_t sz)
+    {
+        if (written > sz)
+            unwrite(written - sz);
     }
 
 protected:
-    char        *target;        // Buffer where we render the object, or nullptr
-    size_t      length;         // Available space
-    size_t      written;        // Number of bytes written
-    file *      saving;         // Save area for a program or object
-    uint        tabs;           // Amount of indent
-    bool        edit  : 1;      // For editor
-    bool        eq    : 1;      // As equation
-    bool        flat  : 1;      // Flat (for stack rendering)
-    bool        space : 1;      // Had a space
-    bool        sign  : 1;      // Need to insert '+' if next char is not '-'
-    bool        cr    : 1;      // Just emitted a CR
-    bool        txt   : 1;      // Inside text
-    bool        nl    : 1;      // Pending CR
+    char  *target;        // Buffer where we render the object, or nullptr
+    size_t length;        // Available space
+    size_t written;       // Number of bytes written
+    file  *saving;        // Save area for a program or object
+    uint   tabs;          // Amount of indent
+    uint   column;        // Current column
+    bool   edit      : 1; // For editor (e.g. render all digits)
+    bool   expr      : 1; // As equation
+    bool   stk       : 1; // Format for stack rendering
+    bool   mlstk     : 1; // Format for multi-line stack rendering
+    bool   txt       : 1; // Inside text
+    bool   needSpace : 1; // Need a space before next non-space
+    bool   gotSpace  : 1; // Just emitted a space
+    bool   needCR    : 1; // Need a CR before next non-space
+    bool   gotCR     : 1; // Just emitted a CR
 };
 
 #endif // RENDERER_H
