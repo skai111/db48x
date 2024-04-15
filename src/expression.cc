@@ -1879,7 +1879,8 @@ grob_p expression::graph(grapher &g, uint depth, int &precedence)
             {
                 if (lprec < prec)
                     lg = parentheses(g, lg);
-                if (rprec <= prec && oid != ID_pow)
+                if (rprec < prec ||
+                    (rprec == prec && (oid == ID_sub || oid == ID_div)))
                     rg = parentheses(g, rg);
             }
             precedence = prec;
