@@ -701,10 +701,10 @@ void user_interface::update_mode()
         mode = TEXT;
     else if (based)
         mode = BASED;
-    else if (parn)
-        mode = PARENTHESES;
     else if (vecs)
         mode = MATRIX;
+    else if (parn)
+        mode = PARENTHESES;
     else if (algs)
         mode = ALGEBRAIC;
     else if (lists || progs)
