@@ -160,13 +160,19 @@ symbol_p expression::render(uint depth, int &precedence, bool editing)
         break;
         case 2:
         {
-            int lprec = 0, rprec = 0;
-            symbol_g op = obj->as_symbol(editing);
+            int      lprec = 0, rprec = 0;
+            symbol_g op   = obj->as_symbol(editing);
             symbol_g rtxt = render(depth, rprec, editing);
             symbol_g ltxt = render(depth, lprec, editing);
-            int prec = obj->precedence();
+            int      prec = obj->precedence();
             if (prec != precedence::FUNCTION)
             {
+                id oid  = obj->type();
+                if (oid == ID_mod || oid == ID_rem)
+                {
+                    op = symbol::make(' ') + op;
+                    op = op + symbol::make(' ');
+                }
                 if (lprec < prec)
                     ltxt = parentheses(ltxt);
                 if (rprec <= prec)
@@ -1879,9 +1885,10 @@ grob_p expression::graph(grapher &g, uint depth, int &precedence)
             {
                 if (lprec < prec)
                     lg = parentheses(g, lg);
-                if (rprec < prec ||
-                    (rprec == prec && (oid == ID_sub || oid == ID_div)))
-                    rg = parentheses(g, rg);
+                if (oid != ID_pow)
+                    if (rprec < prec ||
+                        (rprec == prec && (oid == ID_sub || oid == ID_div)))
+                        rg = parentheses(g, rg);
             }
             precedence = prec;
             switch (oid)

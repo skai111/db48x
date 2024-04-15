@@ -158,7 +158,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        sorting_functions();
+        regression_checks();
     }
     else
     {
@@ -6930,6 +6930,12 @@ void tests::regression_checks()
         .test("1968.1205", F6).expect("1 968 ²⁴¹/₂ ₀₀₀")
         .test("1968.0512", F6).expect("1 968 ³²/₆₂₅")
         .test(LSHIFT, N, RSHIFT, F4); // Reset modes
+
+    step("Bug 906: mod and rem should have spaces during editing")
+        .test(CLEAR, "X Y mod", ENTER).expect("'X mod Y'")
+        .test(NOSHIFT, DOWN, ENTER).expect("'X mod Y'")
+        .test(CLEAR, "X Y rem", ENTER).expect("'X rem Y'")
+        .test(NOSHIFT, DOWN, ENTER).expect("'X rem Y'");
 }
 
 
