@@ -289,7 +289,7 @@ object::result function::evaluate(id op, nfunction_fn fn, uint arity,
         object_g oarg = rt.stack(a);
         while (tag_p tagged = oarg->as<tag>())
             oarg = tagged->tagged_object();
-        algebraic_p arg = oarg->as_algebraic_or_list();
+        algebraic_p arg = oarg->as_extended_algebraic();
         if (!arg)
         {
             rt.type_error();
@@ -1343,4 +1343,111 @@ FUNCTION_BODY(DegreesToRadians)
     xg = pi() / xg;
     xg = xg * x;
     return xg;
+}
+
+
+
+// ============================================================================
+//
+//   Min and Max operations
+//
+// ============================================================================
+
+static algebraic_p min_max(algebraic_r x, algebraic_r y,
+                           int sign, arithmetic_fn mapfn)
+// ----------------------------------------------------------------------------
+//   Compute min / max
+// ----------------------------------------------------------------------------
+{
+    if (array_g xa = x->as<array>())
+    {
+        if (array_g ya = y->as<array>())
+        {
+            auto xi = xa->begin();
+            auto xe = xa->end();
+            auto yi = ya->begin();
+            auto ye = ya->end();
+            array_g ra = array_p(rt.make<array>(nullptr, 0));
+            algebraic_g xo, yo;
+            while (xi != xe && yi != ye)
+            {
+                object_p xobj = *xi++;
+                if (!xobj->is_algebraic())
+                    return nullptr;
+                object_p yobj = *yi++;
+                if (!yobj->is_algebraic())
+                    return nullptr;
+                xo = algebraic_p(xobj);
+                yo = algebraic_p(yobj);
+                xo = min_max(xo, yo, sign, mapfn);
+                if (!xo)
+                    return nullptr;
+                ra = ra->append(+xo);
+            }
+            if (xi != xe || yi != ye)
+            {
+                rt.dimension_error();
+                return nullptr;
+            }
+            return ra;
+        }
+        return xa->map(mapfn, y);
+    }
+    else if (array_g ya = y->as<array>())
+    {
+        return ya->map(x, mapfn);
+    }
+
+    int cmp = 0;
+    if (comparison::compare(&cmp, x, y))
+        return sign * cmp > 0 ? x : y;
+    return nullptr;
+}
+
+
+algebraic_p Min::evaluate(algebraic_r x, algebraic_r y)
+// ----------------------------------------------------------------------------
+//  Evaluation with arithmetic arguments, e.g. within lists
+// ----------------------------------------------------------------------------
+{
+    if (!x || !y)
+        return nullptr;
+    if (x->is_symbolic() || y->is_symbolic())
+        return expression::make(ID_Min, x, y);
+    return min_max(x, y, -1, Min::evaluate);
+}
+
+
+algebraic_p Max::evaluate(algebraic_r x, algebraic_r y)
+// ----------------------------------------------------------------------------
+//  Evaluation with arithmetic arguments, e.g. within lists
+// ----------------------------------------------------------------------------
+{
+    if (!x || !y)
+        return nullptr;
+    if (x->is_symbolic() || y->is_symbolic())
+        return expression::make(ID_Max, x, y);
+    return min_max(x, y, 1, Max::evaluate);
+}
+
+
+NFUNCTION_BODY(Min)
+// ----------------------------------------------------------------------------
+//   Process the Min command
+// ----------------------------------------------------------------------------
+{
+    algebraic_g x = args[0]->as_extended_algebraic();
+    algebraic_g y = args[1]->as_extended_algebraic();
+    return evaluate(x, y);
+}
+
+
+NFUNCTION_BODY(Max)
+// ----------------------------------------------------------------------------
+//   Process the Max command
+// ----------------------------------------------------------------------------
+{
+    algebraic_g x = args[0]->as_extended_algebraic();
+    algebraic_g y = args[1]->as_extended_algebraic();
+    return evaluate(x, y);
 }

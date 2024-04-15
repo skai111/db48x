@@ -730,6 +730,35 @@ struct object
     }
 
 
+    static bool is_extended_algebraic(id ty)
+    // ------------------------------------------------------------------------
+    //    Extended algebraics include text and array values
+    // ------------------------------------------------------------------------
+    {
+        return is_algebraic_or_list(ty) || ty == ID_text;
+    }
+
+
+    bool is_extended_algebraic() const
+    // ------------------------------------------------------------------------
+    //   Check if an object is an extended algebraic, including text or array
+    // ------------------------------------------------------------------------
+    {
+        return is_extended_algebraic(type());
+    }
+
+
+    algebraic_p as_extended_algebraic() const
+    // ------------------------------------------------------------------------
+    //   Return an object as an algebraic if possible, or nullptr
+    // ------------------------------------------------------------------------
+    {
+        if (is_extended_algebraic())
+            return algebraic_p(this);
+        return nullptr;
+    }
+
+
     uint arity() const
     // ------------------------------------------------------------------------
     //   Return the arity for arithmetic operators

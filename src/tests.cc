@@ -158,7 +158,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        rounding_and_truncating();
+        sorting_functions();
     }
     else
     {
@@ -4139,7 +4139,35 @@ void tests::sorting_functions()
         .test(CLEAR, "\"ABC\" \"DEF\" MAX", ENTER).expect("\"DEF\"");
     step("Min function (mixed types)")
         .test(CLEAR, "1 \"DEF\" MAX", ENTER).error("Bad argument type");
-    step("Max function (mixed types)")
+    step("Min function (symbolic types)")
+        .test(CLEAR, "1 X MIN", ENTER).expect("'Min(1;X)'")
+        .test(CLEAR, "X 1 MIN", ENTER).expect("'Min(X;1)'")
+        .test(CLEAR, "X Y MIN", ENTER).expect("'Min(X;Y)'");
+    step("Max function (symbolic types)")
+        .test(CLEAR, "1 X MAX", ENTER).expect("'Max(1;X)'")
+        .test(CLEAR, "X 1 MAX", ENTER).expect("'Max(X;1)'")
+        .test(CLEAR, "X Y MAX", ENTER).expect("'Max(X;Y)'");
+    step("Min with arrays")
+        .test(CLEAR, "[1 2 3] [3 2 1] Min", ENTER).expect("[ 1 2 1 ]");
+    step("Max with arrays")
+        .test(CLEAR, "[1 2 3] [3 2 1] Max", ENTER).expect("[ 3 2 3 ]");
+    step("Min with array and scalar")
+        .test(CLEAR, "[1 2 3] 2 Min", ENTER).expect("[ 1 2 2 ]")
+        .test(CLEAR, "2 [1 2 3] Min", ENTER).expect("[ 1 2 2 ]");
+    step("Max with array and scalar")
+        .test(CLEAR, "[1 2 3] 2 Max", ENTER).expect("[ 2 2 3 ]")
+        .test(CLEAR, "2 [1 2 3] Max", ENTER).expect("[ 2 2 3 ]");
+    step("Min with array and symbolic scalar")
+        .test(CLEAR, "[1 2 3] X Min", ENTER).expect("'Min([ 1 2 3 ];X)'")
+        .test(CLEAR, "X [1 2 3] Min", ENTER).expect("'Min(X;[ 1 2 3 ])'");
+    step("Max with array and symbolic scalar")
+        .test(CLEAR, "[1 2 3] X Max", ENTER).expect("'Max([ 1 2 3 ];X)'")
+        .test(CLEAR, "X [1 2 3] Max", ENTER).expect("'Max(X;[ 1 2 3 ])'");
+    step("Max with arrays")
+        .test(CLEAR, "[1 2 3] [3 2 1] Max", ENTER).expect("[ 3 2 3 ]");
+    step("Min function (symbolic types)")
+        .test(CLEAR, "1 \"DEF\" MAX", ENTER).error("Bad argument type");
+    step("Max function (symbolic types)")
         .test(CLEAR, "1 \"DEF\" MAX", ENTER).error("Bad argument type");
 }
 

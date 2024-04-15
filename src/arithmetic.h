@@ -194,8 +194,6 @@ ARITHMETIC_DECLARE(rem,                 MULTIPLICATIVE);
 ARITHMETIC_DECLARE(pow,                 POWER);
 ARITHMETIC_DECLARE(hypot,               POWER);
 ARITHMETIC_DECLARE(atan2,               POWER);
-ARITHMETIC_DECLARE(Min,                 FUNCTION);
-ARITHMETIC_DECLARE(Max,                 FUNCTION);
 
 
 struct Percent : arithmetic

@@ -302,5 +302,11 @@ NFUNCTION(Product, 4,
               return a == 0 || a == 3;
           }
     );
+NFUNCTION(Min, 2,
+          static algebraic_p evaluate(algebraic_r x, algebraic_r y);
+    );
+NFUNCTION(Max, 2,
+          static algebraic_p evaluate(algebraic_r x, algebraic_r y);
+);
 
 #endif // FUNCTIONS_H
