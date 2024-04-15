@@ -3894,7 +3894,7 @@ void tests::units_and_conversions()
         .test(ENTER, F3)
         .expect("⁵/₁₈");
     step("Split unit object")
-        .test(BSP, RSHIFT, N, F5).expect("'m÷s'")
+        .test(BSP, RSHIFT, N, F4).expect("'m÷s'")
         .test(BSP).expect("⁵/₁₈");
     step("Convert operation")
         .test(CLEAR, KEY1, SHIFT, KEY5, F2, F3)
@@ -4779,7 +4779,7 @@ void tests::tagged_objects()
               KEY1, SHIFT, G, F1, KEY2, KEY3,
               ENTER)
         .expect("ABC:1+23ⅈ")
-        .test(RSHIFT, N, RSHIFT, F2) // TAG->
+        .test(RSHIFT, N, RSHIFT, F3) // TAG->
         .expect("\"ABC\"")
         .test(BSP)
         .expect("1+23ⅈ");
@@ -5670,8 +5670,8 @@ void tests::hms_dms_operations()
         .test(CLEAR, "1.7550_dms", ENTER).expect("1°45′18″");
     step("Creating DMS using fractions menu")
         .test(CLEAR, "1.2345", LSHIFT, H)
-        .test(F6).expect("1 ¹⁹/₄₈")
-        .test(F5).expect("1°23′45″");
+        .test(F4).expect("1 ¹⁹/₄₈")
+        .test(F3).expect("1°23′45″");
     step("Creating DMS by adding zero")
         .test(CLEAR, "1.4241 0", LSHIFT, H)
         .test(LSHIFT, F3).expect("1°42′41″");
@@ -5692,8 +5692,8 @@ void tests::hms_dms_operations()
         .test(CLEAR, "1.4241 1.2333", LSHIFT, H, LSHIFT, F4).expect("0°19′08″");
     step("DMS multiplication")
         .test(CLEAR, "1.2345", LSHIFT, H)
-        .test(F6).expect("1 ¹⁹/₄₈")
-        .test(F5).expect("1°23′45″")
+        .test(F4).expect("1 ¹⁹/₄₈")
+        .test(F3).expect("1°23′45″")
         .test(2, MUL).expect("2°47′30″");
     step("DMS division")
         .test(2, DIV).expect("1°23′45″")
@@ -5747,8 +5747,8 @@ void tests::hms_dms_operations()
         .test(CLEAR)
         .test(1, DOT, 2, DOT, 3, ENTER).expect("1°02′03″")
         .test(LSHIFT, H, LSHIFT, F5).expect("1:02:03")
-        .test(F5).expect("1°02′03″")
-        .test(F5).noerror().expect("1°02′03″")
+        .test(F3).expect("1°02′03″")
+        .test(F3).noerror().expect("1°02′03″")
         .test(LSHIFT, F5).noerror().expect("1:02:03")
         .test(LSHIFT, F5).noerror().expect("1:02:03");
 
@@ -6927,9 +6927,9 @@ void tests::regression_checks()
               LSHIFT, H,
               100, RSHIFT, F3,
               20,  RSHIFT, F4)
-        .test("1968.1205", F4).expect("1 968 ²⁴¹/₂ ₀₀₀")
-        .test("1968.0512", F4).expect("1 968 ³²/₆₂₅")
-        .test(LSHIFT, N, RSHIFT, F4);
+        .test("1968.1205", F6).expect("1 968 ²⁴¹/₂ ₀₀₀")
+        .test("1968.0512", F6).expect("1 968 ³²/₆₂₅")
+        .test(LSHIFT, N, RSHIFT, F4); // Reset modes
 }
 
 

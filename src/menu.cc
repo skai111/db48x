@@ -214,10 +214,10 @@ COMMAND_BODY(ToolsMenu)
     {
         switch(ui.editing_mode())
         {
-        case ui.DIRECT:                 menu = ID_MathMenu; break;
+        case ui.DIRECT:                 menu = ID_EditMenu; break;
         case ui.TEXT:                   menu = ID_TextMenu; break;
         case ui.PROGRAM:                menu = ID_ProgramMenu; break;
-        case ui.ALGEBRAIC:              menu = ID_EquationsMenu; break;
+        case ui.ALGEBRAIC:              menu = ID_RealMenu; break;
         case ui.MATRIX:                 menu = ID_MatrixMenu; break;
         case ui.BASED:                  menu = ID_BasesMenu; break;
         default:
@@ -324,11 +324,13 @@ MENU(MainMenu,
      "Cat",     ID_Catalog,
      "Real",    ID_RealMenu,
      "Matrix",  ID_MatrixMenu,
+     "Symb",    ID_SymbolicMenu,
      "Stack",   ID_StackMenu,
-     "Eqns",    ID_EquationsMenu,
      "UI",      ID_UserInterfaceModesMenu,
 
      "Lib",     ID_Library,
+     "Eqns",    ID_EquationsMenu,
+     "Csts",    ID_ConstantsMenu,
      "Time",    ID_TimeMenu,
      "I/O",     ID_IOMenu,
      "Chars",   ID_CharactersMenu);
@@ -346,11 +348,11 @@ MENU(MathMenu,
      "Const",   ID_ConstantsMenu,
 
      "Hyper",   ID_HyperbolicMenu,
-     "Eqns",    ID_EquationsMenu,
      "Proba",   ID_ProbabilitiesMenu,
      "Stats",   ID_StatisticsMenu,
      "Solver",  ID_SolverMenu,
      "Symb",    ID_SymbolicMenu,
+     "Eqns",    ID_EquationsMenu,
 
      "Signal",  ID_SignalProcessingMenu,
      "Bases",   ID_BasesMenu,
@@ -748,19 +750,19 @@ MENU(SymbolicMenu,
 // ----------------------------------------------------------------------------
 //   Symbolic operations
 // ----------------------------------------------------------------------------
-     ID_Rewrite,
      ID_Collect,
      ID_Expand,
      ID_Simplify,
+     "Ex/Co",   ID_Unimplemented,
+     "→Num",    ID_ToDecimal,
+     "→Q",      ID_ToFraction,
 
+     "↑Match",  ID_Rewrite,
+     "↓Match",  ID_Unimplemented,
      "Isolate", ID_Unimplemented,
      "Apply",   ID_Unimplemented,
-
-     "Ex/Co",   ID_Unimplemented,
      "→Q",      ID_ToFraction,
      "→Qπ",     ID_Unimplemented,
-     "↑Match",  ID_Unimplemented,
-     "↓Match",  ID_Unimplemented,
 
      "∂",       ID_Unimplemented,
      "∫",       ID_Unimplemented,
@@ -952,20 +954,20 @@ MENU(ObjectMenu,
      "Bytes",   ID_Bytes,
      "Type",    ID_Type,
      "TypeName",ID_TypeName,
-     "Clone",   ID_Clone,
      "Obj→",    ID_Explode,
-     "→Text",   ID_ToText,
-
-     "→List",   ID_ToList,
-     "→Prog",   ID_Unimplemented,
-     "→Array",  ID_Unimplemented,
      "→Num",    ID_ToDecimal,
      "→Frac",   ID_ToFraction,
-     "→Graph",  ID_Unimplemented,
 
+     "→List",   ID_ToList,
+     "→Text",   ID_ToText,
      "→Tag",    ID_ToTag,
-     "Tag→",    ID_FromTag,
+     "→Graph",  ID_ToGrob,
+     "→Prog",   ID_Unimplemented,
+     "→Array",  ID_Unimplemented,
+
+     "Clone",   ID_Clone,
      "DTag",    ID_dtag,
+     "Tag→",    ID_FromTag,
      "Matrix",  ID_MatrixMenu,
      "List",    ID_ListMenu,
      "Vector",  ID_VectorMenu);
@@ -1101,20 +1103,18 @@ MENU(SolverMenu,
      "Root",    ID_Root,
      "MultiR",  ID_Unimplemented,
      "PolyR",   ID_Unimplemented,
-
      "Num",     ID_NumericalSolverMenu,
+
      "Diff",    ID_DifferentialSolverMenu,
      "Symb",    ID_SymbolicSolverMenu,
      "Poly",    ID_PolynomialSolverMenu,
      "Linear",  ID_LinearSolverMenu,
-
      "Multi",   ID_MultiSolverMenu,
      "Finance", ID_FinanceSolverMenu,
+
      "Plot",    ID_PlotMenu,
      "L.R.",    ID_StatisticsMenu,
      "Eqns",    ID_EquationsMenu,
-
-
      "Parms",   ID_Unimplemented,
      "Auto",    ID_Unimplemented);
 
@@ -1207,10 +1207,10 @@ MENU(FractionsMenu,
 // ----------------------------------------------------------------------------
      "/",       ID_SelfInsert,
      "%",       ID_Percent,
-     "→Num",    ID_ToDecimal,
-     "→Frac",   ID_ToFraction,
      "→DMS",    ID_ToDMS,
      "DMS→",    ID_FromDMS,
+     "→Num",    ID_ToDecimal,
+     "→Frac",   ID_ToFraction,
 
      "%Total",  ID_PercentTotal,
      "%Chg",    ID_PercentChange,
