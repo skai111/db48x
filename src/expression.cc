@@ -1786,10 +1786,11 @@ grob_p expression::graph(grapher &g, uint depth, int &precedence)
             coord    va   = g.voffset;
             int      maxp = oid == ID_neg ? precedence::MULTIPLICATIVE
                 : precedence::SYMBOL;
-            if (argp < maxp &&
-                oid != ID_sqrt && oid != ID_inv &&
-                oid != ID_exp && oid != ID_exp10 && oid != ID_exp2 &&
-                oid != ID_cbrt)
+            bool paren = (argp < maxp &&
+                          oid != ID_sqrt && oid != ID_inv &&
+                          oid != ID_exp && oid != ID_exp10 && oid != ID_exp2 &&
+                          oid != ID_cbrt);
+            if (paren)
                 arg = parentheses(g, arg, 3);
             precedence = precedence::FUNCTION;
 
@@ -1840,7 +1841,8 @@ grob_p expression::graph(grapher &g, uint depth, int &precedence)
             g.voffset = 0;
             grob_g fn = obj->graph(g);
             coord  vf = g.voffset;
-            return prefix(g, vf, fn, va, arg);
+            return paren ? prefix(g, vf, fn, va, arg)
+                         : infix(g, vf, fn, 0, " ", va, arg);
         }
         break;
         case 2:
