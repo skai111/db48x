@@ -158,7 +158,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        regression_checks();
+        parsing_commands_by_name();
     }
     else
     {
@@ -5607,48 +5607,14 @@ void tests::parsing_commands_by_name()
 {
     BEGIN(commands);
 
-
-#define SPECIAL(ty, ref, name, rname)           \
-    (object::ID_##ty == object::ID_##ref &&     \
-     strcmp(name ? name : "", rname) == 0)
-
 #define ALIAS(ty, name)                                                 \
     if (object::is_command(object::ID_##ty))                            \
     {                                                                   \
         if (name)                                                       \
         {                                                               \
             step("Parsing " #name " for " #ty);                         \
-            if (SPECIAL(ty, inv,                name, "x⁻¹")      ||    \
-                SPECIAL(ty, sq,                 name, "x²")       ||    \
-                SPECIAL(ty, cubed,              name, "x³")       ||    \
-                SPECIAL(ty, cbrt,               name, "∛")        ||    \
-                SPECIAL(ty, hypot,              name, "⊿")        ||    \
-                SPECIAL(ty, atan2,              name, "∠")        ||    \
-                SPECIAL(ty, asin,               name, "sin⁻¹")    ||    \
-                SPECIAL(ty, acos,               name, "cos⁻¹")    ||    \
-                SPECIAL(ty, atan,               name, "tan⁻¹")    ||    \
-                SPECIAL(ty, asinh,              name, "sinh⁻¹")   ||    \
-                SPECIAL(ty, acosh,              name, "cosh⁻¹")   ||    \
-                SPECIAL(ty, atanh,              name, "tanh⁻¹")   ||    \
-                SPECIAL(ty, RealToRectangular,  name, "ℝ→ℂ")      ||    \
-                SPECIAL(ty, RectangularToReal,  name, "ℂ→ℝ")      ||    \
-                SPECIAL(ty, RealToPolar,        name, "ℝ→Polarℂ") ||    \
-                SPECIAL(ty, PolarToReal,        name, "Polarℂ→ℝ") ||    \
-                SPECIAL(ty, ToRectangular,      name, "→Rectℂ")   ||    \
-                SPECIAL(ty, SumOfXSquares,      name, "ΣX²")      ||    \
-                SPECIAL(ty, SumOfYSquares,      name, "ΣY²")      ||    \
-                false)                                                  \
-                                                                        \
-            {                                                           \
-                test(CLEAR, "{ " #ty " }", ENTER, DOWN,                 \
-                     ENTER, "1 GET", ENTER)                             \
-                    .type(object::ID_##ty);                             \
-            }                                                           \
-            else                                                        \
-            {                                                           \
-                test(CLEAR, "{ ", (cstring) name, " } 1 GET", ENTER)    \
-                    .type(object::ID_##ty);                             \
-            }                                                           \
+            test(CLEAR, "{ ", (cstring) name, " } 1 GET", ENTER)        \
+                .type(object::ID_##ty);                                 \
         }                                                               \
     }
 #define ID(ty)                  ALIAS(ty, #ty)
@@ -6709,7 +6675,7 @@ void tests::character_menu()
               RSHIFT, F1, RSHIFT, F2, RSHIFT, F3,
               RSHIFT, F4, RSHIFT, F5,
               ENTER)
-        .expect("\"₀₁₂₃₄⁰¹²³⁴ⅠⅡⅢⅣⅤ\"");
+        .expect("\"⁰¹²³⁴₀₁₂₃₄ⅠⅡⅢⅣⅤ\"");
     step("Ltr-like menu")
         .test(CLEAR, RSHIFT, KEY2).noerror()
         .test(RSHIFT, F5, RSHIFT, ENTER)
@@ -8090,7 +8056,42 @@ tests &tests::itest(cstring txt)
         case L'≥': k = L;           alpha = true; xshift = true; break;
         case L'√': k = C;           alpha = true;  shift = true; break;
         case L'∫': k = KEY8;        alpha = true; xshift = true; break;
+
+            // Special characters that require the characters menu
+#define NEXT        k = RESERVED2; break
+        case L'ℂ': itest(RSHIFT, KEY2, F3, RSHIFT, F3); NEXT;
+        case L'ℚ': itest(RSHIFT, KEY2, F3, RSHIFT, F4); NEXT;
+        case L'ℝ': itest(RSHIFT, KEY2, F3, RSHIFT, F5); NEXT;
+        case L'⁻': itest(RSHIFT, KEY2, RSHIFT, F4, F6, F6, RSHIFT, F3); NEXT;
+        case L'⁰': itest(RSHIFT, KEY2, RSHIFT, F4, F1); NEXT;
+        case L'¹': itest(RSHIFT, KEY2, RSHIFT, F4, F2); NEXT;
+        case L'²': itest(RSHIFT, KEY2, RSHIFT, F4, F3); NEXT;
+        case L'³': itest(RSHIFT, KEY2, RSHIFT, F4, F4); NEXT;
+        case L'⁴': itest(RSHIFT, KEY2, RSHIFT, F4, F5); NEXT;
+        case L'⁵': itest(RSHIFT, KEY2, RSHIFT, F4, F6, F1); NEXT;
+        case L'⁶': itest(RSHIFT, KEY2, RSHIFT, F4, F6, F2); NEXT;
+        case L'⁷': itest(RSHIFT, KEY2, RSHIFT, F4, F6, F3); NEXT;
+        case L'⁸': itest(RSHIFT, KEY2, RSHIFT, F4, F6, F4); NEXT;
+        case L'⁹': itest(RSHIFT, KEY2, RSHIFT, F4, F6, F5); NEXT;
+        case L'₀': itest(RSHIFT, KEY2, RSHIFT, F4, LSHIFT, F1); NEXT;
+        case L'₁': itest(RSHIFT, KEY2, RSHIFT, F4, LSHIFT, F2); NEXT;
+        case L'₂': itest(RSHIFT, KEY2, RSHIFT, F4, LSHIFT, F3); NEXT;
+        case L'₃': itest(RSHIFT, KEY2, RSHIFT, F4, LSHIFT, F4); NEXT;
+        case L'₄': itest(RSHIFT, KEY2, RSHIFT, F4, LSHIFT, F5); NEXT;
+        case L'₅': itest(RSHIFT, KEY2, RSHIFT, F4, F6, LSHIFT, F1); NEXT;
+        case L'₆': itest(RSHIFT, KEY2, RSHIFT, F4, F6, LSHIFT, F2); NEXT;
+        case L'₇': itest(RSHIFT, KEY2, RSHIFT, F4, F6, LSHIFT, F3); NEXT;
+        case L'₈': itest(RSHIFT, KEY2, RSHIFT, F4, F6, LSHIFT, F4); NEXT;
+        case L'₉': itest(RSHIFT, KEY2, RSHIFT, F4, F6, LSHIFT, F5); NEXT;
+        case L'∛': itest(RSHIFT, KEY2, F3, F6, F6, F6, F6, LSHIFT, F2); NEXT;
+        case L'∜': itest(RSHIFT, KEY2, F3, F6, F6, F6, F6, LSHIFT, F3); NEXT;
+        case L'⊿': itest(RSHIFT, KEY2, F3, F6, F6, F6, F6, F6, F5); NEXT;
+        case L'∠': itest(RSHIFT, KEY2, F3, F6, F6, F6, F6, F6, F3); NEXT;
+#undef NEXT
         }
+
+        if (k == RESERVED2)
+            continue;
 
         if (shift)
             xshift = false;
@@ -8099,7 +8100,7 @@ tests &tests::itest(cstring txt)
 
         if (k == RELEASE)
         {
-            fprintf(stderr, "Cannot translate '%c' (%d)\n", c, c);
+            fprintf(stderr, "Cannot translate '%lc' (%d)\n", wchar_t(c), c);
         }
         else
         {
