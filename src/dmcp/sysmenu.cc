@@ -99,7 +99,7 @@ void about_dialog()
     size  h = font->height();
     coord x2;
     for (uint i = 0; i < 2; i++)
-        x2 = Screen.text(x + i, y, utf8("DB48X "), font, pattern::black);
+        x2 = Screen.text(x+i, y, utf8(PROGRAM_NAME " "), font, pattern::black);
     Screen.text(x2, y, utf8("v" PROGRAM_VERSION " © 2024 C. de Dinechin"), font);
     y += h;
     Screen.text(x, y, utf8("A modern implementation of RPL, and"), font);
@@ -525,7 +525,7 @@ cstring state_name()
         return buffer;
     }
 
-    return "DB48X";
+    return PROGRAM_NAME;
 }
 
 

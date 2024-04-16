@@ -63,6 +63,8 @@ all: $(TARGET).$(PGM) help/$(TARGET).md
 dm32:	dm32-all
 dm32-%:
 	$(MAKE) PLATFORM=dmcp SDK=dmcp5/dmcp PGM=pg5 VARIANT=dm32 TARGET=db50x $*
+color-%:
+	$(MAKE) COLOR=color $*
 
 # installation steps
 COPY=cp
@@ -88,7 +90,7 @@ install-config:
 sim: sim/$(TARGET).mak
 	cd sim; $(MAKE) -f $(<F) TARGET=$(shell awk '/^TARGET/ { print $$3; }' sim/$(TARGET).mak)
 sim/$(TARGET).mak: sim/$(TARGET).pro Makefile $(VERSION_H)
-	cd sim; qmake $(<F) -o $(@F) CONFIG+=$(QMAKE_$(OPT))
+	cd sim; qmake $(<F) -o $(@F) CONFIG+=$(QMAKE_$(OPT)) $(COLOR:%=CONFIG+=color)
 
 sim:	sim/gcc111libbid.a	\
 	recorder/config.h	\
@@ -103,10 +105,12 @@ sim:	sim/gcc111libbid.a	\
 clangdb: sim/$(TARGET).mak .ALWAYS
 	cd sim && rm -f *.o && compiledb make -f $(TARGET).mak && mv compile_commands.json ..
 
+IMAGES=$(COLOR:%=color-)images
 cmp-% compare-%:
-	compare images/$*.png images/bad/$*.png -compose src $*.png || true
-	open $*.png images/bad/$*.png images/$*.png
-
+	compare $(IMAGES)/$*.png $(IMAGES)/bad/$*.png -compose src $*.png || true
+	open $*.png $(IMAGES)/bad/$*.png $(IMAGES)/$*.png
+update-%:
+	mv $(IMAGES)/bad/$*.png $(IMAGES)/$*.png
 
 keyboard: Keyboard-Layout.png Keyboard-Cutout.png sim/keyboard-db48x.png help/keyboard.png doc/keyboard.png
 Keyboard-Layout.png: DB48X-Keys/DB48X-Keys.001.png
@@ -156,12 +160,13 @@ fonts/HelpFont.cc: $(TTF2FONT) $(BASE_FONT)
 help/$(TARGET).md: $(wildcard doc/*.md doc/calc-help/*.md doc/commands/*.md)
 	mkdir -p help && \
 	cat $^ | \
-	sed -e '/<!--- $(PRODUCT_MACHINE) --->/,/<!--- !$(PRODUCT_MACHINE) --->/s/$(PRODUCT_MACHINE)/KEEP_IT/g' | \
-	sed -e '/<!--- DM.* --->/,/<!--- !DM.* --->/d' | \
-	sed -e '/<!--- KEEP_IT --->/d' | \
-	sed -e '/<!--- !KEEP_IT --->/d' | \
-	sed -e 's/KEEP_IT/$(PRODUCT_MACHINE)/g' | \
-	sed -e 's/DB48X/$(PRODUCT_NAME)/g' \
+	sed -e '/<!--- $(PRODUCT_MACHINE) --->/,/<!--- !$(PRODUCT_MACHINE) --->/s/$(PRODUCT_MACHINE)/KEEP_IT/g' \
+	    -e '/<!--- DM.* --->/,/<!--- !DM.* --->/d' \
+	    -e '/<!--- KEEP_IT --->/d' \
+	    -e '/<!--- !KEEP_IT --->/d' \
+	    -e 's/KEEP_IT/$(PRODUCT_MACHINE)/g' \
+	    -e 's/DB48X/$(PRODUCT_NAME)/g' \
+	    -e 's/db48x.md/$(TARGET).md/g' \
             -e 's/DM42/$(PRODUCT_MACHINE)/g' > $@
 	cp doc/*.png help/
 	mkdir -p help/img

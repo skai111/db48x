@@ -1,5 +1,5 @@
 // ****************************************************************************
-//  mainwindow.cpp                                                DB48X project
+//  sim-window.cpp                                                DB48X project
 // ****************************************************************************
 //
 //   File Description:
@@ -30,6 +30,7 @@
 #include "sim-window.h"
 
 #include "dmcp.h"
+#include "main.h"
 #include "recorder.h"
 #include "sim-dmcp.h"
 #include "sim-rpl.h"
@@ -73,7 +74,7 @@ MainWindow::MainWindow(QWidget *parent)
     mainWindow = this;
 
     QCoreApplication::setOrganizationName("DB48X");
-    QCoreApplication::setApplicationName("DB48X");
+    QCoreApplication::setApplicationName(PROGRAM_NAME);
 
     ui.setupUi(this);
 
@@ -94,7 +95,7 @@ MainWindow::MainWindow(QWidget *parent)
     highlight->setGeometry(0,0,0,0);
     highlight->show();
 
-    setWindowTitle("DB48X");
+    setWindowTitle(PROGRAM_NAME);
 
     QObject::connect(this, SIGNAL(keyResizeSignal(const QRect &)),
                      highlight, SLOT(keyResizeSlot(const QRect &)));

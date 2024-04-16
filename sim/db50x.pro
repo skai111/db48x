@@ -30,6 +30,8 @@
 include(db48x.pro)
 
 DEFINES-=HELPFILE_NAME=\\\"help/db48x.md\\\"
-DEFINES+=HELPFILE_NAME=\\\"help/db50x.md\\\" CONFIG_COLOR
+DEFINES+=HELPFILE_NAME=\\\"help/db50x.md\\\"
+INCLUDEPATH -= ../src/dm42
+INCLUDEPATH += ../src/dm32
 
 OBJECTS_DIR=db50x-build

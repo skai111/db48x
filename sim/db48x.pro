@@ -118,6 +118,8 @@ DEFINES += 	DECIMAL_CALL_BY_REFERENCE                       \
 		DECIMAL_GLOBAL_EXCEPTION_FLAGS_ACCESS_FUNCTIONS \
                 HELPFILE_NAME=\\\"help/db48x.md\\\"
 
+color:DEFINES += CONFIG_COLOR
+
 # Additional external library HIDAPI linked statically into the code
 INCLUDEPATH += ../src/dm42 ../src/dmcp ../src ../inc
 

@@ -27,6 +27,7 @@
 //   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // ****************************************************************************
 
+#include "main.h"
 #include "object.h"
 #include "recorder.h"
 #include "sim-rpl.h"
@@ -104,12 +105,15 @@ int main(int argc, char *argv[])
 
     // Indicate the first two-byte opcode
     fprintf(stderr,
-            "DB48X version %s\n"
+            "%s version %s\n"
             "Last single-byte opcode is %s\n"
-            "First two byte opcode is %s\n",
+            "First two byte opcode is %s\n"
+            "Help file name is %s\n",
+            PROGRAM_NAME,
             DB48X_VERSION,
             object::name(object::id(127)),
-            object::name(object::id(128)));
+            object::name(object::id(128)),
+            HELPFILE_NAME);
 
     record(options,
            "Simulator invoked as %+s with %d arguments", argv[0], argc-1);
