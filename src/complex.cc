@@ -527,32 +527,42 @@ PARSE_BODY(complex)
         last += utf8_size(cp);
     }
 
-    // If we just have the imaginary unit
-    if (type == ID_rectangular && !xlen)
-    {
-        // Build the imaginary unit
-        rectangular_g result = rectangular::make(integer::make(0),
-                                                 integer::make(1));
-        p.out = +result;
-        p.end = last - first + 2*paren;
-        return OK;
-    }
-
     // If we did not find the necessary structure, just skip
-    if (type == ID_object || !xlen || !ybeg)
+    if (type == ID_object || (!xlen && type != ID_rectangular) || !ybeg)
         return SKIP;
 
     // Check if we need to compute the length of y
     if (!ylen)
     {
         ylen = last - ybeg;
-        if (!ylen)
+        if (!ylen && type != ID_rectangular)
         {
             rt.syntax_error().source(utf8(ybeg));
             return ERROR;
         }
     }
 
+    // If we just have the imaginary unit, e.g. `3i`, `i3`, or just `i`.
+    if (type == ID_rectangular && (!xlen || !ylen))
+    {
+        gcutf8 ysrc = ybeg;
+        algebraic_g x = xlen
+            ? algebraic_p(object::parse(first, xlen))
+            : integer::make(0);
+        algebraic_g y = ylen
+            ? algebraic_p(object::parse(ysrc, ylen))
+            : integer::make(1);
+        if (xlen && !ylen)
+        {
+            // Case of `3i`
+            y = x;
+            x = integer::make(0);
+        }
+        rectangular_g result = rectangular::make(x, y);
+        p.out = +result;
+        p.end = last - first + 2*paren;
+        return OK;
+    }
 
     // Compute size that we parsed
     size_t parsed = last - first + 2*paren;

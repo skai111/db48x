@@ -158,7 +158,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        parsing_commands_by_name();
+        complex_types();
     }
     else
     {
@@ -3549,6 +3549,16 @@ void tests::complex_types()
         .test("RAD", ENTER).expect("arg:3.4 °")
         .test(RSHIFT, F3).expect("1.2∡0.05934 11945 68ʳ")
         .test("DEG", ENTER).expect("1.2∡3.4°");
+
+    step("Short rectangular forms for i")
+        .test(CLEAR, "ⅈ", ENTER)
+        .type(object::ID_rectangular).expect("0+1ⅈ");
+    step("Short rectangular forms for 3.5i")
+        .test(CLEAR, "3.5ⅈ", ENTER)
+        .type(object::ID_rectangular).expect("0+3.5ⅈ");
+    step("Short rectangular forms for i12.05")
+        .test(CLEAR, "ⅈ12.05", ENTER)
+        .type(object::ID_rectangular).expect("0+12.05ⅈ");
 }
 
 
