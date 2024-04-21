@@ -978,7 +978,7 @@ static object::result match_up_down(bool down)
     if (!x || !y)
         return object::ERROR;
     list_p transform = x->as<list>();
-    expression_g eq = y->as<expression>();
+    expression_g eq = expression::as_expression(y);
     if (!transform || !eq)
     {
         rt.type_error();
@@ -986,15 +986,14 @@ static object::result match_up_down(bool down)
     }
 
     list::iterator it(transform);
-    expression_g from = expression_p(*it++);
-    expression_g to = expression_p(*it++);
-    if (!from || from->type() != object::ID_expression ||
-        !to   ||   to->type() != object::ID_expression)
-    {
+    expression_g from = expression::as_expression(*it++);
+    expression_g to = expression::as_expression(*it++);
+    if (!from || !to)
+        {
         rt.value_error();
         return object::ERROR;
     }
-    expression_g cond = expression_p(*it++);
+    expression_g cond = expression::as_expression(*it++);
     cond = eq->rewrite(from, to, cond, down);
     if (!cond)
         return object::ERROR;

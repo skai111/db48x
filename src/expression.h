@@ -99,6 +99,18 @@ struct expression : program
     }
 
 
+    static expression_p as_expression(object_p obj)
+    {
+        if (!obj)
+            return nullptr;
+        if (expression_p ex = obj->as<expression>())
+            return ex;
+        if (algebraic_g alg = obj->as_algebraic())
+            return make(alg);
+        return nullptr;
+    }
+
+
 
     // ========================================================================
     //
