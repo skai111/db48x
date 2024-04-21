@@ -1360,6 +1360,7 @@ static flag_conversion flag_conversions[] =
     {  -65,     object::ID_MultiLineStack               },
     {  -97,     object::ID_VerticalLists                },
     {  -98,     object::ID_VerticalVectors              },
+    { -100,     object::ID_FinalAlgebraResults          },
     { -103,     object::ID_ComplexResults               },
 };
 

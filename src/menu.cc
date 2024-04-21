@@ -787,6 +787,8 @@ MENU(AlgebraMenu,
      "∏",               ID_Unimplemented,
      "∆",               ID_Unimplemented,
      "→Qπ",             ID_Unimplemented,
+
+     "Final",           ID_FinalAlgebraResults,
      "Symb",            ID_SymbolicMenu);
 
 MENU(ArithmeticMenu,

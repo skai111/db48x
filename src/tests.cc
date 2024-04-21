@@ -4671,20 +4671,61 @@ void tests::rewrite_engine()
         .expect("True")
         .test(BSP)
         .expect("'A+B'");
-    step("Multiple substitutions");
+    step("Multiple substitutions (down)");
+    test(CLEAR, "'A+B+C' { 'X+Y' 'Y-X' }", RSHIFT, KEY7, LSHIFT, F1, F1)
+        .expect("True")
+        .test(BSP)
+        .expect("'C-(A+B)'");
+    step("Multiple substitutions (up)");
+    test(CLEAR, "'A+B+C' { 'X+Y' 'Y-X' }", RSHIFT, KEY7, LSHIFT, F1, F2)
+        .expect("True")
+        .test(BSP)
+        .expect("'B-A+C'");
+    step("Setting final flag")
+        .test(CLEAR, "-100 SF", ENTER).noerror();
+    step("Multiple substitutions (down repeat)");
     test(CLEAR, "'A+B+C' { 'X+Y' 'Y-X' }", RSHIFT, KEY7, LSHIFT, F1, F1)
         .expect("True")
         .test(BSP)
         .expect("'C-(B-A)'");
+    step("Multiple substitutions (up repeat)");
+    test(CLEAR, "'A+B+C' { 'X+Y' 'Y-X' }", RSHIFT, KEY7, LSHIFT, F1, F1)
+        .expect("True")
+        .test(BSP)
+        .expect("'C-(B-A)'");
+    step("Setting step by step flag")
+        .test(CLEAR, "StepByStepAlgebraResults", ENTER).noerror();
 
     step("Deep substitution");
     test(CLEAR, "'tan(A-B)+3' { 'A-B' '-B+A' }", RSHIFT, KEY7, LSHIFT, F1, F1)
         .expect("True")
         .test(BSP)
         .expect("'tan(-B+A)+3'");
-    step("Deep substitution with multiple changes");
-    test(CLEAR, "'5+tan(A-B)+(3-sin(C+D-A))' { 'A-B' '-B+A' }",
+    step("Deep substitution with multiple changes (down single)");
+    test(CLEAR, "StepByStepAlgebraResults", ENTER,
+         "'5+tan(A-B)+(3-sin(C+D-A))' { 'A-B' '-B+A' }",
          RSHIFT, KEY7, LSHIFT, F1, F1)
+        .expect("True")
+        .test(BSP)
+        .expect("'5+tan(A-B)+(-sin(C+D-A)+3)'");
+    step("Deep substitution with multiple changes (up single)");
+    test(CLEAR, "StepByStepAlgebraResults", ENTER,
+         "'5+tan(A-B)+(3-sin(C+D-A))' { 'A-B' '-B+A' }",
+         RSHIFT, KEY7, LSHIFT, F1, F2)
+        .expect("True")
+        .test(BSP)
+        .expect("'5+tan(-B+A)+(3-sin(C+D-A))'");
+    step("Deep substitution with multiple changes (down multiple)");
+    test(CLEAR, "FinalAlgebraResults", ENTER,
+         "'5+tan(A-B)+(3-sin(C+D-A))' { 'A-B' '-B+A' }",
+         RSHIFT, KEY7, LSHIFT, F1, F1)
+        .expect("True")
+        .test(BSP)
+        .expect("'5+tan(-B+A)+(-sin(-A+(C+D))+3)'");
+    step("Deep substitution with multiple changes (up multiple)");
+    test(CLEAR, "FinalAlgebraResults", ENTER,
+         "'5+tan(A-B)+(3-sin(C+D-A))' { 'A-B' '-B+A' }",
+         RSHIFT, KEY7, LSHIFT, F1, F2)
         .expect("True")
         .test(BSP)
         .expect("'5+tan(-B+A)+(-sin(-A+(C+D))+3)'");
@@ -4704,6 +4745,18 @@ void tests::rewrite_engine()
         .expect("False")
         .test(BSP)
         .expect("'A+A+A'");
+
+    step("Clearing flag -100")
+        .test(CLEAR, "-100 CF", ENTER);
+    step("Matching down")
+        .test(CLEAR, "'A+B+C' { 'X+Y' 'Y-(-X)' }", RSHIFT, KEY7, LSHIFT, F1, F1)
+        .expect("True")
+        .test(BSP).expect("'C-(-(A+B))'");
+    step("Matching up")
+        .test(CLEAR, "'A+B+C' { 'X+Y' 'Y-(-X)' }", RSHIFT, KEY7, LSHIFT, F1, F2)
+        .expect("True")
+        .test(BSP)
+        .expect("'B-(-A)+C'");
 }
 
 
