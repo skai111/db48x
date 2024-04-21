@@ -36,8 +36,10 @@
 #include "parser.h"
 #include "precedence.h"
 #include "renderer.h"
+#include "settings.h"
 #include "unit.h"
 #include "utf8.h"
+
 
 RECORDER(equation, 16, "Processing of equations and algebraic objects");
 RECORDER(equation_error, 16, "Errors with equations");
@@ -548,7 +550,7 @@ size_t expression::required_memory(id type, id op,
 //
 //   Because of the order in which RPL expressions are stored, the first items
 //   in the array correspond to the innermost portions, so that scanning
-//   starting with the first one, we do a bottom-up search (i.e. ↑MATCH)
+//   starting with the first one, we do a top-down search (i.e. ↓MATCH)
 //
 //   eq:        sin(a+3) - cos(a+3)             a 3 + sin a 3 + cos -
 //   match:     sin x    - cos x                    x sin     x cos -
@@ -571,7 +573,7 @@ static expression_p grab_arguments(size_t &eq, size_t &eqsz)
     }
     if (arity)
     {
-        record(equation_error, "Argument gets %u beyond size %u", arity, eqsz);
+        record(equation, "Argument gets %u beyond size %u", arity, eqsz);
         return nullptr;
     }
 
@@ -782,16 +784,31 @@ expression_p expression::rewrite(expression_r from,
         // Keep checking sub-expressions until we find a match
         size_t eqlen = eqsz;
         fromst = eqst + eqsz;
-        while (eqsz)
+        if (down)
         {
-            // Check if there is a match of this sub-equation
-            matchsz = check_match(eqst, eqsz, fromst, fromsz);
-            if (matchsz)
-                break;
-
-            // Check next step in the equation
-            eqst++;
-            eqsz--;
+            // Check if there is a match in sub-equations going down
+            for (eqsz = eqlen; eqsz; eqst++, eqsz--)
+            {
+                matchsz = check_match(eqst, eqsz, fromst, fromsz);
+                if (matchsz)
+                    break;
+            }
+        }
+        else
+        {
+            size_t eqstart = eqst;
+            // Check if there is a match in sub-equations going up
+            for (eqsz = fromsz; eqsz <= eqlen; eqsz++)
+            {
+                for (eqst = eqstart; eqst + eqsz <= eqlen; eqst++)
+                {
+                    matchsz = check_match(eqst, eqsz, fromst, fromsz);
+                    if (matchsz)
+                        break;
+                }
+                if (matchsz)
+                    break;
+            }
         }
 
         // We don't need the on-stack copies of 'eq' and 'to' anymore
@@ -802,9 +819,6 @@ expression_p expression::rewrite(expression_r from,
         if (matchsz)
         {
             if (cond)
-            {
-            }
-            if (down)
             {
             }
         }
@@ -902,7 +916,7 @@ expression_p expression::rewrite(expression_r from,
                 goto err;
             }
         }
-    } while (replaced && !interrupted());
+    } while (replaced && Settings.FinalAlgebraResults() && !interrupted());
 
 err:
     ASSERT(rt.depth() >= depth);
