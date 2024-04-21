@@ -158,7 +158,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        complex_types();
+        rewrite_engine();
     }
     else
     {
@@ -4645,41 +4645,64 @@ void tests::rewrite_engine()
     BEGIN(rewrites);
 
     step("Single replacement");
-    test(CLEAR, "'A+B' 'X+Y' 'Y-sin X' rewrite", ENTER)
+    test(CLEAR, "'A+B' { 'X+Y' 'Y-sin X' } ↓match", ENTER)
+        .expect("True")
+        .test(BSP)
         .expect("'B-sin A'");
 
     step("In-depth replacement");
-    test(CLEAR, " 'A*(B+C)' 'X+Y' 'Y-sin X' rewrite", ENTER)
+    test(CLEAR, " 'A*(B+C)' { 'X+Y' 'Y-sin X' } ↓Match", ENTER)
+        .expect("True")
+        .test(BSP)
         .expect("'A·(C-sin B)'");
 
     step("Variable matching");
-    test(CLEAR, "'A*(B+C)' 'X+X' 'X-sin X' rewrite", ENTER)
+    test(CLEAR, "'A*(B+C)' { 'X+X' 'X-sin X' }", RSHIFT, KEY7, LSHIFT, F1, F1)
+        .expect("False")
+        .test(BSP)
         .expect("'A·(B+C)'");
-    test(CLEAR, "'A*(B+(B))' 'X+X' 'X-sin X' rewrite", ENTER)
+    test(CLEAR, "'A*(B+(B))' { 'X+X' 'X-sin X' }", RSHIFT, KEY7, LSHIFT, F1, F1)
+        .expect("True")
+        .test(BSP)
         .expect("'A·(B-sin B)'");
 
     step("Constant folding");
-    test(CLEAR, "'A+B+0' 'X+0' 'X' rewrite", ENTER)
+    test(CLEAR, "'A+B+0' { 'X+0' 'X' }", RSHIFT, KEY7, LSHIFT, F1, F1)
+        .expect("True")
+        .test(BSP)
         .expect("'A+B'");
     step("Multiple substitutions");
-    test(CLEAR, "'A+B+C' 'X+Y' 'Y-X' rewrite", ENTER)
+    test(CLEAR, "'A+B+C' { 'X+Y' 'Y-X' }", RSHIFT, KEY7, LSHIFT, F1, F1)
+        .expect("True")
+        .test(BSP)
         .expect("'C-(B-A)'");
 
     step("Deep substitution");
-    test(CLEAR, "'tan(A-B)+3' 'A-B' '-B+A' rewrite", ENTER)
+    test(CLEAR, "'tan(A-B)+3' { 'A-B' '-B+A' }", RSHIFT, KEY7, LSHIFT, F1, F1)
+        .expect("True")
+        .test(BSP)
         .expect("'tan(-B+A)+3'");
     step("Deep substitution with multiple changes");
-    test(CLEAR, "'5+tan(A-B)+(3-sin(C+D-A))' 'A-B' '-B+A' rewrite", ENTER)
+    test(CLEAR, "'5+tan(A-B)+(3-sin(C+D-A))' { 'A-B' '-B+A' }",
+         RSHIFT, KEY7, LSHIFT, F1, F1)
+        .expect("True")
+        .test(BSP)
         .expect("'5+tan(-B+A)+(-sin(-A+(C+D))+3)'");
 
     step("Matching integers");
-    test(CLEAR, "'(A+B)^3' 'X^N' 'X*X^(N-1)' rewrite", ENTER)
+    test(CLEAR, "'(A+B)^3' { 'X^N' 'X*X^(N-1)' }", RSHIFT, KEY7, LSHIFT, F1, F1)
+        .expect("True")
+        .test(BSP)
         .expect("'(A+B)·(A+B)²'");
 
     step("Matching unique terms");
-    test(CLEAR, "'(A+B+A)' 'X+U+X' '2*X+U' rewrite", ENTER)
+    test(CLEAR, "'(A+B+A)' { 'X+U+X' '2*X+U' }", RSHIFT, KEY7, LSHIFT, F1, F1)
+        .expect("True")
+        .test(BSP)
         .expect("'2·A+B'");
-    test(CLEAR, "'(A+A+A)' 'X+U+X' '2*X+U' rewrite", ENTER)
+    test(CLEAR, "'(A+A+A)' { 'X+U+X' '2*X+U' }", RSHIFT, KEY7, LSHIFT, F1, F1)
+        .expect("False")
+        .test(BSP)
         .expect("'A+A+A'");
 }
 
@@ -8049,10 +8072,12 @@ tests &tests::itest(cstring txt)
         case L'«': k = RUNSTOP;     alpha = false; shift = true; del = true; break;
         case L'»': k = RUNSTOP;     alpha = false; shift = true; bsp = true; break;
         case L'→': k = STO;         alpha = true; xshift = true; break;
+        case L'←': k = H;           alpha = true; xshift = true; break;
         case L'·': k = MUL;         alpha = true;  shift = true; break;
         case L'×': k = MUL;         alpha = true;  shift = true; break;
         case L'÷': k = DIV;         alpha = true;  shift = true; break;
         case L'↑': k = C;           alpha = true; xshift = true; break;
+        case L'↓': k = I;           alpha = true; xshift = true; break;
         case L'ⅈ': k = G; fn = F1;  alpha = false; shift = true; break;
         case L'∡': k = G; fn = F2;  alpha = false; shift = true; break;
         case L'ρ': k = E;           alpha = true;  shift = true; break;

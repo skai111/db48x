@@ -128,7 +128,7 @@ settings::settings() :
     SearchBackground            (pattern::gray25.bits);
 
     CursorSelBackground         (pattern::gray90.bits);
-#endif // CONFIG_COLOR
+#endif // CONFIG_COLOR7
 }
 
 // ============================================================================

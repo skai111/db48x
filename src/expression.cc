@@ -546,6 +546,10 @@ size_t expression::required_memory(id type, id op,
 //   - The 'from' pattern       [from..from+fromsz]
 //   - The 'eq' value           [eq  ..eq+eqsz]
 //
+//   Because of the order in which RPL expressions are stored, the first items
+//   in the array correspond to the innermost portions, so that scanning
+//   starting with the first one, we do a bottom-up search (i.e. ↑MATCH)
+//
 //   eq:        sin(a+3) - cos(a+3)             a 3 + sin a 3 + cos -
 //   match:     sin x    - cos x                    x sin     x cos -
 //
@@ -580,7 +584,8 @@ static expression_p grab_arguments(size_t &eq, size_t &eqsz)
     }
     eq += sz;
     eqsz -= sz;
-    list_p list = list::make(object::ID_expression, scr.scratch(), scr.growth());
+    list_p list = list::make(object::ID_expression,
+                             scr.scratch(), scr.growth());
     return expression_p(list);
 }
 
@@ -729,7 +734,10 @@ static size_t check_match(size_t eq, size_t eqsz,
 }
 
 
-expression_p expression::rewrite(expression_r from, expression_r to) const
+expression_p expression::rewrite(expression_r from,
+                                 expression_r to,
+                                 expression_r cond,
+                                 bool         down) const
 // ----------------------------------------------------------------------------
 //   If we match pattern in `from`, then rewrite using pattern in `to`
 // ----------------------------------------------------------------------------
@@ -789,6 +797,17 @@ expression_p expression::rewrite(expression_r from, expression_r to) const
         // We don't need the on-stack copies of 'eq' and 'to' anymore
         ASSERT(rt.depth() >= depth);
         rt.drop(rt.depth() - depth);
+
+        // If we matched a sub-equation, evaluate the condition
+        if (matchsz)
+        {
+            if (cond)
+            {
+            }
+            if (down)
+            {
+            }
+        }
 
         // If we matched a sub-equation, perform replacement
         if (matchsz)
@@ -893,19 +912,26 @@ err:
 }
 
 
-expression_p expression::rewrite(size_t size, const byte_p rewrites[]) const
+expression_p expression::rewrite(size_t       size,
+                                 const byte_p rewrites[],
+                                 bool         down) const
 // ----------------------------------------------------------------------------
 //   Apply a series of rewrites
 // ----------------------------------------------------------------------------
 {
     expression_g eq = this;
     for (size_t i = 0; eq && i < size; i += 2)
-        eq = eq->rewrite(expression_p(rewrites[i]), expression_p(rewrites[i+1]));
+        eq = eq->rewrite(expression_p(rewrites[i]),
+                         expression_p(rewrites[i + 1]),
+                         nullptr,
+                         down);
     return eq;
 }
 
 
-expression_p expression::rewrite_all(size_t size, const byte_p rewrites[]) const
+expression_p expression::rewrite_all(size_t       size,
+                                     const byte_p rewrites[],
+                                     bool         down) const
 // ----------------------------------------------------------------------------
 //   Loop on the rewrites until the result stabilizes
 // ----------------------------------------------------------------------------
@@ -920,7 +946,7 @@ expression_p expression::rewrite_all(size_t size, const byte_p rewrites[]) const
             break;
 
         last = eq;
-        eq = eq->rewrite(size, rewrites);
+        eq = eq->rewrite(size, rewrites, down);
     }
     if (count >= Settings.MaxRewrites())
         rt.too_many_rewrites_error();
@@ -928,32 +954,61 @@ expression_p expression::rewrite_all(size_t size, const byte_p rewrites[]) const
 }
 
 
-COMMAND_BODY(Rewrite)
+static object::result match_up_down(bool down)
 // ----------------------------------------------------------------------------
-//   Rewrite (From, To, Value): Apply rewrites
+//   Run a rewrite up or down
 // ----------------------------------------------------------------------------
 {
     object_p x = rt.stack(0);
     object_p y = rt.stack(1);
-    object_p z = rt.stack(2);
-    if (!x || !y || !z)
-        return ERROR;
-    expression_g eq = z->as<expression>();
-    expression_g from = y->as<expression>();
-    expression_g to = x->as<expression>();
-    if (!from || !to || !eq)
+    if (!x || !y)
+        return object::ERROR;
+    list_p transform = x->as<list>();
+    expression_g eq = y->as<expression>();
+    if (!transform || !eq)
     {
         rt.type_error();
-        return ERROR;
+        return object::ERROR;
     }
 
-    eq = eq->rewrite(from, to);
-    if (!eq)
-        return ERROR;
-    if (!rt.drop(2) || !rt.top(eq))
-        return ERROR;
+    list::iterator it(transform);
+    expression_g from = expression_p(*it++);
+    expression_g to = expression_p(*it++);
+    if (!from || from->type() != object::ID_expression ||
+        !to   ||   to->type() != object::ID_expression)
+    {
+        rt.value_error();
+        return object::ERROR;
+    }
+    expression_g cond = expression_p(*it++);
+    cond = eq->rewrite(from, to, cond, down);
+    if (!cond)
+        return object::ERROR;
+    object_p changed = object::static_object(+cond != +eq
+                                             ? object::ID_True
+                                             : object::ID_False);
+    if (!rt.stack(1, cond) || !rt.stack(0, changed))
+        return object::ERROR;
 
-    return OK;
+    return object::OK;
+}
+
+
+COMMAND_BODY(MatchUp)
+// ----------------------------------------------------------------------------
+//   Bottom-up match and replace command
+// ----------------------------------------------------------------------------
+{
+    return match_up_down(false);
+}
+
+
+COMMAND_BODY(MatchDown)
+// ----------------------------------------------------------------------------
+//   Match pattern down command
+// ----------------------------------------------------------------------------
+{
+    return match_up_down(true);
 }
 
 
@@ -987,7 +1042,7 @@ expression_p expression::expand() const
 //   Run various rewrites to expand equation
 // ----------------------------------------------------------------------------
 {
-    return rewrite_all(
+    return rewrite_all_down(
         (x+y)*z,     x*z+y*z,
         x*(y+z),     x*y+x*z,
         (x-y)*z,     x*z-y*z,
@@ -1022,7 +1077,7 @@ expression_p expression::collect() const
 //    Run various rewrites to collect terms / factor equation
 // ----------------------------------------------------------------------------
 {
-    return rewrite_all(
+    return rewrite_all_up(
         x*z+y*z,                (x+y)*z,
         x*y+x*z,                x*(y+z),
         x*z-y*z,                (x-y)*z,
@@ -1057,7 +1112,7 @@ expression_p expression::simplify() const
 //   Run various rewrites to simplify equation
 // ----------------------------------------------------------------------------
 {
-    return rewrite_all(
+    return rewrite_all_up(
         x + zero,    x,
         zero + x,    x,
         x - zero,    x,
@@ -1296,7 +1351,7 @@ expression_p expression::as_difference_for_solve() const
 // ----------------------------------------------------------------------------
 //   Revisit: how to transform A and B, A or B, e.g. A=B and C=D ?
 {
-    return rewrite(x == y, x - y);
+    return rewrite_down(x == y, x - y);
 }
 
 

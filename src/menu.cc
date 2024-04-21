@@ -705,46 +705,45 @@ MENU(RegressionMenu,
 // ----------------------------------------------------------------------------
 //   Statistics regression menu
 // ----------------------------------------------------------------------------
-     "BestFit", ID_BestFit,
-     "LinFit",  ID_LinearFit,
-     "ExpFit",  ID_ExponentialFit,
-     "LogFit",  ID_PowerFit,
-     "PwrFit",  ID_LogarithmicFit,
-     "LR",      ID_LinearRegression,
+     "BestFit",         ID_BestFit,
+     "LinFit",          ID_LinearFit,
+     "ExpFit",          ID_ExponentialFit,
+     "LogFit",          ID_PowerFit,
+     "PwrFit",          ID_LogarithmicFit,
+     "LR",              ID_LinearRegression,
 
-     "XCol",    ID_IndependentColumn,
-     "YCol",    ID_DependentColumn,
-     "StdDev" , ID_StandardDeviation,
-     "Corr",    ID_Correlation,
-     "Inter",   ID_Intercept,
-     "Slope",   ID_Slope,
+     "XCol",            ID_IndependentColumn,
+     "YCol",            ID_DependentColumn,
+     "StdDev" ,         ID_StandardDeviation,
+     "Corr",            ID_Correlation,
+     "Inter",           ID_Intercept,
+     "Slope",           ID_Slope,
 
-     "ΣX",      ID_SumOfX,
-     "ΣY",      ID_SumOfY,
-     "ΣXY",     ID_SumOfXY,
-     "ΣX²",     ID_SumOfXSquares,
-     "ΣY²",     ID_SumOfYSquares,
-     "ΣSize",   ID_DataSize);
+     "ΣX",              ID_SumOfX,
+     "ΣY",              ID_SumOfY,
+     "ΣXY",             ID_SumOfXY,
+     "ΣX²",             ID_SumOfXSquares,
+     "ΣY²",             ID_SumOfYSquares,
+     "ΣSize",           ID_DataSize);
 
 MENU(PopulationMenu,
 // ----------------------------------------------------------------------------
 //   Statistics population menu
 // ----------------------------------------------------------------------------
-     "XCol",    ID_IndependentColumn,
-     "YCol",    ID_DependentColumn,
-     "Bins",    ID_FrequencyBins,
-     "PopVar",  ID_PopulationVariance,
-     "PopSDev", ID_PopulationStandardDeviation,
-     "PCovar",  ID_PopulationCovariance);
+     "XCol",            ID_IndependentColumn,
+     "YCol",            ID_DependentColumn,
+     "Bins",            ID_FrequencyBins,
+     "PopVar",          ID_PopulationVariance,
+     "PopSDev",         ID_PopulationStandardDeviation,
+     "PCovar",          ID_PopulationCovariance);
 
 
 MENU(SignalProcessingMenu,
 // ----------------------------------------------------------------------------
 //   Signal processing (Fast Fourier Transform)
 // ----------------------------------------------------------------------------
-     "FFT",     ID_Unimplemented,
-     "InvFFT",  ID_Unimplemented);
-
+     "FFT",             ID_Unimplemented,
+     "InvFFT",          ID_Unimplemented);
 
 MENU(SymbolicMenu,
 // ----------------------------------------------------------------------------
@@ -753,31 +752,95 @@ MENU(SymbolicMenu,
      ID_Collect,
      ID_Expand,
      ID_Simplify,
-     "Ex/Co",   ID_Unimplemented,
-     "→Num",    ID_ToDecimal,
-     "→Q",      ID_ToFraction,
+     "Ex/Co",           ID_Unimplemented,
+     "→Num",            ID_ToDecimal,
+     "→Q",              ID_ToFraction,
 
-     "↑Match",  ID_Rewrite,
-     "↓Match",  ID_Unimplemented,
-     "Isolate", ID_Unimplemented,
-     "Apply",   ID_Unimplemented,
-     "→Q",      ID_ToFraction,
-     "→Qπ",     ID_Unimplemented,
+     "Algbra",          ID_AlgebraMenu,
+     "Arith",           ID_ArithmeticMenu,
+     "Calc",            ID_CalculationMenu,
+     "Trig",            ID_TrigIdentitiesMenu,
+     "Exp/Ln",          ID_ExpLogIdentitiesMenu,
+     "Poly",            ID_PolynomialsMenu,
 
-     "∂",       ID_Unimplemented,
-     "∫",       ID_Unimplemented,
-     "∑",       ID_Unimplemented,
-     "∏",       ID_Unimplemented,
-     "∆",       ID_Unimplemented,
-     "Taylor",  ID_Unimplemented,
+     "Graph",           ID_PlotMenu,
+     "Integ",           ID_IntegrationMenu,
+     "Deriv",           ID_DifferentiationMenu,
+     "DSolve",          ID_DifferentialSolverMenu,
+     "Simplify",        ID_AutoSimplify,
+     "KeepAll",         ID_NoAutoSimplify);
 
-     "Show",    ID_Unimplemented,
-     "Quote",   ID_Unimplemented,
-     "|",       ID_Unimplemented,
-     "Rules",   ID_Unimplemented,
-     "Simplify",ID_AutoSimplify,
-     "KeepAll", ID_NoAutoSimplify);
+MENU(AlgebraMenu,
+// ----------------------------------------------------------------------------
+//   Algebraic menu
+// ----------------------------------------------------------------------------
+     "↓Match",          ID_MatchDown,
+     "↑Match",          ID_MatchUp,
+     "Isolate",         ID_Unimplemented,
+     "Apply",           ID_Unimplemented,
+     "→Num",            ID_ToDecimal,
+     "→Q",              ID_ToFraction,
 
+     "∂",               ID_Unimplemented,
+     "∫",               ID_Unimplemented,
+     "∑",               ID_Unimplemented,
+     "∏",               ID_Unimplemented,
+     "∆",               ID_Unimplemented,
+     "→Qπ",             ID_Unimplemented,
+     "Symb",            ID_SymbolicMenu);
+
+MENU(ArithmeticMenu,
+// ----------------------------------------------------------------------------
+//   Arithmetic menu
+// ----------------------------------------------------------------------------
+     "∂",               ID_Unimplemented,
+     "∫",               ID_Unimplemented,
+     "∑",               ID_Unimplemented,
+     "∏",               ID_Unimplemented,
+     "∆",               ID_Unimplemented,
+     "Taylor",          ID_Unimplemented,
+
+     "Show",            ID_Unimplemented,
+     "Quote",           ID_Unimplemented,
+     "|",               ID_Unimplemented,
+     "Rules",           ID_Unimplemented,
+     "Symb",            ID_SymbolicMenu);
+
+MENU(CalculationMenu,
+// ----------------------------------------------------------------------------
+//   Calculation menu
+// ----------------------------------------------------------------------------
+     "Deriv",           ID_Unimplemented,
+     "DerivX",          ID_Unimplemented,
+     "IBF",             ID_Unimplemented,
+     "IntVX",           ID_Unimplemented,
+     "Limit",           ID_Unimplemented,
+     "Serie",           ID_Unimplemented,
+     "Taylor",          ID_Unimplemented,
+     "Symb",            ID_SymbolicMenu);
+
+MENU(TrigIdentitiesMenu,
+// ----------------------------------------------------------------------------
+//   Trigonometry identities
+// ----------------------------------------------------------------------------
+     "HalfTan",         ID_Unimplemented,
+     "Tan→SinCos",      ID_Unimplemented,
+     "Tan→SinCos²",     ID_Unimplemented,
+     "TExpand",         ID_Unimplemented,
+     "TLin",            ID_Unimplemented,
+     "Trig",            ID_Unimplemented,
+     "Symb",            ID_SymbolicMenu);
+
+MENU(ExpLogIdentitiesMenu,
+// ----------------------------------------------------------------------------
+//   Exponentials and logarithm identities
+// ----------------------------------------------------------------------------
+     "ExpLn",         ID_Unimplemented,
+     "Lin",      ID_Unimplemented,
+     "LnCollect",     ID_Unimplemented,
+     "SinCos",   ID_Unimplemented,
+     "TExpand",   ID_Unimplemented,
+     "Symb",    ID_SymbolicMenu);
 
 MENU(ProgramMenu,
 // ----------------------------------------------------------------------------
@@ -1389,6 +1452,7 @@ MENU(MathModesMenu,
      "x·y",                                     ID_UseDotForMultiplication,
      "Angles",                                  ID_SetAngleUnits,
      "Disp",                                    ID_DisplayModesMenu);
+
 
 MENU(PrintingMenu,
 // ----------------------------------------------------------------------------

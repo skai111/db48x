@@ -98,33 +98,98 @@ struct expression : program
         return rt.make<expression>(type, op, args, arity);
     }
 
-    expression_p rewrite(expression_r from, expression_r to) const;
-    expression_p rewrite(expression_p from, expression_p to) const
+
+
+    // ========================================================================
+    //
+    //  Rewrite engine (↑MATCH et ↓MATCH)
+    //
+    // ========================================================================
+
+    expression_p rewrite_up(expression_r from,
+                            expression_r to,
+                            expression_r cond) const
     {
-        return rewrite(expression_g(from), expression_g(to));
+        return rewrite(from, to, cond, false);
     }
-    expression_p rewrite(size_t size, const byte_p rewrites[]) const;
-    expression_p rewrite_all(size_t size, const byte_p rewrites[]) const;
+    expression_p rewrite_up(expression_p from,
+                         expression_p to,
+                            expression_p cond = nullptr) const
+
+    {
+        return rewrite_up(expression_g(from),
+                          expression_g(to),
+                          expression_g(cond));
+    }
+    expression_p rewrite_down(expression_r from,
+                              expression_r to,
+                              expression_r cond) const
+    {
+        return rewrite(from, to, cond, true);
+    }
+    expression_p rewrite_down(expression_p from,
+                              expression_p to,
+                              expression_p cond = nullptr) const
+    {
+        return rewrite_down(expression_g(from),
+                            expression_g(to),
+                            expression_g(cond));
+    }
+
+    expression_p rewrite(expression_r from,
+                         expression_r to,
+                         expression_r cond,
+                         bool         down) const;
+    expression_p rewrite(expression_p from,
+                         expression_p to,
+                         expression_p cond,
+                         bool         down) const
+    {
+        return rewrite(expression_g(from),
+                       expression_g(to),
+                       expression_g(cond),
+                       down);
+    }
+    expression_p rewrite(size_t size,
+                         const byte_p rewrites[], bool down) const;
+    expression_p rewrite_all(size_t size,
+                             const byte_p rewrites[], bool down) const;
 
     static expression_p rewrite(expression_r eq,
                                 expression_r from,
-                                expression_r to)
+                                expression_r to,
+                                expression_r cond,
+                                bool         down)
     {
-        return eq->rewrite(from, to);
+        return eq->rewrite(from, to, cond, down);
     }
 
     template <typename ...args>
-    expression_p rewrite(args... rest) const
+    expression_p rewrite_down(args... rest) const
     {
         static constexpr byte_p rewrites[] = { rest.as_bytes()... };
-        return rewrite(sizeof...(rest), rewrites);
+        return rewrite(sizeof...(rest), rewrites, true);
     }
 
     template <typename ...args>
-    expression_p rewrite_all(args... rest) const
+    expression_p rewrite_up(args... rest) const
     {
         static constexpr byte_p rewrites[] = { rest.as_bytes()... };
-        return rewrite_all(sizeof...(rest), rewrites);
+        return rewrite(sizeof...(rest), rewrites, false);
+    }
+
+    template <typename ...args>
+    expression_p rewrite_all_down(args... rest) const
+    {
+        static constexpr byte_p rewrites[] = { rest.as_bytes()... };
+        return rewrite_all(sizeof...(rest), rewrites, true);
+    }
+
+    template <typename ...args>
+    expression_p rewrite_all_up(args... rest) const
+    {
+        static constexpr byte_p rewrites[] = { rest.as_bytes()... };
+        return rewrite_all(sizeof...(rest), rewrites, false);
     }
 
     expression_p expand() const;
@@ -443,6 +508,7 @@ struct eq_neg_integer : eq<object::ID_neg_integer, byte(-c)> {};
 //
 // ============================================================================
 
-COMMAND_DECLARE(Rewrite,3);
+COMMAND_DECLARE(MatchUp,   2);
+COMMAND_DECLARE(MatchDown, 2);
 
 #endif // EXPRESSION_H
