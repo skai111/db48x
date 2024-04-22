@@ -5655,16 +5655,26 @@ void tests::flags_by_name()
     BEGIN(sysflags);
 
 #define ID(id)
-#define FLAG(Enable, Disable)                           \
-    step("Setting flag " #Enable)                       \
-        .test(#Enable, ENTER)                           \
-        .noerror();                                     \
-    step("Clearing flag " #Disable " (default)")        \
-        .test(#Disable, ENTER)                          \
-        .noerror();
-#define SETTING(Name, Low, High, Init)          \
-    step("Setting " #Name " to default " #Init) \
-        .noerror();
+#define FLAG(Enable, Disable)                                   \
+    step("Clearing flag " #Disable " (default)")                \
+        .test(CLEAR, #Disable, ENTER).noerror()                 \
+        .test("'" #Enable "' RCL", ENTER).expect("False")       \
+        .test("'" #Disable "' RCL", ENTER).expect("True");      \
+    step("Setting flag " #Enable)                               \
+        .test(CLEAR, #Enable, ENTER).noerror()                  \
+        .test("'" #Enable "' RCL", ENTER).expect("True")        \
+        .test("'" #Disable "' RCL", ENTER).expect("False");     \
+    step("Purging flag " #Enable " (return to default)")        \
+        .test(CLEAR, "'" #Disable "' PURGE", ENTER).noerror()   \
+        .test("'" #Enable "' RCL", ENTER).expect("False")       \
+        .test("'" #Disable "' RCL", ENTER).expect("True");      \
+    step("Purging flag " #Disable " (return to default)")       \
+        .test(CLEAR, "'" #Enable "' PURGE", ENTER).noerror()    \
+        .test("'" #Enable "' RCL", ENTER).expect("False")       \
+        .test("'" #Disable "' RCL", ENTER).expect("True");
+#define SETTING(Name, Low, High, Init)                          \
+    step("Purging " #Name " to revert it to default " #Init)    \
+        .test(CLEAR, "'" #Name "' PURGE", ENTER).noerror();
 #include "ids.tbl"
 }
 
@@ -5681,7 +5691,7 @@ void tests::settings_by_name()
 #define SETTING(Name, Low, High, Init)                  \
     step("Getting " #Name " current value")             \
         .test("'" #Name "' RCL", ENTER)                 \
-        .noerror();                                       \
+        .noerror();                                     \
     step("Setting " #Name " to its current value")      \
         .test("" #Name "", ENTER)                       \
         .noerror();

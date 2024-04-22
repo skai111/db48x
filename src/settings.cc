@@ -537,13 +537,14 @@ bool settings::purge(object::id name)
 #define FLAG(Enable, Disable)                   \
     case ID_##Enable:                           \
     case ID_##Disable:                          \
-        Settings.Disable();                     \
+        Settings.Disable(true);                 \
         break;
 #include "ids.tbl"
 
     default:
         return false;
     }
+    ui.menu_refresh();
     return true;
 }
 
@@ -561,16 +562,17 @@ bool settings::flag(object::id name, bool value)
 #define FLAG(Enable, Disable)                   \
     case ID_##Enable:                           \
         Settings.Enable(value);                 \
-        return true;                            \
+        break;                                  \
     case ID_##Disable:                          \
         Settings.Disable(value);                \
-        return true;
+        break;
 #include "ids.tbl"
 
     default:
-        break;
+        return false;
     }
-    return false;
+    ui.menu_refresh();
+    return true;
 }
 
 
