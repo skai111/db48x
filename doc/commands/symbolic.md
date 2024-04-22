@@ -54,7 +54,8 @@ Rationale: The default DB48X approach makes it easier to write transformation
 rules for the common cases, the `&` character being a bit harder to access on
 the calculator's keyboard. The assumption is that we rarely write patterns to
 match a specific variable, i.e. replace an expression only if it refers to `X`
-but not to `Y`.
+but not to `Y`. The HP behaviour can be restored using the `ExplicitWildcards`
+flag.
 
 A further extension in DB48X is to give a semantic meaning to specific variable
 names:

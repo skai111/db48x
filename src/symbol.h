@@ -81,6 +81,12 @@ struct symbol : text
     }
     bool     matches(utf8 name, size_t len) const;
 
+    bool     starts_with(cstring name) const
+    {
+        return starts_with(utf8(name), strlen(name));
+    }
+    bool     starts_with(utf8 name, size_t len) const;
+
 public:
     OBJECT_DECL(symbol);
     PARSE_DECL(symbol);

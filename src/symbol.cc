@@ -177,6 +177,19 @@ bool symbol::matches(utf8 otxt, size_t osz) const
 }
 
 
+bool symbol::starts_with(utf8 otxt, size_t osz) const
+// ----------------------------------------------------------------------------
+//   Check if the symbol matches the
+// ----------------------------------------------------------------------------
+{
+    size_t sz;
+    utf8 txt = value(&sz);
+    if (sz < osz)
+        return false;
+    return memcmp(cstring(txt), cstring(otxt), osz) == 0;
+}
+
+
 GRAPH_BODY(symbol)
 // ----------------------------------------------------------------------------
 //   Render the symbol as italics

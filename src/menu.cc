@@ -789,6 +789,7 @@ MENU(AlgebraMenu,
      "→Qπ",             ID_Unimplemented,
 
      "Final",           ID_FinalAlgebraResults,
+     "&Wild",           ID_ExplicitWildcards,
      "Symb",            ID_SymbolicMenu);
 
 MENU(ArithmeticMenu,

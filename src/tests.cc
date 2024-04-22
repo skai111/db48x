@@ -4770,6 +4770,24 @@ void tests::rewrite_engine()
               "↓match", ENTER)
         .expect("3")
         .test(BSP).expect("'cos(2·A)+cos(2·B+B)+sin(2·C+C+C)'");
+
+    step("Setting ExplicitWildcards to match with &Wildcard")
+        .test(CLEAR,
+              "ExplicitWildcards", ENTER).noerror();
+    step("Matching names no longer works")
+        .test("'cos(2*A)+cos(3*B)+sin(4*C)' "
+              "{ 'N*Y' '(N-1)*Y+Y' } "
+              "↓match", ENTER)
+        .expect("0")
+        .test(BSP).expect("'cos(2·A)+cos(3·B)+sin(4·C)'");
+    step("Matching explicit wildcards now works")
+        .test("'cos(2*A)+cos(3*B)+sin(4*C)' "
+              "{ '&N*&Y' '(&N-1)*&Y+&Y' } "
+              "↓match", ENTER)
+        .expect("6")
+        .test(BSP).expect("'cos(A+A)+cos(B+B+B)+sin(C+C+C+C)'");
+    step("Restoring default for wildcards")
+        .test(CLEAR, "'ExplicitWildcards' Purge", ENTER).noerror();
 }
 
 

@@ -597,7 +597,8 @@ static bool must_be_integer(symbol_p symbol)
 //   Convention for naming integers in rewrite rules
 // ----------------------------------------------------------------------------
 {
-    char first = tolower(object::payload(symbol)[1]);
+    uint idx = 1+Settings.ExplicitWildcards();
+    char first = tolower(object::payload(symbol)[idx]);
     return strchr("ijklmnpq", first) != nullptr;
 }
 
@@ -607,10 +608,13 @@ static bool must_be_unique(symbol_p symbol)
 //   Convention for naming unique terms in rewrite rules
 // ----------------------------------------------------------------------------
 {
-    char first = tolower(object::payload(symbol)[1]);
+    uint idx = 1+Settings.ExplicitWildcards();
+    char first = tolower(object::payload(symbol)[idx]);
     return strchr("uvw", first) != nullptr;
 }
 
+
+int dddebug() { return 1; }
 
 static size_t check_match(size_t eq, size_t eqsz,
                           size_t from, size_t fromsz)
@@ -629,7 +633,9 @@ static size_t check_match(size_t eq, size_t eqsz,
         object::id fty = ftop->type();
 
         // Check if this this is a symbol.
-        if (fty == object::ID_symbol)
+        if (fty == object::ID_symbol &&
+            dddebug() &&
+            symbol_p(ftop)->starts_with("&") == Settings.ExplicitWildcards())
         {
             // Check if the symbol already exists
             symbol_p name = symbol_p(ftop);

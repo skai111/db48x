@@ -810,6 +810,7 @@ FLAG(VerticalVectors,           HorizontalVectors)
 FLAG(NeedToClearErrors,         NoNeedToClearErrors)
 FLAG(VerticalProgramRendering,  HorizontalProgramRendering)
 FLAG(StepByStepAlgebraResults,  FinalAlgebraResults)
+FLAG(ExplicitWildcards,         ImplicitWildcards)
 
 
 ALIAS(HardwareFloatingPoint,    "HFP")
