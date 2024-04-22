@@ -237,7 +237,7 @@ object::result draw_plot(object::id                  kind,
     algebraic_g      y;
     save<symbol_g *> iref(expression::independent,
                           (symbol_g *) &ppar.independent);
-    settings::PrepareForProgramEvaluation wilLRunPrograms;
+    settings::PrepareForProgramEvaluation willRunPrograms;
     if (ui.draw_graphics())
         if (Settings.DrawPlotAxes())
             draw_axes(ppar);

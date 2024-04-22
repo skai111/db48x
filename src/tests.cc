@@ -4760,6 +4760,16 @@ void tests::rewrite_engine()
         .expect("1")
         .test(BSP)
         .expect("'B-(-A)+C'");
+
+    step("Returning to default")
+        .test(CLEAR, "'FinalAlgebraResults' Purge", ENTER).noerror();
+    step("Matching with conditions")
+        .test(CLEAR,
+              "'cos(2*A)+cos(3*B)+sin(4*C)' "
+              "{ 'N*Y' '(N-1)*Y+Y' 'N>2' } "
+              "↓match", ENTER)
+        .expect("3")
+        .test(BSP).expect("'cos(2·A)+cos(2·B+B)+sin(2·C+C+C)'");
 }
 
 

@@ -736,6 +736,128 @@ static size_t check_match(size_t eq, size_t eqsz,
 }
 
 
+static inline algebraic_p build_expr(expression_p eqin,
+                                     uint         eqst,
+                                     expression_r to,
+                                     uint         matchsz,
+                                     uint         locals,
+                                     uint        &rwcount,
+                                     bool        &replaced)
+// ----------------------------------------------------------------------------
+//   Build an expression by rewriting
+// ----------------------------------------------------------------------------
+{
+    scribble     scr;
+    expression_g eq       = eqin;
+    size_t       where    = 0;
+    bool         compute  = +eq == +to;
+
+    // Copy from the original
+    for (expression::iterator it = eq->begin(); it != eq->end(); ++it)
+    {
+        ASSERT(*it);
+        if (where < eqst || where >= eqst + matchsz)
+        {
+            // Copy from source equation directly
+            object_p obj = *it;
+            if (!rt.append(obj->size(), byte_p(obj)))
+                return nullptr;
+        }
+        else if (!replaced)
+        {
+            // Insert a version of 'to' where symbols are replaced
+            for (object_p tobj : *to)
+            {
+                if (tobj->type() == object::ID_symbol)
+                {
+                    // Check if we find the matching pattern in local
+                    symbol_p name    = symbol_p(tobj);
+                    object_p found   = nullptr;
+                    size_t   symbols = rt.locals() - locals;
+                    for (size_t l = 0; !found && l < symbols; l += 2)
+                    {
+                        symbol_p existing = symbol_p(rt.local(l));
+                        if (!existing)
+                            continue;
+                        if (existing->is_same_as(name))
+                            found = rt.local(l+1);
+                    }
+                    if (found)
+                    {
+                        tobj = found;
+                        if (must_be_integer(name))
+                            compute = true;
+                    }
+                }
+
+                // Only copy the payload of equations
+                size_t tobjsize = tobj->size();
+                if (expression_p teq = tobj->as<expression>())
+                    tobj = teq->objects(&tobjsize);
+                if (!rt.append(tobjsize, byte_p(tobj)))
+                    return nullptr;
+            }
+
+            replaced = true;
+            rwcount++;
+        }
+        where++;
+    }
+
+    // Restart anew with replaced equation
+    eq = expression_p(list::make(object::ID_expression,
+                                 scr.scratch(), scr.growth()));
+
+    if (eq)
+    {
+        // If we had an integer matched and replaced, execute equation
+        if (compute)
+        {
+            // Need to evaluate e.g. 3-1 to get 2
+            size_t depth = rt.depth();
+            if (eq->run() == object::OK)
+            {
+                if (rt.depth() == depth+1)
+                {
+                    if (object_p computed = rt.pop())
+                    {
+                        if (algebraic_g eqa = computed->as_algebraic())
+                            return eqa;
+                    }
+                }
+            }
+            eq = nullptr;
+        }
+    }
+
+    return +eq;
+}
+
+
+static size_t check_match(size_t eq, size_t eqsz,
+                          size_t from, size_t fromsz,
+                          expression_r cond, uint locals)
+// ----------------------------------------------------------------------------
+//   Check if the condition applies
+// ----------------------------------------------------------------------------
+{
+    size_t match = check_match(eq, eqsz, from, fromsz);
+    if (!match || !cond)
+        return match;
+
+    uint condrw = 0;
+    bool condrepl = false;
+    algebraic_g cval = build_expr(cond, 0, cond, ~0U,
+                                  locals, condrw, condrepl);
+    if (!cval)
+        return 0;
+    int rc = cval->as_truth(false);
+    if (rc <= 0)                // If this does not evaluate correctly, fail
+        match = 0;
+    return match;
+}
+
+
 expression_p expression::rewrite(expression_r from,
                                  expression_r to,
                                  expression_r cond,
@@ -761,13 +883,14 @@ expression_p expression::rewrite(expression_r from,
     uint         rewrites = Settings.MaxRewrites();
     uint         rwcount  = 0;
 
+    settings::PrepareForProgramEvaluation willRunPrograms;
+
     // Loop while there are replacements found
     do
     {
         // Location of expanded equation
         size_t eqsz = 0, fromsz = 0;
         size_t eqst = 0, fromst = 0;
-        bool compute = false;
 
         replaced = false;
 
@@ -791,7 +914,8 @@ expression_p expression::rewrite(expression_r from,
             // Check if there is a match in sub-equations going down
             for (eqsz = eqlen; eqsz; eqst++, eqsz--)
             {
-                matchsz = check_match(eqst, eqsz, fromst, fromsz);
+                matchsz = check_match(eqst, eqsz, fromst, fromsz,
+                                      cond, locals);
                 if (matchsz)
                     break;
             }
@@ -804,7 +928,8 @@ expression_p expression::rewrite(expression_r from,
             {
                 for (eqst = eqstart; eqst + eqsz <= eqlen; eqst++)
                 {
-                    matchsz = check_match(eqst, eqsz, fromst, fromsz);
+                    matchsz = check_match(eqst, eqsz, fromst, fromsz,
+                                          cond, locals);
                     if (matchsz)
                         break;
                 }
@@ -817,97 +942,21 @@ expression_p expression::rewrite(expression_r from,
         ASSERT(rt.depth() >= depth);
         rt.drop(rt.depth() - depth);
 
-        // If we matched a sub-equation, evaluate the condition
-        if (matchsz)
-        {
-            if (cond)
-            {
-            }
-        }
-
         // If we matched a sub-equation, perform replacement
         if (matchsz)
         {
-            scribble scr;
-            size_t   where  = 0;
-
             // We matched from the back of the equation object
             eqst = eqlen - matchsz - eqst;
 
-            // Copy from the original
-            for (expression::iterator it = eq->begin(); it != eq->end(); ++it)
-            {
-                ASSERT(*it);
-                if (where < eqst || where >= eqst + matchsz)
-                {
-                    // Copy from source equation directly
-                    object_p obj = *it;
-                    if (!rt.append(obj->size(), byte_p(obj)))
-                        return nullptr;
-                }
-                else if (!replaced)
-                {
-                    // Insert a version of 'to' where symbols are replaced
-                    for (object_p tobj : *to)
-                    {
-                        if (tobj->type() == ID_symbol)
-                        {
-                            // Check if we find the matching pattern in local
-                            symbol_p name = symbol_p(tobj);
-                            object_p found = nullptr;
-                            size_t symbols = rt.locals() - locals;
-                            for (size_t l = 0; !found && l < symbols; l += 2)
-                            {
-                                symbol_p existing = symbol_p(rt.local(l));
-                                if (!existing)
-                                    continue;
-                                if (existing->is_same_as(name))
-                                    found = rt.local(l+1);
-                            }
-                            if (found)
-                            {
-                                tobj = found;
-                                if (must_be_integer(name))
-                                    compute = true;
-                            }
-                        }
+            algebraic_g eqa = build_expr(eq, eqst, to, matchsz, locals,
+                                         rwcount, replaced);
+            if (!eqa)
+                goto err;
 
-                        // Only copy the payload of equations
-                        size_t tobjsize = tobj->size();
-                        if (expression_p teq = tobj->as<expression>())
-                            tobj = teq->objects(&tobjsize);
-                        if (!rt.append(tobjsize, byte_p(tobj)))
-                            return nullptr;
-                    }
-
-                    replaced = true;
-                    rwcount++;
-                }
-                where++;
-            }
-
-            // Restart anew with replaced equation
-            eq = expression_p(list::make(ID_expression,
-                                       scr.scratch(), scr.growth()));
-
-            // If we had an integer matfched and replaced, execute equation
-            if (compute)
-            {
-                // Need to evaluate e.g. 3-1 to get 2
-                if (eq->run() != object::OK)
-                    goto err;
-                if (rt.depth() != depth+1)
-                    goto err;
-                object_p computed = rt.pop();
-                if (!computed)
-                    goto err;
-                algebraic_g eqa = computed->as_algebraic();
-                if (!eqa)
-                    goto err;
-                eq = eqa->as<expression>();
-                if (!eq)
-                    eq = expression::make(eqa);
-            }
+            // Wrap result in expression if needed
+            eq = eqa->as<expression>();
+            if (!eq)
+                eq = expression::make(eqa);
 
             // Drop the local names, we will recreate them on next match
             rt.unlocals(rt.locals() - locals);
@@ -918,7 +967,7 @@ expression_p expression::rewrite(expression_r from,
                 rt.too_many_rewrites_error();
                 goto err;
             }
-        }
+        } // matchz
     } while (replaced && Settings.FinalAlgebraResults() && !interrupted());
 
     if (count)
