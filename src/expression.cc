@@ -739,6 +739,7 @@ static size_t check_match(size_t eq, size_t eqsz,
 expression_p expression::rewrite(expression_r from,
                                  expression_r to,
                                  expression_r cond,
+                                 uint        *count,
                                  bool         down) const
 // ----------------------------------------------------------------------------
 //   If we match pattern in `from`, then rewrite using pattern in `to`
@@ -748,16 +749,17 @@ expression_p expression::rewrite(expression_r from,
 //
 {
     // Remember the current stack depth and locals
-    size_t     locals   = rt.locals();
-    size_t     depth    = rt.depth();
+    size_t       locals   = rt.locals();
+    size_t       depth    = rt.depth();
 
     // Need a GC pointer since stack operations may move us
     expression_g eq       = this;
 
     // Information about part we replace
-    bool       replaced = false;
-    size_t     matchsz  = 0;
-    uint       rewrites = Settings.MaxRewrites();
+    bool         replaced = false;
+    size_t       matchsz  = 0;
+    uint         rewrites = Settings.MaxRewrites();
+    uint         rwcount  = 0;
 
     // Loop while there are replacements found
     do
@@ -879,6 +881,7 @@ expression_p expression::rewrite(expression_r from,
                     }
 
                     replaced = true;
+                    rwcount++;
                 }
                 where++;
             }
@@ -918,16 +921,20 @@ expression_p expression::rewrite(expression_r from,
         }
     } while (replaced && Settings.FinalAlgebraResults() && !interrupted());
 
+    if (count)
+        *count += rwcount;
+
 err:
     ASSERT(rt.depth() >= depth);
     rt.drop(rt.depth() - depth);
     rt.unlocals(rt.locals() - locals);
-    return eq;;
+    return eq;
 }
 
 
 expression_p expression::rewrite(size_t       size,
                                  const byte_p rewrites[],
+                                 uint        *count,
                                  bool         down) const
 // ----------------------------------------------------------------------------
 //   Apply a series of rewrites
@@ -937,32 +944,32 @@ expression_p expression::rewrite(size_t       size,
     for (size_t i = 0; eq && i < size; i += 2)
         eq = eq->rewrite(expression_p(rewrites[i]),
                          expression_p(rewrites[i + 1]),
-                         nullptr,
-                         down);
+                         nullptr, count, down);
     return eq;
 }
 
 
 expression_p expression::rewrite_all(size_t       size,
                                      const byte_p rewrites[],
+                                     uint        *count,
                                      bool         down) const
 // ----------------------------------------------------------------------------
 //   Loop on the rewrites until the result stabilizes
 // ----------------------------------------------------------------------------
 {
-    uint count = 0;
+    uint rwcount = 0;
     expression_g last = nullptr;
     expression_g eq = this;
-    while (count++ < Settings.MaxRewrites() && eq && +eq != +last)
+    while (rwcount++ < Settings.MaxRewrites() && eq && +eq != +last)
     {
         // Check if we produced the same value
         if (last && last->is_same_as(eq))
             break;
 
         last = eq;
-        eq = eq->rewrite(size, rewrites, down);
+        eq = eq->rewrite(size, rewrites, count, down);
     }
-    if (count >= Settings.MaxRewrites())
+    if (rwcount >= Settings.MaxRewrites())
         rt.too_many_rewrites_error();
     return eq;
 }
@@ -989,17 +996,16 @@ static object::result match_up_down(bool down)
     expression_g from = expression::as_expression(*it++);
     expression_g to = expression::as_expression(*it++);
     if (!from || !to)
-        {
+    {
         rt.value_error();
         return object::ERROR;
     }
     expression_g cond = expression::as_expression(*it++);
-    cond = eq->rewrite(from, to, cond, down);
+    uint rwcount = 0;
+    cond = eq->rewrite(from, to, cond, &rwcount, down);
     if (!cond)
         return object::ERROR;
-    object_p changed = object::static_object(+cond != +eq
-                                             ? object::ID_True
-                                             : object::ID_False);
+    integer_g changed = integer::make(rwcount);
     if (!rt.stack(1, cond) || !rt.stack(0, changed))
         return object::ERROR;
 

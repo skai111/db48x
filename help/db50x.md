@@ -7117,6 +7117,8 @@ This flag enables numbered variables similar to what existed on earlier RPN calc
 
 This flag disables numbered variables, behaving closer to the way RPL calculators work. For example, when the setting is active, `2.5 0 STO` generates an `Invalid name` error.
 
+
+
 # States
 
 The calculator can save and restore state in files with extension `.48S`.
@@ -7549,33 +7551,95 @@ Set both the independent and dependent data columns in the reserved variable
 `XCol` `YCol` ▶ (Update `ΣParameters`)
 # Operations with Symbolic Expressions
 
-## Rewrite
+## ↑Match
 
-Applies an arbitrary transformation on equations. The first argument is the
-equation to transform. The second argument is the pattern to match. The third
-argument is the replacement pattern. Patterns can contain variable names, which
-are substituted with the corresponding sub-expression.
+Match pattern up and [rewrite expression](#expression-rewrite), starting with
+the innermost subexpressions first. This approach works well for
+simplifications. A subexpression simplified during one execution will be a
+simpler argument of its parent expression, so the parent expression can be
+simplified further.
 
-In the matching pattern, variables with a name that begins with `i`, `j`, `k`,
-`l`, `m`, `n`, `p` or `q` must match a non-zero positive integer. When such a
-match happens, the expression is evaluated after rewrite in order to compute
-values such as `3-1`.
+`Expr` { `From` `To` } ▶ `Expr` `Count`
+`Expr` { `From` `To` `Cond` } ▶ `Expr` `Count`
 
-Additionally, variables with a name that begins with `u`, `v` or `w` must
-be _unique_ within the pattern. This is useful for term-reordering rules,
-such as `'x*u*x' 'x*x*u'`, which should not match `a*a*a` where it is a no-op.
-If multiple variables with a unique name exist in the same pattern, then they
-must match symbols, and the symbols must be sorted in the same order as
-in the pattern. For example, rewriting `v*u` as `u*v` and `x*v*u` as `x*u*v` and
-applying these rules repeadely will result in a sorting of terms in
-multiplications.
+The first argument `Expr` is the expression to transform.
 
-`Eq` `From` `To` ▶ `Eq`
+The second argument is a list containing the pattern to match `From`,
+the replacement pattern `To`,
+and an optional condition `Cond` on the pattern.
+
+
+## ↓Match
+
+Match pattern down and [rewrite expression](#expression-rewrite), starting with
+the outermost expression first. This approach works well for expansion. An
+expression expanded during one execution of `↓Match` will contain additional
+subexpressions, and those subexpressions can be expanded further.
+
+`Expr` { `From` `To` } ▶ `Expr` `Count`
+`Expr` { `From` `To` `Cond` } ▶ `Expr` `Count`
+
+The first argument `Expr` is the expression to transform.
+
+The second argument is a list containing the pattern to match `From`,
+the replacement pattern `To`,
+and an optional condition `Cond` on the pattern.
+
+## Expression rewrite
+
+Operations such as `↑Match` and `↓Match` apply arbitrary transformations on
+algebraic expressions. The way this operates is similar to how HP
+calculators perform, but with important differences, controlled by flags.
+
+First, patterns can contain wildcards, which are substituted with the
+corresponding sub-expression in the matched `Expr`.
+
+* On HP calculators, the wildcard names must begin with `&`, and only an
+  optional external conditions can control what matches or not.
+
+* On DB50X, by default, any name in the pattern acts as a wildcard, and we use
+  `&` to refer to a specific variable i.e. `&A` only matches the variable named
+  `A`.
+
+Rationale: The default DB50X approach makes it easier to write transformation
+rules for the common cases, the `&` character being a bit harder to access on
+the calculator's keyboard. The assumption is that we rarely write patterns to
+match a specific variable, i.e. replace an expression only if it refers to `X`
+but not to `Y`.
+
+A further extension in DB50X is to give a semantic meaning to specific variable
+names:
+
+* In the matching pattern, variables with a name that begins with `i`, `j`, `k`,
+  `l`, `m`, `n`, `p` or `q` must match a non-zero positive integer. When such a
+  match happens, the expression is evaluated after rewrite in order to compute
+  values such as `3-1`.
+
+* Additionally, variables with a name that begins with `u`, `v` or `w` must be
+  _unique_ within the pattern. This is useful for term-reordering rules, such as
+  `'x*u*x' 'x*x*u'`, which should not match `a*a*a` where it is a no-op.  If
+  multiple variables with a unique name exist in the same pattern, then they
+  must match symbols, and the symbols must be sorted in the same order as in the
+  pattern. For example, rewriting `v*u` as `u*v` and `x*v*u` as `x*u*v` and
+  applying these rules repeadely will result in a sorting of terms in
+  multiplications.
+
+Another important difference is that on HP calculators, the number of rewrites
+of subexpressions is limited to a single pass, irrespective of flag `-100`
+(step-by-step CAS mode), whereas DB50X will repeat application by default (this
+can be changed by setting `StepByStepAlgebraResults`, or alternatively, by
+clearing flag `-100`).
+
+This leads to the last important difference. On HP calculators, `↑Match` and
+`↓Match` return either `0` or `1` in the first level of the stack to indicate if
+a replacement occurred. On DB50X, the number of replaced subexpressions is
+returned, and it can be greater than 1.
+
 
 Examples:
-* `'A+B+0' 'X+0' 'X' rewrite` returns `'A+B'`
-* `'A+B+C' 'X+Y' 'Y-X' rewrite` returns `'C-(B-A)`
-* `'(A+B)^3' 'X^N' 'X*X^(N-1)' rewrite` returns `(A+B)*(A+B)^2`.
+* `'A+B+0' {'X+0' 'X' } ↓Match` returns `'A+B' 1`
+* `'A+B+C' { 'X+Y' 'Y-X' } ↓Match` returns `'C-(B-A)' 2`
+* `'(A+B)^3' { 'X^N' 'X*X^(N-1)' } ↓Match` returns `(A+B)*(A+B)^2`.
 
 
 ## AutoSimplify
@@ -7595,12 +7659,15 @@ or `X*1-B*0` will no longer be simplified during evaluation.
 The opposite setting is [AutoSimplify](#autosimplify)
 
 
-## RULEMATCH
-Find if an expression matches a rule pattern
+## FinalAlgebraResults
+
+Evaluate algebraic rules on symbolic expressions repeatedly until no futher change results from applying them.
 
 
-## RULEAPPLY
-Match and apply a rule to an expression repeatedly
+## StepByStepAlgebraResults
+
+Evaluate algebraic rules on symbolic expressions one step at a time.
+
 
 
 ## →Num (→Decimal, ToDecimal)

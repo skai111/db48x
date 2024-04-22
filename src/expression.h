@@ -120,88 +120,126 @@ struct expression : program
 
     expression_p rewrite_up(expression_r from,
                             expression_r to,
-                            expression_r cond) const
+                            expression_r cond,
+                            uint *count = nullptr) const
     {
-        return rewrite(from, to, cond, false);
+        return rewrite(from, to, cond, count, false);
     }
     expression_p rewrite_up(expression_p from,
-                         expression_p to,
-                            expression_p cond = nullptr) const
+                            expression_p to,
+                            expression_p cond  = nullptr,
+                            uint        *count = nullptr) const
 
     {
         return rewrite_up(expression_g(from),
                           expression_g(to),
-                          expression_g(cond));
+                          expression_g(cond),
+                          count);
     }
     expression_p rewrite_down(expression_r from,
                               expression_r to,
-                              expression_r cond) const
+                              expression_r cond,
+                              uint *count = nullptr) const
     {
-        return rewrite(from, to, cond, true);
+        return rewrite(from, to, cond, count, true);
     }
     expression_p rewrite_down(expression_p from,
                               expression_p to,
-                              expression_p cond = nullptr) const
+                              expression_p cond  = nullptr,
+                              uint        *count = nullptr) const
     {
         return rewrite_down(expression_g(from),
                             expression_g(to),
-                            expression_g(cond));
+                            expression_g(cond),
+                            count);
     }
 
     expression_p rewrite(expression_r from,
                          expression_r to,
                          expression_r cond,
+                         uint        *count,
                          bool         down) const;
     expression_p rewrite(expression_p from,
                          expression_p to,
                          expression_p cond,
+                         uint        *count,
                          bool         down) const
     {
         return rewrite(expression_g(from),
                        expression_g(to),
                        expression_g(cond),
+                       count,
                        down);
     }
-    expression_p rewrite(size_t size,
-                         const byte_p rewrites[], bool down) const;
-    expression_p rewrite_all(size_t size,
-                             const byte_p rewrites[], bool down) const;
+    expression_p rewrite(size_t size, const byte_p rewrites[],
+                         uint *count, bool down) const;
+    expression_p rewrite_all(size_t size, const byte_p rewrites[],
+                             uint *count, bool down) const;
 
     static expression_p rewrite(expression_r eq,
                                 expression_r from,
                                 expression_r to,
                                 expression_r cond,
+                                uint        *count,
                                 bool         down)
     {
-        return eq->rewrite(from, to, cond, down);
+        return eq->rewrite(from, to, cond, count, down);
+    }
+
+    template <typename ...args>
+    expression_p rewrite_down(uint *count, args... rest) const
+    {
+        static constexpr byte_p rewrites[] = { rest.as_bytes()... };
+        return rewrite(sizeof...(rest), rewrites, count, true);
+    }
+
+    template <typename ...args>
+    expression_p rewrite_up(uint *count, args... rest) const
+    {
+        static constexpr byte_p rewrites[] = { rest.as_bytes()... };
+        return rewrite(sizeof...(rest), rewrites, count, false);
+    }
+
+    template <typename ...args>
+    expression_p rewrite_all_down(uint *count, args... rest) const
+    {
+        static constexpr byte_p rewrites[] = { rest.as_bytes()... };
+        return rewrite_all(sizeof...(rest), rewrites, count, true);
+    }
+
+    template <typename ...args>
+    expression_p rewrite_all_up(uint *count, args... rest) const
+    {
+        static constexpr byte_p rewrites[] = { rest.as_bytes()... };
+        return rewrite_all(sizeof...(rest), rewrites, count, false);
     }
 
     template <typename ...args>
     expression_p rewrite_down(args... rest) const
     {
         static constexpr byte_p rewrites[] = { rest.as_bytes()... };
-        return rewrite(sizeof...(rest), rewrites, true);
+        return rewrite(sizeof...(rest), rewrites, nullptr, true);
     }
 
     template <typename ...args>
     expression_p rewrite_up(args... rest) const
     {
         static constexpr byte_p rewrites[] = { rest.as_bytes()... };
-        return rewrite(sizeof...(rest), rewrites, false);
+        return rewrite(sizeof...(rest), rewrites, nullptr, false);
     }
 
     template <typename ...args>
     expression_p rewrite_all_down(args... rest) const
     {
         static constexpr byte_p rewrites[] = { rest.as_bytes()... };
-        return rewrite_all(sizeof...(rest), rewrites, true);
+        return rewrite_all(sizeof...(rest), rewrites, nullptr, true);
     }
 
     template <typename ...args>
     expression_p rewrite_all_up(args... rest) const
     {
         static constexpr byte_p rewrites[] = { rest.as_bytes()... };
-        return rewrite_all(sizeof...(rest), rewrites, false);
+        return rewrite_all(sizeof...(rest), rewrites, nullptr, false);
     }
 
     expression_p expand() const;

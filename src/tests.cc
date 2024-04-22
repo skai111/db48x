@@ -4646,51 +4646,54 @@ void tests::rewrite_engine()
 
     step("Single replacement");
     test(CLEAR, "'A+B' { 'X+Y' 'Y-sin X' } ↓match", ENTER)
-        .expect("True")
+        .expect("1")
         .test(BSP)
         .expect("'B-sin A'");
 
     step("In-depth replacement");
     test(CLEAR, " 'A*(B+C)' { 'X+Y' 'Y-sin X' } ↓Match", ENTER)
-        .expect("True")
+        .expect("1")
         .test(BSP)
         .expect("'A·(C-sin B)'");
 
     step("Variable matching");
     test(CLEAR, "'A*(B+C)' { 'X+X' 'X-sin X' }", RSHIFT, KEY7, LSHIFT, F1, F1)
-        .expect("False")
+        .expect("0")
         .test(BSP)
         .expect("'A·(B+C)'");
     test(CLEAR, "'A*(B+(B))' { 'X+X' 'X-sin X' }", RSHIFT, KEY7, LSHIFT, F1, F1)
-        .expect("True")
+        .expect("1")
         .test(BSP)
         .expect("'A·(B-sin B)'");
 
     step("Constant folding");
     test(CLEAR, "'A+B+0' { 'X+0' 'X' }", RSHIFT, KEY7, LSHIFT, F1, F1)
-        .expect("True")
+        .expect("1")
         .test(BSP)
         .expect("'A+B'");
+
+    step("Clearing final flag")
+        .test(CLEAR, "-100 CF", ENTER).noerror();
     step("Multiple substitutions (down)");
     test(CLEAR, "'A+B+C' { 'X+Y' 'Y-X' }", RSHIFT, KEY7, LSHIFT, F1, F1)
-        .expect("True")
+        .expect("1")
         .test(BSP)
         .expect("'C-(A+B)'");
     step("Multiple substitutions (up)");
     test(CLEAR, "'A+B+C' { 'X+Y' 'Y-X' }", RSHIFT, KEY7, LSHIFT, F1, F2)
-        .expect("True")
+        .expect("1")
         .test(BSP)
         .expect("'B-A+C'");
     step("Setting final flag")
         .test(CLEAR, "-100 SF", ENTER).noerror();
     step("Multiple substitutions (down repeat)");
     test(CLEAR, "'A+B+C' { 'X+Y' 'Y-X' }", RSHIFT, KEY7, LSHIFT, F1, F1)
-        .expect("True")
+        .expect("2")
         .test(BSP)
         .expect("'C-(B-A)'");
     step("Multiple substitutions (up repeat)");
     test(CLEAR, "'A+B+C' { 'X+Y' 'Y-X' }", RSHIFT, KEY7, LSHIFT, F1, F1)
-        .expect("True")
+        .expect("2")
         .test(BSP)
         .expect("'C-(B-A)'");
     step("Setting step by step flag")
@@ -4698,51 +4701,51 @@ void tests::rewrite_engine()
 
     step("Deep substitution");
     test(CLEAR, "'tan(A-B)+3' { 'A-B' '-B+A' }", RSHIFT, KEY7, LSHIFT, F1, F1)
-        .expect("True")
+        .expect("1")
         .test(BSP)
         .expect("'tan(-B+A)+3'");
     step("Deep substitution with multiple changes (down single)");
     test(CLEAR, "StepByStepAlgebraResults", ENTER,
          "'5+tan(A-B)+(3-sin(C+D-A))' { 'A-B' '-B+A' }",
          RSHIFT, KEY7, LSHIFT, F1, F1)
-        .expect("True")
+        .expect("1")
         .test(BSP)
         .expect("'5+tan(A-B)+(-sin(C+D-A)+3)'");
     step("Deep substitution with multiple changes (up single)");
     test(CLEAR, "StepByStepAlgebraResults", ENTER,
          "'5+tan(A-B)+(3-sin(C+D-A))' { 'A-B' '-B+A' }",
          RSHIFT, KEY7, LSHIFT, F1, F2)
-        .expect("True")
+        .expect("1")
         .test(BSP)
         .expect("'5+tan(-B+A)+(3-sin(C+D-A))'");
     step("Deep substitution with multiple changes (down multiple)");
     test(CLEAR, "FinalAlgebraResults", ENTER,
          "'5+tan(A-B)+(3-sin(C+D-A))' { 'A-B' '-B+A' }",
          RSHIFT, KEY7, LSHIFT, F1, F1)
-        .expect("True")
+        .expect("3")
         .test(BSP)
         .expect("'5+tan(-B+A)+(-sin(-A+(C+D))+3)'");
     step("Deep substitution with multiple changes (up multiple)");
     test(CLEAR, "FinalAlgebraResults", ENTER,
          "'5+tan(A-B)+(3-sin(C+D-A))' { 'A-B' '-B+A' }",
          RSHIFT, KEY7, LSHIFT, F1, F2)
-        .expect("True")
+        .expect("3")
         .test(BSP)
         .expect("'5+tan(-B+A)+(-sin(-A+(C+D))+3)'");
 
     step("Matching integers");
     test(CLEAR, "'(A+B)^3' { 'X^N' 'X*X^(N-1)' }", RSHIFT, KEY7, LSHIFT, F1, F1)
-        .expect("True")
+        .expect("2")
         .test(BSP)
         .expect("'(A+B)·(A+B)²'");
 
     step("Matching unique terms");
     test(CLEAR, "'(A+B+A)' { 'X+U+X' '2*X+U' }", RSHIFT, KEY7, LSHIFT, F1, F1)
-        .expect("True")
+        .expect("1")
         .test(BSP)
         .expect("'2·A+B'");
     test(CLEAR, "'(A+A+A)' { 'X+U+X' '2*X+U' }", RSHIFT, KEY7, LSHIFT, F1, F1)
-        .expect("False")
+        .expect("0")
         .test(BSP)
         .expect("'A+A+A'");
 
@@ -4750,11 +4753,11 @@ void tests::rewrite_engine()
         .test(CLEAR, "-100 CF", ENTER);
     step("Matching down")
         .test(CLEAR, "'A+B+C' { 'X+Y' 'Y-(-X)' }", RSHIFT, KEY7, LSHIFT, F1, F1)
-        .expect("True")
+        .expect("1")
         .test(BSP).expect("'C-(-(A+B))'");
     step("Matching up")
         .test(CLEAR, "'A+B+C' { 'X+Y' 'Y-(-X)' }", RSHIFT, KEY7, LSHIFT, F1, F2)
-        .expect("True")
+        .expect("1")
         .test(BSP)
         .expect("'B-(-A)+C'");
 }

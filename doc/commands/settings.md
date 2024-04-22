@@ -504,6 +504,8 @@ This flag enables numbered variables similar to what existed on earlier RPN calc
 
 This flag disables numbered variables, behaving closer to the way RPL calculators work. For example, when the setting is active, `2.5 0 STO` generates an `Invalid name` error.
 
+
+
 # States
 
 The calculator can save and restore state in files with extension `.48S`.
