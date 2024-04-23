@@ -223,6 +223,7 @@ struct expression : program
     expression_p rewrites(args... rest) const
     {
         settings::SaveExplicitWildcards ewc(false);
+        settings::SaveAutoSimplify as(false);
         static constexpr byte_p rwdata[] = { rest.as_bytes()... };
         return do_rewrites<down,conds,rep>(sizeof...(rest), rwdata, nullptr);
     }
