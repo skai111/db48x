@@ -1099,7 +1099,9 @@ expression_p expression::expand() const
         x + (y - z), (x + y) - z,
         x - y + z,   (x + z) - y,
         v + u,       u + v,
-        x + v + u,   x + u + v
+        x + v + u,   x + u + v,
+        x^(y+z),     (x^y)*(x^z),
+        (x*y)^z,     (x^z)*(y^z)
         );
 }
 
