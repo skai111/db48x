@@ -41,8 +41,10 @@
 #include "utf8.h"
 
 
-RECORDER(equation, 16, "Processing of equations and algebraic objects");
-RECORDER(equation_error, 16, "Errors with equations");
+RECORDER(equation,      16, "Processing of equations and algebraic objects");
+RECORDER(equation_error,16, "Errors with equations");
+RECORDER(rewrites,      16, "Expression rewrites");
+RECORDER(rewrites_done, 16, "Successful expression rewrites");
 
 
 symbol_g *expression::independent = nullptr;
@@ -882,12 +884,16 @@ expression_p expression::rewrite(expression_r from,
 
     // Need a GC pointer since stack operations may move us
     expression_g eq       = this;
+    expression_g saved    = this;
 
     // Information about part we replace
     bool         replaced = false;
     size_t       matchsz  = 0;
     uint         rewrites = Settings.MaxRewrites();
     uint         rwcount  = 0;
+
+    record(rewrites, "Rewrite %t applying %t->%t cond %t",
+           +eq, +from, +to, +cond);
 
     settings::PrepareForProgramEvaluation willRunPrograms;
 
@@ -983,6 +989,12 @@ err:
     ASSERT(rt.depth() >= depth);
     rt.drop(rt.depth() - depth);
     rt.unlocals(rt.locals() - locals);
+
+    record(rewrites, "%+s rewritten as %t", rwcount ? "Was" : "Not", +eq);
+    if (rwcount)
+        record(rewrites_done,
+               "%t rewritten as %t applying %t->%t with condition %t %u times",
+               +saved, +eq, +from, +to, +cond, rwcount);
     return eq;
 }
 
