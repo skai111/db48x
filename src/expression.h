@@ -346,6 +346,7 @@ public:
 
 
 
+
 // ============================================================================
 //
 //    C++ expression building (to create rules in C++ code)
@@ -358,11 +359,28 @@ struct eq
 //   A static expression builder for C++ code
 // ----------------------------------------------------------------------------
 {
+    // Helper to ensure a compile error if we ever use a value above 128
+    static constexpr byte leb(byte value)
+    {
+        return byte(value / byte(value < 128));
+    }
+
+    // Helper for low and high byte of a value that does not fit in one byte
+    static constexpr byte lb(uint value)
+    {
+        return byte(leb(byte(value & 127)) | 128);
+    }
+    static constexpr byte hb(uint value)
+    {
+        return leb(byte((value / 128) & 127));
+    }
+
+
     eq() {}
     static constexpr byte object_data[sizeof...(args) + 2] =
     {
-        object::ID_expression,
-        byte(sizeof...(args)),  // Must be less than 128...
+        leb(object::ID_expression),
+        leb(sizeof...(args)),  // Must be less than 128...
         args...
     };
     constexpr byte_p as_bytes() const
@@ -375,12 +393,19 @@ struct eq
     }
 
     // Negation operation
-    eq<args..., object::ID_neg>
-    operator-()         { return eq<args..., object::ID_neg>(); }
+    eq<args..., leb(object::ID_neg)>
+    operator-()         { return eq<args..., leb(object::ID_neg)>(); }
 
-#define EQ_FUNCTION(name)                                       \
-    eq<args..., object::ID_##name>                              \
-    name()         { return eq<args..., object::ID_##name>(); }
+    template <uint ty>
+    using fntype = typename std::conditional<(ty < 128),
+                                             eq<args..., byte(ty)>,
+                                             eq<args..., lb(ty), hb(ty)>>::type;
+
+#define EQ_FUNCTION(name)                                               \
+    fntype<object::ID_##name> name()                                    \
+    {                                                                   \
+        return fntype<object::ID_##name>();                             \
+    }
 
     EQ_FUNCTION(sqrt);
     EQ_FUNCTION(cbrt);
@@ -429,67 +454,68 @@ struct eq
 
     // Arithmetic
     template<byte ...y>
-    eq<args..., y..., object::ID_add>
-    operator+(eq<y...>) { return eq<args..., y..., object::ID_add>(); }
+    eq<args..., y..., leb(object::ID_add)>
+    operator+(eq<y...>) { return eq<args..., y..., leb(object::ID_add)>(); }
 
     template<byte ...y>
-    eq<args..., y..., object::ID_sub>
-    operator-(eq<y...>) { return eq<args..., y..., object::ID_sub>(); }
+    eq<args..., y..., leb(object::ID_sub)>
+    operator-(eq<y...>) { return eq<args..., y..., leb(object::ID_sub)>(); }
 
     template<byte ...y>
-    eq<args..., y..., object::ID_mul>
-    operator*(eq<y...>) { return eq<args..., y..., object::ID_mul>(); }
+    eq<args..., y..., leb(object::ID_mul)>
+    operator*(eq<y...>) { return eq<args..., y..., leb(object::ID_mul)>(); }
 
     template<byte ...y>
-    eq<args..., y..., object::ID_div>
-    operator/(eq<y...>) { return eq<args..., y..., object::ID_div>(); }
+    eq<args..., y..., leb(object::ID_div)>
+    operator/(eq<y...>) { return eq<args..., y..., leb(object::ID_div)>(); }
 
     template<byte ...y>
-    eq<args..., y..., object::ID_mod>
-    operator%(eq<y...>) { return eq<args..., y..., object::ID_mod>(); }
+    eq<args..., y..., leb(object::ID_mod)>
+    operator%(eq<y...>) { return eq<args..., y..., leb(object::ID_mod)>(); }
 
     template<byte ...y>
-    eq<args..., y..., object::ID_rem>
-    rem(eq<y...>) { return eq<args..., y..., object::ID_rem>(); }
+    eq<args..., y..., leb(object::ID_rem)>
+    rem(eq<y...>) { return eq<args..., y..., leb(object::ID_rem)>(); }
 
     template<byte ...y>
-    eq<args..., y..., object::ID_pow>
-    operator^(eq<y...>) { return eq<args..., y..., object::ID_pow>(); }
+    eq<args..., y..., leb(object::ID_pow)>
+    operator^(eq<y...>) { return eq<args..., y..., leb(object::ID_pow)>(); }
 
     template<byte ...y>
-    eq<args..., y..., object::ID_pow>
-    pow(eq<y...>) { return eq<args..., y..., object::ID_pow>(); }
+    eq<args..., y..., leb(object::ID_pow)>
+    pow(eq<y...>) { return eq<args..., y..., leb(object::ID_pow)>(); }
 
     // Comparisons
     template<byte ...y>
-    eq<args..., y..., object::ID_TestLT>
-    operator<(eq<y...>) { return eq<args..., y..., object::ID_TestLT>(); }
+    eq<args..., y..., leb(object::ID_TestLT)>
+    operator<(eq<y...>) { return eq<args..., y..., leb(object::ID_TestLT)>(); }
 
     template<byte ...y>
-    eq<args..., y..., object::ID_TestEQ>
-    operator==(eq<y...>) { return eq<args..., y..., object::ID_TestEQ>(); }
+    eq<args..., y..., leb(object::ID_TestEQ)>
+    operator==(eq<y...>) { return eq<args..., y..., leb(object::ID_TestEQ)>(); }
 
     template<byte ...y>
-    eq<args..., y..., object::ID_TestGT>
-    operator>(eq<y...>) { return eq<args..., y..., object::ID_TestGT>(); }
+    eq<args..., y..., leb(object::ID_TestGT)>
+    operator>(eq<y...>) { return eq<args..., y..., leb(object::ID_TestGT)>(); }
 
     template<byte ...y>
-    eq<args..., y..., object::ID_TestLE>
-    operator<=(eq<y...>) { return eq<args..., y..., object::ID_TestLE>(); }
+    eq<args..., y..., leb(object::ID_TestLE)>
+    operator<=(eq<y...>) { return eq<args..., y..., leb(object::ID_TestLE)>(); }
 
     template<byte ...y>
-    eq<args..., y..., object::ID_TestNE>
-    operator!=(eq<y...>) { return eq<args..., y..., object::ID_TestNE>(); }
+    eq<args..., y..., leb(object::ID_TestNE)>
+    operator!=(eq<y...>) { return eq<args..., y..., leb(object::ID_TestNE)>(); }
 
     template<byte ...y>
-    eq<args..., y..., object::ID_TestGE>
-    operator>=(eq<y...>) { return eq<args..., y..., object::ID_TestGE>(); }
+    eq<args..., y..., leb(object::ID_TestGE)>
+    operator>=(eq<y...>) { return eq<args..., y..., leb(object::ID_TestGE)>(); }
 
 };
 
-#define EQ_FUNCTION(name)                               \
-    template<byte ...x>                                 \
-    eq<x..., object::ID_##name>                         \
+
+#define EQ_FUNCTION(name)                                       \
+    template<byte ...x>                                         \
+    typename eq<x...>::template fntype<object::ID_##name>       \
     name(eq<x...> xeq)         { return xeq.name(); }
 
 
@@ -547,7 +573,7 @@ template <byte c>       struct eq_symbol  : eq<object::ID_symbol,  1, c> {};
 // Build an integer constant
 template <uint c, std::enable_if_t<(c >= 0 && c < 128), bool> = true>
 struct eq_integer : eq<object::ID_integer, byte(c)> {};
-template <int c, std::enable_if_t<(c <= 0 && c >= -128), bool> = true>
+template <int c, std::enable_if_t<(c <= 0 && c > -128), bool> = true>
 struct eq_neg_integer : eq<object::ID_neg_integer, byte(-c)> {};
 
 
