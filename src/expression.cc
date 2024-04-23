@@ -616,8 +616,6 @@ static bool must_be_unique(symbol_p symbol)
 }
 
 
-int dddebug() { return 1; }
-
 static size_t check_match(size_t eq, size_t eqsz,
                           size_t from, size_t fromsz)
 // ----------------------------------------------------------------------------
@@ -629,19 +627,18 @@ static size_t check_match(size_t eq, size_t eqsz,
     while (fromsz && eqsz)
     {
         // Check what we match against
-        object_p ftop = rt.stack(from);
+        object_g ftop = rt.stack(from);
         if (!ftop)
             return false;
         object::id fty = ftop->type();
 
         // Check if this this is a symbol.
         if (fty == object::ID_symbol &&
-            dddebug() &&
-            symbol_p(ftop)->starts_with("&") == Settings.ExplicitWildcards())
+            symbol_p(+ftop)->starts_with("&") == Settings.ExplicitWildcards())
         {
             // Check if the symbol already exists
-            symbol_p name = symbol_p(ftop);
-            object_p found = nullptr;
+            symbol_g name = symbol_p(+ftop);
+            object_g found = nullptr;
             size_t symbols = rt.locals() - locals;
             for (size_t l = 0; !found && l < symbols; l += 2)
             {
@@ -665,7 +662,7 @@ static size_t check_match(size_t eq, size_t eqsz,
                     // At this point, if we have an integer, it was
                     // wrapped in an equation by grab_arguments.
                     size_t depth = rt.depth();
-                    if (program::run(ftop) != object::OK)
+                    if (program::run(+ftop) != object::OK)
                         return 0;
                     if (rt.depth() != depth + 1)
                     {
@@ -690,20 +687,14 @@ static size_t check_match(size_t eq, size_t eqsz,
                     for (size_t l = 0; l < symbols; l += 2)
                     {
                         symbol_p existing = symbol_p(rt.local(l+1));
-                        if (!existing || existing->is_same_as(symbol_p(ftop)))
+                        if (!existing || existing->is_same_as(symbol_p(+ftop)))
                             return 0;
                         symbol_p ename = symbol_p(rt.local(l));
                         if (must_be_unique(ename))
                         {
                             // Check if order of names and values match
-                            symbol_p ftn = ftop->as_quoted<symbol>();
-                            if (!ftn)
-                                return 0;
-                            symbol_p en = existing->as_quoted<symbol>();
-                            if (!en)
-                                return 0;
                             int cmpnames = name->compare_to(ename);
-                            int cmpvals = ftn->compare_to(en);
+                            int cmpvals = ftop->compare_to(existing);
                             if (cmpnames * cmpvals < 0)
                                 return 0;
                         }
@@ -711,7 +702,7 @@ static size_t check_match(size_t eq, size_t eqsz,
                 }
 
                 // Grab the parameter that corresponds and store it
-                if (!rt.push(name) || !rt.push(ftop) || !rt.locals(2))
+                if (!rt.push(+name) || !rt.push(+ftop) || !rt.locals(2))
                     return 0;
             }
             else
