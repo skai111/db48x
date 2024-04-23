@@ -987,49 +987,6 @@ err:
 }
 
 
-expression_p expression::rewrite(size_t       size,
-                                 const byte_p rewrites[],
-                                 uint        *count,
-                                 bool         down) const
-// ----------------------------------------------------------------------------
-//   Apply a series of rewrites
-// ----------------------------------------------------------------------------
-{
-    expression_g eq = this;
-    for (size_t i = 0; eq && i < size; i += 2)
-        eq = eq->rewrite(expression_p(rewrites[i]),
-                         expression_p(rewrites[i + 1]),
-                         nullptr, count, down);
-    return eq;
-}
-
-
-expression_p expression::rewrite_all(size_t       size,
-                                     const byte_p rewrites[],
-                                     uint        *count,
-                                     bool         down) const
-// ----------------------------------------------------------------------------
-//   Loop on the rewrites until the result stabilizes
-// ----------------------------------------------------------------------------
-{
-    uint rwcount = 0;
-    expression_g last = nullptr;
-    expression_g eq = this;
-    while (rwcount++ < Settings.MaxRewrites() && eq && +eq != +last)
-    {
-        // Check if we produced the same value
-        if (last && last->is_same_as(eq))
-            break;
-
-        last = eq;
-        eq = eq->rewrite(size, rewrites, count, down);
-    }
-    if (rwcount >= Settings.MaxRewrites())
-        rt.too_many_rewrites_error();
-    return eq;
-}
-
-
 static object::result match_up_down(bool down)
 // ----------------------------------------------------------------------------
 //   Run a rewrite up or down
@@ -1096,27 +1053,28 @@ COMMAND_BODY(MatchDown)
 template <byte ...args>
 constexpr byte eq<args...>::object_data[sizeof...(args)+2];
 
-static eq_symbol<'x'> x;
-static eq_symbol<'y'> y;
-static eq_symbol<'z'> z;
-static eq_symbol<'n'> n;
-static eq_symbol<'m'> m;
-static eq_symbol<'p'> p;
-static eq_symbol<'u'> u;
-static eq_symbol<'v'> v;
-static eq_symbol<'w'> w;
-static eq_integer<0>  zero;
+static eq_symbol<'x'>     x;
+static eq_symbol<'y'>     y;
+static eq_symbol<'z'>     z;
+static eq_symbol<'n'>     n;
+static eq_symbol<'m'>     m;
+static eq_symbol<'p'>     p;
+static eq_symbol<'u'>     u;
+static eq_symbol<'v'>     v;
+static eq_symbol<'w'>     w;
+static eq_integer<0>      zero;
 static eq_neg_integer<-1> mone;
-static eq_integer<1> one;
-static eq_integer<2> two;
-static eq_integer<3> three;
+static eq_integer<1>      one;
+static eq_integer<2>      two;
+static eq_integer<3>      three;
+static eq_always          always;
 
 expression_p expression::expand() const
 // ----------------------------------------------------------------------------
 //   Run various rewrites to expand equation
 // ----------------------------------------------------------------------------
 {
-    return rewrite_all_down(
+    return rewrites(
         (x+y)*z,     x*z+y*z,
         x*(y+z),     x*y+x*z,
         (x-y)*z,     x*z-y*z,
@@ -1151,7 +1109,7 @@ expression_p expression::collect() const
 //    Run various rewrites to collect terms / factor equation
 // ----------------------------------------------------------------------------
 {
-    return rewrite_all_up(
+    return rewrites(
         x*z+y*z,                (x+y)*z,
         x*y+x*z,                x*(y+z),
         x*z-y*z,                (x-y)*z,
@@ -1186,7 +1144,7 @@ expression_p expression::simplify() const
 //   Run various rewrites to simplify equation
 // ----------------------------------------------------------------------------
 {
-    return rewrite_all_up(
+    return rewrites(
         x + zero,    x,
         zero + x,    x,
         x - zero,    x,
@@ -1425,7 +1383,7 @@ expression_p expression::as_difference_for_solve() const
 // ----------------------------------------------------------------------------
 //   Revisit: how to transform A and B, A or B, e.g. A=B and C=D ?
 {
-    return rewrite_down(x == y, x - y);
+    return rewrites(x == y, x - y);
 }
 
 

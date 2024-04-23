@@ -171,11 +171,6 @@ struct expression : program
                        count,
                        down);
     }
-    expression_p rewrite(size_t size, const byte_p rewrites[],
-                         uint *count, bool down) const;
-    expression_p rewrite_all(size_t size, const byte_p rewrites[],
-                             uint *count, bool down) const;
-
     static expression_p rewrite(expression_r eq,
                                 expression_r from,
                                 expression_r to,
@@ -186,60 +181,49 @@ struct expression : program
         return eq->rewrite(from, to, cond, count, down);
     }
 
-    template <typename ...args>
-    expression_p rewrite_down(uint *count, args... rest) const
+    enum rwrepeat       { ONCE,         REPEAT };
+    enum rwconds        { ALWAYS,       CONDITIONAL };
+    enum rwdir          { DOWN,         UP };
+
+    template<rwdir down=DOWN, rwconds conds=ALWAYS, rwrepeat rep=REPEAT>
+    expression_p do_rewrites(size_t       size,
+                             const byte_p rewrites[],
+                             uint        *count = nullptr) const
+    // ------------------------------------------------------------------------
+    //   Apply a series of rewrites
+    // ------------------------------------------------------------------------
     {
-        static constexpr byte_p rewrites[] = { rest.as_bytes()... };
-        return rewrite(sizeof...(rest), rewrites, count, true);
+        uint         rwcount = rep ? Settings.MaxRewrites() : 10;
+        expression_g eq      = this;
+        expression_g last    = nullptr;
+        do
+        {
+            last = eq;
+
+            for (size_t i = 0; i < size; i += conds ? 3 : 2)
+            {
+                eq = eq->rewrite(expression_p(rewrites[i+0]),
+                                 expression_p(rewrites[i+1]),
+                                 expression_p(conds ? rewrites[i+2] : nullptr),
+                                 count, down);
+                if (!eq)
+                    return nullptr;
+            }
+            if (+eq == +last)
+                break;
+        } while (--rwcount);
+
+        if (rep && !rwcount)
+            rt.too_many_rewrites_error();
+        return eq;
     }
 
-    template <typename ...args>
-    expression_p rewrite_up(uint *count, args... rest) const
+    template <rwdir down=DOWN, rwconds conds=ALWAYS, rwrepeat rep=REPEAT,
+              typename ...args>
+    expression_p rewrites(args... rest) const
     {
-        static constexpr byte_p rewrites[] = { rest.as_bytes()... };
-        return rewrite(sizeof...(rest), rewrites, count, false);
-    }
-
-    template <typename ...args>
-    expression_p rewrite_all_down(uint *count, args... rest) const
-    {
-        static constexpr byte_p rewrites[] = { rest.as_bytes()... };
-        return rewrite_all(sizeof...(rest), rewrites, count, true);
-    }
-
-    template <typename ...args>
-    expression_p rewrite_all_up(uint *count, args... rest) const
-    {
-        static constexpr byte_p rewrites[] = { rest.as_bytes()... };
-        return rewrite_all(sizeof...(rest), rewrites, count, false);
-    }
-
-    template <typename ...args>
-    expression_p rewrite_down(args... rest) const
-    {
-        static constexpr byte_p rewrites[] = { rest.as_bytes()... };
-        return rewrite(sizeof...(rest), rewrites, nullptr, true);
-    }
-
-    template <typename ...args>
-    expression_p rewrite_up(args... rest) const
-    {
-        static constexpr byte_p rewrites[] = { rest.as_bytes()... };
-        return rewrite(sizeof...(rest), rewrites, nullptr, false);
-    }
-
-    template <typename ...args>
-    expression_p rewrite_all_down(args... rest) const
-    {
-        static constexpr byte_p rewrites[] = { rest.as_bytes()... };
-        return rewrite_all(sizeof...(rest), rewrites, nullptr, true);
-    }
-
-    template <typename ...args>
-    expression_p rewrite_all_up(args... rest) const
-    {
-        static constexpr byte_p rewrites[] = { rest.as_bytes()... };
-        return rewrite_all(sizeof...(rest), rewrites, nullptr, false);
+        static constexpr byte_p rwdata[] = { rest.as_bytes()... };
+        return do_rewrites<down,conds,rep>(sizeof...(rest), rwdata, nullptr);
     }
 
     expression_p expand() const;
@@ -576,8 +560,16 @@ struct eq_integer : eq<object::ID_integer, byte(c)> {};
 template <int c, std::enable_if_t<(c <= 0 && c > -128), bool> = true>
 struct eq_neg_integer : eq<object::ID_neg_integer, byte(-c)> {};
 
+// Build a conditional that always runs
+struct eq_always : eq<object::ID_True>
+{
+    constexpr byte_p as_bytes() const
+    {
+        return nullptr;
+    }
+};
 
-
+//
 // ============================================================================
 //
 //   User commands

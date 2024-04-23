@@ -483,7 +483,7 @@ NAMED(pgdir, "PurgeDirectory")
 /// Equations
 NAMED(MatchUp,   "↑Match")
 NAMED(MatchDown, "↓Match")
-CMD(Expand)
+CMD(Expand)                     ALIAS(Expand, "Expan")
 CMD(Collect)
 CMD(Simplify)
 
