@@ -60,6 +60,7 @@
 #include "menu.h"
 #include "parser.h"
 #include "plot.h"
+#include "polynomial.h"
 #include "program.h"
 #include "renderer.h"
 #include "runtime.h"

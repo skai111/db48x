@@ -260,6 +260,7 @@ CXX_SOURCES +=				\
 	src/menu.cc			\
 	src/object.cc			\
 	src/plot.cc			\
+	src/polynomial.cc		\
 	src/program.cc			\
 	src/renderer.cc			\
 	src/runtime.cc			\

@@ -1267,6 +1267,7 @@ ID(sparse_font)
 ID(dmcp_font)
 
 ID(tag)
+ID(polynomial)
 
 ID(conditional)
 ID(while_conditional)
