@@ -30,6 +30,7 @@
 // ****************************************************************************
 
 
+#include "functions.h"
 #include "program.h"
 #include "settings.h"
 #include "symbol.h"
@@ -196,6 +197,7 @@ struct expression : program
         uint         rwcount = rep ? Settings.MaxRewrites() : 10;
         expression_g eq      = this;
         expression_g last    = nullptr;
+        bool         intr    = false;
         do
         {
             last = eq;
@@ -208,8 +210,11 @@ struct expression : program
                                  count, down);
                 if (!eq)
                     return nullptr;
+                intr = program::interrupted();
+                if (intr)
+                    break;
             }
-            if (+eq == +last)
+            if (+eq == +last || intr)
                 break;
         } while (--rwcount);
 
@@ -228,8 +233,18 @@ struct expression : program
         return do_rewrites<down,conds,rep>(sizeof...(rest), rwdata, nullptr);
     }
 
+
+
+    // ========================================================================
+    //
+    //   Common rewrite rules
+    //
+    // ========================================================================
+
     expression_p expand() const;
     expression_p collect() const;
+    expression_p fold_constants() const;
+    expression_p reorder_terms() const;
     expression_p simplify() const;
     expression_p as_difference_for_solve() const; // Transform A=B into A-B
     object_p     outermost_operator() const;
@@ -243,6 +258,13 @@ struct expression : program
                                   algebraic_g &scale,
                                   algebraic_g &exponent);
 
+
+    // ========================================================================
+    //
+    //   Graphical rendering of expressions
+    //
+    // ========================================================================
+
 protected:
     static symbol_p render(uint depth, int &precedence, bool edit);
     static size_t   render(const expression *o, renderer &r, bool quoted);
@@ -252,7 +274,7 @@ protected:
 public:
     static grob_p   graph(grapher &g, uint depth, int &precedence);
     static grob_p   parentheses(grapher &g, grob_g x, uint padding = 0);
-    static grob_p   sqrt(grapher &g, grob_g x);
+    static grob_p   root(grapher &g, grob_g x);
     static grob_p   ratio(grapher &g, grob_g x, grob_g y);
     static grob_p   ratio(grapher &g, cstring x, grob_g y);
     static grob_p   infix(grapher &g,
@@ -580,5 +602,11 @@ struct eq_always : eq<object::ID_True>
 
 COMMAND_DECLARE(MatchUp,   2);
 COMMAND_DECLARE(MatchDown, 2);
+
+FUNCTION(Expand);
+FUNCTION(Collect);
+FUNCTION(FoldConstants);
+FUNCTION(ReorderTerms);
+FUNCTION(Simplify);
 
 #endif // EXPRESSION_H

@@ -557,6 +557,15 @@ size_t expression::required_memory(id type, id op,
 //   eq:        sin(a+3) - cos(a+3)             a 3 + sin a 3 + cos -
 //   match:     sin x    - cos x                    x sin     x cos -
 //
+//   Names of wildcards have a special role based on the initial letter:
+//   - a, b, c: Constant values (numbers), i.e. is_real returns true
+//   - i, j   : Positive integer values,i.e. type is ID_integer
+//   - k, l, m: Non-zero positive integer values,i.e. type is ID_integer
+//   - n, o, p: Names, i.e. is_symbol returns true
+//   - u, v, w: Unique sub-expressions, i.e. u!=v, v!=w, u!=w
+//   - x, y, z: Arbitrary expression, can be identical to one another
+//
+//   Lowercase names must be sorted, i.e. x<=y and u<v.
 
 static expression_p grab_arguments(size_t &eq, size_t &eqsz)
 // ----------------------------------------------------------------------------
@@ -594,25 +603,70 @@ static expression_p grab_arguments(size_t &eq, size_t &eqsz)
 }
 
 
-static bool must_be_integer(symbol_p symbol)
+static bool must_be(symbol_p symbol, char low, char high)
+// ------------------------------------------------------------------------
+//   Check a convention about a symbol
+// ----------------------------------------------------------------------------
+{
+    uint idx   = 1 + Settings.ExplicitWildcards();
+    char first = tolower(object::payload(symbol)[idx]);
+    return first >= low && first <= high;
+}
+
+
+static inline bool must_be_constant(symbol_p symbol)
+// ------------------------------------------------------------------------
+//   Convention for naming numerical constants in rewrite rules
+// ----------------------------------------------------------------------------
+{
+    return must_be(symbol, 'a', 'c');
+}
+
+
+static inline bool must_be_integer(symbol_p symbol)
 // ------------------------------------------------------------------------
 //   Convention for naming integers in rewrite rules
 // ----------------------------------------------------------------------------
 {
-    uint idx = 1+Settings.ExplicitWildcards();
-    char first = tolower(object::payload(symbol)[idx]);
-    return strchr("ijklmnpq", first) != nullptr;
+    return must_be(symbol, 'i', 'm');
 }
 
 
-static bool must_be_unique(symbol_p symbol)
+static inline bool must_be_nonzero(symbol_p symbol)
+// ------------------------------------------------------------------------
+//   Convention for naming non-zero integers in rewrite rules
+// ----------------------------------------------------------------------------
+{
+    return must_be(symbol, 'k', 'm');
+}
+
+
+static inline bool must_be_name(symbol_p symbol)
+// ------------------------------------------------------------------------
+//   Convention for identifying names in rewrite rules
+// ----------------------------------------------------------------------------
+{
+    return must_be(symbol, 'n', 'p');
+}
+
+
+static inline bool must_be_unique(symbol_p symbol)
 // ------------------------------------------------------------------------
 //   Convention for naming unique terms in rewrite rules
 // ----------------------------------------------------------------------------
 {
-    uint idx = 1+Settings.ExplicitWildcards();
-    char first = tolower(object::payload(symbol)[idx]);
-    return strchr("uvw", first) != nullptr;
+    return must_be(symbol, 'u', 'w');
+}
+
+
+static bool must_be_sorted(symbol_p symbol)
+// ----------------------------------------------------------------------------
+//   Convention for naming terms in rewrite rules that need to be sorted
+// ----------------------------------------------------------------------------
+{
+    uint idx   = 1 + Settings.ExplicitWildcards();
+    char first = object::payload(symbol)[idx];
+    return first >= 'a' && first <= 'z';
 }
 
 
@@ -624,7 +678,7 @@ static size_t check_match(size_t eq, size_t eqsz,
 {
     size_t eqs = eq;
     size_t locals = rt.locals();
-    while (fromsz && eqsz)
+    while (fromsz && eqsz && !program::interrupted())
     {
         // Check what we match against
         object_g ftop = rt.stack(from);
@@ -637,15 +691,15 @@ static size_t check_match(size_t eq, size_t eqsz,
             symbol_p(+ftop)->starts_with("&") == Settings.ExplicitWildcards())
         {
             // Check if the symbol already exists
-            symbol_g name = symbol_p(+ftop);
-            object_g found = nullptr;
-            size_t symbols = rt.locals() - locals;
+            symbol_g name    = symbol_p(+ftop);
+            object_g found   = nullptr;
+            size_t   symbols = rt.locals() - locals;
             for (size_t l = 0; !found && l < symbols; l += 2)
             {
-                symbol_p existing = symbol_p(rt.local(l));
-                if (!existing)
+                symbol_p ename = symbol_p(rt.local(l));
+                if (!ename)
                     return 0;
-                if (existing->is_same_as(name))
+                if (ename->is_same_as(name))
                     found = rt.local(l+1);
             }
 
@@ -657,41 +711,62 @@ static size_t check_match(size_t eq, size_t eqsz,
             if (!found)
             {
                 // Check if we expect an integer value
-                if (must_be_integer(name))
+                bool want_cst = must_be_constant(name);
+                bool want_int = must_be_integer(name);
+                if (want_cst || want_int)
                 {
-                    // At this point, if we have an integer, it was
+                    // At this point, if we have a numerical value, it was
                     // wrapped in an equation by grab_arguments.
                     size_t depth = rt.depth();
                     if (program::run(+ftop) != object::OK)
                         return 0;
                     if (rt.depth() != depth + 1)
                     {
-                        rt.type_error();
+                        if (rt.depth() > depth)
+                            rt.drop(rt.depth() - depth);
                         return 0;
                     }
                     ftop = rt.pop();
 
-                    // We must have an integer
+                    // Check if we expect an integer or a real constant
                     fty = ftop->type();
-                    if (fty != object::ID_integer)
+                    if (want_int && fty != object::ID_integer)
+                        return 0;
+                    else if (want_cst && !object::is_real(fty))
                         return 0;
 
-                    // We always special-case zero as a terminating condition
-                    if (ftop->is_zero())
+                    if (must_be_nonzero(name) && ftop->is_zero())
                         return 0;
                 }
 
                 // Check if the name must be unique in the locals
-                if (must_be_unique(name))
+                else if (must_be_unique(name))
                 {
                     for (size_t l = 0; l < symbols; l += 2)
                     {
-                        symbol_p existing = symbol_p(rt.local(l+1));
-                        if (!existing || existing->is_same_as(symbol_p(+ftop)))
+                        object_p existing = rt.local(l+1);
+                        if (!existing || existing->is_same_as(+ftop))
                             return 0;
+                    }
+                }
+                else if (must_be_name(name))
+                {
+                    if (!ftop->as_quoted<symbol>())
+                        return 0;
+                }
+
+                // Check if things must be sorted
+                if (must_be_sorted(name))
+                {
+                    for (size_t l = 0; l < symbols; l += 2)
+                    {
                         symbol_p ename = symbol_p(rt.local(l));
-                        if (must_be_unique(ename))
+                        if (must_be_sorted(ename))
                         {
+                            object_p existing = rt.local(l+1);
+                            if (!existing)
+                                return 0;
+
                             // Check if order of names and values match
                             int cmpnames = name->compare_to(ename);
                             int cmpvals = ftop->compare_to(existing);
@@ -784,7 +859,7 @@ static inline algebraic_p build_expr(expression_p eqin,
                     if (found)
                     {
                         tobj = found;
-                        if (must_be_integer(name))
+                        if (must_be_integer(name)|| must_be_constant(name))
                             compute = true;
                     }
                 }
@@ -919,7 +994,7 @@ expression_p expression::rewrite(expression_r from,
             {
                 matchsz = check_match(eqst, eqsz, fromst, fromsz,
                                       cond, locals);
-                if (matchsz)
+                if (matchsz || interrupted())
                     break;
             }
         }
@@ -933,13 +1008,15 @@ expression_p expression::rewrite(expression_r from,
                 {
                     matchsz = check_match(eqst, eqsz, fromst, fromsz,
                                           cond, locals);
-                    if (matchsz)
+                    if (matchsz || interrupted())
                         break;
                 }
-                if (matchsz)
+                if (matchsz || interrupted())
                     break;
             }
         }
+        if (interrupted())
+            break;
 
         // We don't need the on-stack copies of 'eq' and 'to' anymore
         ASSERT(rt.depth() >= depth);
@@ -990,193 +1067,10 @@ err:
 }
 
 
-static object::result match_up_down(bool down)
-// ----------------------------------------------------------------------------
-//   Run a rewrite up or down
-// ----------------------------------------------------------------------------
-{
-    object_p x = rt.stack(0);
-    object_p y = rt.stack(1);
-    if (!x || !y)
-        return object::ERROR;
-    list_p transform = x->as<list>();
-    expression_g eq = expression::as_expression(y);
-    if (!transform || !eq)
-    {
-        rt.type_error();
-        return object::ERROR;
-    }
-
-    list::iterator it(transform);
-    expression_g from = expression::as_expression(*it++);
-    expression_g to = expression::as_expression(*it++);
-    if (!from || !to)
-    {
-        rt.value_error();
-        return object::ERROR;
-    }
-    expression_g cond = expression::as_expression(*it++);
-    uint rwcount = 0;
-    cond = eq->rewrite(from, to, cond, &rwcount, down);
-    if (!cond)
-        return object::ERROR;
-    integer_g changed = integer::make(rwcount);
-    if (!rt.stack(1, cond) || !rt.stack(0, changed))
-        return object::ERROR;
-
-    return object::OK;
-}
-
-
-COMMAND_BODY(MatchUp)
-// ----------------------------------------------------------------------------
-//   Bottom-up match and replace command
-// ----------------------------------------------------------------------------
-{
-    return match_up_down(false);
-}
-
-
-COMMAND_BODY(MatchDown)
-// ----------------------------------------------------------------------------
-//   Match pattern down command
-// ----------------------------------------------------------------------------
-{
-    return match_up_down(true);
-}
-
-
-
-// ============================================================================
-//
-//    Actual rewrites for various rules
-//
-// ============================================================================
-
-template <byte ...args>
-constexpr byte eq<args...>::object_data[sizeof...(args)+2];
-
-static eq_symbol<'x'>     x;
-static eq_symbol<'y'>     y;
-static eq_symbol<'z'>     z;
-static eq_symbol<'n'>     n;
-static eq_symbol<'m'>     m;
-static eq_symbol<'p'>     p;
-static eq_symbol<'u'>     u;
-static eq_symbol<'v'>     v;
-static eq_symbol<'w'>     w;
-static eq_integer<0>      zero;
-static eq_neg_integer<-1> mone;
-static eq_integer<1>      one;
-static eq_integer<2>      two;
-static eq_integer<3>      three;
-static eq_always          always;
-
-expression_p expression::expand() const
-// ----------------------------------------------------------------------------
-//   Run various rewrites to expand equation
-// ----------------------------------------------------------------------------
-{
-    return rewrites(
-        (x+y)*z,     x*z+y*z,
-        x*(y+z),     x*y+x*z,
-        (x-y)*z,     x*z-y*z,
-        x*(y-z),     x*y-x*z,
-        sq(x),       x*x,
-        cubed(x),    x*x*x,
-        x^zero,      one,
-        x^one,       x,
-        x^n,         x * (x^(n-one)),
-        x * n,       n * x,
-        v * u,       u * v,
-        x * v * u,   x * u * v,
-        one * x,     x,
-        zero * x,    zero,
-        n + x,       x + n,
-        x + zero,    x,
-        x - x,       zero,
-        x + y - y,   x,
-        x - y + y,   x,
-        x * (y * z), (x * y) * z,
-        x + (y + z), (x + y) + z,
-        x + (y - z), (x + y) - z,
-        x - y + z,   (x + z) - y,
-        v + u,       u + v,
-        x + v + u,   x + u + v,
-        x^(y+z),     (x^y)*(x^z),
-        (x*y)^z,     (x^z)*(y^z)
-        );
-}
-
-
-expression_p expression::collect() const
-// ----------------------------------------------------------------------------
-//    Run various rewrites to collect terms / factor equation
-// ----------------------------------------------------------------------------
-{
-    return rewrites(
-        x*z+y*z,                (x+y)*z,
-        x*y+x*z,                x*(y+z),
-        x*z-y*z,                (x-y)*z,
-        x*y-x*z,                x*(y-z),
-        x*(x^n),                x^(n+one),
-        (x^n)*x,                x^(n+one),
-        (x^n)*(x^m),            x^(n+m),
-        sq(x),                  x^two,
-        cubed(x),               x^three,
-        x * n,                  n * x,
-        one * x,                x,
-        zero * x,               zero,
-        n + x,                  x + n,
-        x + zero,               x,
-        x - x,                  zero,
-        n * x + x,              (n + one) * x,
-        x + n * x,              (n + one) * x,
-        m * x + n * x,          (m + n) * x,
-        x * y * x,              (x^two) * y,
-        x * y * y,              (y^two) * x,
-        x + y + y,              two * y + x,
-        (x ^ n) * y * x,        (x^(n + one)) * y,
-        (x ^ n) * (x + y),      (x^(n+one)) + (x^n) * y,
-        (x ^ n) * (y + x),      (x^(n+one)) + (x^n) * y,
-        x + x,                  two * x
-        );
-}
-
-
-expression_p expression::simplify() const
-// ----------------------------------------------------------------------------
-//   Run various rewrites to simplify equation
-// ----------------------------------------------------------------------------
-{
-    return rewrites(
-        x + zero,    x,
-        zero + x,    x,
-        x - zero,    x,
-        zero - x,    x,
-        x * zero,    zero,
-        zero * x,    zero,
-        x * one,     x,
-        one * x,     x,
-        x / one,     x,
-        x / x,       one,
-        one / x,     inv(x),
-        x * x * x,   cubed(x),
-        x * x,       sq(x),
-        x ^ zero,    one,
-        x ^ one,     x,
-        x ^ two,     sq(x),
-        x ^ three,   cubed(x),
-        x ^ mone,    inv(x),
-        (x^n)*(x^m), x ^ (n+m)
-        );
-}
-
-
 algebraic_p expression::factor_out(algebraic_g expr,
-                                 algebraic_g factor,
-                                 algebraic_g &scale,
-                                 algebraic_g &exponent)
+                                   algebraic_g factor,
+                                   algebraic_g &scale,
+                                   algebraic_g &exponent)
 // ----------------------------------------------------------------------------
 //   Factor out the given factor from the equation
 // ----------------------------------------------------------------------------
@@ -1382,16 +1276,6 @@ algebraic_p expression::simplify_products() const
 }
 
 
-expression_p expression::as_difference_for_solve() const
-// ----------------------------------------------------------------------------
-//   For the solver, transform A=B into A-B
-// ----------------------------------------------------------------------------
-//   Revisit: how to transform A and B, A or B, e.g. A=B and C=D ?
-{
-    return rewrites(x == y, x - y);
-}
-
-
 object_p expression::outermost_operator() const
 // ----------------------------------------------------------------------------
 //   Return the last operator in the equation
@@ -1462,7 +1346,7 @@ grob_p expression::parentheses(grapher &g, grob_g what, uint padding)
 }
 
 
-grob_p expression::sqrt(grapher &g, grob_g what)
+grob_p expression::root(grapher &g, grob_g what)
 // ----------------------------------------------------------------------------
 //  Draw a square root around the expression
 // ----------------------------------------------------------------------------
@@ -1919,14 +1803,14 @@ grob_p expression::graph(grapher &g, uint depth, int &precedence)
                 return suscript(g, va, arg, 0, "!", 0);
             case ID_sqrt:
                 precedence = precedence::FUNCTION_POWER;
-                return sqrt(g, arg);
+                return root(g, arg);
             case ID_inv:
                 precedence = precedence::FUNCTION_POWER;
                 return ratio(g, "1", arg);
             case ID_cbrt:
             {
                 auto fid = g.font;
-                arg = sqrt(g, arg);
+                arg = root(g, arg);
                 g.reduce_font();
                 arg = suscript(g, 0, "3", va, arg, -1, false);
                 g.font = fid;
@@ -1990,7 +1874,7 @@ grob_p expression::graph(grapher &g, uint depth, int &precedence)
             case ID_mul: return infix(g, lv, lg, 0, mulsep(), rv, rg);
             case ID_xroot:
             {
-                lg = sqrt(g, lg);
+                lg = root(g, lg);
                 rg = suscript(g, rv, rg, lv, lg, -1, false);
                 return rg;
             }
@@ -2249,4 +2133,457 @@ EVAL_BODY(funcall)
 // ----------------------------------------------------------------------------
 {
     return o->run(true);
+}
+
+
+
+// ============================================================================
+//
+//   User-accessible match commands
+//
+// ============================================================================
+
+static object::result match_up_down(bool down)
+// ----------------------------------------------------------------------------
+//   Run a rewrite up or down
+// ----------------------------------------------------------------------------
+{
+    object_p x = rt.stack(0);
+    object_p y = rt.stack(1);
+    if (!x || !y)
+        return object::ERROR;
+    list_p transform = x->as<list>();
+    expression_g eq = expression::as_expression(y);
+    if (!transform || !eq)
+    {
+        rt.type_error();
+        return object::ERROR;
+    }
+
+    list::iterator it(transform);
+    expression_g from = expression::as_expression(*it++);
+    expression_g to = expression::as_expression(*it++);
+    if (!from || !to)
+    {
+        rt.value_error();
+        return object::ERROR;
+    }
+    expression_g cond = expression::as_expression(*it++);
+    uint rwcount = 0;
+    cond = eq->rewrite(from, to, cond, &rwcount, down);
+    if (!cond)
+        return object::ERROR;
+    integer_g changed = integer::make(rwcount);
+    if (!rt.stack(1, cond) || !rt.stack(0, changed))
+        return object::ERROR;
+
+    return object::OK;
+}
+
+
+COMMAND_BODY(MatchUp)
+// ----------------------------------------------------------------------------
+//   Bottom-up match and replace command
+// ----------------------------------------------------------------------------
+{
+    return match_up_down(false);
+}
+
+
+COMMAND_BODY(MatchDown)
+// ----------------------------------------------------------------------------
+//   Match pattern down command
+// ----------------------------------------------------------------------------
+{
+    return match_up_down(true);
+}
+
+
+
+// ============================================================================
+//
+//    Actual rewrites for various rules
+//
+// ============================================================================
+
+template <byte ...args>
+constexpr byte eq<args...>::object_data[sizeof...(args)+2];
+
+// Wildcards used to build patterns (type based on initial letter, see above)
+static eq_symbol<'a'>     a;    // Numerical constants
+static eq_symbol<'b'>     b;
+static eq_symbol<'c'>     c;
+static eq_symbol<'i'>     i;    // Positive or zero integer values
+static eq_symbol<'j'>     j;
+static eq_symbol<'k'>     k;    // Positive non-zero integers
+static eq_symbol<'l'>     l;
+static eq_symbol<'m'>     m;
+static eq_symbol<'n'>     n;    // Symbols
+static eq_symbol<'o'>     o;
+static eq_symbol<'p'>     p;
+static eq_symbol<'u'>     u;    // Unique subexpressions
+static eq_symbol<'v'>     v;
+static eq_symbol<'w'>     w;
+static eq_symbol<'x'>     x;    // Any subexpression
+static eq_symbol<'y'>     y;
+static eq_symbol<'z'>     z;
+
+// Wildcards that must be sorted
+static eq_symbol<'A'>     A;    // Numerical constants
+static eq_symbol<'B'>     B;
+static eq_symbol<'C'>     C;
+static eq_symbol<'I'>     I;    // Positive or zero integer values
+static eq_symbol<'J'>     J;
+static eq_symbol<'K'>     K;    // Positive non-zero integers
+static eq_symbol<'L'>     L;
+static eq_symbol<'M'>     M;
+static eq_symbol<'N'>     N;    // Symbols
+static eq_symbol<'O'>     O;
+static eq_symbol<'P'>     P;
+static eq_symbol<'U'>     U;    // Unique subexpressions
+static eq_symbol<'V'>     V;
+static eq_symbol<'W'>     W;
+static eq_symbol<'X'>     X;    // Any subexpression
+static eq_symbol<'Y'>     Y;
+static eq_symbol<'Z'>     Z;
+
+// Numerical constants
+static eq_integer<0>      zero;
+static eq_neg_integer<-1> mone;
+static eq_integer<1>      one;
+static eq_integer<2>      two;
+static eq_integer<3>      three;
+static eq_always          always;
+
+expression_p expression::as_difference_for_solve() const
+// ----------------------------------------------------------------------------
+//   For the solver, transform A=B into A-B
+// ----------------------------------------------------------------------------
+//   Revisit: how to transform A and B, A or B, e.g. A=B and C=D ?
+{
+    return rewrites(X == Y, X - Y);
+}
+
+
+expression_p expression::expand() const
+// ----------------------------------------------------------------------------
+//   Run various rewrites to expand terms
+// ----------------------------------------------------------------------------
+{
+    return rewrites<DOWN>(
+        // Compute constants
+        A+B,            A+B,
+        A-B,            A-B,
+        A*B,            A*B,
+        A/B,            A/B,
+        A^B,            A^B,
+        -A,             -A,
+
+        // Expand bult-in functions
+        inv(x),         one/x,
+        sq(x),          x^two,
+        cubed(x),       x^three,
+        sqrt(x),        x^(one/two),
+        cbrt(x),        x^(one/three),
+
+        // Distribute additions
+        (X+Y)*Z,        X*Z+Y*Z,
+        (X-Y)*Z,        X*Z-Y*Z,
+        X*(Y+Z),        X*Y+X*Z,
+        X*(Y-Z),        X*Y-X*Z,
+
+        // Expand powers
+        (X*Y)^Z,        (X^Z)*(Y^Z),
+        (X/Y)^Z,        (X^Z)/(Y^Z),
+        X^(Y+Z),        (X^Y)*(X^Z),
+        X^(Y-Z),        (X^Y)/(X^Z),
+        X^(Y*Z),        (X^Y)^Z,
+
+        // Group terms
+        v + u,          u + v,
+        X + v + u,      X + u + v,
+        A + X,          X + A,
+        v * u,          u * v,
+        X * v * u,      X * u * v,
+        X * A,          A * X,
+
+        // Sign change simplifications
+        X + (-Y),       X - Y,
+        X - (-Y),       X + Y,
+        X * (-Y),       -(X*Y),
+        X / (-Y),       -(X/Y),
+        X ^ (-Y),       one / (X^Y),
+
+        (-X) + Y,       Y - X,
+        (-X) - Y,       -(X + Y),
+        (-X) * Y,       -(X * Y),
+        (-X) / Y,       -(X / Y),
+
+        // Additive simplifications
+        X + zero,       X,
+        X + X,          two * X,
+        X - X,          zero,
+        X - zero,       X,
+        zero - X,       -X,
+        A * X + X,      (A + one) * X,
+        X + A * X,      (A + one) * X,
+        A*X + B*X,      (A + B) * X,
+
+        // Multiplicative simplifications
+        zero * X,       zero,
+        one * X,        X,
+        zero / X,       zero,
+        X / one,        X,
+
+        // Power simplifications
+        X^zero,         one,
+        X^one,          X,
+
+        // Expansion of powers
+        X^K,            (X^(K-one))*X);
+}
+
+
+expression_p expression::collect() const
+// ----------------------------------------------------------------------------
+//    Run various rewrites to collect terms (inverse of expand)
+// ----------------------------------------------------------------------------
+{
+    return rewrites<UP>(
+        // Collection of powers
+        (X^K)*X,        X^(K+one),
+        X*(X^K),        X^(K+one),
+        (X^A)*(X^B),    X^(A+B),
+
+        // Power simplifications
+        X^one,          X,
+        X^zero,         one,
+
+        // Multiplicative simplifications
+        X / one,        X,
+        zero / X,       zero,
+        one * X,        X,
+        zero * X,       zero,
+
+        // Additive simplifications
+        A*X + B*X,      (A + B) * X,
+        X + A * X,      (A + one) * X,
+        A * X + X,      (A + one) * X,
+        zero - X,       -X,
+        X - zero,       X,
+        X - X,          zero,
+        X + X,          two * X,
+        X + zero,       X,
+
+        // Sign change simplifications
+        (-X) / Y,       -(X / Y),
+        (-X) * Y,       -(X * Y),
+        (-X) - Y,       -(X + Y),
+        (-X) + Y,       Y - X,
+
+        X ^ (-Y),       one / (X^Y),
+        x / (-Y),       -(X/Y),
+        X * (-Y),       -(X*Y),
+        X - (-Y),       X + Y,
+        X + (-Y),       X - Y,
+
+        // Group terms
+        X * A,          A * X,
+        X * v * u,      X * u * v,
+        v * u,          u * v,
+        A + X,          X + A,
+        X + v + u,      X + u + v,
+        v + u,          u + v,
+
+        // Collect powers
+        (X^Y)^Z,        X^(Y*Z),
+        (X^Y)/(X^Z),    X^(Y-Z),
+        (X^Y)*(X^Z),    X^(Y+Z),
+        (X^Z)/(Y^Z),    (X/Y)^Z,
+        (X^Z)*(Y^Z),    (X*Y)^Z,
+
+        // Collect additions
+        X*Y-X*Z,        X*(Y-Z),
+        X*Y+X*Z,        X*(Y+Z),
+        X*Z-Y*Z,        (X-Y)*Z,
+        X*Z+Y*Z,        (X+Y)*Z,
+
+        // Generate initial powers (must be last)
+        X*X,            X^two,
+
+        // Compute constants
+        -A,          -A,
+        A^B,         A^B,
+        A/B,         A/B,
+        A*B,         A*B,
+        A-B,         A-B,
+        A+B,         A+B);
+}
+
+
+expression_p expression::fold_constants() const
+// ----------------------------------------------------------------------------
+//  Fold constants
+// ----------------------------------------------------------------------------
+{
+    return rewrites<DOWN>(
+        // Compute constants
+        A+B,         A+B,
+        A-B,         A-B,
+        A*B,         A*B,
+        A/B,         A/B,
+        A^B,         A^B,
+        -A,          -A,
+
+        // Group terms
+        v + u,       u + v,
+        X + v + u,   X + u + v,
+        A + X,       X + A,
+        v * u,       u * v,
+        X * v * u,   X * u * v,
+        X * A,       A * X,
+
+        // Additive simplifications
+        X + zero,    X,
+        X + X,       two * X,
+        X - X,       zero,
+        X - zero,    X,
+        zero - X,    -X,
+        A * X + X,   (A + one) * X,
+        X + A * X,   (A + one) * X,
+        A*X + B*X,   (A + B) * X,
+
+        // Multiplicative simplifications
+        zero * X,    zero,
+        one * X,     X,
+        zero / X,    zero,
+        X / one,     X,
+
+        // Power simplifications
+        X^zero,      one,
+        X^one,       X);
+}
+
+
+expression_p expression::reorder_terms() const
+// ----------------------------------------------------------------------------
+//   Reorder terms
+// ----------------------------------------------------------------------------
+{
+    return rewrites<DOWN>(
+        // Group terms
+        v + u,       u + v,
+        X + v + u,   X + u + v,
+        A + X,       X + A,
+        v * u,       u * v,
+        X * v * u,   X * u * v,
+        X * A,       A * x);
+}
+
+
+expression_p expression::simplify() const
+// ----------------------------------------------------------------------------
+//   Run various rewrites to simplify equation
+// ----------------------------------------------------------------------------
+{
+    return rewrites(
+        A+B,         A+B,
+        A*B,         A*B,
+        A-B,         A-B,
+        A/B,         A/B,
+        A^B,         A^B,
+
+        X * A,       A * X,
+        X + X,       two * X,
+        A * X + X,   (A + one) * X,
+        (X ^ K) * X, X ^ (K + one),
+        X * (X ^ K), X ^ (K + one),
+        (X^A)*(x^B), X ^ (A + B),
+
+        one * X,     X,
+        zero * X,    zero,
+        X * (Y * Z), (X * Y) * Z,
+
+        X + Y - Y,   X,
+        X - Y + Y,   X,
+        X + (Y + Z), (X + Y) + Z,
+        X + (Y - Z), (X + Y) - Z,
+        X - Y + Z,   (X + Z) - Y,
+        v + u,       u + v,
+        X + v + v,   X + two * v,
+        X + A*U + U, X + (A + one) * U,
+        X + v + u,   X + u + v,
+
+        v * u,       u * v,
+        X * U * U,   X * (U ^ two),
+        X *(U^A)* U, X * (U^(A + one)),
+        X * V * U,   X * U * V);
+}
+
+
+// ============================================================================
+//
+//   User-level expression rewrite commands
+//
+// ============================================================================
+
+static algebraic_p do_rewrite(algebraic_r x,
+                              expression_p (expression::*op)() const)
+// ----------------------------------------------------------------------------
+//   Shared code for all rewrite operations
+// ----------------------------------------------------------------------------
+{
+    if (!x)
+        return nullptr;
+    if (expression_p eq = x->as<expression>())
+        return (eq->*op)();
+    if (x->is_algebraic())
+        return x;
+    rt.type_error();
+    return nullptr;
+}
+
+
+FUNCTION_BODY(Expand)
+// ----------------------------------------------------------------------------
+//   Expand terms in expressions
+// ----------------------------------------------------------------------------
+{
+    return do_rewrite(x, &expression::expand);
+}
+
+
+FUNCTION_BODY(Collect)
+// ----------------------------------------------------------------------------
+//   Collect terms in expressions (inverse of expand)
+// ----------------------------------------------------------------------------
+{
+    return do_rewrite(x, &expression::collect);
+}
+
+
+FUNCTION_BODY(FoldConstants)
+// ----------------------------------------------------------------------------
+//   Evaluate constants in expressions
+// ----------------------------------------------------------------------------
+{
+    return do_rewrite(x, &expression::fold_constants);
+}
+
+
+FUNCTION_BODY(ReorderTerms)
+// ----------------------------------------------------------------------------
+//   Sort terms in the expression
+// ----------------------------------------------------------------------------
+{
+    return do_rewrite(x, &expression::reorder_terms);
+}
+
+
+FUNCTION_BODY(Simplify)
+// ----------------------------------------------------------------------------
+//   Simplify equations
+// ----------------------------------------------------------------------------
+{
+    return do_rewrite(x, &expression::simplify);
 }

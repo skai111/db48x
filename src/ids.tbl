@@ -485,6 +485,8 @@ NAMED(MatchUp,   "↑Match")
 NAMED(MatchDown, "↓Match")
 CMD(Expand)                     ALIAS(Expand, "Expan")
 CMD(Collect)
+CMD(FoldConstants)
+CMD(ReorderTerms)
 CMD(Simplify)
 
 // Complex numbers

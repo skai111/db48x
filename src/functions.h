@@ -239,10 +239,6 @@ FUNCTION(im);
 FUNCTION(arg);
 FUNCTION(conj);
 
-FUNCTION(Expand);
-FUNCTION(Collect);
-FUNCTION(Simplify);
-
 FUNCTION(ToDecimal);
 FUNCTION(ToFraction);
 FUNCTION(RadiansToDegrees);

@@ -1240,54 +1240,6 @@ NFUNCTION_BODY(Product)
 }
 
 
-FUNCTION_BODY(Expand)
-// ----------------------------------------------------------------------------
-//   Expand equations
-// ----------------------------------------------------------------------------
-{
-    if (!x)
-        return nullptr;
-    if (expression_p eq = x->as<expression>())
-        return algebraic_p(eq->expand());
-    if (x->is_algebraic())
-        return x;
-    rt.type_error();
-    return nullptr;
-}
-
-
-FUNCTION_BODY(Collect)
-// ----------------------------------------------------------------------------
-//   Collect equations
-// ----------------------------------------------------------------------------
-{
-    if (!x)
-        return nullptr;
-    if (expression_p eq = x->as<expression>())
-        return algebraic_p(eq->collect());
-    if (x->is_algebraic())
-        return x;
-    rt.type_error();
-    return nullptr;
-}
-
-
-FUNCTION_BODY(Simplify)
-// ----------------------------------------------------------------------------
-//   Simplify equations
-// ----------------------------------------------------------------------------
-{
-    if (!x)
-        return nullptr;
-    if (expression_p eq = x->as<expression>())
-        return algebraic_p(eq->simplify());
-    if (x->is_algebraic())
-        return x;
-    rt.type_error();
-    return nullptr;
-}
-
-
 FUNCTION_BODY(ToDecimal)
 // ----------------------------------------------------------------------------
 //   Convert numbers to a decimal value

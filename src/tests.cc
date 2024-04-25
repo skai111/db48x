@@ -4674,7 +4674,7 @@ void tests::rewrite_engine()
 
     step("Clearing final flag")
         .test(CLEAR, "-100 CF", ENTER).noerror();
-    step("Multiple substitutions (down)");
+    step("Single substitutions (down)");
     test(CLEAR, "'A+B+C' { 'X+Y' 'Y-X' }", RSHIFT, KEY7, LSHIFT, F1, F1)
         .expect("1")
         .test(BSP)
@@ -4700,44 +4700,55 @@ void tests::rewrite_engine()
         .test(CLEAR, "StepByStepAlgebraResults", ENTER).noerror();
 
     step("Deep substitution");
-    test(CLEAR, "'tan(A-B)+3' { 'A-B' '-B+A' }", RSHIFT, KEY7, LSHIFT, F1, F1)
+    test(CLEAR, "'tan(A-B)+3' { 'X-Y' '-Y+X' }", RSHIFT, KEY7, LSHIFT, F1, F1)
         .expect("1")
         .test(BSP)
         .expect("'tan(-B+A)+3'");
     step("Deep substitution with multiple changes (down single)");
     test(CLEAR, "StepByStepAlgebraResults", ENTER,
-         "'5+tan(A-B)+(3-sin(C+D-A))' { 'A-B' '-B+A' }",
+         "'5+tan(A-B)+(3-sin(C+D-A))' { 'X-Y' '-Y+X' }",
          RSHIFT, KEY7, LSHIFT, F1, F1)
         .expect("1")
         .test(BSP)
         .expect("'5+tan(A-B)+(-sin(C+D-A)+3)'");
     step("Deep substitution with multiple changes (up single)");
     test(CLEAR, "StepByStepAlgebraResults", ENTER,
-         "'5+tan(A-B)+(3-sin(C+D-A))' { 'A-B' '-B+A' }",
+         "'5+tan(A-B)+(3-sin(C+D-A))' { 'X-Y' '-Y+X' }",
          RSHIFT, KEY7, LSHIFT, F1, F2)
         .expect("1")
         .test(BSP)
         .expect("'5+tan(-B+A)+(3-sin(C+D-A))'");
     step("Deep substitution with multiple changes (down multiple)");
     test(CLEAR, "FinalAlgebraResults", ENTER,
-         "'5+tan(A-B)+(3-sin(C+D-A))' { 'A-B' '-B+A' }",
+         "'5+tan(A-B)+(3-sin(C+D-A))' { 'X-Y' '-Y+X' }",
          RSHIFT, KEY7, LSHIFT, F1, F1)
         .expect("3")
         .test(BSP)
         .expect("'5+tan(-B+A)+(-sin(-A+(C+D))+3)'");
     step("Deep substitution with multiple changes (up multiple)");
     test(CLEAR, "FinalAlgebraResults", ENTER,
-         "'5+tan(A-B)+(3-sin(C+D-A))' { 'A-B' '-B+A' }",
+         "'5+tan(A-B)+(3-sin(C+D-A))' { 'X-Y' '-Y+X' }",
          RSHIFT, KEY7, LSHIFT, F1, F2)
         .expect("3")
         .test(BSP)
         .expect("'5+tan(-B+A)+(-sin(-A+(C+D))+3)'");
 
     step("Matching integers");
-    test(CLEAR, "'(A+B)^3' { 'X^N' 'X*X^(N-1)' }", RSHIFT, KEY7, LSHIFT, F1, F1)
+    test(CLEAR, "'(A+B)^3' { 'X^K' 'X*X^(K-1)' }", RSHIFT, KEY7, LSHIFT, F1, F1)
         .expect("2")
         .test(BSP)
         .expect("'(A+B)·(A+B)²'");
+
+    step("Matching sorted integers (success)");
+    test(CLEAR, "'3+5' { 'i+j' '21*(j-i)' }", RSHIFT, KEY7, LSHIFT, F1, F1)
+        .expect("1")
+        .test(BSP)
+        .expect("'42'");
+    step("Matching sorted integers (failing)");
+    test(CLEAR, "'5+3' { 'i+j' '21*(j-i)' }", RSHIFT, KEY7, LSHIFT, F1, F1)
+        .expect("0")
+        .test(BSP)
+        .expect("'5+3'");
 
     step("Matching unique terms");
     test(CLEAR, "'(A+B+A)' { 'X+U+X' '2*X+U' }", RSHIFT, KEY7, LSHIFT, F1, F1)
@@ -4766,7 +4777,7 @@ void tests::rewrite_engine()
     step("Matching with conditions")
         .test(CLEAR,
               "'cos(2*A)+cos(3*B)+sin(4*C)' "
-              "{ 'N*Y' '(N-1)*Y+Y' 'N>2' } "
+              "{ 'K*Y' '(K-1)*Y+Y' 'K>2' } "
               "↓match", ENTER)
         .expect("3")
         .test(BSP).expect("'cos(2·A)+cos(2·B+B)+sin(2·C+C+C)'");
@@ -4782,7 +4793,7 @@ void tests::rewrite_engine()
         .test(BSP).expect("'cos(2·A)+cos(3·B)+sin(4·C)'");
     step("Matching explicit wildcards now works")
         .test("'cos(2*A)+cos(3*B)+sin(4*C)' "
-              "{ '&N*&Y' '(&N-1)*&Y+&Y' } "
+              "{ '&K*&Y' '(&K-1)*&Y+&Y' } "
               "↓match", ENTER)
         .expect("6")
         .test(BSP).expect("'cos(A+A)+cos(B+B+B)+sin(C+C+C+C)'");

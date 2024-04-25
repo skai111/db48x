@@ -7608,22 +7608,19 @@ match a specific variable, i.e. replace an expression only if it refers to `X`
 but not to `Y`. The HP behaviour can be restored using the `ExplicitWildcards`
 flag.
 
-A further extension in DB50X is to give a semantic meaning to specific variable
-names:
+A further extension in DB50X is to give a semantic meaning to the first letter
+of variable names:
 
-* In the matching pattern, variables with a name that begins with `i`, `j`, `k`,
-  `l`, `m`, `n`, `p` or `q` must match a non-zero positive integer. When such a
-  match happens, the expression is evaluated after rewrite in order to compute
-  values such as `3-1`.
-
-* Additionally, variables with a name that begins with `u`, `v` or `w` must be
-  _unique_ within the pattern. This is useful for term-reordering rules, such as
-  `'x*u*x' 'x*x*u'`, which should not match `a*a*a` where it is a no-op.  If
-  multiple variables with a unique name exist in the same pattern, then they
-  must match symbols, and the symbols must be sorted in the same order as in the
-  pattern. For example, rewriting `v*u` as `u*v` and `x*v*u` as `x*u*v` and
-  applying these rules repeadely will result in a sorting of terms in
-  multiplications.
+* `a`, `b` and `c` denote numerical constants, like real or integer values.
+* `i`, `j` are positive integer values which may be zero and may be the result
+  of a computation, i.e. `3-3` will match.
+* `k`, `l`, `m` are non-zero positive integer values, which may be the result of
+  a compuation, i.e. `3-2` will match.
+* `n`, `o`, `p` are symbols or names like `'ABC'`.
+* `u`, `v`, `w` are unique terms, i.e. terms that cannot be presented more than
+  once in an expression.
+* Names where the initial is lowercase must be sorted, so that `x+y` will match
+  `A+B` but not `B+A`.
 
 Another important difference is that on HP calculators, the number of rewrites
 of subexpressions is limited to a single pass, irrespective of flag `-100`
