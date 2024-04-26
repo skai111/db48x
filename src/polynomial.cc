@@ -33,6 +33,641 @@
 #include "expression.h"
 #include "grob.h"
 #include "integer.h"
+#include "leb128.h"
+
+
+polynomial_p polynomial::make(algebraic_p value)
+// ----------------------------------------------------------------------------
+//   Convert a value into an algebraic with zero variables
+// ----------------------------------------------------------------------------
+{
+    if (!value || !value->is_real())
+        return nullptr;
+
+    scribble scr;
+    algebraic_g avalue = value;
+    size_t sz = value->size();
+    byte *p = rt.allocate(1 + sz);
+    if (!p)
+        return nullptr;
+    *p++ = 0; // Number of variables = 0
+    memcpy(p, +avalue, sz);
+    gcbytes data = scr.scratch();
+    size_t datasz = scr.growth();
+    return rt.make<polynomial>(data, datasz);
+}
+
+
+polynomial_p polynomial::make(symbol_p name)
+// ----------------------------------------------------------------------------
+//   Convert a name into an algebraic with a single variable
+// ----------------------------------------------------------------------------
+{
+    if (!name || name->type() != ID_symbol)
+        return nullptr;
+
+    scribble scr;
+    symbol_g aname = name;
+    byte_p   src   = name->payload();
+    byte_p   p     = src;
+    size_t   len   = leb128<size_t>(p);
+    size_t   namesz = p + len - src;
+    size_t   polysz = namesz + integer::required_memory(ID_integer, 1) + 2;
+    byte    *dst   = rt.allocate(polysz);
+    if (!dst)
+        return nullptr;
+    dst = leb128(dst, 1);               // Number of variables = 1
+    memcpy(dst, src, namesz);           // Copy name
+    dst += namesz;
+    dst = leb128(dst, ID_integer);      // Encode constant 1 (scaling factor)
+    dst = leb128(dst, 1);
+    dst = leb128(dst, 1);               // Encode exponent 1
+    gcbytes data = scr.scratch();
+    size_t datasz = scr.growth();
+    return rt.make<polynomial>(data, datasz);
+}
+
+
+static bool polynomial_op(size_t depth, polynomial_p (*op)(polynomial_r x))
+// ----------------------------------------------------------------------------
+//   Unary operation
+// ----------------------------------------------------------------------------
+{
+    if (rt.depth() - depth >= 1)
+        if (polynomial_g arg = rt.top()->as<polynomial>())
+            if (polynomial_p result = op(arg))
+                if (rt.top(result))
+                    return true;
+    return false;
+}
+
+
+static bool polynomial_op(size_t depth, polynomial_p (*op)(polynomial_r x,
+                                                           polynomial_r y))
+// ----------------------------------------------------------------------------
+//   Binary operation
+// ----------------------------------------------------------------------------
+{
+    if (rt.depth() - depth >= 2)
+        if (polynomial_g x = rt.pop()->as<polynomial>())
+            if (polynomial_g y = rt.top()->as<polynomial>())
+                if (polynomial_p result = op(x, y))
+                    if (rt.top(result))
+                        return true;
+    return false;
+}
+
+
+static bool polynomial_op(size_t depth,
+                          polynomial_p (*op)(polynomial_r x,
+                                             integer_r y),
+                          integer_r yi)
+// ----------------------------------------------------------------------------
+//   Binary power operation
+// ----------------------------------------------------------------------------
+{
+    if (yi)
+        if (rt.depth() - depth >= 2)
+            if (polynomial_g x = rt.pop()->as<polynomial>())
+                if (polynomial_g y = rt.top()->as<polynomial>())
+                    if (polynomial_p result = op(x, yi))
+                        if (rt.top(result))
+                            return true;
+    return false;
+}
+
+
+polynomial_p polynomial::make(expression_p expr, bool error)
+// ----------------------------------------------------------------------------
+//   Check if an expression has the right structure for a polynomial
+// ----------------------------------------------------------------------------
+{
+    // If the expression is already a polynomial, return it
+    if (!expr || expr->type() == ID_polynomial)
+        return polynomial_p(expr);
+    if (expr->type() != ID_expression)
+    {
+        if (error)
+            rt.type_error();
+        return nullptr;
+    }
+
+    // First check that what we have is compatible with expectations
+    size_t    depth = rt.depth();
+    integer_g power = nullptr;
+    for (object_p obj : *expr)
+    {
+        ASSERT(obj && "We must have valid objects in expressions");
+        id ty = obj->type();
+
+        // Save integer exponents for `pow`
+        if (ty == ID_integer)
+            power = integer_p(obj);
+        else if (ty != ID_pow)
+            power = nullptr;
+
+        // Check which types are valid in a polynomial
+        if (is_real(ty))
+        {
+            algebraic_g arg = algebraic_p(obj);
+            polynomial_g poly = make(arg);
+            if (!poly)
+                goto error;
+            rt.push(+poly);
+        }
+        else if (ty == ID_symbol)
+        {
+            symbol_g sym = symbol_p(obj);
+            polynomial_g poly = make(sym);
+            if (!poly)
+                goto error;
+            rt.push(+poly);
+        }
+        else if (ty == ID_neg)
+        {
+            if (!polynomial_op(depth, neg))
+                goto error;
+        }
+        else if (ty == ID_add)
+        {
+            if (!polynomial_op(depth, add))
+                goto error;
+        }
+        else if (ty == ID_sub)
+        {
+            if (!polynomial_op(depth, sub))
+                goto error;
+        }
+        else if (ty == ID_mul)
+        {
+            if (!polynomial_op(depth, mul))
+                goto error;
+        }
+        else if (ty == ID_pow)
+        {
+            if (!polynomial_op(depth, pow, power))
+                goto error;
+        }
+        else
+        {
+            // All other operators are invalid in a polynom
+            if (error)
+                rt.value_error();
+            goto error;
+        }
+    }
+
+    if (rt.depth() == depth + 1)
+        if (polynomial_p result = rt.pop()->as<polynomial>())
+            return result;
+
+error:
+    // Case where we had an error: drop anything we pushed on the stack
+    if (size_t removing = rt.depth() - depth)
+        rt.drop(removing);
+    return nullptr;
+}
+
+
+byte *polynomial::copy_variables(polynomial_r x, byte *prev)
+// ----------------------------------------------------------------------------
+//   Copy variables from an existing polynomial, return pointer at end
+// ----------------------------------------------------------------------------
+{
+    if (!x)
+        return nullptr;
+
+    gcmbytes gprev  = prev;
+    size_t   ovars  = prev ? leb128<size_t>(prev) : 0;
+    size_t   ovoffs = prev  - +gprev;
+
+    byte_p   xp     = x->payload();
+    size_t   xsz    = leb128<size_t>(xp);
+    size_t   nvars  = leb128<size_t>(xp);
+    size_t   offset = xp - byte_p(+x);
+
+    // Insert variables in copy
+    for (size_t v = 0; v < nvars; v++)
+    {
+        if (offset >= xsz)
+            return nullptr;
+
+        // Scan next variable in polynomial x
+        xp = byte_p(+x) + offset;
+        size_t vlen = leb128<size_t>(xp);
+
+        // Check if a copy of that variable already exists
+        byte_p old  = nullptr;
+        int    cmp  = -1;
+        if (prev)
+        {
+            // Restart from beginning of variables
+            prev = gprev + ovoffs;
+            for (size_t ov = 0; ov < ovars; ov++)
+            {
+                byte_p oldvar = prev;
+                size_t ovlen = leb128<size_t>(prev);
+                cmp   = memcmp(prev, xp, std::min(ovlen, vlen));
+                if (cmp >= 0)
+                {
+                    old = oldvar;
+                    if (cmp == 0)
+                        cmp = ovlen - vlen;
+                    break;
+                }
+            }
+        }
+
+        size_t vsz  = leb128size(vlen) + vlen;
+        if (cmp)
+        {
+            // Size needed for variable
+            size_t offs = old - +gprev;
+            bool vszchg = !prev || leb128size(ovars+1) != leb128size(ovars);
+            byte  *copy = rt.allocate(vsz + vszchg);
+            if (!copy)
+                return nullptr;
+            ovars++;
+            if (!prev)
+            {
+                gprev = prev = copy;
+                copy = (byte *) leb128(+gprev, ovars);
+            }
+            else
+            {
+                if (vszchg)
+                    memmove((byte *) +gprev + 1, +gprev, copy - +gprev);
+                leb128(+gprev, ovars);
+            }
+            if (!old)
+            {
+                memcpy(copy, byte_p(+x) + offset, vsz);
+            }
+            else
+            {
+                old = +gprev + offs;
+                size_t copysz = copy - old;
+                memmove((byte *) old + vsz, old, copysz);
+                memcpy((byte *) old, byte_p(+x) + offset, vsz);
+            }
+        }
+        offset += vsz;
+    }
+
+    return (byte *) +gprev;
+}
+
+
+polynomial_p polynomial::neg(polynomial_r x)
+// ----------------------------------------------------------------------------
+//  Negate a polynomial by negating the constant in all terms
+// ----------------------------------------------------------------------------
+{
+    scribble scr;
+    gcbytes  polycopy = copy_variables(x);
+    size_t   nvars    = x->variables();
+    for (auto term : *x)
+    {
+        algebraic_g factor = term.factor();
+        factor = -factor;
+        size_t sz = factor->size();
+        byte *np = rt.allocate(sz);
+        if (!np)
+            return nullptr;
+        memcpy(np, +factor, sz);
+        for (size_t v = 0; v < nvars; v++)
+        {
+            ularge exponent = term.exponent();
+            byte *ep = rt.allocate(leb128size(exponent));
+            if (!ep)
+                return nullptr;
+            leb128(ep, exponent);
+        }
+    }
+    gcbytes data = scr.scratch();
+    size_t datasz = scr.growth();
+    return rt.make<polynomial>(data, datasz);
+}
+
+
+polynomial_p polynomial::addsub(polynomial_r x, polynomial_r y, bool sub)
+// ----------------------------------------------------------------------------
+//  Add or subtract two polynomials
+// ----------------------------------------------------------------------------
+{
+    scribble scr;
+    gcbytes  result = copy_variables(x);
+    result          = copy_variables(y, (byte *) +result);
+    if (!result)
+        return nullptr;
+
+    byte_p p        = +result;
+    size_t nvars    = leb128<size_t>(p);
+    size_t xvars    = x->variables();
+    size_t yvars    = y->variables();
+    ularge xexp[nvars];
+    ularge yexp[nvars];
+    size_t xvar[xvars];
+    size_t yvar[yvars];
+
+    // Map variables in x and y to variables in the result
+    for (size_t v = 0; v < nvars; v++)
+    {
+        size_t nlen = leb128<size_t>(p);
+        for (size_t xv = 0; xv < xvars; xv++)
+        {
+            size_t xlen = 0;
+            utf8   xname = x->variable(xv, &xlen);
+            if (xlen == nlen && memcmp(xname, p, xlen) == 0)
+                xvar[xv] = v;
+        }
+        for (size_t yv = 0; yv < yvars; yv++)
+        {
+            size_t ylen = 0;
+            utf8   yname = y->variable(yv, &ylen);
+            if (ylen == nlen && memcmp(yname, p, ylen) == 0)
+                yvar[yv] = v;
+        }
+        p += nlen;
+    }
+
+    // Add all the terms in X
+    for (auto xterm : *x)
+    {
+        for (size_t v = 0; v < nvars; v++)
+            xexp[v] = 0;
+
+        // Computer the factor of the variables in polynomial x
+        algebraic_g xfactor = xterm.factor();
+        for (size_t xv = 0; xv < xvars; xv++)
+            xexp[xvar[xv]] = xterm.exponent();
+
+        // Check if we have the same factors in polynomial y
+        for (auto yterm : *y)
+        {
+            for (size_t v = 0; v < nvars; v++)
+                yexp[v] = 0;
+
+            algebraic_g yfactor = yterm.factor();
+            for (size_t yv = 0; yv < yvars; yv++)
+                yexp[yvar[yv]] = yterm.exponent();
+
+            bool sameexps = true;
+            for (size_t v = 0; sameexps && v < nvars; v++)
+                sameexps = xexp[v] == yexp[v];
+            if (sameexps)
+                xfactor = sub ? xfactor - yfactor : xfactor + yfactor;
+        }
+        if (!xfactor)
+            return nullptr;
+        if (!xfactor->is_zero())
+        {
+            size_t sz = xfactor->size();
+            byte *p = rt.allocate(sz);
+            if (!p)
+                return nullptr;
+            memcpy(p, +xfactor, sz);
+            p += sz;
+            for (size_t v = 0; v < nvars; v++)
+            {
+                p = rt.allocate(leb128size(xexp[v]));
+                if (!p)
+                    return nullptr;
+                leb128(p, xexp[v]);
+            }
+        }
+    }
+
+    // Add all the terms in Y
+    for (auto yterm : *y)
+    {
+        for (size_t v = 0; v < nvars; v++)
+            yexp[v] = 0;
+
+        // Computer the factor of the variables in polynomial y
+        algebraic_g yfactor = yterm.factor();
+        for (size_t yv = 0; yv < yvars; yv++)
+            yexp[yvar[yv]] = yterm.exponent();
+
+        // Check if we have the same factors in polynomial X
+        for (auto xterm : *x)
+        {
+            for (size_t v = 0; v < nvars; v++)
+                xexp[v] = 0;
+
+            algebraic_g xfactor = xterm.factor();
+            for (size_t xv = 0; xv < xvars; xv++)
+                xexp[xvar[xv]] = xterm.exponent();
+
+            bool sameexps = true;
+            for (size_t v = 0; sameexps && v < nvars; v++)
+                sameexps = xexp[v] == yexp[v];
+            if (sameexps)
+                yfactor = nullptr; // Already done in the X loop
+        }
+
+        if (yfactor && !yfactor->is_zero())
+        {
+            if (sub)
+                yfactor = -yfactor;
+
+            size_t sz = yfactor->size();
+            byte *p = rt.allocate(sz);
+            if (!p)
+                return nullptr;
+            memcpy(p, +yfactor, sz);
+            p += sz;
+            for (size_t v = 0; v < nvars; v++)
+            {
+                p = rt.allocate(leb128size(yexp[v]));
+                if (!p)
+                    return nullptr;
+                leb128(p, yexp[v]);
+            }
+        }
+    }
+
+    gcbytes data = scr.scratch();
+    size_t datasz = scr.growth();
+    return rt.make<polynomial>(data, datasz);
+}
+
+
+polynomial_p polynomial::add(polynomial_r x, polynomial_r y)
+// ----------------------------------------------------------------------------
+//  Add two polynomials
+// ----------------------------------------------------------------------------
+{
+    return addsub(x, y, false);
+}
+
+
+polynomial_p polynomial::sub(polynomial_r x, polynomial_r y)
+// ----------------------------------------------------------------------------
+//  Subtract two polynomials
+// ----------------------------------------------------------------------------
+{
+    return addsub(x, y, true);
+}
+
+
+
+polynomial_p polynomial::mul(polynomial_r x, polynomial_r y)
+// ----------------------------------------------------------------------------
+//   Multiply two polynomials
+// ----------------------------------------------------------------------------
+{
+    scribble scr;
+    gcbytes  result = copy_variables(x);
+    result          = copy_variables(y, (byte *) +result);
+    if (!result)
+        return nullptr;
+
+    byte_p p        = +result;
+    size_t nvars    = leb128<size_t>(p);
+    size_t xvars    = x->variables();
+    size_t yvars    = y->variables();
+    ularge xexp[nvars];
+    ularge yexp[nvars];
+    size_t xvar[xvars];
+    size_t yvar[yvars];
+
+    // Map variables in x and y to variables in the result
+    for (size_t v = 0; v < nvars; v++)
+    {
+        size_t nlen = leb128<size_t>(p);
+        for (size_t xv = 0; xv < xvars; xv++)
+        {
+            size_t xlen = 0;
+            utf8   xname = x->variable(xv, &xlen);
+            if (xlen == nlen && memcmp(xname, p, xlen) == 0)
+                xvar[xv] = v;
+        }
+        for (size_t yv = 0; yv < yvars; yv++)
+        {
+            size_t ylen = 0;
+            utf8   yname = y->variable(yv, &ylen);
+            if (ylen == nlen && memcmp(yname, p, ylen) == 0)
+                yvar[yv] = v;
+        }
+        p += nlen;
+    }
+
+    // Loop over all the terms in X
+    for (auto xterm : *x)
+    {
+        for (size_t v = 0; v < nvars; v++)
+            xexp[v] = 0;
+
+        // Computer the factor of the variables in polynomial x
+        algebraic_g xfactor = xterm.factor();
+        for (size_t xv = 0; xv < xvars; xv++)
+            xexp[xvar[xv]] = xterm.exponent();
+
+        // Check if we have the same factors in polynomial y
+        for (auto yterm : *y)
+        {
+            for (size_t v = 0; v < nvars; v++)
+                yexp[v] = 0;
+
+            algebraic_g yfactor = yterm.factor();
+            for (size_t yv = 0; yv < yvars; yv++)
+                yexp[yvar[yv]] = yterm.exponent();
+
+            xfactor = xfactor * yfactor;
+            if (!xfactor)
+                return nullptr;
+            if (!xfactor->is_zero())
+            {
+                size_t sz = xfactor->size();
+                byte *p = rt.allocate(sz);
+                if (!p)
+                    return nullptr;
+                memcpy(p, +xfactor, sz);
+                p += sz;
+                for (size_t v = 0; v < nvars; v++)
+                {
+                    ularge exp = xexp[v] + yexp[v];
+                    p = rt.allocate(leb128size(exp));
+                    p = leb128(p, exp);
+                }
+            }
+        }
+    }
+
+    gcbytes data = scr.scratch();
+    size_t datasz = scr.growth();
+    return rt.make<polynomial>(data, datasz);
+}
+
+
+
+polynomial_p polynomial::div(polynomial_r x, polynomial_r y)
+// ----------------------------------------------------------------------------
+//  Euclidean divide of polynomials
+// ----------------------------------------------------------------------------
+{
+    polynomial_g q, r;
+    if (quorem(x, y, q, r))
+        return q;
+    return nullptr;
+}
+
+
+
+polynomial_p polynomial::mod(polynomial_r x, polynomial_r y)
+// ----------------------------------------------------------------------------
+//  Euclidean remainder of polynomials
+// ----------------------------------------------------------------------------
+{
+    polynomial_g q, r;
+    if (quorem(x, y, q, r))
+        return r;
+    return nullptr;
+}
+
+
+bool polynomial::quorem(polynomial_r x, polynomial_r y,
+                        polynomial_g &q, polynomial_g &r)
+// ----------------------------------------------------------------------------
+//  Quotient and remainder of two polynomials
+// ----------------------------------------------------------------------------
+{
+    rt.unimplemented_error();
+    return false;
+}
+
+
+
+polynomial_p polynomial::pow(polynomial_r x, integer_r y)
+// ----------------------------------------------------------------------------
+//  Elevate a polynomial to some integer power
+// ----------------------------------------------------------------------------
+{
+    ularge exp = y->value<ularge>();
+    polynomial_g r = nullptr;
+    polynomial_g m = x;
+    while (exp)
+    {
+        if (exp & 1)
+        {
+            r = r ? mul(r, m) : +m;
+            if (!r)
+                return nullptr;
+        }
+        m = mul(m, m);
+        if (!m)
+            return nullptr;
+        exp >>= 1;
+    }
+
+    if (!r)
+    {
+        algebraic_g one = integer::make(1);
+        r = polynomial::make(one);
+    }
+    return r;
+}
 
 
 size_t polynomial::variables() const
@@ -40,21 +675,32 @@ size_t polynomial::variables() const
 //   Return the number of variables
 // ----------------------------------------------------------------------------
 {
-    byte_p p      = byte_p(this);
-    byte_p first  = p;
+    byte_p first  = byte_p(this);
+    byte_p p      = payload();
     size_t length = leb128<size_t>(p);
     size_t nvars = leb128<size_t>(p);
     return (size_t(p - first) < length) ? nvars : 0;
 }
 
 
-symbol_g polynomial::variable(uint index) const
+symbol_g polynomial::variable(size_t index) const
 // ----------------------------------------------------------------------------
 //   Return the variable at the given index as a symbol
 // ----------------------------------------------------------------------------
 {
-    byte_p p      = byte_p(this);
-    byte_p first  = p;
+    size_t len = 0;
+    utf8 p = variable(index, &len);
+    return symbol::make(p, len);
+}
+
+
+utf8 polynomial::variable(size_t index, size_t *len) const
+// ----------------------------------------------------------------------------
+//   Return the variable at the given index as a symbol
+// ----------------------------------------------------------------------------
+{
+    byte_p first  = byte_p(this);
+    byte_p p      = payload();
     size_t length = leb128<size_t>(p);
     size_t nvars  = leb128<size_t>(p);
     if (index >= nvars)
@@ -68,13 +714,15 @@ symbol_g polynomial::variable(uint index) const
     if (size_t(p - first) >= length)
         return nullptr;
     size_t vlen = leb128<size_t>(p);
-    return symbol::make(p, vlen);
+    if (len)
+        *len = vlen;
+    return p;
 }
 
 
 PARSE_BODY(polynomial)
 // ----------------------------------------------------------------------------
-//   No parsing for polynomials, they are only generated
+//   No parsing for polynomials, they are only generated from expressions
 // ----------------------------------------------------------------------------
 {
     return SKIP;
@@ -115,7 +763,7 @@ EVAL_BODY(polynomial)
         {
             ularge exponent = term.exponent();
             algebraic_g value = +integer::make(exponent);
-            value = pow(vars[v], value);
+            value = ::pow(vars[v], value);
             factor = factor * value;
             if (!factor)
                 return ERROR;
@@ -205,7 +853,7 @@ GRAPH_BODY(polynomial)
     {
         // Render the factor
         algebraic_g factor = term.factor();
-        grob_g      factg  = factor->graph(g);
+        grob_g      factg  = factor->is_one() ? nullptr : factor->graph(g);
         coord       vf     = 0;
 
         // Render the terms
@@ -223,7 +871,10 @@ GRAPH_BODY(polynomial)
                     termg = suscript(g, vt, termg, 0, exptxt);
                     vt = g.voffset;
                 }
-                factg = infix(g, vf, factg, 0, mul, vt, termg);
+                if (factg)
+                    factg = infix(g, vf, factg, 0, mul, vt, termg);
+                else
+                    factg = termg;
                 vf = g.voffset;
             }
         }
