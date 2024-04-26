@@ -114,6 +114,13 @@ struct algebraic : command
     //   Return a hardware floating-point value if possible
     // -------------------------------------------------------------------------
 
+    bool is_numeric_constant() const;
+    algebraic_p as_numeric_constant() const;
+    // ------------------------------------------------------------------------
+    //   Check if a value is a valid numerical constant (real or complex)
+    // ------------------------------------------------------------------------
+
+
     INSERT_DECL(algebraic);
 };
 

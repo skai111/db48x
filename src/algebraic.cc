@@ -754,3 +754,31 @@ algebraic_p algebraic::evaluate() const
     rt.type_error();
     return nullptr;
 }
+
+
+bool algebraic::is_numeric_constant() const
+// ----------------------------------------------------------------------------
+//  Return true if a value is a valid numerical constant in polynomials
+// ----------------------------------------------------------------------------
+{
+    id ty = type();
+    if (is_real(ty))
+        return true;
+    if (ty == ID_polar || ty == ID_rectangular)
+    {
+        complex_p z = complex_p(this);
+        return z->x()->is_real() && z->y()->is_real();
+    }
+    return false;
+}
+
+
+algebraic_p algebraic::as_numeric_constant() const
+// ----------------------------------------------------------------------------
+//   Check if a value is a valid numerical constant (real or complex)
+// ----------------------------------------------------------------------------
+{
+    if (is_numeric_constant())
+        return this;
+    return nullptr;
+}

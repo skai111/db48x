@@ -41,7 +41,7 @@ polynomial_p polynomial::make(algebraic_p value)
 //   Convert a value into an algebraic with zero variables
 // ----------------------------------------------------------------------------
 {
-    if (!value || !value->is_real())
+    if (!value || !value->is_numeric_constant())
         return nullptr;
 
     scribble scr;
@@ -167,7 +167,7 @@ polynomial_p polynomial::make(expression_p expr, bool error)
             power = nullptr;
 
         // Check which types are valid in a polynomial
-        if (is_real(ty))
+        if (is_real(ty) || (ty == ID_polar || ty == ID_rectangular))
         {
             algebraic_g arg = algebraic_p(obj);
             polynomial_g poly = make(arg);
@@ -911,6 +911,10 @@ FUNCTION_BODY(ToPolynomial)
     }
     if (expression_g eq = x->as<expression>())
         return polynomial::make(eq, true);
+    if (symbol_g sym = x->as<symbol>())
+        return polynomial::make(sym);
+    if (algebraic_g value = x->as_numeric_constant())
+        return polynomial::make(value);
     rt.type_error();
     return nullptr;
 }
