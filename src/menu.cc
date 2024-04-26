@@ -752,7 +752,7 @@ MENU(SymbolicMenu,
      ID_Collect,
      ID_Expand,
      ID_Simplify,
-     "Ex/Co",           ID_Unimplemented,
+     "→Poly",           ID_ToPolynomial,
      "→Num",            ID_ToDecimal,
      "→Q",              ID_ToFraction,
 

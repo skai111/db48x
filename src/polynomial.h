@@ -205,4 +205,7 @@ public:
     GRAPH_DECL(polynomial);
 };
 
+
+FUNCTION(ToPolynomial);
+
 #endif // POLYNOMIAL_H

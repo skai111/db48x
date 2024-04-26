@@ -890,3 +890,27 @@ GRAPH_BODY(polynomial)
     // We are done, push the result
     return result;
 }
+
+
+FUNCTION_BODY(ToPolynomial)
+// ----------------------------------------------------------------------------
+//   Convert an expression as a polynomial
+// ----------------------------------------------------------------------------
+{
+    if (!x)
+        return nullptr;
+    if (object_p quoted = x->as_quoted())
+    {
+        if (algebraic_p alg = quoted->as_algebraic())
+        {
+            if (symbol_g sym = alg->as<symbol>())
+                return polynomial::make(sym);
+            if (algebraic_g value = alg->as_numeric_constant())
+                return polynomial::make(value);
+        }
+    }
+    if (expression_g eq = x->as<expression>())
+        return polynomial::make(eq, true);
+    rt.type_error();
+    return nullptr;
+}

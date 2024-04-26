@@ -488,6 +488,7 @@ CMD(Collect)
 CMD(FoldConstants)
 CMD(ReorderTerms)
 CMD(Simplify)
+NAMED(ToPolynomial, "→Polynomial")    ALIAS(ToPolynomial, "→Poly")
 
 // Complex numbers
 NAMED(RealToRectangular, "ℝ→ℂ")
