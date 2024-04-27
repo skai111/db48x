@@ -40,6 +40,7 @@
 #include "functions.h"
 #include "integer.h"
 #include "list.h"
+#include "polynomial.h"
 #include "runtime.h"
 #include "settings.h"
 #include "tag.h"
@@ -909,7 +910,7 @@ algebraic_p arithmetic::non_numeric<struct pow>(algebraic_r x, algebraic_r y)
 
         // Do not expand X^3 or integers when y>=0
         if (x->is_symbolic())
-            return expression::make(ID_pow, x, y);
+            return nullptr;
 
         // Deal with X^N where N is a positive integer
         ularge yv = integer_p(+y)->value<ularge>();
@@ -1313,6 +1314,40 @@ algebraic_p arithmetic::evaluate(id          op,
 
     if (x->is_symbolic_arg() && y->is_symbolic_arg())
     {
+        polynomial_g xp  = x->as<polynomial>();
+        polynomial_g yp  = y->as<polynomial>();
+        polynomial_p xpp = xp;
+        polynomial_p ypp = yp;
+        if (xpp || ypp)
+        {
+            if (!xp)
+                xp = polynomial::make(x);
+            if (xp)
+            {
+                if (!yp && op == ID_pow)
+                    if (integer_g yi = y->as<integer>())
+                        return polynomial::pow(xp, yi);
+                if (!yp)
+                    yp = polynomial::make(y);
+                if (yp)
+                {
+                    switch(op)
+                    {
+                    case ID_add: return polynomial::add(xp, yp); break;
+                    case ID_sub: return polynomial::sub(xp, yp); break;
+                    case ID_mul: return polynomial::mul(xp, yp); break;
+                    case ID_div: return polynomial::div(xp, yp); break;
+                    case ID_mod:
+                    case ID_rem: return polynomial::mod(xp, yp); break;
+                    default: break;
+                    }
+                }
+                if (ypp)
+                    y = yp->as_expression();
+                if (xpp)
+                    x = xp->as_expression();
+            }
+        }
         x = expression::make(op, x, y);
         return x;
     }
