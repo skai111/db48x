@@ -257,6 +257,7 @@ COMMAND_BODY(ToolsMenu)
             case ID_based_integer:
             case ID_based_bignum:       menu = ID_BasesMenu; break;
             case ID_text:               menu = ID_TextMenu; break;
+            case ID_symbol:
             case ID_expression:         menu = ID_SymbolicMenu; break;
             case ID_program:            menu = ID_DebugMenu; break;
             case ID_list:               menu = ID_ListMenu; break;
