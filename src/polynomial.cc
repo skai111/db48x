@@ -41,8 +41,8 @@ polynomial_p polynomial::make(algebraic_p value)
 //   Convert a value into an algebraic with zero variables
 // ----------------------------------------------------------------------------
 {
-    if (!value)
-        return nullptr;
+    if (!value || value->type() == ID_polynomial)
+        return polynomial_p(value);
 
     if (expression_g expr = value->as<expression>())
     {
