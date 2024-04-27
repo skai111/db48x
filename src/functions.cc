@@ -39,6 +39,7 @@
 #include "integer.h"
 #include "list.h"
 #include "logical.h"
+#include "polynomial.h"
 #include "tag.h"
 #include "unit.h"
 
@@ -250,6 +251,11 @@ object::result function::evaluate(algebraic_fn op, bool mat)
         {
             top = tag_p(top)->tagged_object();
             topty = top->type();
+        }
+        if (topty == ID_polynomial)
+        {
+            top = polynomial_p(top)->as_expression();
+            topty = top ? top->type() : ID_expression;
         }
         if (topty == ID_list || (topty == ID_array && !mat))
         {
