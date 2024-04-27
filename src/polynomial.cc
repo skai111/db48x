@@ -819,14 +819,18 @@ RENDER_BODY(polynomial)
 
         // Emit the factor
         algebraic_g factor = term.factor();
-        factor->render(r);
+        bool hasmul = !factor->is_one();
+        if (hasmul)
+            factor->render(r);
 
         for (size_t v = 0; v < nvars; v++)
         {
             ularge exponent = term.exponent();
             if (exponent)
             {
-                r.put(mul);
+                if (hasmul)
+                    r.put(mul);
+                hasmul = true;
                 vars[v]->render(r);
                 if (exponent > 1)
                 {
@@ -835,6 +839,8 @@ RENDER_BODY(polynomial)
                 }
             }
         }
+        if (!hasmul)
+            factor->render(r);
     }
 
     // We are done, push the result
