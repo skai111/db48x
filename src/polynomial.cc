@@ -918,3 +918,66 @@ FUNCTION_BODY(ToPolynomial)
     rt.type_error();
     return nullptr;
 }
+
+
+COMMAND_BODY(FromPolynomial)
+// ----------------------------------------------------------------------------
+//   Convert a polynomial to an expression
+// ----------------------------------------------------------------------------
+{
+    if (object_p obj = rt.top())
+        if (polynomial_p poly = obj->as<polynomial>())
+            if (algebraic_p result = poly->as_expression())
+                if (rt.top(result))
+                    return OK;
+    if (!rt.error())
+        rt.type_error();
+    return ERROR;
+}
+
+
+algebraic_p polynomial::as_expression() const
+// ----------------------------------------------------------------------------
+//   Rewrite a polynomial as a regular expression
+// ----------------------------------------------------------------------------
+{
+    polynomial_g poly = this;
+    size_t       nvars = poly->variables();
+    algebraic_g  vars[nvars];
+
+    // Evaluate each of the variables exactly once (this is where we save time)
+    for (size_t v = 0; v < nvars; v++)
+    {
+        symbol_p var = poly->variable(v);
+        vars[v] = var;
+    }
+
+    // Loop over all factors
+    algebraic_g result = nullptr;
+    for (auto term : *poly)
+    {
+        algebraic_g factor = term.factor();
+        if (!factor->is_zero())
+        {
+            for (size_t v = 0; v < nvars; v++)
+            {
+                ularge exponent = term.exponent();
+                algebraic_g value = +integer::make(exponent);
+                value = ::pow(vars[v], value);
+                factor = factor->is_one() ? value : factor * value;
+                if (!factor)
+                    return nullptr;;
+            }
+            result = result + factor;
+            if (!result)
+                return nullptr;
+        }
+    }
+
+    // If we did not have any term, just return 0
+    if (!result)
+        result = +integer::make(0);
+
+    // We are done, return the result
+    return result;
+}

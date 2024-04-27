@@ -107,6 +107,9 @@ struct polynomial : expression
     symbol_g variable(size_t index) const;
     utf8     variable(size_t index, size_t *len) const;
 
+    // Convert polynomial to expression
+    algebraic_p as_expression() const;
+
     // Iterating over factors and exponents
     struct iterator
     {
@@ -207,5 +210,6 @@ public:
 
 
 FUNCTION(ToPolynomial);
+COMMAND_DECLARE(FromPolynomial, 1);
 
 #endif // POLYNOMIAL_H

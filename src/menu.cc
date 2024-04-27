@@ -263,6 +263,7 @@ COMMAND_BODY(ToolsMenu)
             case ID_array:              menu = ID_MatrixMenu; break;
             case ID_tag:                menu = ID_ObjectMenu; break;
             case ID_unit:               menu = unit_menu(unit_p(top)); break;
+            case ID_polynomial:         menu = ID_PolynomialsMenu; break;
             default:                    break;
             }
         }
@@ -541,6 +542,8 @@ MENU(PolynomialsMenu,
 // ----------------------------------------------------------------------------
 //   Root-finding operations
 // ----------------------------------------------------------------------------
+     "Poly→",   ID_FromPolynomial,
+     "Obj→",    ID_Explode,
      "FCoef",   ID_Unimplemented,
      "FRoots",  ID_Unimplemented,
      "MRoot",   ID_Unimplemented,

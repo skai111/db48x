@@ -36,6 +36,7 @@
 #include "fraction.h"
 #include "integer.h"
 #include "parser.h"
+#include "polynomial.h"
 #include "program.h"
 #include "renderer.h"
 #include "runtime.h"
@@ -269,6 +270,11 @@ COMMAND_BODY(Explode)
             rt.dimension_error();
             rt.push(obj);
         }
+        break;
+    case ID_polynomial:
+        if (algebraic_p alg = polynomial_p(obj)->as_expression())
+            if (rt.top(alg))
+                return OK;
         break;
     case ID_text:
         if (rt.drop())
