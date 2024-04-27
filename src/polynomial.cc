@@ -41,9 +41,25 @@ polynomial_p polynomial::make(algebraic_p value)
 //   Convert a value into an algebraic with zero variables
 // ----------------------------------------------------------------------------
 {
-    if (!value || !value->is_numeric_constant())
+    if (!value)
         return nullptr;
 
+    if (expression_g expr = value->as<expression>())
+    {
+        value = nullptr;
+        if (object_p quoted = expr->as_quoted())
+            if (algebraic_p alg = quoted->as_algebraic())
+                value = alg;
+        if (!value)
+            return make(expr);
+    }
+
+    if (symbol_g sym = value->as<symbol>())
+        return make(sym);
+    if (!value->is_numeric_constant())
+        return nullptr;
+
+    // Case where we have a numerical constant
     scribble scr;
     algebraic_g avalue = value;
     size_t sz = value->size();
@@ -899,22 +915,8 @@ FUNCTION_BODY(ToPolynomial)
 {
     if (!x)
         return nullptr;
-    if (object_p quoted = x->as_quoted())
-    {
-        if (algebraic_p alg = quoted->as_algebraic())
-        {
-            if (symbol_g sym = alg->as<symbol>())
-                return polynomial::make(sym);
-            if (algebraic_g value = alg->as_numeric_constant())
-                return polynomial::make(value);
-        }
-    }
-    if (expression_g eq = x->as<expression>())
-        return polynomial::make(eq, true);
-    if (symbol_g sym = x->as<symbol>())
-        return polynomial::make(sym);
-    if (algebraic_g value = x->as_numeric_constant())
-        return polynomial::make(value);
+    if (polynomial_p poly = polynomial::make(x))
+        return poly;
     rt.type_error();
     return nullptr;
 }
@@ -968,7 +970,7 @@ algebraic_p polynomial::as_expression() const
                 if (!factor)
                     return nullptr;;
             }
-            result = result + factor;
+            result = result ? result + factor : factor;
             if (!result)
                 return nullptr;
         }
