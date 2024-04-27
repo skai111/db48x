@@ -127,7 +127,7 @@ static bool polynomial_op(size_t depth, polynomial_p (*op)(polynomial_r x,
     if (rt.depth() - depth >= 2)
         if (polynomial_g x = rt.pop()->as<polynomial>())
             if (polynomial_g y = rt.top()->as<polynomial>())
-                if (polynomial_p result = op(x, y))
+                if (polynomial_p result = op(y, x))
                     if (rt.top(result))
                         return true;
     return false;
@@ -135,18 +135,18 @@ static bool polynomial_op(size_t depth, polynomial_p (*op)(polynomial_r x,
 
 
 static bool polynomial_op(size_t depth,
-                          polynomial_p (*op)(polynomial_r x,
-                                             integer_r y),
-                          integer_r yi)
+                          polynomial_p (*op)(polynomial_r y,
+                                             integer_r x),
+                          integer_r xi)
 // ----------------------------------------------------------------------------
 //   Binary power operation
 // ----------------------------------------------------------------------------
 {
-    if (yi)
+    if (xi)
         if (rt.depth() - depth >= 2)
             if (polynomial_g x = rt.pop()->as<polynomial>())
                 if (polynomial_g y = rt.top()->as<polynomial>())
-                    if (polynomial_p result = op(x, yi))
+                    if (polynomial_p result = op(y, xi))
                         if (rt.top(result))
                             return true;
     return false;
