@@ -914,15 +914,7 @@ algebraic_p arithmetic::non_numeric<struct pow>(algebraic_r x, algebraic_r y)
 
         // Deal with X^N where N is a positive integer
         ularge yv = integer_p(+y)->value<ularge>();
-        algebraic_g r = integer::make(1);
-        algebraic_g xx = x;
-        while (yv)
-        {
-            if (yv & 1)
-                r = r * xx;
-            yv /= 2;
-            xx = xx * xx;
-        }
+        algebraic_g r = ::pow(x, yv);
         if (negy)
             r = inv::run(r);
         return r;
@@ -1522,6 +1514,24 @@ algebraic_g pow(algebraic_r x, algebraic_r y)
 // ----------------------------------------------------------------------------
 {
     return pow::evaluate(x, y);
+}
+
+
+algebraic_g pow(algebraic_r xr, ularge y)
+// ----------------------------------------------------------------------------
+//   Power with a known integer value
+// ----------------------------------------------------------------------------
+{
+    algebraic_g r = integer::make(1);
+    algebraic_g x = xr;
+    while (y)
+    {
+        if (y & 1)
+            r = r * x;
+        y /= 2;
+        x = x * x;
+    }
+    return r;
 }
 
 

@@ -771,23 +771,32 @@ EVAL_BODY(polynomial)
     }
 
     // Loop over all factors
-    algebraic_g result = +integer::make(0);
+    algebraic_g result = nullptr;
     for (auto term : *poly)
     {
         algebraic_g factor = term.factor();
-        for (size_t v = 0; v < nvars; v++)
+        if (!factor->is_zero())
         {
-            ularge exponent = term.exponent();
-            algebraic_g value = +integer::make(exponent);
-            value = ::pow(vars[v], value);
-            factor = factor * value;
-            if (!factor)
+            for (size_t v = 0; v < nvars; v++)
+            {
+                ularge exponent = term.exponent();
+                if (exponent)
+                {
+                    algebraic_g value = exponent == 1
+                        ? vars[v]
+                        : ::pow(vars[v], exponent);
+                    factor = factor * value;
+                    if (!factor)
+                        return ERROR;
+                }
+            }
+            result = result ? result + factor : factor;
+            if (!result)
                 return ERROR;
         }
-        result = result + factor;
-        if (!result)
-            return ERROR;
     }
+    if (!result)
+        result = +integer::make(0);
 
     // We are done, push the result
     return rt.push(+result) ? OK : ERROR;
@@ -976,11 +985,15 @@ algebraic_p polynomial::as_expression() const
             for (size_t v = 0; v < nvars; v++)
             {
                 ularge exponent = term.exponent();
-                algebraic_g value = +integer::make(exponent);
-                value = ::pow(vars[v], value);
-                factor = factor->is_one() ? value : factor * value;
-                if (!factor)
-                    return nullptr;;
+                if (exponent)
+                {
+                    algebraic_g value = exponent == 1
+                        ? vars[v]
+                        : ::pow(vars[v], exponent);
+                    factor = factor->is_one() ? value : factor * value;
+                    if (!factor)
+                        return nullptr;;
+                }
             }
             result = result ? result + factor : factor;
             if (!result)
