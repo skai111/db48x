@@ -815,6 +815,7 @@ FLAG(NeedToClearErrors,         NoNeedToClearErrors)
 FLAG(VerticalProgramRendering,  HorizontalProgramRendering)
 FLAG(StepByStepAlgebraResults,  FinalAlgebraResults)
 FLAG(ExplicitWildcards,         ImplicitWildcards)
+FLAG(NormalPolynomialRender,    InvertedPolynomialRender)
 
 
 ALIAS(HardwareFloatingPoint,    "HFP")

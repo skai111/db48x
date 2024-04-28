@@ -853,6 +853,9 @@ GRAPH_BODY(polynomial)
 //  Render a polynomial as a graphic expression
 // ----------------------------------------------------------------------------
 {
+    if (Settings.InvertedPolynomialRender())
+        std::swap(g.foreground, g.background);
+
     polynomial_g poly = o;
     size_t       nvars = poly->variables();
     grob_g       vars[nvars];
@@ -908,6 +911,9 @@ GRAPH_BODY(polynomial)
             result = factg;
         vr = g.voffset;
     }
+
+    if (Settings.InvertedPolynomialRender())
+        std::swap(g.foreground, g.background);
 
     // We are done, push the result
     return result;
