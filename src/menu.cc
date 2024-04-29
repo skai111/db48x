@@ -786,9 +786,9 @@ MENU(AlgebraMenu,
      "→Q",              ID_ToFraction,
 
      "∂",               ID_Unimplemented,
-     "∫",               ID_Unimplemented,
-     "∑",               ID_Unimplemented,
-     "∏",               ID_Unimplemented,
+     "∫",               ID_Integrate,
+     "∑",               ID_Sum,
+     "∏",               ID_Product,
      "∆",               ID_Unimplemented,
      "→Qπ",             ID_Unimplemented,
 
@@ -801,9 +801,9 @@ MENU(ArithmeticMenu,
 //   Arithmetic menu
 // ----------------------------------------------------------------------------
      "∂",               ID_Unimplemented,
-     "∫",               ID_Unimplemented,
-     "∑",               ID_Unimplemented,
-     "∏",               ID_Unimplemented,
+     "∫",               ID_Integrate,
+     "∑",               ID_Sum,
+     "∏",               ID_Product,
      "∆",               ID_Unimplemented,
      "Taylor",          ID_Unimplemented,
 
