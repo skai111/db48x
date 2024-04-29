@@ -290,6 +290,7 @@ byte *polynomial::copy_variables(polynomial_r x, byte *prev)
                         cmp = ovlen - vlen;
                     break;
                 }
+                prev += ovlen;
             }
         }
 
@@ -568,6 +569,7 @@ polynomial_p polynomial::mul(polynomial_r x, polynomial_r y)
     }
 
     // Loop over all the terms in X
+    gcbytes terms = p;
     for (auto xterm : *x)
     {
         for (size_t v = 0; v < nvars; v++)
@@ -588,22 +590,52 @@ polynomial_p polynomial::mul(polynomial_r x, polynomial_r y)
             for (size_t yv = 0; yv < yvars; yv++)
                 yexp[yvar[yv]] = yterm.exponent();
 
-            xfactor = xfactor * yfactor;
-            if (!xfactor)
+            algebraic_g rfactor = xfactor * yfactor;
+            if (!rfactor)
                 return nullptr;
-            if (!xfactor->is_zero())
+            if (!rfactor->is_zero())
             {
-                size_t sz = xfactor->size();
+                // Check if there is an existing term with same exponents
+                gcbytes end = rt.allocate(0);
+                byte_p next = end;
+                for (byte_p check = terms; check < end; check = next)
+                {
+                    algebraic_g existing = algebraic_p(check);
+                    bool sameexps = true;
+                    byte_p expp = byte_p(existing->skip());
+                    for (size_t v = 0; v < nvars; v++)
+                    {
+                        ularge eexp = leb128<size_t>(expp);
+                        if (eexp != xexp[v] + yexp[v])
+                            sameexps = false;
+                    }
+                    next = expp;
+                    if (sameexps)
+                    {
+                        size_t remove = size_t(expp - check);
+                        rfactor = rfactor + existing;
+                        memmove((byte *) +existing,
+                                byte_p(existing) + remove,
+                                end - byte_p(+existing));
+                        rt.free(remove);
+                        break;
+                    }
+                }
+            }
+
+            if (!rfactor->is_zero())
+            {
+                size_t sz = rfactor->size();
                 byte  *p  = rt.allocate(sz);
                 if (!p)
                     return nullptr;
-                memcpy(p, +xfactor, sz);
+                memcpy(p, +rfactor, sz);
                 p += sz;
                 for (size_t v = 0; v < nvars; v++)
                 {
                     ularge exp = xexp[v] + yexp[v];
-                    p          = rt.allocate(leb128size(exp));
-                    p          = leb128(p, exp);
+                    p = rt.allocate(leb128size(exp));
+                    p = leb128(p, exp);
                 }
             }
         }
