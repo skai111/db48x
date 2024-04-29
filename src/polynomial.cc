@@ -927,11 +927,15 @@ GRAPH_BODY(polynomial)
 
         // Addition of terms
         if (result)
+        {
             result = infix(g, vr, result, 0, isneg ? "-" : "+", vf, factg);
+            if (!result)
+                return nullptr;
+        }
         else
+        {
             result = factg;
-        if (!result)
-            return nullptr;
+        }
         vr = g.voffset;
     }
 
