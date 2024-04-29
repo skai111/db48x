@@ -459,7 +459,7 @@ polynomial_p polynomial::addsub(polynomial_r x, polynomial_r y, bool sub)
         for (size_t v = 0; v < nvars; v++)
             yexp[v] = 0;
 
-        // Computer the factor of the variables in polynomial y
+        // Compute the factor of the variables in polynomial y
         algebraic_g yfactor = yterm.factor();
         for (size_t yv = 0; yv < yvars; yv++)
             yexp[yvar[yv]] = yterm.exponent();
@@ -817,14 +817,18 @@ RENDER_BODY(polynomial)
     unicode mul   = Settings.UseDotForMultiplication() ? L'·' : L'×';
     for (auto term : *poly)
     {
-        // Separate terms with +
-        if (!first)
-            r.put('+');
-        first              = false;
-
         // Emit the factor
         algebraic_g factor = term.factor();
-        bool        hasmul = !factor->is_one();
+        bool isneg = factor->is_negative(false);
+        if (isneg)
+            factor = -factor;
+
+        // Separate terms with + or -
+        if (!first)
+            r.put(isneg ? '-' : '+');
+        first = false;
+
+        bool hasmul = !factor->is_one();
         if (hasmul)
             factor->render(r);
 
@@ -883,6 +887,9 @@ GRAPH_BODY(polynomial)
     {
         // Render the factor
         algebraic_g factor = term.factor();
+        bool        isneg  = factor->is_negative(false);
+        if (isneg)
+            factor = -factor;
         grob_g      factg  = factor->is_one() ? nullptr : factor->graph(g);
         coord       vf     = 0;
 
@@ -920,7 +927,7 @@ GRAPH_BODY(polynomial)
 
         // Addition of terms
         if (result)
-            result = infix(g, vr, result, 0, "+", vf, factg);
+            result = infix(g, vr, result, 0, isneg ? "-" : "+", vf, factg);
         else
             result = factg;
         if (!result)
