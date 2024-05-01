@@ -190,6 +190,8 @@ bool directory::store(object_g name, object_g value)
     case ID_StatsParameters:
     case ID_Equation:
     case ID_PlotParameters:
+    case ID_AlgebraConfiguration:
+    case ID_AlgebraVariable:
         break;
 
     case ID_symbol:
@@ -422,6 +424,8 @@ object_p directory::recall_all(object_p name, bool report_missing)
     case ID_StatsParameters:
     case ID_Equation:
     case ID_PlotParameters:
+    case ID_AlgebraConfiguration:
+    case ID_AlgebraVariable:
         break;
 
     case ID_symbol:
@@ -491,6 +495,8 @@ size_t directory::purge(object_p name)
     case ID_StatsParameters:
     case ID_Equation:
     case ID_PlotParameters:
+    case ID_AlgebraConfiguration:
+    case ID_AlgebraVariable:
         break;
 
     case ID_symbol:

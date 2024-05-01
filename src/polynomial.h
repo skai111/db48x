@@ -80,6 +80,7 @@ struct polynomial : expression
     static polynomial_p make(algebraic_p expr);
     static polynomial_p make(symbol_p expr);
     static polynomial_p make(expression_p expr, bool error = false);
+    static polynomial_p make(algebraic_r factor, symbol_r sym, ularge exp);
 
     // Write in the scratchpad a combination of the variables of two polynoms
     static byte *copy_variables(polynomial_r x, byte *previous = nullptr);
@@ -95,6 +96,7 @@ struct polynomial : expression
     static bool         quorem(polynomial_r x, polynomial_r y,
                                polynomial_g &q, polynomial_g &r);
     static polynomial_p pow(polynomial_r x, integer_r y);
+    static polynomial_p pow(polynomial_r x, ularge y);
 
     // Return total length of the polynomial in bytes
     size_t length() const
@@ -106,6 +108,9 @@ struct polynomial : expression
     size_t   variables() const;
     symbol_g variable(size_t index) const;
     utf8     variable(size_t index, size_t *len) const;
+    size_t   variable(utf8 name, size_t len) const;
+    size_t   variable(symbol_p name) const;
+    ularge   order(size_t *var = nullptr) const;
 
     // Convert polynomial to expression
     algebraic_p as_expression() const;
@@ -115,81 +120,19 @@ struct polynomial : expression
     {
         typedef iterator &value_type;
 
-        explicit iterator(polynomial_p poly, bool at_end = false)
-            : poly(poly), size(), variables(), offset()
-        {
-            byte_p first = byte_p(poly);
-            byte_p p     = poly->payload();
-            size       = leb128<size_t>(p);
-            size += p - first;
-            variables    = leb128<size_t>(p);
-            if (at_end)
-            {
-                offset = size;
-            }
-            else
-            {
-                for (size_t v = 0; v < variables; v++)
-                {
-                    // Skip each name
-                    size_t vlen = leb128<size_t>(p);
-                    p += vlen;
-                }
-                offset = p - first;
-            }
-        }
+        // Iterator interface
+        explicit iterator(polynomial_p poly, bool at_end = false);
+        bool        operator==(const iterator &o) const;
+        bool        operator!=(const iterator &o) const;
+        iterator   &operator++();
+        iterator    operator++(int);
+        value_type  operator*();
 
-        algebraic_p factor()
-        {
-            algebraic_p scalar    = algebraic_p(poly) + offset;
-            object_p    exponents = scalar->skip();
-            offset = exponents - object_p(poly);
-            return scalar;
-        }
-
-        ularge exponent()
-        {
-            byte_p p = byte_p(poly) + offset;
-            uint exp = leb128<ularge>(p);
-            offset = p - byte_p(poly);
-            return exp;
-        }
-
-        bool operator==(const iterator &o) const
-        {
-            return +o.poly  == +poly
-                && o.offset == offset
-                && o.size == size
-                && o.variables == variables;
-        }
-
-        bool operator!=(const iterator &o) const
-        {
-            return !(o==*this);
-        }
-
-        // We don't increment, because it's really factor() and exponent()
-        // that increment the offset.
-        iterator& operator++()
-        {
-            if (offset < size)
-            {
-                factor();
-                for (size_t v = 0; v < variables; v++)
-                    exponent();
-            }
-            return *this;
-        }
-        iterator operator++(int)
-        {
-            iterator prev = *this;
-            ++(*this);
-            return prev;
-        }
-        value_type operator*()
-        {
-            return *this;
-        }
+        // Attributes of the iteratred value
+        algebraic_p  factor();
+        ularge       exponent();
+        ularge       rank(size_t *var = nullptr) const;
+        ularge       rank(size_t var) const;
 
         polynomial_g poly;
         size_t       size;
@@ -199,8 +142,15 @@ struct polynomial : expression
 
     iterator begin() const      { return iterator(this); }
     iterator end() const        { return iterator(this, true); }
+    iterator ranking(size_t *var) const;
+    iterator ranking(size_t var) const;
 
-public:
+    // Algebra variable
+    static symbol_p     main_variable();
+    static bool         main_variable(symbol_p var);
+    static directory_p  config();
+
+  public:
     OBJECT_DECL(polynomial);
     PARSE_DECL(polynomial);
     EVAL_DECL(polynomial);
@@ -210,6 +160,9 @@ public:
 
 
 FUNCTION(ToPolynomial);
-COMMAND_DECLARE(FromPolynomial, 1);
+COMMAND_DECLARE(FromPolynomial,         1);
+COMMAND_DECLARE(AlgebraConfiguration,   0);
+COMMAND_DECLARE(AlgebraVariable,        0);
+COMMAND_DECLARE(StoreAlgebraVariable,   1);
 
 #endif // POLYNOMIAL_H

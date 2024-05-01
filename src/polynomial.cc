@@ -34,6 +34,7 @@
 #include "grob.h"
 #include "integer.h"
 #include "leb128.h"
+#include "variables.h"
 
 
 polynomial_p polynomial::make(algebraic_p value)
@@ -98,6 +99,37 @@ polynomial_p polynomial::make(symbol_p name)
     dst = leb128(dst, ID_integer); // Encode constant 1 (scaling factor)
     dst = leb128(dst, 1);
     dst = leb128(dst, 1); // Encode exponent 1
+    gcbytes data   = scr.scratch();
+    size_t  datasz = scr.growth();
+    return rt.make<polynomial>(data, datasz);
+}
+
+
+polynomial_p polynomial::make(algebraic_r factor, symbol_r sym, ularge exp)
+// ----------------------------------------------------------------------------
+//   Convert a value into an algebraic with zero variables
+// ----------------------------------------------------------------------------
+{
+    if (!factor || !sym)
+        return nullptr;
+    if (exp == 0)
+        return make(factor);
+
+    // Case where we have a numerical constant
+    scribble scr;
+    size_t   len = sym->length();
+    size_t   fsz = factor->size();
+    size_t   asz = 1 + fsz + len + leb128size(len) + leb128size(exp);
+    byte    *p   = rt.allocate(asz);
+    if (!p)
+        return nullptr;
+    *p++ = 1; // Number of variables = 1
+    p = leb128(p, len);
+    memcpy(p, sym->value(), len);
+    p += len;
+    memcpy(p, +factor, fsz);
+    p += fsz;
+    p = leb128(p, exp);
     gcbytes data   = scr.scratch();
     size_t  datasz = scr.growth();
     return rt.make<polynomial>(data, datasz);
@@ -282,7 +314,8 @@ byte *polynomial::copy_variables(polynomial_r x, byte *prev)
             {
                 byte_p oldvar = prev;
                 size_t ovlen  = leb128<size_t>(prev);
-                cmp           = memcmp(prev, xp, std::min(ovlen, vlen));
+                cmp = strncasecmp(cstring(prev), cstring(xp),
+                                  std::min(ovlen, vlen));
                 if (cmp >= 0)
                 {
                     old = oldvar;
@@ -330,6 +363,14 @@ byte *polynomial::copy_variables(polynomial_r x, byte *prev)
         offset += vsz;
     }
 
+    if (!gprev)
+    {
+        byte *p = rt.allocate(1);
+        if (p)
+            *p = 0;
+        gprev = p;
+    }
+
     return (byte *) +gprev;
 }
 
@@ -339,6 +380,9 @@ polynomial_p polynomial::neg(polynomial_r x)
 //  Negate a polynomial by negating the constant in all terms
 // ----------------------------------------------------------------------------
 {
+    if (!x)
+        return nullptr;
+
     scribble scr;
     gcbytes  polycopy = copy_variables(x);
     size_t   nvars    = x->variables();
@@ -371,6 +415,9 @@ polynomial_p polynomial::addsub(polynomial_r x, polynomial_r y, bool sub)
 //  Add or subtract two polynomials
 // ----------------------------------------------------------------------------
 {
+    if (!x || !y)
+        return nullptr;
+
     scribble scr;
     gcbytes  result = copy_variables(x);
     result          = copy_variables(y, (byte *) +result);
@@ -394,14 +441,16 @@ polynomial_p polynomial::addsub(polynomial_r x, polynomial_r y, bool sub)
         {
             size_t xlen  = 0;
             utf8   xname = x->variable(xv, &xlen);
-            if (xlen == nlen && memcmp(xname, p, xlen) == 0)
+            if (xlen == nlen &&
+                strncasecmp(cstring(xname), cstring(p), xlen) == 0)
                 xvar[xv] = v;
         }
         for (size_t yv = 0; yv < yvars; yv++)
         {
             size_t ylen  = 0;
             utf8   yname = y->variable(yv, &ylen);
-            if (ylen == nlen && memcmp(yname, p, ylen) == 0)
+            if (ylen == nlen &&
+                strncasecmp(cstring(yname), cstring(p), ylen) == 0)
                 yvar[yv] = v;
         }
         p += nlen;
@@ -436,7 +485,7 @@ polynomial_p polynomial::addsub(polynomial_r x, polynomial_r y, bool sub)
         }
         if (!xfactor)
             return nullptr;
-        if (!xfactor->is_zero())
+        if (!xfactor->is_zero(false))
         {
             size_t sz = xfactor->size();
             byte  *p  = rt.allocate(sz);
@@ -482,7 +531,7 @@ polynomial_p polynomial::addsub(polynomial_r x, polynomial_r y, bool sub)
                 yfactor = nullptr; // Already done in the X loop
         }
 
-        if (yfactor && !yfactor->is_zero())
+        if (yfactor && !yfactor->is_zero(false))
         {
             if (sub)
                 yfactor = -yfactor;
@@ -532,6 +581,9 @@ polynomial_p polynomial::mul(polynomial_r x, polynomial_r y)
 //   Multiply two polynomials
 // ----------------------------------------------------------------------------
 {
+    if (!x || !y)
+        return nullptr;
+
     scribble scr;
     gcbytes  result = copy_variables(x);
     result          = copy_variables(y, (byte *) +result);
@@ -555,14 +607,16 @@ polynomial_p polynomial::mul(polynomial_r x, polynomial_r y)
         {
             size_t xlen  = 0;
             utf8   xname = x->variable(xv, &xlen);
-            if (xlen == nlen && memcmp(xname, p, xlen) == 0)
+            if (xlen == nlen &&
+                strncasecmp(cstring(xname), cstring(p), xlen) == 0)
                 xvar[xv] = v;
         }
         for (size_t yv = 0; yv < yvars; yv++)
         {
             size_t ylen  = 0;
             utf8   yname = y->variable(yv, &ylen);
-            if (ylen == nlen && memcmp(yname, p, ylen) == 0)
+            if (ylen == nlen &&
+                strncasecmp(cstring(yname), cstring(p), ylen) == 0)
                 yvar[yv] = v;
         }
         p += nlen;
@@ -593,7 +647,7 @@ polynomial_p polynomial::mul(polynomial_r x, polynomial_r y)
             algebraic_g rfactor = xfactor * yfactor;
             if (!rfactor)
                 return nullptr;
-            if (!rfactor->is_zero())
+            if (!rfactor->is_zero(false))
             {
                 // Check if there is an existing term with same exponents
                 gcbytes end = rt.allocate(0);
@@ -623,7 +677,7 @@ polynomial_p polynomial::mul(polynomial_r x, polynomial_r y)
                 }
             }
 
-            if (!rfactor->is_zero())
+            if (!rfactor->is_zero(false))
             {
                 size_t sz = rfactor->size();
                 byte  *p  = rt.allocate(sz);
@@ -678,9 +732,101 @@ bool polynomial::quorem(polynomial_r  x,
 // ----------------------------------------------------------------------------
 //  Quotient and remainder of two polynomials
 // ----------------------------------------------------------------------------
+//  The quotient is computed based on the polynomial::main_variable
+//
+//  Consider x = A^3-B^3 and y=A-B
+//  We start with q=0, r=(A^3-B^3) and y=A-B
+//
+//      q               r               high R  ratio HR/HY     prod
+//
+//      0               A^3-B^3         A^3     A^2             A^3-A^2*B
+//      A^2             A^2*B-B^3       A^2*B   A*B             A^2*B-A*B^2
+//      A^2+A*B         A*B^2-B^3       A*B^2   B^2             A*B^2-B^3
+//      A^2+A*B+B^2     0               0
+//
+//
+//  Consider x=A^3+B^3 and y=A-B
+//      q               r               high R  ratio HR/HY     prod
+//
+//      0               A^3+B^3         A^3     A^2             A^3+A^2*B
+//      A^2             A^2*B+B^3       A^2*B   A*B             A^2*B+A*B^2
+//      A^2+A*B        -A*B^2+B^3      -A*B^2  -B^2             -A*B^2+B^3
+//      A^2+A*B+B^2     2*B^3           0
+//
 {
-    rt.unimplemented_error();
-    return false;
+    if (!x || !y)
+        return false;
+
+    // Initial remainder and quotient
+    r = x;
+    q = polynomial::make(integer::make(0));
+    if (!q)
+        return false;
+
+    // Find highest rank in the terms
+    symbol_g     var    = main_variable();
+    size_t       rvar   = r->variable(+var);
+    size_t       yvar   = y->variable(+var);
+    iterator     ri     = r->ranking(rvar);
+    iterator     yi     = y->ranking(yvar);
+    ularge       rorder = ri.rank(rvar);
+    ularge       yorder = yi.rank(yvar);
+
+    symbol_g rvars[ri.variables];
+    for (size_t rv = 0; rv < ri.variables; rv++)
+        rvars[rv] = r->variable(rv);
+
+    while (rorder >= yorder)
+    {
+        iterator     yterm = yi;
+        algebraic_g  yf    = yterm.factor();
+
+        // Compute term factor for ratio of highest-ranking terms in var
+        polynomial_g rpoly = polynomial::make(integer::make(0));
+        for (auto rterm : *r)
+        {
+            algebraic_g  rf    = rterm.factor();
+            polynomial_g ratio = polynomial::make(rf / yf);
+            if (!ratio)
+                return false;
+            bool match = true;
+            for (size_t rv = 0; rv < rterm.variables; rv++)
+            {
+                ularge rexp = rterm.exponent();
+                if (rv == rvar)
+                {
+                    match = rexp == rorder;
+                    rexp = rorder - yorder;
+                }
+                if (match)
+                {
+                    algebraic_g rf = integer::make(1);
+                    polynomial_g rp = polynomial::make(rf, rvars[rv], rexp);
+                    ratio = mul(ratio, rp);
+                    if (!ratio)
+                        return false;
+                }
+            }
+            if (match)
+            {
+                rpoly = add(rpoly, ratio);
+                if (!rpoly)
+                    return false;
+            }
+        }
+        q = add(q, rpoly);
+        rpoly = mul(rpoly, y);
+        r = sub(r, rpoly);
+        if (!r)
+            return false;
+
+        // Restart with rest
+        rvar = r->variable(+var);
+        ri = r->ranking(rvar);
+        rorder = ri.rank(rvar);
+    }
+
+    return true;
 }
 
 
@@ -689,7 +835,18 @@ polynomial_p polynomial::pow(polynomial_r x, integer_r y)
 //  Elevate a polynomial to some integer power
 // ----------------------------------------------------------------------------
 {
-    ularge       exp = y->value<ularge>();
+    if (!x || !y)
+        return nullptr;
+    ularge exp = y->value<ularge>();
+    return pow(x, exp);
+}
+
+
+polynomial_p polynomial::pow(polynomial_r x, ularge exp)
+// ----------------------------------------------------------------------------
+//  Elevate a polynomial to some integer power
+// ----------------------------------------------------------------------------
+{
     polynomial_g r   = nullptr;
     polynomial_g m   = x;
     while (exp)
@@ -765,6 +922,136 @@ utf8 polynomial::variable(size_t index, size_t *len) const
 }
 
 
+size_t polynomial::variable(utf8 name, size_t len) const
+// ----------------------------------------------------------------------------
+//   Find a variable by name
+// ----------------------------------------------------------------------------
+{
+    byte_p first  = byte_p(this);
+    byte_p p      = payload();
+    size_t length = leb128<size_t>(p);
+    size_t nvars  = leb128<size_t>(p);
+
+    for (size_t v = 0; v < nvars; v++)
+    {
+        size_t vlen = leb128<size_t>(p);
+        if (vlen == len &&
+            strncasecmp(cstring(p), cstring(name), len) == 0)
+            return v;
+        p += vlen;
+        if (size_t(p - first) >= length)
+            break;
+    }
+    return ~0U;
+}
+
+
+size_t polynomial::variable(symbol_p sym) const
+// ----------------------------------------------------------------------------
+//   Find a variable by name
+// ----------------------------------------------------------------------------
+{
+    if (!sym)
+        return ~0UL;
+    size_t len  = 0;
+    utf8   name = sym->value(&len);
+    return variable(name, len);
+}
+
+
+ularge polynomial::order(size_t *var) const
+// ----------------------------------------------------------------------------
+//   Compute the order of a polynomial, as the highest exponent of any variable
+// ----------------------------------------------------------------------------
+{
+    iterator    where   = ranking(var);
+    size_t      mainvar = 0;
+    ularge      maxexp  = 0;
+    if (where != end())
+    {
+
+        algebraic_g factor  = where.factor();
+        for (size_t v = 0; v < where.variables; v++)
+        {
+            ularge vexp = where.exponent();
+            if (vexp > maxexp)
+            {
+                maxexp = vexp;
+                mainvar = v;
+            }
+        }
+    }
+    if (var)
+        *var = mainvar;
+
+    return maxexp;
+}
+
+
+polynomial::iterator polynomial::ranking(size_t *var) const
+// ----------------------------------------------------------------------------
+//   Locate the highest-ranking term in the polynomial
+// ----------------------------------------------------------------------------
+{
+    size_t vars    = variables();
+    size_t mainvar = 0;
+    ularge maxexp  = 0;
+    iterator where = end();
+    for (auto term : *this)
+    {
+        iterator here = term;
+        algebraic_g factor = term.factor();
+        if (!factor->is_zero(false))
+        {
+            for (size_t v = 0; v < vars; v++)
+            {
+                ularge vexp = term.exponent();
+                if (maxexp < vexp)
+                {
+                    mainvar = v;
+                    maxexp = vexp;
+                    where = here;
+                }
+            }
+        }
+    }
+    if (var)
+        *var = mainvar;
+
+    return where;
+}
+
+
+polynomial::iterator polynomial::ranking(size_t var) const
+// ----------------------------------------------------------------------------
+//   Locate the highest-ranking term for given vairable in the polynomial
+// ----------------------------------------------------------------------------
+{
+    size_t vars    = variables();
+    ularge maxexp  = 0;
+    iterator where = end();
+    for (auto term : *this)
+    {
+        iterator here = term;
+        algebraic_g factor = term.factor();
+        if (!factor->is_zero(false))
+        {
+            for (size_t v = 0; v < vars; v++)
+            {
+                ularge vexp = term.exponent();
+                if (v == var && maxexp < vexp)
+                {
+                    maxexp = vexp;
+                    where = here;
+                }
+            }
+        }
+    }
+
+    return where;
+}
+
+
 PARSE_BODY(polynomial)
 // ----------------------------------------------------------------------------
 //   No parsing for polynomials, they are only generated from expressions
@@ -804,7 +1091,7 @@ EVAL_BODY(polynomial)
     for (auto term : *poly)
     {
         algebraic_g factor = term.factor();
-        if (!factor->is_zero())
+        if (!factor->is_zero(false))
         {
             for (size_t v = 0; v < nvars; v++)
             {
@@ -1030,7 +1317,7 @@ algebraic_p polynomial::as_expression() const
     for (auto term : *poly)
     {
         algebraic_g factor = term.factor();
-        if (!factor->is_zero())
+        if (!factor->is_zero(false))
         {
             for (size_t v = 0; v < nvars; v++)
             {
@@ -1057,4 +1344,277 @@ algebraic_p polynomial::as_expression() const
 
     // We are done, return the result
     return result;
+}
+
+
+
+// ============================================================================
+//
+//   Polynomial iterator
+//
+// ============================================================================
+
+polynomial::iterator::iterator(polynomial_p poly, bool at_end)
+// ----------------------------------------------------------------------------
+//   Constructor for an iterator over polynomials
+// ----------------------------------------------------------------------------
+    : poly(poly), size(), variables(), offset()
+{
+    byte_p first = byte_p(poly);
+    byte_p p     = poly->payload();
+    size       = leb128<size_t>(p);
+    size += p - first;
+    variables    = leb128<size_t>(p);
+    if (at_end)
+    {
+        offset = size;
+    }
+    else
+    {
+        for (size_t v = 0; v < variables; v++)
+        {
+            // Skip each name
+            size_t vlen = leb128<size_t>(p);
+            p += vlen;
+        }
+        offset = p - first;
+    }
+}
+
+
+algebraic_p polynomial::iterator::factor()
+// ----------------------------------------------------------------------------
+//   Consume the scaling factor in the iterator
+// ----------------------------------------------------------------------------
+
+{
+    algebraic_p scalar    = algebraic_p(poly) + offset;
+    object_p    exponents = scalar->skip();
+    offset = exponents - object_p(poly);
+    return scalar;
+}
+
+
+ularge polynomial::iterator::exponent()
+// ----------------------------------------------------------------------------
+//   Consume the next exponent in the iterator
+// ----------------------------------------------------------------------------
+{
+    byte_p p = byte_p(poly) + offset;
+    uint exp = leb128<ularge>(p);
+    offset = p - byte_p(poly);
+    return exp;
+}
+
+
+bool polynomial::iterator::operator==(const iterator &o) const
+// ----------------------------------------------------------------------------
+//   Check if two iterators are equal
+// ----------------------------------------------------------------------------
+{
+    return +o.poly  == +poly
+        &&  o.offset == offset
+        &&  o.size == size
+        &&  o.variables == variables;
+}
+
+
+bool polynomial::iterator::operator!=(const iterator &o) const
+// ----------------------------------------------------------------------------
+//   Check if two iterators are not equal
+// ----------------------------------------------------------------------------
+{
+    return !(o==*this);
+}
+
+
+polynomial::iterator& polynomial::iterator::operator++()
+// ----------------------------------------------------------------------------
+//   Iterator pre-increment
+// ----------------------------------------------------------------------------
+{
+    if (offset < size)
+    {
+        factor();
+        for (size_t v = 0; v < variables; v++)
+            exponent();
+    }
+    return *this;
+}
+
+
+polynomial::iterator polynomial::iterator::operator++(int)
+// ----------------------------------------------------------------------------
+//   Iterator post-increment
+// ----------------------------------------------------------------------------
+{
+    iterator prev = *this;
+    ++(*this);
+    return prev;
+}
+
+
+polynomial::iterator::value_type polynomial::iterator::operator*()
+// ----------------------------------------------------------------------------
+//   Derefernecing an iterator return the iterator itself
+// ----------------------------------------------------------------------------
+{
+    return *this;
+}
+
+
+ularge polynomial::iterator::rank(size_t *var) const
+// ----------------------------------------------------------------------------
+//   Return the highest rank at the iterator position
+// ----------------------------------------------------------------------------
+{
+    ularge      maxexp = 0;
+    ularge      mainvar = ~0U;
+    if (offset < size)
+    {
+        iterator    it     = *this;
+        algebraic_g factor = it.factor();
+        if (!factor->is_zero(false))
+        {
+            for (size_t v = 0; v  < variables; v++)
+            {
+                ularge vexp = it.exponent();
+                if (vexp > maxexp)
+                {
+                    mainvar = v;
+                    maxexp = vexp;
+                }
+
+            }
+        }
+    }
+
+    if (var)
+        *var = mainvar;
+
+    return maxexp;
+}
+
+
+ularge polynomial::iterator::rank(size_t var) const
+// ----------------------------------------------------------------------------
+//   Return the rank associated with a variable
+// ----------------------------------------------------------------------------
+{
+    ularge      maxexp = 0;
+    if (offset < size)
+    {
+        iterator    it     = *this;
+        algebraic_g factor = it.factor();
+        if (!factor->is_zero(false))
+        {
+            for (size_t v = 0; v  < variables; v++)
+            {
+                ularge vexp = it.exponent();
+                if (var == v && vexp > maxexp)
+                    maxexp = vexp;
+            }
+        }
+    }
+    return maxexp;
+}
+
+
+symbol_p polynomial::main_variable()
+// ----------------------------------------------------------------------------
+//   Return the current variable for polynomial evaluation
+// ----------------------------------------------------------------------------
+{
+    if (directory_p dir = config())
+        if (object_p name = static_object(ID_AlgebraVariable))
+            if (object_p obj = dir->recall(name))
+                if (symbol_p sym = obj->as_quoted<symbol>())
+                    return sym;
+    return symbol::make("x");
+}
+
+
+
+bool polynomial::main_variable(symbol_p sym)
+// ----------------------------------------------------------------------------
+//   Set the current variable for polynomial evaluation
+// ----------------------------------------------------------------------------
+{
+    directory_g cfg = config();
+    if (!cfg)
+    {
+        object_p name = static_object(ID_AlgebraConfiguration);
+        directory *dir = rt.variables(0);
+        if (!dir)
+        {
+            rt.no_directory_error();
+            return false;
+        }
+
+        cfg = rt.make<directory>();
+        if (!cfg || !dir->store(name, +cfg))
+            return false;
+    }
+
+    if (object_p name = static_object(ID_AlgebraVariable))
+        if (directory *wcfg = (directory *) +cfg)
+            return wcfg->store(name, sym);
+
+    return false;
+}
+
+
+directory_p polynomial::config()
+// ----------------------------------------------------------------------------
+//   Return the directory for the current CAS configuration, or nullptr
+// ----------------------------------------------------------------------------
+{
+    if (object_p name = static_object(ID_AlgebraConfiguration))
+        if (object_p obj = directory::recall_all(name, false))
+            if (directory_p dir = obj->as<directory>())
+                return dir;
+    return nullptr;
+}
+
+
+
+COMMAND_BODY(AlgebraConfiguration)
+// ----------------------------------------------------------------------------
+//   Recall the current algebra configuration directory
+// ----------------------------------------------------------------------------
+{
+    if (directory_p config = polynomial::config())
+        if (rt.push(config))
+            return OK;
+    return ERROR;
+}
+
+
+COMMAND_BODY(AlgebraVariable)
+// ----------------------------------------------------------------------------
+//   Recall the current algebra variable, defaults to `X`
+// ----------------------------------------------------------------------------
+{
+    if (symbol_p var = polynomial::main_variable())
+        if (rt.push(var))
+            return OK;
+    return ERROR;
+}
+
+
+COMMAND_BODY(StoreAlgebraVariable)
+// ----------------------------------------------------------------------------
+//   Store the current algebra varialbe
+// ----------------------------------------------------------------------------
+{
+    if (object_p obj = rt.pop())
+    {
+        if (symbol_p sym = obj->as_quoted<symbol>())
+        {
+            if (polynomial::main_variable(sym))
+                return OK;
+        }
+        rt.type_error();
+    }
+    return ERROR;
 }

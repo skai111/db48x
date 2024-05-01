@@ -984,6 +984,21 @@ SETTING(ErrorBeepFrequency,     0, 25000,       1400)
 SETTING(ErrorBeepDuration,      0, 500,         50)
 
 
+
+// ============================================================================
+//
+//    CAS configuration
+//
+// ============================================================================
+
+
+OP(AlgebraConfiguration,   "Ⓓ")        ALIAS(AlgebraConfiguration,  "CASDir")
+OP(AlgebraVariable,        "ⓧ")        ALIAS(AlgebraVariable,       "VX")
+                                        ALIAS(AlgebraVariable,       "RclVX")
+OP(StoreAlgebraVariable,   "Storeⓧ")   ALIAS(StoreAlgebraVariable,  "StoVX")
+
+
+
 // ============================================================================
 //
 //   Special commands
