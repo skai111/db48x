@@ -184,6 +184,22 @@ static bool polynomial_op(size_t depth,
 }
 
 
+static bool polynomial_op(size_t depth,
+                          polynomial_p (*op)(polynomial_r y, ularge x),
+                          ularge xi)
+// ----------------------------------------------------------------------------
+//   Binary power operation
+// ----------------------------------------------------------------------------
+{
+    if (rt.depth() - depth >= 1)
+        if (polynomial_g y = rt.top()->as<polynomial>())
+            if (polynomial_p result = op(y, xi))
+                if (rt.top(result))
+                    return true;
+    return false;
+}
+
+
 polynomial_p polynomial::make(expression_p expr, bool error)
 // ----------------------------------------------------------------------------
 //   Check if an expression has the right structure for a polynomial
@@ -253,6 +269,16 @@ polynomial_p polynomial::make(expression_p expr, bool error)
         else if (ty == ID_pow)
         {
             if (!polynomial_op(depth, pow, power))
+                goto error;
+        }
+        else if (ty == ID_sq)
+        {
+            if (!polynomial_op(depth, pow, 2))
+                goto error;
+        }
+        else if (ty == ID_cubed)
+        {
+            if (!polynomial_op(depth, pow, 3))
                 goto error;
         }
         else

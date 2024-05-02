@@ -254,7 +254,20 @@ object::result function::evaluate(algebraic_fn op, bool mat)
         }
         if (topty == ID_polynomial)
         {
-            top = polynomial_p(top)->as_expression();
+            if (op == algebraic_fn(sq::evaluate) ||
+                op == algebraic_fn(cubed::evaluate))
+            {
+                polynomial_g xp = polynomial_p(top);
+                ularge exp = op == algebraic_fn(cubed::evaluate) ? 3 : 2;
+                top = polynomial::pow(xp, exp);
+                if (top && rt.top(top))
+                    return OK;
+                return ERROR;
+            }
+            else
+            {
+                top = polynomial_p(top)->as_expression();
+            }
             topty = top ? top->type() : ID_expression;
         }
         if (topty == ID_list || (topty == ID_array && !mat))
