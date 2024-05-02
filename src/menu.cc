@@ -543,6 +543,7 @@ MENU(PolynomialsMenu,
 // ----------------------------------------------------------------------------
 //   Root-finding operations
 // ----------------------------------------------------------------------------
+     "Ⓟ'\t'",   ID_SelfInsert,
      "Poly→",   ID_FromPolynomial,
      "Obj→",    ID_Explode,
      "FCoef",   ID_Unimplemented,
