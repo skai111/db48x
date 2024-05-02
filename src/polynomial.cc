@@ -34,6 +34,7 @@
 #include "grob.h"
 #include "integer.h"
 #include "leb128.h"
+#include "parser.h"
 #include "variables.h"
 
 
@@ -1083,7 +1084,45 @@ PARSE_BODY(polynomial)
 //   No parsing for polynomials, they are only generated from expressions
 // ----------------------------------------------------------------------------
 {
-    return SKIP;
+    // If already parsing an equation, let upper parser deal with quote
+    if (p.precedence)
+        return SKIP;
+
+    utf8    source = p.source;
+    size_t  max    = p.length;
+    size_t  parsed = 0;
+
+    // First character must be a constant marker
+    unicode cp = utf8_codepoint(source);
+    if (cp != L'Ⓟ')
+        return SKIP;
+    parsed = utf8_next(source, parsed, max);
+
+    // Parse the expression itself
+    p.source = +p.source + parsed;
+    p.length -= parsed;
+    p.precedence = 1;
+    auto result = list_parse(ID_expression, p, '\'', '\'');
+    p.precedence = 0;
+    p.source = +p.source - parsed;
+    p.length += parsed;
+    p.end += parsed;
+
+    if (result != OK)
+        return result;
+    if (p.out)
+    {
+        if (algebraic_p alg = p.out->as_algebraic())
+        {
+            if (polynomial_p poly = polynomial::make(alg))
+            {
+                p.out = +poly;
+                return OK;
+            }
+        }
+    }
+    rt.invalid_polynomial_error().source(p.source, p.end);
+    return ERROR;
 }
 
 
@@ -1092,6 +1131,9 @@ EVAL_BODY(polynomial)
 //   We can evaluate polynomials a bit faster than usual expressions
 // ----------------------------------------------------------------------------
 {
+    if (running)
+        return rt.push(o) ? OK : ERROR;
+
     polynomial_g poly  = o;
     size_t       nvars = poly->variables();
     algebraic_g  vars[nvars];
@@ -1157,6 +1199,11 @@ RENDER_BODY(polynomial)
     for (size_t v = 0; v < nvars; v++)
         vars[v] = poly->variable(v);
 
+    r.put(unicode(L'Ⓟ'));
+    bool editing = r.editing();
+    if (editing)
+        r.put('\'');
+
     // Loop over all factors
     bool    first = true;
     unicode mul   = Settings.UseDotForMultiplication() ? L'·' : L'×';
@@ -1196,6 +1243,8 @@ RENDER_BODY(polynomial)
         if (!hasmul)
             factor->render(r);
     }
+    if (editing)
+        r.put('\'');
 
     // We are done, push the result
     return r.size();
@@ -1286,8 +1335,12 @@ GRAPH_BODY(polynomial)
         vr = g.voffset;
     }
 
+    // Either invert the polynomial or display a little P
     if (Settings.InvertedPolynomialRender())
         std::swap(g.foreground, g.background);
+    else
+        // Display a little P to identify a polynomial
+        result = prefix(g, 0, "Ⓟ", vr, result);
 
     // We are done, push the result
     return result;
