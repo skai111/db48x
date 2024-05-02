@@ -1277,7 +1277,8 @@ FUNCTION_BODY(ToPolynomial)
         return nullptr;
     if (polynomial_p poly = polynomial::make(x))
         return poly;
-    rt.type_error();
+    if (!rt.error())
+        rt.invalid_polynomial_error();
     return nullptr;
 }
 
