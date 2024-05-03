@@ -1221,7 +1221,7 @@ RENDER_BODY(polynomial)
             r.put(isneg ? '-' : '+');
         first = false;
 
-        bool hasmul = !factor->is_one();
+        bool hasmul = !factor->is_one(false);
         if (hasmul)
             factor->render(r);
 
@@ -1282,7 +1282,7 @@ GRAPH_BODY(polynomial)
         bool        isneg  = factor->is_negative(false);
         if (isneg)
             factor = -factor;
-        grob_g      factg  = factor->is_one() ? nullptr : factor->graph(g);
+        grob_g      factg  = factor->is_one(false) ? nullptr : factor->graph(g);
         coord       vf     = 0;
 
         // Render the terms
@@ -1320,7 +1320,7 @@ GRAPH_BODY(polynomial)
         // Addition of terms
         if (result)
         {
-            if (factor->is_one() && !factg)
+            if (factor->is_one(false) && !factg)
                 factg = factor->graph(g);
             result = infix(g, vr, result, 0, isneg ? "-" : "+", vf, factg);
             if (!result)
@@ -1401,9 +1401,10 @@ algebraic_p polynomial::as_expression() const
                 ularge exponent = term.exponent();
                 if (exponent)
                 {
-                    algebraic_g value =
-                        exponent == 1 ? vars[v] : ::pow(vars[v], exponent);
-                    factor = factor->is_one() ? value : factor * value;
+                    algebraic_g value = exponent == 1
+                        ? vars[v]
+                        : ::pow(vars[v], exponent);
+                    factor = factor->is_one(false) ? value : factor * value;
                     if (!factor)
                         return nullptr;
                     ;
