@@ -366,7 +366,6 @@ PARSE_BODY(complex)
             if (sign)
             {
                 // Cannot have two signs
-                rt.syntax_error().source(last);
                 return WARN;
             }
             sign = cp;
