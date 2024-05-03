@@ -544,6 +544,7 @@ MENU(PolynomialsMenu,
 //   Root-finding operations
 // ----------------------------------------------------------------------------
      "Ⓟ'\t'",   ID_SelfInsert,
+     "→Poly",   ID_ToPolynomial,
      "Poly→",   ID_FromPolynomial,
      "Obj→",    ID_Explode,
      "Display", ID_PrefixPolynomialRender,
@@ -558,8 +559,8 @@ MENU(PolynomialsMenu,
      "TVMRoot", ID_Unimplemented,
      "XRoot",   ID_xroot,
      "Zeros",   ID_Unimplemented,
-     "Square",  ID_sqrt,
-     "Cube",    ID_cbrt);
+     "Square",  ID_sq,
+     "Cube",    ID_cubed);
 
 MENU(HyperbolicMenu,
 // ----------------------------------------------------------------------------
