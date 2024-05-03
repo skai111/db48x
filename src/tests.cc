@@ -7032,6 +7032,24 @@ void tests::polynomials()
    step("Adding back one fo the original variables")
        .test("'X'", ENTER, ADD)
        .expect("ⓅX");
+   step("Multiplication of simple polynomials")
+        .test(NOSHIFT, F1, "X-Y", ENTER, NOSHIFT, F1, "X+Y", ENTER, MUL)
+       .expect("ⓅX↑2-Y↑2");
+   step("Polynomial euclidean division")
+       .test(NOSHIFT, F1, "X-Y", ENTER, DIV)
+       .expect("ⓅX+Y");
+   step("Polynomial exponentiation")
+       .test("3", LSHIFT, B)
+       .expect("ⓅX↑3+3·X↑2·Y+3·X·Y↑2+Y↑3");
+   step("Polynomial division with remainder")
+       .test(NOSHIFT, F1, "X-Y", ENTER, DIV)
+       .expect("ⓅX↑2+4·X·Y+7·Y↑2");
+   step("Polynomial remainder")
+       .test(LSHIFT, M, "rem", ENTER)
+       .expect("Ⓟ8·Y↑3");
+   step("Checking result")
+       .test(NOSHIFT, M, F1, "X-Y", ENTER, MUL, ADD)
+       .expect("ⓅY↑3+X↑3+3·X↑2·Y+3·X·Y↑2");
 
     step("Restore default rendering for polynomials")
         .test(CLEAR, "'PrefixPolynomialRender' purge", ENTER).noerror();
