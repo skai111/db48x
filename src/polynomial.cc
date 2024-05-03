@@ -1199,8 +1199,9 @@ RENDER_BODY(polynomial)
     for (size_t v = 0; v < nvars; v++)
         vars[v] = poly->variable(v);
 
-    r.put(unicode(L'Ⓟ'));
     bool editing = r.editing();
+    if (editing || Settings.PrefixPolynomialRender())
+        r.put(unicode(L'Ⓟ'));
     if (editing)
         r.put('\'');
 
@@ -1256,9 +1257,6 @@ GRAPH_BODY(polynomial)
 //  Render a polynomial as a graphic expression
 // ----------------------------------------------------------------------------
 {
-    if (Settings.InvertedPolynomialRender())
-        std::swap(g.foreground, g.background);
-
     polynomial_g poly  = o;
     size_t       nvars = poly->variables();
     grob_g       vars[nvars];
@@ -1335,11 +1333,8 @@ GRAPH_BODY(polynomial)
         vr = g.voffset;
     }
 
-    // Either invert the polynomial or display a little P
-    if (Settings.InvertedPolynomialRender())
-        std::swap(g.foreground, g.background);
-    else
-        // Display a little P to identify a polynomial
+    // Optionally display a little inverted [poly] to identify a polynomial
+    if (Settings.PrefixPolynomialRender())
         result = prefix(g, 0, "Ⓟ", vr, result);
 
     // We are done, push the result
