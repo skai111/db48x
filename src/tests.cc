@@ -7026,9 +7026,12 @@ void tests::polynomials()
    step("... step 8")
        .test("'X*Y'", ENTER, ADD)
        .expect("ⓅX·Y");
-   step("... step 9")
+   step("Special case where resulting polynomial is empty")
        .test("'X*Y'", ENTER, ADD)
        .expect("Ⓟ0");
+   step("Adding back one fo the original variables")
+       .test("'X'", ENTER, ADD)
+       .expect("ⓅX");
 
     step("Restore default rendering for polynomials")
         .test(CLEAR, "'PrefixPolynomialRender' purge", ENTER).noerror();

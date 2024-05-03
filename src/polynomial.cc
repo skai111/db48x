@@ -447,6 +447,8 @@ polynomial_p polynomial::addsub(polynomial_r x, polynomial_r y, bool sub)
 
     scribble scr;
     gcbytes  result = copy_variables(x);
+    if (!result)                // Special case of empty x
+        rt.free(scr.growth());
     result          = copy_variables(y, (byte *) +result);
     if (!result)
         return nullptr;
@@ -613,6 +615,8 @@ polynomial_p polynomial::mul(polynomial_r x, polynomial_r y)
 
     scribble scr;
     gcbytes  result = copy_variables(x);
+    if (!result)
+        rt.free(scr.growth());
     result          = copy_variables(y, (byte *) +result);
     if (!result)
         return nullptr;
@@ -1244,6 +1248,9 @@ RENDER_BODY(polynomial)
         if (!hasmul)
             factor->render(r);
     }
+    // Special-case of empty polynomial
+    if (first)
+        r.put('0');
     if (editing)
         r.put('\'');
 
