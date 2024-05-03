@@ -133,6 +133,7 @@ TESTS(insert,           "Insertion of variables, units and constants");
 TESTS(characters,       "Character menu and catalog");
 TESTS(probabilities,    "Probabilities");
 TESTS(sumprod,          "Sums and products");
+TESTS(poly,             "Polynomials");
 
 EXTRA(plotfns,          "Plot all functions");
 EXTRA(sysflags,         "Enable/disable every RPL flag");
@@ -158,7 +159,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        regression_checks();
+        polynomials();
     }
     else
     {
@@ -222,6 +223,7 @@ void tests::run(bool onlyCurrent)
         character_menu();
         probabilities();
         sum_and_product();
+        polynomials();
         regression_checks();
     }
     summary();
@@ -4818,7 +4820,7 @@ void tests::expand_collect_simplify()
 
     step("Multiple adds");
     test(CLEAR, "'3*(A+B+C)' expand ", ENTER)
-        .expect("'3·A+3·B+3·C'");
+        .expect("'3·C+(3·A+3·B)'");
 
     step("Single sub, right");
     test(CLEAR, "'(A-B)*C' expand ", ENTER)
@@ -4833,9 +4835,9 @@ void tests::expand_collect_simplify()
 
     step("Expand and collect a power");
     test(CLEAR, "'(A+B)^3' expand ", ENTER)
-        .expect("'A·A·A+A·A·B+A·A·B+A·B·B+A·A·B+A·B·B+A·B·B+B·B·B'");
+        .expect("'A·(A·A)+A·(A·B)+(A·(A·B)+A·(B·B))+(B·(A·A)+B·(A·B)+(B·(A·B)+B·(B·B)))'");
     test("collect ", ENTER)
-        .expect("'2·(B↑2·A)+(A↑3+A↑2·(2·B)+B↑2·A+A↑2·B)+B↑3'");
+        .expect("'(A+B)↑3'");
     // .expect("'(A+B)³'");
 }
 
@@ -6960,6 +6962,76 @@ void tests::sum_and_product()
         .expect("'∏(I;1;N;(A+I)↑3)'")
         .test(CLEAR, "I N 1 '(A+I)^3' ∏", ENTER)
         .expect("'∏(I;N;1;(A+I)↑3)'");
+}
+
+
+void tests::polynomials()
+// ----------------------------------------------------------------------------
+//   Operations on polynomials
+// ----------------------------------------------------------------------------
+{
+    BEGIN(poly);
+
+    step("Display polynomial prefix on the stack")
+        .test(CLEAR, "PrefixPolynomialRender", ENTER).noerror();
+
+    step("Create polynomial from an expression")
+        .test(CLEAR, "'X-Y' →Poly", ENTER)
+        .expect("ⓅX-Y");
+    step("Create polynomial from menu")
+        .test(CLEAR, "'X-Y'", ENTER, NOSHIFT, A, F4)
+        .expect("ⓅX-Y");
+    step("Create polynomial using self-insert")
+        .test(CLEAR, RSHIFT, C, F1, "X-Y", ENTER)
+        .expect("ⓅX-Y");
+    step("Reordering of polynomials")
+        .test(F1, "2*X*X*X+Y*(Y+1)*3+Z*Z*Z", ENTER)
+        .expect("Ⓟ2·X↑3+3·Y↑2+3·Y+Z↑3");
+    step("Adding polynomials")
+        .test(ADD)
+        .expect("ⓅX+2·Y+2·X↑3+3·Y↑2+Z↑3");
+    step("Cancelling out terms")
+        .test(F1, KEY2, MUL, "Y", NOSHIFT, ENTER, SUB)
+        .expect("ⓅX+2·X↑3+3·Y↑2+Z↑3");
+   step("Adding an expression to a polynomial")
+       .test("'Y-X'", ENTER, ADD)
+        .expect("Ⓟ2·X↑3+3·Y↑2+Z↑3+Y");
+   step("Adding a polynomial to an expression")
+       .test("'Y-X'", ENTER, M, ADD)
+        .expect("Ⓟ2·Y-X+2·X↑3+3·Y↑2+Z↑3");
+   step("Multiplying a polynomial by an expression")
+       .test("'Y-X'", ENTER, M, MUL)
+       .expect("Ⓟ2·Y↑2+2·X↑3·Y+3·Y↑3+Y·Z↑3-3·X·Y+X↑2-2·X↑4-3·X·Y↑2-X·Z↑3");
+   step("Adding/subtracting expressions to cancel out terms")
+       .test("'X*Y*X*X*2'", ENTER, SUB)
+       .expect("Ⓟ2·Y↑2+3·Y↑3+Y·Z↑3-3·X·Y+X↑2-2·X↑4-3·X·Y↑2-X·Z↑3");
+   step("... step 2")
+       .test("'Y*Y*3*Y'", ENTER, SUB)
+       .expect("Ⓟ2·Y↑2+Y·Z↑3-3·X·Y+X↑2-2·X↑4-3·X·Y↑2-X·Z↑3");
+   step("... step 3")
+       .test("'Y*3*X*Y'", ENTER, ADD)
+       .expect("Ⓟ2·Y↑2+Y·Z↑3-3·X·Y+X↑2-2·X↑4-X·Z↑3");
+   step("... step 4")
+       .test("'Z^3*(-X-Y)'", ENTER, SUB)
+       .expect("Ⓟ2·Y↑2+2·Y·Z↑3-3·X·Y+X↑2-2·X↑4");
+   step("... step 5")
+       .test("'(Y+Y)*(Y+Z*sq(Z))'", ENTER, SUB)
+       .expect("Ⓟ3·X·Y+X↑2-2·X↑4");
+   step("... step 6")
+       .test("'X'", ENTER, LSHIFT, C, ENTER, LSHIFT, C, ENTER, ADD, SUB, SUB)
+       .expect("Ⓟ3·X·Y");
+   step("... step 7")
+       .test("'Y*X'", ENTER, ADD)
+       .expect("Ⓟ2·X·Y");
+   step("... step 8")
+       .test("'X*Y'", ENTER, ADD)
+       .expect("ⓅX·Y");
+   step("... step 9")
+       .test("'X*Y'", ENTER, ADD)
+       .expect("Ⓟ0");
+
+    step("Restore default rendering for polynomials")
+        .test(CLEAR, "'PrefixPolynomialRender' purge", ENTER).noerror();
 }
 
 
