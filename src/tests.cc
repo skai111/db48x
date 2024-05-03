@@ -158,7 +158,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        rewrite_engine();
+        regression_checks();
     }
     else
     {
@@ -7040,6 +7040,12 @@ void tests::regression_checks()
         .test(NOSHIFT, DOWN, ENTER).expect("'X mod Y'")
         .test(CLEAR, "X Y rem", ENTER).expect("'X rem Y'")
         .test(NOSHIFT, DOWN, ENTER).expect("'X rem Y'");
+
+    step("Bug 917: Editor works when exiting and search is active")
+        .test(CLEAR, "123", ENTER, DOWN).editor("123")
+        .test(NOSHIFT, A, EXIT).expect("123")
+        .test(KEY1).editor("1")
+        .test(ENTER).expect("1");
 }
 
 

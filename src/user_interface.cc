@@ -292,6 +292,7 @@ bool user_interface::end_edit()
     xshift      = false;
     dirtyEditor = true;
     dirtyStack  = true;
+    searching   = ~0U;
     edRows      = 0;
     last        = 0;
     select      = ~0;
@@ -385,6 +386,7 @@ void user_interface::clear_editor()
     rt.clear();
     cursor      = 0;
     select      = ~0U;
+    searching   = ~0U;
     xoffset     = 0;
     edRows      = 0;
     alpha       = false;
