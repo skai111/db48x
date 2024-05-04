@@ -1,5 +1,71 @@
 # Release notes
 
+## Release 0.7.5 "Perfect Joy" - Polynomials and symbolic rewrites
+
+This release contains a lot of groundwork in preparation for future work on
+symbolic expressions, symbolic solving and symbolic integration, as well as to
+improve compatibility with HP calculators. In particular, `rewrite` has been
+replaced with the HP equivalents, `↑Match` and `↓Match`, allowing top-down and
+bottom-up replacement, as well as support for conditions. Also, these commands
+return the number of replacements performed instead of just `0` or `1`.
+
+THe other major user-visible new feature is the addition of a polynomials data
+type, which does not exist on HP calculators, exposing polynomial features in a
+way that is more consistent with the spirit of RPL. For example, Euclidean
+division of polynomials can be achieved using the regular `/` operation on
+polynomials instead of requiring a dedicated `DIV2` command.
+
+
+### New features
+
+* Support for polynomials as a data type, including Euclidean division
+* Arithmetic operations on polynomials, including `sq` and `cubed`
+* Conversion functions `→Poly` and `Poly→` to convert to and from polynomials
+* Optional case-sensitive symbol matching
+* Algebra configuration directory (like `CASDIR` on HP calculators)
+* rewrites: Replace `rewrite` command with HP-compatible `↑Match` and `↓Match`
+* rewrites: Add `ExplicitWildcards` option to match HP syntax (`&A`)
+* rewrites: Add rules to expand powers
+* rewrites: Add support for conditions when matching patterns
+* rewrites: Add support for step-by-step rewrites
+* rewrites: Add support for bottom-up rewrites
+* flags: `Purge` now resets system flags to default value
+
+
+### Bug fixes
+
+* editor: Fix unresponsive keys after using `EXIT` key while searching
+* complex: Avoid emitting syntax errors while parsing
+* rewrites: Avoid potential garbage collection corruption problem
+* rewrites: Disable auto-simplification during rewrites
+* rewrites: Factor out rewrite loop
+* expressions: Encode expressions with type ID >= 128 correctly
+* arithmetic: Add space around `mod` and `rem` in rendering
+* graph: Do not add parentheses for `X*(Y/Z)`
+* functions: Make percentage operations binary functions
+* functions: Turn `min` and `max` into algebraic functions
+* cycle: For expressions, cycle graphic/text rendering correctly
+* menus: Replace `EquationsMenu` with `ExpressionMenu` in other menus
+* ui: Insert space when inserting array inside function
+
+
+### Improvements
+
+* menus: Updates to `PolynomialMenu` to enter polynomials and for conversions
+* menus: Add product and sum to symbolic and algebra menus
+* menus: Make `ToolsMenu` select `SymbolicMenu` for symbols
+* expressions: Reorganize the code for rewrites
+* rewrites: Add recorders for rewrites that are actually done
+* tests: Some adjustments on color images
+* rewrites: Convert algebraics into expression as needed
+* complex: Parse `3i` and `i3` in addition to `i`
+* tests: Add support for more characters
+* simulator: Separator color and dm32 support
+* graph: Add space when rendering simple function
+* keyboard: Updated SVG files with latest menu labeling changes
+
+
+
 ## Release 0.7.4 "Flesh" - Polishing and refinements
 
 This release is mostly about polishing various aspects of the

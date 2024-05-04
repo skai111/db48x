@@ -422,14 +422,10 @@ unintentional differences, since the implementation is completely new.
   always represent complex numbers in rectangular form internally, possibly
   converting it to polar form at display time.
 
-* DB50X features at least 3 floating-point precisions using 32-bit, 64-bit and
-  128-bit respectively, provided by the DMCP's existing [Intel Binary Decimal
-  Floating-Point library](#intel-decimal-floating-point-math). The 128-bit
-  format gives the calculator 34 significant digits of precision, like the
-  DM32. DB50X may support other formats in the future, like the
-  arbitrary-precision floating-point found in newRPL. The `Precision` command
-  (in the `DisplayModesMenu`) can be used to select the precision for arithmetic
-  operations.
+* DB50X features arbitrary-precision decimal floating-point. The `Precision`
+  command (in the `DisplayModesMenu`) can be used to select the precision for
+  numerical operations. In addition, it supports 32-bit and 64-bit
+  hardware-accelerated binary floating-point.
 
 * Based numbers with an explicit base, like `#123h` keep their base, which makes
   it possible to show on stack binary and decimal numbers side by side. Mixed
@@ -461,6 +457,10 @@ unintentional differences, since the implementation is completely new.
   The `TypeName` command is an extension that returns more precise textual
   information, and should be preferred both for readability and future
   compatibility.
+
+* DB50X has a dedicated data type to represent multi-variate polynomials, in
+  addition to the classical RPL-based algebraic expressions.
+
 
 ### Alignment with SwissMicros calculators
 
@@ -582,6 +582,12 @@ operate on these items when it makes sense. Therefore:
   simplified as a polynomial expression, so that you get a negative value if
   `A>B`. The HP50G behaviour seems surprising and undesirable. DB50X follows the
   HP48 approach.
+
+* The `↑Match` and `↓Match` operations return the number of replacement
+  performed, not just a binary `0` or `1` value. In addition, the patterns can
+  identify specific kinds of values based on the first letter of the pattern
+  variable name, e.g. `i` or `j` for positive integers, or `u` and `v` for
+  unique terms, i.e. terms that are only matched once in the expression.
 
 
 ### Unicode support
@@ -2277,6 +2283,72 @@ You can edit it by recalling its content on the stack using
 `"config:equations.csv" RCL`, editing the values, and then storing the content
 back to disk using `"config:equations.csv" STO`.
 # Release notes
+
+## Release 0.7.5 "Perfect Joy" - Polynomials and symbolic rewrites
+
+This release contains a lot of groundwork in preparation for future work on
+symbolic expressions, symbolic solving and symbolic integration, as well as to
+improve compatibility with HP calculators. In particular, `rewrite` has been
+replaced with the HP equivalents, `↑Match` and `↓Match`, allowing top-down and
+bottom-up replacement, as well as support for conditions. Also, these commands
+return the number of replacements performed instead of just `0` or `1`.
+
+THe other major user-visible new feature is the addition of a polynomials data
+type, which does not exist on HP calculators, exposing polynomial features in a
+way that is more consistent with the spirit of RPL. For example, Euclidean
+division of polynomials can be achieved using the regular `/` operation on
+polynomials instead of requiring a dedicated `DIV2` command.
+
+
+### New features
+
+* Support for polynomials as a data type, including Euclidean division
+* Arithmetic operations on polynomials, including `sq` and `cubed`
+* Conversion functions `→Poly` and `Poly→` to convert to and from polynomials
+* Optional case-sensitive symbol matching
+* Algebra configuration directory (like `CASDIR` on HP calculators)
+* rewrites: Replace `rewrite` command with HP-compatible `↑Match` and `↓Match`
+* rewrites: Add `ExplicitWildcards` option to match HP syntax (`&A`)
+* rewrites: Add rules to expand powers
+* rewrites: Add support for conditions when matching patterns
+* rewrites: Add support for step-by-step rewrites
+* rewrites: Add support for bottom-up rewrites
+* flags: `Purge` now resets system flags to default value
+
+
+### Bug fixes
+
+* editor: Fix unresponsive keys after using `EXIT` key while searching
+* complex: Avoid emitting syntax errors while parsing
+* rewrites: Avoid potential garbage collection corruption problem
+* rewrites: Disable auto-simplification during rewrites
+* rewrites: Factor out rewrite loop
+* expressions: Encode expressions with type ID >= 128 correctly
+* arithmetic: Add space around `mod` and `rem` in rendering
+* graph: Do not add parentheses for `X*(Y/Z)`
+* functions: Make percentage operations binary functions
+* functions: Turn `min` and `max` into algebraic functions
+* cycle: For expressions, cycle graphic/text rendering correctly
+* menus: Replace `EquationsMenu` with `ExpressionMenu` in other menus
+* ui: Insert space when inserting array inside function
+
+
+### Improvements
+
+* menus: Updates to `PolynomialMenu` to enter polynomials and for conversions
+* menus: Add product and sum to symbolic and algebra menus
+* menus: Make `ToolsMenu` select `SymbolicMenu` for symbols
+* expressions: Reorganize the code for rewrites
+* rewrites: Add recorders for rewrites that are actually done
+* tests: Some adjustments on color images
+* rewrites: Convert algebraics into expression as needed
+* complex: Parse `3i` and `i3` in addition to `i`
+* tests: Add support for more characters
+* simulator: Separator color and dm32 support
+* graph: Add space when rendering simple function
+* keyboard: Updated SVG files with latest menu labeling changes
+
+
 
 ## Release 0.7.4 "Flesh" - Polishing and refinements
 

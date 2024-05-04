@@ -470,14 +470,10 @@ unintentional differences, since the implementation is completely new.
   always represent complex numbers in rectangular form internally, possibly
   converting it to polar form at display time.
 
-* DB48X features at least 3 floating-point precisions using 32-bit, 64-bit and
-  128-bit respectively, provided by the DMCP's existing [Intel Binary Decimal
-  Floating-Point library](#intel-decimal-floating-point-math). The 128-bit
-  format gives the calculator 34 significant digits of precision, like the
-  DM42. DB48X may support other formats in the future, like the
-  arbitrary-precision floating-point found in newRPL. The `Precision` command
-  (in the `DisplayModesMenu`) can be used to select the precision for arithmetic
-  operations.
+* DB48X features arbitrary-precision decimal floating-point. The `Precision`
+  command (in the `DisplayModesMenu`) can be used to select the precision for
+  numerical operations. In addition, it supports 32-bit and 64-bit
+  hardware-accelerated binary floating-point.
 
 * Based numbers with an explicit base, like `#123h` keep their base, which makes
   it possible to show on stack binary and decimal numbers side by side. Mixed
@@ -509,6 +505,10 @@ unintentional differences, since the implementation is completely new.
   The `TypeName` command is an extension that returns more precise textual
   information, and should be preferred both for readability and future
   compatibility.
+
+* DB48X has a dedicated data type to represent multi-variate polynomials, in
+  addition to the classical RPL-based algebraic expressions.
+
 
 ### Alignment with SwissMicros calculators
 
@@ -630,6 +630,12 @@ operate on these items when it makes sense. Therefore:
   simplified as a polynomial expression, so that you get a negative value if
   `A>B`. The HP50G behaviour seems surprising and undesirable. DB48X follows the
   HP48 approach.
+
+* The `↑Match` and `↓Match` operations return the number of replacement
+  performed, not just a binary `0` or `1` value. In addition, the patterns can
+  identify specific kinds of values based on the first letter of the pattern
+  variable name, e.g. `i` or `j` for positive integers, or `u` and `v` for
+  unique terms, i.e. terms that are only matched once in the expression.
 
 
 ### Unicode support
