@@ -8242,6 +8242,7 @@ tests &tests::itest(cstring txt)
         case '7': k = KEY7;         shift = alpha; break;
         case '8': k = KEY8;         shift = alpha; break;
         case '9': k = KEY9;         shift = alpha; break;
+
         case '+': k = ADD;          alpha = true;  shift = true; break;
         case '-': k = SUB;          alpha = true;  shift = true; break;
         case '*': k = MUL;          alpha = true; xshift = true; break;
@@ -8326,6 +8327,8 @@ tests &tests::itest(cstring txt)
         case L'∜': itest(RSHIFT, KEY2, F3, F6, F6, F6, F6, LSHIFT, F3); NEXT;
         case L'⊿': itest(RSHIFT, KEY2, F3, F6, F6, F6, F6, F6, F5); NEXT;
         case L'∠': itest(RSHIFT, KEY2, F3, F6, F6, F6, F6, F6, F3); NEXT;
+        case L'Ⓓ': itest(RSHIFT, KEY2, F1, F6, F6, F1); NEXT;
+        case L'ⓧ': itest(RSHIFT, KEY2, F1, F6, F6, F2); NEXT;
 #undef NEXT
         }
 

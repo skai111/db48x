@@ -795,6 +795,9 @@ MENU(AlgebraMenu,
      "∆",               ID_Unimplemented,
      "→Qπ",             ID_Unimplemented,
 
+     "Ⓓ",               ID_AlgebraConfiguration,
+     "ⓧ",               ID_AlgebraVariable,
+     "Stoⓧ",            ID_StoreAlgebraVariable,
      "Final",           ID_FinalAlgebraResults,
      "&Wild",           ID_ExplicitWildcards,
      "Symb",            ID_SymbolicMenu);
