@@ -160,33 +160,44 @@ bool symbol::is_same_as(symbol_p other) const
     utf8 otxt = other->value(&osz);
     if (sz != osz)
         return false;
-    return strncasecmp(cstring(txt), cstring(otxt), sz) == 0;
+    return compare(txt, otxt, sz) == 0;
 }
 
 
 bool symbol::matches(utf8 otxt, size_t osz) const
 // ----------------------------------------------------------------------------
-//   Check if the symbol matches the
+//   Check if the symbol matches the prefix
 // ----------------------------------------------------------------------------
 {
     size_t sz;
     utf8 txt = value(&sz);
     if (sz != osz)
         return false;
-    return strncmp(cstring(txt), cstring(otxt), sz) == 0;
+    return compare(txt, otxt, sz) == 0;
 }
 
 
 bool symbol::starts_with(utf8 otxt, size_t osz) const
 // ----------------------------------------------------------------------------
-//   Check if the symbol matches the
+//   Check if the symbol begins with the given symbols
 // ----------------------------------------------------------------------------
 {
     size_t sz;
     utf8 txt = value(&sz);
     if (sz < osz)
         return false;
-    return memcmp(cstring(txt), cstring(otxt), osz) == 0;
+    return compare(txt, otxt, osz) == 0;
+}
+
+
+int symbol::compare(utf8 x, utf8 y, size_t len)
+// ----------------------------------------------------------------------------
+//   Compare two names, ignoring case or not depending on settings
+// ----------------------------------------------------------------------------
+{
+    return Settings.IgnoreSymbolCase()
+        ? strncasecmp(cstring(x), cstring(y), len)
+        : strncmp(cstring(x), cstring(y), len);
 }
 
 

@@ -341,8 +341,7 @@ byte *polynomial::copy_variables(polynomial_r x, byte *prev)
             {
                 byte_p oldvar = prev;
                 size_t ovlen  = leb128<size_t>(prev);
-                cmp = strncasecmp(cstring(prev), cstring(xp),
-                                  std::min(ovlen, vlen));
+                cmp = symbol::compare(prev, xp, std::min(ovlen, vlen));
                 if (cmp >= 0)
                 {
                     old = oldvar;
@@ -470,16 +469,14 @@ polynomial_p polynomial::addsub(polynomial_r x, polynomial_r y, bool sub)
         {
             size_t xlen  = 0;
             utf8   xname = x->variable(xv, &xlen);
-            if (xlen == nlen &&
-                strncasecmp(cstring(xname), cstring(p), xlen) == 0)
+            if (xlen == nlen && symbol::compare(xname, p, xlen) == 0)
                 xvar[xv] = v;
         }
         for (size_t yv = 0; yv < yvars; yv++)
         {
             size_t ylen  = 0;
             utf8   yname = y->variable(yv, &ylen);
-            if (ylen == nlen &&
-                strncasecmp(cstring(yname), cstring(p), ylen) == 0)
+            if (ylen == nlen && symbol::compare(yname, p, ylen) == 0)
                 yvar[yv] = v;
         }
         p += nlen;
@@ -638,16 +635,14 @@ polynomial_p polynomial::mul(polynomial_r x, polynomial_r y)
         {
             size_t xlen  = 0;
             utf8   xname = x->variable(xv, &xlen);
-            if (xlen == nlen &&
-                strncasecmp(cstring(xname), cstring(p), xlen) == 0)
+            if (xlen == nlen && symbol::compare(xname, p, xlen) == 0)
                 xvar[xv] = v;
         }
         for (size_t yv = 0; yv < yvars; yv++)
         {
             size_t ylen  = 0;
             utf8   yname = y->variable(yv, &ylen);
-            if (ylen == nlen &&
-                strncasecmp(cstring(yname), cstring(p), ylen) == 0)
+            if (ylen == nlen && symbol::compare(yname, p, ylen) == 0)
                 yvar[yv] = v;
         }
         p += nlen;
@@ -966,8 +961,7 @@ size_t polynomial::variable(utf8 name, size_t len) const
     for (size_t v = 0; v < nvars; v++)
     {
         size_t vlen = leb128<size_t>(p);
-        if (vlen == len &&
-            strncasecmp(cstring(p), cstring(name), len) == 0)
+        if (vlen == len && symbol::compare(p, name, len) == 0)
             return v;
         p += vlen;
         if (size_t(p - first) >= length)

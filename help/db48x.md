@@ -7117,7 +7117,15 @@ This flag enables numbered variables similar to what existed on earlier RPN calc
 
 This flag disables numbered variables, behaving closer to the way RPL calculators work. For example, when the setting is active, `2.5 0 STO` generates an `Invalid name` error.
 
+## IgnoreSymbolCase
 
+Ignore the case in symbols, i.e. variables `X` and `x` are the same.
+Note that this is different from the way RPL in HP calculators works.
+
+## DistinguishSymbolCase
+
+Distinguish the case in symbols, i.e. variables `X` and `x` are distinct.
+This is the way RPL in HP calculators works.
 
 # States
 

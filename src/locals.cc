@@ -304,8 +304,7 @@ PARSE_BODY(local)
             for (size_t n = 0; n < count; n++)
             {
                 size_t nlen = leb128<size_t>(+names);
-                if (nlen == len &&
-                    strncasecmp(cstring(+names), cstring(source), nlen) == 0)
+                if (nlen == len && symbol::compare(+names, source, nlen) == 0)
                 {
                     // Found a local name, return it
                     gcutf8 text   = source;

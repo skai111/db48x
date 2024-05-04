@@ -332,10 +332,10 @@ object_p directory::lookup(object_p ref) const
 //   Find if the name exists in the directory, if so return pointer to it
 // ----------------------------------------------------------------------------
 {
-    byte_p p = payload();
-    size_t size = leb128<size_t>(p);
-    size_t rsize = ref->size();
-    bool   issym = ref->type() == ID_symbol;
+    byte_p   p     = payload();
+    size_t   size  = leb128<size_t>(p);
+    size_t   rsize = ref->size();
+    symbol_p rsym  = ref->as<symbol>();
 
     while (size)
     {
@@ -345,11 +345,12 @@ object_p directory::lookup(object_p ref) const
             return name;
         if (ns == rsize)
         {
-            if (issym)
+            if (rsym)
             {
                 // Regular symbols: case insensitive comparison
-                if (strncasecmp(cstring(name), cstring(ref), rsize) == 0)
-                    return name;
+                if (symbol_p nsym = name->as<symbol>())
+                    if (rsym->is_same_as(nsym))
+                        return name;
             }
             else
             {
