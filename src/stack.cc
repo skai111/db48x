@@ -290,11 +290,12 @@ void stack::draw_stack()
         }
 
         // Draw index
-        Screen.clip(clip);
+        Screen.clip(0, ytop, hdrx, bottom);
         snprintf(buf, sizeof(buf), "%u", level + 1);
         size hw = idxfont->width(utf8(buf));
         Screen.text(hdrx - hw, y + idxOffset, utf8(buf), idxfont,
                     Settings.StackLevelForeground());
+        Screen.clip(clip);
 
         lineHeight = font->height();
     }
