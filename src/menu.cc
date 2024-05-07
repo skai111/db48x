@@ -1524,6 +1524,11 @@ MENU(GraphicsMenu,
      "DispXY",  ID_DispXY,
 
      "Show",    ID_Show,
+     "PixOn",   ID_PixOn,
+     "PixOff",  ID_PixOff,
+     "Pix?",    ID_PixTest,
+     "PixCol?", ID_PixColor,
+
      "Plot",    ID_PlotMenu);
 
 MENU(MemoryMenu,
