@@ -94,7 +94,7 @@ simulator, and more.
 * logical: Add `SetBit`, `ClearBit` and `FlipBit` commands
 * memory: Implement the `Clone` (`NewOb`) function
 * menus: Add `log2` and `exp2` to `ExpLogMenu`
-* menus: Place `ListMenu` as a keyboard-accesisble menu
+* menus: Place `ListMenu` as a keyboard-accessible menu
 * parsing: Parse n-ary functions
 * program: Add vertical program rendering mode
 * stack: Display error message emitted during stack rendering
