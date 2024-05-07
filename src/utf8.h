@@ -40,7 +40,7 @@ inline bool is_utf8_first(byte b)
 //   Check if this is the first byte in a UTF-8 sequence
 // ----------------------------------------------------------------------------
 {
-    return b >= 0xC0 && b <= 0xFD;
+    return b >= 0xC0U && b <= 0xFDU;
 }
 
 
@@ -49,7 +49,7 @@ inline bool is_utf8_next(byte b)
 //   Check if this is a follow-up byte in a UTF-8 sequence
 // ----------------------------------------------------------------------------
 {
-    return b >= 0x80 && b <= 0xBF;
+    return b >= 0x80U && b <= 0xBFU;
 }
 
 
@@ -339,13 +339,13 @@ inline bool is_valid_in_name(unicode cp)
 //   Check if character is valid in a name after the initial character
 // ----------------------------------------------------------------------------
 {
-    if (isalnum(cp))
+    if (cp == byte(cp) && isalnum(cp))
         return true;
     static utf8 valid = utf8("!$%&?");
     for (utf8 p = valid; *p; p = utf8_next(p))
         if (cp == utf8_codepoint(p))
             return true;
-    if (cp < 0x80)
+    if (cp < unicode(0x80))
         return false;
 
     static utf8 invalid = utf8("÷×·↑∂⁻¹²³«»ⅈ∡ ;,.'\"<=>≤≠≥[](){}«»\n\t");
