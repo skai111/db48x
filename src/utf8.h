@@ -365,6 +365,24 @@ inline bool is_valid_in_name(utf8 s)
 }
 
 
+inline bool is_valid_in_constant_name(unicode cp)
+// ----------------------------------------------------------------------------
+//   In constants, we accept a few additional characters
+// ----------------------------------------------------------------------------
+{
+    return cp == L'ⅈ' || is_valid_in_name(cp);
+}
+
+
+inline bool is_valid_in_constant_name(utf8 s)
+// ----------------------------------------------------------------------------
+//   Check if first character in a string is valid in a name
+// ----------------------------------------------------------------------------
+{
+    return is_valid_in_constant_name(utf8_codepoint(s));
+}
+
+
 inline bool is_valid_as_name_initial(unicode cp)
 // ----------------------------------------------------------------------------
 //   Check if character is valid as initial of a name

@@ -88,7 +88,8 @@ PARSE_BODY(command)
                 type = spellings[i].type;
 
                 // When parsing an equation, parse x³ as cubed(x)
-                if (eq && (type == ID_sq || type == ID_cubed || type == ID_inv))
+                if (eq && (type == ID_sq  || type == ID_cubed ||
+                           type == ID_inv || type == ID_fact))
                     continue;
             }
 
