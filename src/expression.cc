@@ -111,9 +111,23 @@ symbol_p expression::render(uint depth, int &precedence, bool editing)
 //   Render an object as a symbol at a given precedence
 // ----------------------------------------------------------------------------
 {
+    if (rt.depth() <= depth)
+    {
+        record(equation_error, "Rendering at depth %u with stack depth %u",
+               depth, rt.depth());
+        return nullptr;
+    }
+
     if (object_g obj = rt.pop())
     {
-        int arity = obj->arity();
+        uint arity = obj->arity();
+        if (rt.depth() < depth + arity)
+        {
+            record(equation_error,
+                   "Rendering %s arity %u at depth %u with stack depth %u",
+                   name(obj->type()), arity, depth, rt.depth());
+            return nullptr;
+        }
         switch(arity)
         {
         case 0:
@@ -197,7 +211,7 @@ symbol_p expression::render(uint depth, int &precedence, bool editing)
         {
             symbol_g op = obj->as_symbol(editing);
             symbol_g args = nullptr;
-            for (int a = 0; a < arity; a++)
+            for (uint a = 0; a < arity; a++)
             {
                 int prec = 0;
                 symbol_g arg = render(depth, prec, editing);
@@ -1744,9 +1758,23 @@ grob_p expression::graph(grapher &g, uint depth, int &precedence)
 //   Render a single object as a graphical object
 // ----------------------------------------------------------------------------
 {
+    if (rt.depth() <= depth)
+    {
+        record(equation_error, "Graphing at depth %u with stack depth %u",
+               depth, rt.depth());
+        return nullptr;
+    }
+
     if (object_g obj = rt.pop())
     {
-        int arity = obj->arity();
+        uint arity = obj->arity();
+        if (rt.depth() < depth + arity)
+        {
+            record(equation_error,
+                   "Graphing %s arity %u at depth %u with stack depth %u",
+                   name(obj->type()), arity, depth, rt.depth());
+            return nullptr;
+        }
         switch(arity)
         {
         case 0:
@@ -1925,7 +1953,7 @@ grob_p expression::graph(grapher &g, uint depth, int &precedence)
         {
             grob_g args = nullptr;
             coord argsv = 0;
-            for (int a = 0; a < arity; a++)
+            for (uint a = 0; a < arity; a++)
             {
                 int    prec = 0;
                 grob_g arg  = graph(g, depth, prec);
