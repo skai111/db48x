@@ -1380,6 +1380,17 @@ void tests::global_variables()
     step("Recall from file as BMP")
         .test(CLEAR, EXIT, "\"Hello.bmp\" RCL", ENTER).noerror()
         .image_noheader("rcl-bmp");
+
+    step("Allowing command names in quotes")
+        .test(CLEAR, "'bar'", ENTER)
+        .expect("'BarPlot'");
+    step("Editing command names")
+        .test(DOWN).editor("'BarPlot'")
+        .test(ENTER)
+        .expect("'BarPlot'");
+    step("Rejecting command names as variable names")
+        .test(CLEAR, "124 'bar' STO", ENTER)
+        .error("Invalid name");
 }
 
 

@@ -234,7 +234,7 @@ object::result list::list_parse(id      type,
                 }
 
                 // TODO: A symbol could be a function, need to deal with that
-                if (is_algebraic_fn(type))
+                if (is_command(type))
                 {
                     prefix = obj;
                     if (prefix)
@@ -327,12 +327,22 @@ object::result list::list_parse(id      type,
     // If we still have a pending opcode here, syntax error (e.g. '1+`)
     if (infix || prefix)
     {
-        if (infix)
-            rt.command(infix);
-        else if (prefix)
-            rt.command(prefix);
-        rt.argument_expected_error();
-        return ERROR;
+        object_g obj = prefix ? prefix : infix;
+        rt.command(obj);
+        if (objcount == 0 && scr.growth() == 0)
+        {
+            size_t objsize = obj->size();
+            byte *objcopy = rt.allocate(objsize);
+            if (!objcopy)
+                return ERROR;
+            memmove(objcopy, (byte *) obj, objsize);
+            objcount = 1;
+        }
+        else
+        {
+            rt.argument_expected_error();
+            return ERROR;
+        }
     }
 
     if (non_alg && objcount != 1)

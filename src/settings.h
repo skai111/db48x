@@ -321,6 +321,7 @@ struct setting : command
 
     static cstring label(id ty);
     static cstring printf(cstring format, ...);
+    ARITY_DECL(1);
 };
 
 

@@ -123,10 +123,14 @@ symbol_p expression::render(uint depth, int &precedence, bool editing)
         uint arity = obj->arity();
         if (rt.depth() < depth + arity)
         {
-            record(equation_error,
-                   "Rendering %s arity %u at depth %u with stack depth %u",
-                   name(obj->type()), arity, depth, rt.depth());
-            return nullptr;
+            if (rt.depth() != depth)
+            {
+                record(equation_error,
+                       "Rendering %s arity %u at depth %u with stack depth %u",
+                       name(obj->type()), arity, depth, rt.depth());
+                return nullptr;
+            }
+            arity = 0;
         }
         switch(arity)
         {
@@ -1770,10 +1774,14 @@ grob_p expression::graph(grapher &g, uint depth, int &precedence)
         uint arity = obj->arity();
         if (rt.depth() < depth + arity)
         {
-            record(equation_error,
-                   "Graphing %s arity %u at depth %u with stack depth %u",
-                   name(obj->type()), arity, depth, rt.depth());
-            return nullptr;
+            if (rt.depth() != depth)
+            {
+                record(equation_error,
+                       "Graphing %s arity %u at depth %u with stack depth %u",
+                       name(obj->type()), arity, depth, rt.depth());
+                return nullptr;
+            }
+            arity = 0;
         }
         switch(arity)
         {
