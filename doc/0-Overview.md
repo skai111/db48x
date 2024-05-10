@@ -500,9 +500,11 @@ unintentional differences, since the implementation is completely new.
   computations to mimic the HP50G behaviour with limited benefit, `Size` returns
   1 for integers, algebraic expressions and unit objects.
 
-* The `Type` command returns HP-compatible values that are sometimes imprecise
-  (e.g. it cannot distinguish between polar and rectangular complex values).
-  The `TypeName` command is an extension that returns more precise textual
+* The [`Type`](#type) command can return HP-compatible values that are sometimes
+  imprecise (e.g. it cannot distinguish between polar and rectangular complex
+  values), or numerical values that distinguish all the types in DB48X. This is
+  controlled by the [`CompatibleTypes`](#compatibletypes) setting.  The
+  `TypeName` command is a DB48X-only extension that returns more precise textual
   information, and should be preferred both for readability and future
   compatibility.
 

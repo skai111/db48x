@@ -452,9 +452,11 @@ unintentional differences, since the implementation is completely new.
   computations to mimic the HP50G behaviour with limited benefit, `Size` returns
   1 for integers, algebraic expressions and unit objects.
 
-* The `Type` command returns HP-compatible values that are sometimes imprecise
-  (e.g. it cannot distinguish between polar and rectangular complex values).
-  The `TypeName` command is an extension that returns more precise textual
+* The [`Type`](#type) command can return HP-compatible values that are sometimes
+  imprecise (e.g. it cannot distinguish between polar and rectangular complex
+  values), or numerical values that distinguish all the types in DB50X. This is
+  controlled by the [`CompatibleTypes`](#compatibletypes) setting.  The
+  `TypeName` command is a DB50X-only extension that returns more precise textual
   information, and should be preferred both for readability and future
   compatibility.
 
@@ -5267,12 +5269,20 @@ Get a path to the current directory
 
 
 ## Variables (VARS)
+
 List all visible variables in a directory
 
+▶ `{ Variables... }`
 
-## ALLVARS
-List all variables in a directory
 
+## TypedVariables (TVARS)
+
+List variables of a specific type
+
+`type` ▶ `{ Variables... }`
+`{ types... }` ▶ `{ Variables... }`
+
+See the [`Type`](#type) command for a list of types.
 
 ## ORDER
 Sort variables in a directory
@@ -5309,17 +5319,6 @@ Make variable read/write
 ## RENAME
 Change the name of a variable
 
-
-## TVARS
-List variables of a specific type
-
-
-## TVARSE
-List all variables with extended type information
-
-
-## SADD
-Apply command ADD to the stored contents of the variable
 
 
 ## SPROP

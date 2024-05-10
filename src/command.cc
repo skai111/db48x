@@ -511,84 +511,16 @@ COMMAND_BODY(Bytes)
 }
 
 
-static integer_p type_value(object_p obj)
-// ----------------------------------------------------------------------------
-//   Return a native or compatible type value
-// ----------------------------------------------------------------------------
-{
-    uint type = obj->type();
-    if (Settings.CompatibleTypes())
-    {
-        switch (type)
-        {
-        case object::ID_hwfloat:
-        case object::ID_hwdouble:
-        case object::ID_decimal:                type = 0; break; // Or 21
-        case object::ID_rectangular:
-        case object::ID_polar:                  type = 1; break;
-        case object::ID_text:                   type = 2; break;
-        // Treat as symbolic vector matrix on HP50G,
-        // don't check inside to see if it's real (3) or complex (4) array
-        case object::ID_array:                  type = 29; break;
-        case object::ID_list:                   type = 5; break;
-        case object::ID_symbol:                 type = 6; break;
-        case object::ID_local:                  type = 7; break;
-        case object::ID_block:
-        case object::ID_locals:
-        case object::ID_program:                type = 8; break;
-        case object::ID_fraction:
-        case object::ID_neg_fraction:
-        case object::ID_big_fraction:
-        case object::ID_neg_big_fraction:
-        case object::ID_expression:             type = 9; break;
-
-#ifdef CONFIG_FIXED_BASED_OBJECTS
-        case object::ID_hex_integer:
-        case object::ID_dec_integer:
-        case object::ID_oct_integer:
-        case object::ID_bin_integer:
-        case object::ID_hex_bignum:
-        case object::ID_dec_bignum:
-        case object::ID_oct_bignum:
-        case object::ID_bin_bignum:
-#endif // CONFIG_FIXED_BASED_OBJECTS
-        case object::ID_based_integer:
-        case object::ID_based_bignum:           type = 10; break;
-        case object::ID_grob:
-        case object::ID_bitmap:                 type = 11; break;
-        case object::ID_tag:                    type = 12; break;
-        case object::ID_unit:                   type = 13; break;
-        // No XLIB type 14 yet
-        case object::ID_directory:              type = 15; break;
-        // No Library type 16 yet
-        // No Backup object type 17 yet
-        case object::ID_integer:
-        case object::ID_neg_integer:
-        case object::ID_bignum:
-        case object::ID_neg_bignum:             type = 28; break;
-        case object::ID_dense_font:             type = 27; break;
-        case object::ID_sparse_font:            type = 30; break;
-
-        default:
-            type = object::is_algebraic(object::id(type)) ? 18 : 19;
-            break;
-        }
-        return integer::make(type);
-    }
-    return rt.make<neg_integer>(type + 1);
-}
-
-
-
 COMMAND_BODY(Type)
 // ----------------------------------------------------------------------------
 //   Return the type of the top of stack as a numerical value
 // ----------------------------------------------------------------------------
 {
     if (object_p top = rt.top())
-        if (integer_p type = type_value(top))
-            if (rt.top(type))
-                return OK;
+        if (int tval = top->type_value())
+            if (integer_p type = integer::make(tval))
+                if (rt.top(type))
+                    return OK;
     return ERROR;
 }
 

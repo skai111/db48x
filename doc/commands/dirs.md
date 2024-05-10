@@ -130,12 +130,20 @@ Get a path to the current directory
 
 
 ## Variables (VARS)
+
 List all visible variables in a directory
 
+▶ `{ Variables... }`
 
-## ALLVARS
-List all variables in a directory
 
+## TypedVariables (TVARS)
+
+List variables of a specific type
+
+`type` ▶ `{ Variables... }`
+`{ types... }` ▶ `{ Variables... }`
+
+See the [`Type`](#type) command for a list of types.
 
 ## ORDER
 Sort variables in a directory
@@ -172,17 +180,6 @@ Make variable read/write
 ## RENAME
 Change the name of a variable
 
-
-## TVARS
-List variables of a specific type
-
-
-## TVARSE
-List all variables with extended type information
-
-
-## SADD
-Apply command ADD to the stored contents of the variable
 
 
 ## SPROP

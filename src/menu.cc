@@ -1566,7 +1566,9 @@ MENU(MemoryMenu,
      "Recall÷", ID_RecallDiv,
 
      "Incr",    ID_Increment,
-     "Decr",    ID_Decrement);
+     "Decr",    ID_Decrement,
+     "Vars",    ID_Vars,
+     "TVars",   ID_TVars);
 
 
 MENU(TimeMenu,

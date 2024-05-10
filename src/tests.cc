@@ -159,7 +159,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        polynomials();
+        global_variables();
     }
     else
     {
@@ -1288,6 +1288,8 @@ void tests::global_variables()
         .test(CLEAR, "DirTest", ENTER).noerror();
     step("Path function")
         .test(CLEAR, "PATH", ENTER).expect("{ HomeDirectory DirTest }");
+    step("Vars command")
+        .test(CLEAR, "VARS", ENTER).expect("{ }");
     step("Updir function")
         .test(CLEAR, "UpDir path", ENTER).expect("{ HomeDirectory }");
     step("Enter directory again")
@@ -1298,6 +1300,30 @@ void tests::global_variables()
         .test(CLEAR, "242 'Foo' STO", ENTER).noerror();
     step("Recall from subdirectory")
         .test(CLEAR, "Foo", ENTER).expect("242");
+    step("Store another variable in subdirectory")
+        .test(CLEAR, "\"Glop\" 'Baz' STO", ENTER).noerror();
+    step("List variables in subdirectory")
+        .test(CLEAR, "variables", ENTER).expect("{ Baz Foo }");
+    step("List variables in subdirectory with the correct type")
+        .test(CLEAR, "28 tvars", ENTER).expect("{ Foo }")
+        .test(CLEAR, "2 tvars", ENTER).expect("{ Baz }");
+    step("List variables in subdirectory with an incorrect type")
+        .test(CLEAR, "0 tvars", ENTER).expect("{ }");
+    step("List variables in subdirectory with multiple types")
+        .test(CLEAR, "{ 0 2 } tvars", ENTER).expect("{ Baz }")
+        .test(CLEAR, "{ 28 2 } tvars", ENTER).expect("{ Baz Foo }");
+    step("List variables in subdirectory with DB48X types")
+        .test(CLEAR, ~int(object::ID_integer)," tvars", ENTER)
+        .expect("{ Foo }")
+        .test(CLEAR, "{ ",
+              ~int(object::ID_integer), " ",
+              ~int(object::ID_array), " } tvars", ENTER)
+        .expect("{ Foo }")
+        .test(CLEAR, "{ ",
+              ~int(object::ID_text), " ",
+              ~int(object::ID_integer), " } tvars", ENTER)
+        .expect("{ Baz Foo }")
+        .test(CLEAR, "{ 28 2 } tvars", ENTER).expect("{ Baz Foo }");
     step("Recursive directory")
         .test(CLEAR, "'DirTest2' crdir", ENTER).noerror();
     step("Entering sub-subdirectory")

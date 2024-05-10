@@ -606,6 +606,10 @@ ALIAS(RecallDiv,"Rcl/")                 ALIAS(RecallDiv, "Rcl÷")
 CMD(Increment)                          ALIAS(Increment, "Incr")
 CMD(Decrement)                          ALIAS(Decrement, "Decr")
 
+// Other variable operations
+NAMED(Vars,     "Variables")
+NAMED(TVars,    "TypedVariables")
+
 // Bitwise operations
 NAMED(RL, "RotateLeft")
 NAMED(RR, "RotateRight")

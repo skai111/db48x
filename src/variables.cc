@@ -1075,6 +1075,88 @@ COMMAND_BODY(pgdir)
 }
 
 
+static bool vars_enumerator(object_p name, object_p value, void *arg)
+// ----------------------------------------------------------------------------
+//   Callback to add the variable name to the scratchpad
+// ----------------------------------------------------------------------------
+{
+    object_p types = object_p(arg);
+    if (types)
+    {
+        int tval = value->type_value();
+        settings::SaveCompatibleTypes sct(!Settings.CompatibleTypes());
+        int atval = value->type_value();
+        bool found = false;
+        if (list_p ltypes = types->as<list>())
+        {
+            for (object_p li : *ltypes)
+            {
+                int itval = li->as_int32(0, true);
+                found = itval == tval || itval == atval;
+                if (found)
+                    break;
+            }
+        }
+        else
+        {
+            int itval = types->as_int32(0, true);
+            found = itval == tval || itval == atval;
+        }
+        if (!found || rt.error())
+            return false;
+    }
+
+    object_g gname = name;
+    size_t sz = name->size();
+    byte *p = rt.allocate(sz);
+    if (!p)
+        return false;
+    memmove(p, byte_p(+gname), sz);
+    return true;
+}
+
+
+static list_p variables(object_p types)
+// ----------------------------------------------------------------------------
+//  List all the variables matching the given type in the current directory
+// ----------------------------------------------------------------------------
+{
+    directory *dir = rt.variables(0);
+    if (!dir)
+    {
+        rt.no_directory_error();
+        return nullptr;
+    }
+    scribble scr;
+    dir->enumerate(vars_enumerator, (void *) types);
+    list_p list = list::make (scr.scratch(), scr.growth());
+    return list;
+}
+
+
+COMMAND_BODY(Vars)
+// ----------------------------------------------------------------------------
+//   List variables in current directory
+// ----------------------------------------------------------------------------
+{
+    if (list_p list = variables(nullptr))
+        if (rt.push(list))
+            return OK;
+    return ERROR;
+}
+
+
+COMMAND_BODY(TVars)
+// ----------------------------------------------------------------------------
+//   List variables in current directory matching the type
+// ----------------------------------------------------------------------------
+{
+    if (object_p types = rt.top())
+        if (list_p list = variables(types))
+            if (rt.top(list))
+                return OK;
+    return ERROR;
+}
 
 
 

@@ -253,6 +253,16 @@ struct object
     }
 
 
+    static int type_value(id type);
+    int type_value() const
+    // ------------------------------------------------------------------------
+    //   Return the type value as returned by `type` command
+    // ------------------------------------------------------------------------
+    {
+        return type_value(type());
+    }
+
+
     const dispatch &ops() const
     // ------------------------------------------------------------------------
     //   Return the handlers for the current object
