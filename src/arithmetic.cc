@@ -1548,3 +1548,157 @@ INSERT_BODY(arithmetic)
     }
     return ui.edit(o->fancy(), ui.INFIX);
 }
+
+
+// ============================================================================
+//
+//   Div2 operation (returning quotient and remainder)
+//
+// ============================================================================
+
+COMMAND_BODY(Div2)
+// ----------------------------------------------------------------------------
+//   Process the Div2 command
+// ----------------------------------------------------------------------------
+{
+    object_p xo = rt.stack(0);
+    object_p yo = rt.stack(1);
+    if (!xo || !yo)
+        return ERROR;
+
+    while (tag_p xt = xo->as<tag>())
+        xo = xt->tagged_object();
+    while (tag_p yt = yo->as<tag>())
+        yo = yt->tagged_object();
+
+    id xty = xo->type();
+    id yty = yo->type();
+
+    if (is_integer(xty) && is_integer(yty))
+    {
+        if (is_bignum(xty)  || is_bignum(yty))
+        {
+            bignum_g xi = bignum::promote(xo);
+            bignum_g yi = bignum::promote(yo);
+            if (!xi || !yi)
+                return ERROR;
+
+            if (xi->is_zero())
+            {
+                rt.zero_divide_error();
+                return ERROR;
+            }
+            bignum_g q, r;
+            id rty = bignum::product_type(xi->type(), yi->type());
+            if (!bignum::quorem(yi, xi, rty, &q, &r))
+                return ERROR;
+            tag_g  qtag = tag::make("Q", +q);
+            tag_g  rtag = tag::make("R", +r);
+            if (qtag && rtag && rt.stack(0, rtag) && rt.stack(1, qtag))
+                return OK;
+            return ERROR;
+        }
+        else
+        {
+            integer_p xi = integer_p(xo);
+            integer_p yi = integer_p(yo);
+            ularge    xv = xi->value<ularge>();
+            ularge    yv = yi->value<ularge>();
+            if (!xv)
+            {
+                rt.zero_divide_error();
+                return ERROR;
+            }
+            id rty = is_based(xty)
+                ? xty
+                : is_based(yty)
+                ? yty
+                : (xty == ID_neg_integer) != (yty == ID_neg_integer)
+                ? ID_neg_integer
+                : ID_integer;
+            ularge qv   = yv / xv;
+            ularge rv   = yv % xv;
+            tag_g  qtag = tag::make("Q", rt.make<integer>(rty, qv));
+            tag_g  rtag = tag::make("R", rt.make<integer>(rty, rv));
+            if (qtag && rtag && rt.stack(0, rtag) && rt.stack(1, qtag))
+                return OK;
+            return ERROR;
+        }
+    }
+
+    if (is_fraction(xty) || is_fraction(yty))
+    {
+        algebraic_g xa = algebraic_p(xo);
+        algebraic_g ya = algebraic_p(yo);
+        fraction_g xf = arithmetic::fraction_promotion(xa);
+        fraction_g yf = arithmetic::fraction_promotion(ya);
+        if (xf && yf)
+        {
+            bignum_g   xn = xf->numerator();
+            bignum_g   xd = xf->denominator();
+            bignum_g   yn = yf->numerator();
+            bignum_g   yd = yf->denominator();
+            fraction_g q  = big_fraction::make(yn * xd, yd * xn);
+            bignum_g   ir = q->numerator() / q->denominator();
+            q = big_fraction::make(ir, bignum::make(1));
+            fraction_g r = yf - q * xf;
+            tag_g  qtag = tag::make("Q", +ir);
+            tag_g  rtag = tag::make("R", +r);
+            if (qtag && rtag && rt.stack(0, rtag) && rt.stack(1, qtag))
+                return OK;
+            return ERROR;
+        }
+    }
+
+    if (is_real(xty) && is_real(yty))
+    {
+        algebraic_g xa = algebraic_p(xo);
+        algebraic_g ya = algebraic_p(yo);
+        if (!arithmetic::decimal_promotion(xa, ya))
+            return ERROR;
+        decimal_g xd = decimal_p(+xa);
+        decimal_g yd = decimal_p(+ya);
+        decimal_g q = yd / xd;
+        if (!q)
+            return ERROR;
+        q = q->truncate();
+        decimal_g r = yd - q * xd;
+        tag_g  qtag = tag::make("Q", +q);
+        tag_g  rtag = tag::make("R", +r);
+        if (qtag && rtag && rt.stack(0, rtag) && rt.stack(1, qtag))
+            return OK;
+        return ERROR;
+    }
+
+    algebraic_g xa = xo->as_algebraic();
+    algebraic_g ya = yo->as_algebraic();
+    if (!xa || !ya)
+    {
+        if (!rt.error())
+            rt.type_error();
+        return ERROR;
+    }
+
+    polynomial_g xp = polynomial::make(xa);
+    polynomial_g yp = polynomial::make(ya);
+    if (!xp || !yp)
+    {
+        if (!rt.error())
+            rt.type_error();
+        return ERROR;
+    }
+
+    polynomial_g q, r;
+    if (!polynomial::quorem(yp, xp, q, r))
+    {
+        if (!rt.error())
+            rt.invalid_polynomial_error();
+        return ERROR;
+    }
+
+    tag_g  qtag = tag::make("Q", +q);
+    tag_g  rtag = tag::make("R", +r);
+    if (qtag && rtag && rt.stack(0, rtag) && rt.stack(1, qtag))
+        return OK;
+    return ERROR;
+}

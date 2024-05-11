@@ -190,6 +190,8 @@ public:
     static bignum_g pow(bignum_r y, bignum_r x);
     static bignum_p shift(bignum_r x, int bits, bool rotate, bool arith);
 
+    static bignum_p promote(object_p ival);
+
 public:
     OBJECT_DECL(bignum);
     PARSE_DECL(bignum);

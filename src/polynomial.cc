@@ -802,7 +802,7 @@ bool polynomial::quorem(polynomial_r  x,
     for (size_t rv = 0; rv < ri.variables; rv++)
         rvars[rv] = r->variable(rv);
 
-    while (rorder >= yorder)
+    while (rorder >= yorder && yi != y->end())
     {
         iterator     yterm = yi;
         algebraic_g  yf    = yterm.factor();

@@ -195,6 +195,8 @@ ARITHMETIC_DECLARE(pow,                 POWER);
 ARITHMETIC_DECLARE(hypot,               POWER);
 ARITHMETIC_DECLARE(atan2,               POWER);
 
+COMMAND_DECLARE(Div2, 2);
+
 
 
 // ============================================================================

@@ -117,6 +117,7 @@ struct tests
     void probabilities();
     void sum_and_product();
     void polynomials();
+    void quotient_and_remainder();
     void regression_checks();
 
     enum key

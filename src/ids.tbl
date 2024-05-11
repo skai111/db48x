@@ -573,6 +573,10 @@ CMD(ScreenCapture)
 CMD(Root)
 NAMED(Integrate, "∫")
 
+// Special arithmetic
+NAMED(Div2, "QuoRem")                   ALIAS(Div2, "IDiv2")
+                                        ALIAS(Div2, "QuotientRemainder")
+
 // Additional list and data sorting functions
 NAMED(FromList, "List→")
 CMD(QuickSort)

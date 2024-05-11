@@ -4643,8 +4643,10 @@ Least common multiple
 
 
 ## IDIV2
-Integer division, get quoteiant and remainder
+Integer division, get quotient and remainder.
+On DB48X, this is an alias for [div2](#div2).
 
+`Y` `X` ▶ `IP(Y/X)` `Y rem X`
 
 ## IQUOT
 Quotient of the integer division
@@ -4699,7 +4701,13 @@ Nth Hermite polynomial as used in probabilities
 
 
 ## DIV2
-Polynomial euclidean division as symbolic
+Euclidean division, returning quotient and remainder
+On HP calculators, this only applies for polynomials.
+On DB48X, this applies to integers, big integers, decimals, fractions and polynomials. It puts both the quotient and the remainder on the stack. For many data types, this operation is significantly more efficient than computing the quotient and the remainder separately.
+
+`Y` `X` ▶ `IP(Y/X)` `Y rem X`
+
+Aliases: `idiv2`, `QuoRem`, `QuotientRemainder`
 
 
 ## PDIV2

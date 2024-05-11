@@ -957,3 +957,37 @@ bignum_g operator>>(bignum_r y, uint x)
         return nullptr;
     return bignum::shift(y, -int(x), false, false);
 }
+
+
+bignum_p bignum::promote(object_p obj)
+// ----------------------------------------------------------------------------
+//   Promote integer values to bignum
+// ----------------------------------------------------------------------------
+{
+    if (!obj)
+        return nullptr;
+
+    id oty = obj->type();
+    if (is_bignum(oty))
+        return bignum_p(obj);
+    if (is_integer(oty))
+    {
+        id rty;
+        switch(oty)
+        {
+        default:
+        case ID_integer:        rty = ID_bignum; break;
+        case ID_neg_integer:    rty = ID_neg_bignum; break;
+#if CONFIG_FIXED_BASED_OBJECTS
+        case ID_hex_integer:    rty = ID_hex_bignum; break;
+        case ID_dec_integer:    rty = ID_dec_bignum; break;
+        case ID_oct_integer:    rty = ID_oct_bignum; break;
+        case ID_bin_integer:    rty = ID_bin_bignum; break;
+#else
+        case ID_based_integer:  rty = ID_based_bignum; break;
+#endif // CONFIG_FIXED_BASED_OBJECTS
+        }
+        return rt.make<bignum>(rty, integer_g(integer_p(obj)));
+    }
+    return nullptr;
+}

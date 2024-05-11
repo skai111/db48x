@@ -423,6 +423,7 @@ MENU(NumbersMenu,
 
      "Σ",       ID_Sum,
      "∏",       ID_Product,
+     "QuoRem",  ID_Div2,
 
      "IsPrime", ID_Unimplemented,
      "NextPr",  ID_Unimplemented,
@@ -548,19 +549,21 @@ MENU(PolynomialsMenu,
      "Poly→",   ID_FromPolynomial,
      "Obj→",    ID_Explode,
      "Display", ID_PrefixPolynomialRender,
-     "FCoef",   ID_Unimplemented,
+     "QuoRem",  ID_Div2,
+
      "FRoots",  ID_Unimplemented,
      "MRoot",   ID_Unimplemented,
      "MSolvr",  ID_Unimplemented,
      "PCoef",   ID_Unimplemented,
      "PRoot",   ID_Unimplemented,
      "Root",    ID_Root,
+
      "Solve",   ID_Unimplemented,
      "TVMRoot", ID_Unimplemented,
      "XRoot",   ID_xroot,
      "Zeros",   ID_Unimplemented,
-     "Square",  ID_sq,
-     "Cube",    ID_cubed);
+     "FCoef",   ID_Unimplemented);
+
 
 MENU(HyperbolicMenu,
 // ----------------------------------------------------------------------------

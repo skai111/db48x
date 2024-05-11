@@ -134,6 +134,7 @@ TESTS(characters,       "Character menu and catalog");
 TESTS(probabilities,    "Probabilities");
 TESTS(sumprod,          "Sums and products");
 TESTS(poly,             "Polynomials");
+TESTS(quorem,           "Quotient and remainder");
 
 EXTRA(plotfns,          "Plot all functions");
 EXTRA(sysflags,         "Enable/disable every RPL flag");
@@ -159,7 +160,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        global_variables();
+        quotient_and_remainder();
     }
     else
     {
@@ -224,6 +225,7 @@ void tests::run(bool onlyCurrent)
         probabilities();
         sum_and_product();
         polynomials();
+        quotient_and_remainder();
         regression_checks();
     }
     summary();
@@ -7090,6 +7092,51 @@ void tests::polynomials()
 
     step("Restore default rendering for polynomials")
         .test(CLEAR, "'PrefixPolynomialRender' purge", ENTER).noerror();
+}
+
+
+void tests::quotient_and_remainder()
+// ----------------------------------------------------------------------------
+//   DIV2 operation, computing simultaneous quotient and remainder
+// ----------------------------------------------------------------------------
+{
+    BEGIN(quorem);
+
+    step("Integer values")
+        .test(CLEAR, 355, ENTER, 113, " DIV2", ENTER)
+        .expect("R:16")
+        .test(BSP)
+        .expect("Q:3");
+    step("Big integer values")
+        .test(CLEAR, "2", ENTER, "70", LSHIFT, B, 313, " IDIV2", ENTER)
+        .expect("R:11")
+        .test(BSP)
+        .expect("Q:3 771 858 213 154 668 701");
+    step("Fractions")
+        .test(CLEAR, "2/3", ENTER, "4/55", RSHIFT, W, F3)
+        .expect("R:²/₁₆₅")
+        .test(BSP)
+        .expect("Q:9");
+    step("Decimal")
+        .test(CLEAR, "2.3", ENTER, "0.32", RSHIFT, W, F3)
+        .expect("R:0.06")
+        .test(BSP)
+        .expect("Q:7.");
+    step("Polynomials")
+        .test(CLEAR, "'X^2+X+1'", ENTER, "'2*(X+2)'", RSHIFT, C, F6)
+        .expect("R:3")
+        .test(BSP)
+        .expect("Q:¹/₂·X-¹/₂");
+    step("Polynomials with polynomial remainder")
+        .test(CLEAR, "'(X^2+X+1)^3'", ENTER, "'2*(X+2)^2'", RSHIFT, C, F6)
+        .expect("R:81·X-135")
+        .test(BSP)
+        .expect("Q:¹/₂·X↑4-¹/₂·X↑3+3·X↑2-6 ¹/₂·X+17");
+    step("Polynomials with zero remainder")
+        .test(CLEAR, "'(X^2+X+1)^3'", ENTER, "'(1+X^2+X)^2'", RSHIFT, C, F6)
+        .expect("R:0")
+        .test(BSP)
+        .expect("Q:X↑2+X+1");
 }
 
 
