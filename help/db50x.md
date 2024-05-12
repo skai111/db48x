@@ -7767,6 +7767,32 @@ The precision of the conversion in digits is defined by
 [→FracDigits](#ToFractionDigits), and the maximum number of iterations for the
 conversion is defined by [→FracDigits](#ToFractionIterations)
 
+## ListExpressionNames (LName)
+
+List all variables used in an expression or polynomial, leaving the original
+object on the stack, and returning the result as an array.
+Names are sorted in decreasing order of size, and for the same size,
+in alphabetical order.
+
+`'A*Foo*G(X;Y;cos Z)`  ▶ `'A*Foo*G(X;Y;cos Z)` `[ Foo A G X Y Z ]`
+
+As a DB50X extension, this command also applies to programs, list and
+arrays. Another extension is the
+[`ExpressionVariables`](#expressionvariables) command.
+
+
+## ExpressionVariables (XVars)
+
+List all variables used in an expression or polynomial, returning the result as
+a list.
+Names are sorted in decreasing order of size, and for the same size,
+in alphabetical order.
+
+`'A*Foo*G(X;Y;cos Z)`  ▶ `'A*Foo*G(X;Y;cos Z)` `[ Foo A G X Y Z ]`
+
+This is a variation of the HP command [`LNAME`](#listexpressionnames), which is
+a bit more convenient to use in programs.
+
 ## RULEAPPLY1
 Match and apply a rule to an expression only once
 

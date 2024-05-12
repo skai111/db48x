@@ -613,6 +613,8 @@ CMD(Decrement)                          ALIAS(Decrement, "Decr")
 // Other variable operations
 NAMED(Vars,     "Variables")
 NAMED(TVars,    "TypedVariables")
+NAMED(XVars,    "ExpressionVariables")
+NAMED(LName,    "ListExpressionNames")
 
 // Bitwise operations
 NAMED(RL, "RotateLeft")

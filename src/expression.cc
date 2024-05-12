@@ -40,7 +40,6 @@
 #include "unit.h"
 #include "utf8.h"
 
-
 RECORDER(equation,      16, "Processing of equations and algebraic objects");
 RECORDER(equation_error,16, "Errors with equations");
 RECORDER(rewrites,      16, "Expression rewrites");

@@ -35,6 +35,7 @@
 #include "expression.h"
 #include "grob.h"
 #include "parser.h"
+#include "polynomial.h"
 #include "precedence.h"
 #include "program.h"
 #include "renderer.h"
@@ -1668,4 +1669,179 @@ COMMAND_BODY(ReverseList)
 // ----------------------------------------------------------------------------
 {
     return do_sort(nullptr);
+}
+
+
+
+// ============================================================================
+//
+//   Enumeration of names in an expression, a program or a list
+//
+// ============================================================================
+
+bool list::names_enumerate(size_t depth) const
+// ----------------------------------------------------------------------------
+//   Enumerate the names in the object
+// ----------------------------------------------------------------------------
+{
+    size_t vars;
+    switch(type())
+    {
+    case ID_expression:
+    case ID_funcall:
+    case ID_program:
+    case ID_list:
+    case ID_block:
+    case ID_array:
+        for (auto obj : *this)
+        {
+            switch(obj->type())
+            {
+            case ID_symbol:
+                if (!names_insert(depth, symbol_p(obj)))
+                    return false;
+                break;
+            case ID_expression:
+            case ID_funcall:
+            case ID_polynomial:
+                if (!expression_p(obj)->names_enumerate(depth))
+                    return false;
+                break;
+            default:
+                break;
+            }
+        }
+        break;
+    case ID_polynomial:
+    {
+        polynomial_g p = polynomial_p(this);
+        vars = p->variables();
+        for (size_t v = 0; v < vars; v++)
+            if (!names_insert(depth, p->variable(v)))
+                return false;
+        break;
+    }
+    default:
+        break;
+    }
+    return true;
+}
+
+
+bool list::names_insert(size_t depth, symbol_p sym)
+// ----------------------------------------------------------------------------
+//   Insert a name according to LNAME sorting order
+// ----------------------------------------------------------------------------
+{
+    size_t existing = rt.depth() - depth;
+    size_t len      = 0;
+    utf8   name     = sym->value(&len);
+    int    cmp      = -1;
+    size_t level;
+    for (level = 0; level < existing; level++)
+    {
+        symbol_p other = symbol_p(rt.stack(level));
+        size_t   olen  = 0;
+        utf8     oname = other->value(&olen);
+        cmp = olen - len;
+        if (!cmp)
+            cmp = symbol::compare(name, oname, olen);
+        if (cmp <= 0)
+            break;
+    }
+    if (cmp)
+    {
+        symbol_g s = sym;
+        if (!rt.push(+sym))
+            return false;
+        for (size_t i = 0; i < level; i++)
+            if (!rt.stack(i, rt.stack(i+1)))
+                return false;
+        if (!rt.stack(level, s))
+            return false;
+    }
+    return true;
+}
+
+
+list_p list::names(id type) const
+// ----------------------------------------------------------------------------
+//   Return the list of names in an expression
+// ----------------------------------------------------------------------------
+//   The sorting order defined for `LNAME` in HP50G manual is:
+//   - Longer variables first
+//   - For same size, alphabetic order
+{
+    size_t   depth = rt.depth();
+    scribble scr;
+
+    if (!names_enumerate(depth))
+        goto error;
+
+    // Copy the items to the list
+    while (rt.depth() > depth)
+    {
+        object_g obj = rt.pop();
+        size_t objsz = obj->size();
+        byte *objcopy = rt.allocate(objsz);
+        if (!objcopy)
+            goto error;
+        memmove(objcopy, +obj, objsz);
+    }
+
+    return list::make(type, scr.scratch(), scr.growth());
+
+error:
+    if (size_t now = rt.depth())
+        if (now > depth)
+            rt.drop(now - depth);
+    return nullptr;
+}
+
+
+static list_p list_variables(object_p obj,
+                             object::id type = object::ID_array)
+// ----------------------------------------------------------------------------
+//   List all variables in an expressions
+// ----------------------------------------------------------------------------
+{
+    object::id objty = obj->type();
+
+    if (objty == object::ID_expression ||
+        objty == object::ID_funcall    ||
+        objty == object::ID_polynomial ||
+        objty == object::ID_program    ||
+        objty == object::ID_block      ||
+        objty == object::ID_list       ||
+        objty == object::ID_array)
+        return list_p(obj)->names(type);
+
+    rt.type_error();
+    return nullptr;
+}
+
+
+COMMAND_BODY(XVars)
+// ----------------------------------------------------------------------------
+//   List all variable names in an array, leave expression in place
+// ----------------------------------------------------------------------------
+{
+    if (object_p obj = rt.top())
+        if (list_p result = list_variables(obj, ID_list))
+            if (rt.top(result))
+                return OK;
+    return ERROR;
+}
+
+
+COMMAND_BODY(LName)
+// ----------------------------------------------------------------------------
+//   List variable names in expression as an array, leave expression in place
+// ----------------------------------------------------------------------------
+{
+    if (object_p obj = rt.top())
+        if (list_p result = list_variables(obj, ID_array))
+            if (rt.push(result))
+                return OK;
+    return ERROR;
 }

@@ -826,6 +826,8 @@ MENU(CalculationMenu,
 // ----------------------------------------------------------------------------
 //   Calculation menu
 // ----------------------------------------------------------------------------
+     "LName",           ID_LName,
+     "XVars",           ID_XVars,
      "Deriv",           ID_Unimplemented,
      "DerivX",          ID_Unimplemented,
      "IBF",             ID_Unimplemented,

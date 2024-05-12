@@ -135,6 +135,7 @@ TESTS(probabilities,    "Probabilities");
 TESTS(sumprod,          "Sums and products");
 TESTS(poly,             "Polynomials");
 TESTS(quorem,           "Quotient and remainder");
+TESTS(expr,             "Operations on expressions");
 
 EXTRA(plotfns,          "Plot all functions");
 EXTRA(sysflags,         "Enable/disable every RPL flag");
@@ -160,7 +161,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        quotient_and_remainder();
+        expression_operations();
     }
     else
     {
@@ -226,6 +227,7 @@ void tests::run(bool onlyCurrent)
         sum_and_product();
         polynomials();
         quotient_and_remainder();
+        expression_operations();
         regression_checks();
     }
     summary();
@@ -7137,6 +7139,59 @@ void tests::quotient_and_remainder()
         .expect("R:0")
         .test(BSP)
         .expect("Q:X↑2+X+1");
+}
+
+
+void tests::expression_operations()
+// ----------------------------------------------------------------------------
+//   Operations on expressions
+// ----------------------------------------------------------------------------
+{
+    BEGIN(expr);
+
+    step("List variables in expression with LNAME")
+        .test(CLEAR, "'ABC+A+X+Foo(Z;B;A)'", ENTER)
+        .expect("'ABC+A+X+Foo(Z;B;A)'")
+        .test("LNAME", ENTER)
+        .expect("[ ABC Foo A B X Z ]")
+        .test(BSP)
+        .expect("'ABC+A+X+Foo(Z;B;A)'");
+    step("List variables in program")
+        .test(CLEAR, LSHIFT, RUNSTOP, "A BD + C *", ENTER)
+        .want("« A BD + C × »")
+        .test("LNAME", ENTER)
+        .expect("[ BD A C ]")
+        .test(BSP)
+        .want("« A BD + C × »");
+    step("List variables in polynomial")
+        .test(CLEAR, "'2*X+Y'", ENTER, NOSHIFT, A, F4)
+        .expect("2·X+Y")
+        .test("LNAME", ENTER)
+        .expect("[ X Y ]")
+        .test(BSP)
+        .expect("2·X+Y");
+
+    step("List variables in expression with XVARS")
+        .test(CLEAR, "'ABC+A+X+Foo(Z;B;A)'", ENTER)
+        .expect("'ABC+A+X+Foo(Z;B;A)'")
+        .test("XVARS", ENTER)
+        .expect("{ ABC Foo A B X Z }")
+        .test(BSP, BSP)
+        .error("Too few arguments");
+    step("List variables in program")
+        .test(CLEAR, LSHIFT, RUNSTOP, "A BD + C *", ENTER)
+        .want("« A BD + C × »")
+        .test("XVARS", ENTER)
+        .expect("{ BD A C }")
+        .test(BSP, BSP)
+        .error("Too few arguments");
+    step("List variables in polynomial")
+        .test(CLEAR, "'2*X+Y'", ENTER, NOSHIFT, A, F4)
+        .expect("2·X+Y")
+        .test("XVARS", ENTER)
+        .expect("{ X Y }")
+        .test(BSP, BSP)
+        .error("Too few arguments");
 }
 
 

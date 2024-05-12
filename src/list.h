@@ -131,6 +131,11 @@ struct list : text
         return object_p(value(size));
     }
 
+    list_p      names(id type = ID_list) const;
+    bool        names_enumerate(size_t depth) const;
+    static bool names_insert(size_t depth, symbol_p sym);
+
+
     // Iterator, built in a way that is robust to garbage collection in loops
     struct iterator
     {
@@ -325,7 +330,8 @@ COMMAND_DECLARE(Filter,2);
 COMMAND_DECLARE(ListSum,1);
 COMMAND_DECLARE(ListProduct,1);
 COMMAND_DECLARE(ListDifferences,1);
-
+COMMAND_DECLARE(XVars, 1);
+COMMAND_DECLARE(LName, 1);
 
 
 inline list_g operator+(list_r x, list_r y)
