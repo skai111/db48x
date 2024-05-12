@@ -1,5 +1,33 @@
 # Release notes
 
+## Release 0.7.6 "United" - Equation Solving Menu
+
+This release is primarily about implementing a dynamic solving menu that makes
+it easier to solve equations with multiple variables. This is roughly equivalent
+to the "Solve Equation" application in the HP50G.
+
+### New features
+
+* solver: Implement solving menu
+* tag: Graphic rendering for tagged objects
+* lists: Implement `lname` and `xvars` commands
+* arithmetic: Implement `div2` command
+* variables: Implement `vars` and `tvars` commands
+
+### Bug fixes
+
+* render: Avoid errors while rendering / graphing
+* expressions: Avoid consuming stack levels for invalid expressions
+* symbols: Avoid ignoring the list of bad characters in symbols
+* command: Fix for `x!` parsing
+* stack: Correctly set clipping for stack index
+* doc: Fix typo in release note
+
+### Improvements
+
+* menus: Add `PixOn`, `PixOff`, `Pix?` and `PixC?` to `GraphicsMenu`
+
+
 ## Release 0.7.5 "Perfect Joy" - Polynomials and symbolic rewrites
 
 This release contains a lot of groundwork in preparation for future work on
