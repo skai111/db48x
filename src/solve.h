@@ -6,7 +6,7 @@
 //
 //   File Description:
 //
-//
+//    Numerical solver and solver menu
 //
 //
 //
@@ -31,10 +31,36 @@
 
 #include "algebraic.h"
 #include "command.h"
+#include "menu.h"
 #include "symbol.h"
 
 algebraic_p solve(program_g eq, symbol_g name, object_g guess);
 
 COMMAND_DECLARE(Root,3);
+
+COMMAND_DECLARE(StEq, 1);
+COMMAND_DECLARE(RcEq, 0);
+
+
+struct SolvingMenu : menu
+// ----------------------------------------------------------------------------
+//   The solving menu is built dynamically from current expression
+// ----------------------------------------------------------------------------
+//   The SolvingMenu shows expression variables in the menu
+//   For each variable, the function key has the three following features:
+//   - Unshifted sets the variable value
+//   - Shifted solves for the variable
+//   - XShifted recalls the variable value
+{
+    SolvingMenu(id type = ID_SolvingMenu) : menu(type) {}
+
+public:
+    OBJECT_DECL(SolvingMenu);
+    MENU_DECL(SolvingMenu);
+};
+
+COMMAND_DECLARE_INSERT(SolvingMenuStore,1);
+COMMAND_DECLARE_INSERT(SolvingMenuSolve,0);
+COMMAND_DECLARE_INSERT(SolvingMenuRecall,0);
 
 #endif // SOLVE_H

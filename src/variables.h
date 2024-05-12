@@ -106,6 +106,11 @@ struct directory : list
     //    Check if a name exists in the directory, return value ptr if it does
     // ------------------------------------------------------------------------
 
+    static bool store_here(object_p name, object_p value);
+    // ------------------------------------------------------------------------
+    //    Store in the current directory, or fail if it does not exist
+    // ------------------------------------------------------------------------
+
     object_p lookup(object_p name) const;
     // ------------------------------------------------------------------------
     //    Check if a name exists in the directory, return name ptr if it does
@@ -230,7 +235,7 @@ public:
     MENU_DECL(VariablesMenu);
 };
 
-COMMAND_DECLARE_INSERT(VariablesMenuExecute,-1);
+COMMAND_DECLARE_INSERT(VariablesMenuExecute,~0);
 COMMAND_DECLARE_INSERT(VariablesMenuRecall,0);
 COMMAND_DECLARE_INSERT(VariablesMenuStore,1);
 

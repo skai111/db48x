@@ -468,6 +468,21 @@ object_p directory::recall_all(object_p name, bool report_missing)
 }
 
 
+bool directory::store_here(object_p name, object_p value)
+// ----------------------------------------------------------------------------
+//  Store a variable in the current directory
+// ----------------------------------------------------------------------------
+{
+    directory *dir = rt.variables(0);
+    if (!dir)
+    {
+        rt.no_directory_error();
+        return false;
+    }
+    return dir->store(name, value);
+}
+
+
 size_t directory::purge(object_p name)
 // ----------------------------------------------------------------------------
 //    Purge a name (and associated value) from the directory
@@ -691,17 +706,10 @@ COMMAND_BODY(Sto)
 //   Store a global variable into current directory
 // ----------------------------------------------------------------------------
 {
-    directory *dir = rt.variables(0);
-    if (!dir)
-    {
-        rt.no_directory_error();
-        return ERROR;
-    }
-
     // Check that we have two objects in the stack
     object_p name = rt.stack(0);
     object_p value = rt.stack(1);
-    if (name && value && dir->store(name, value))
+    if (name && value && directory::store_here(name, value))
     {
         rt.drop(2);
         return OK;
@@ -735,13 +743,6 @@ static object::result store_op(object::id op)
 //   Store with a given operation
 // ----------------------------------------------------------------------------
 {
-    directory *dir = rt.variables(0);
-    if (!dir)
-    {
-        rt.no_directory_error();
-        return object::ERROR;
-    }
-
     object_g name = rt.stack(0);
     object_g value = rt.stack(1);
     if (!name || !value)
@@ -755,7 +756,7 @@ static object::result store_op(object::id op)
     if (object::result res = cmd->evaluate())
         return res;
     value = rt.pop();
-    if (value && dir->store(name, value))
+    if (value && directory::store_here(name, value))
         return object::OK;
     return object::ERROR;
 }
@@ -772,19 +773,11 @@ static object::result store_op(object::id op, object_p cstval)
 //   Store with a given operation
 // ----------------------------------------------------------------------------
 {
-    directory *dir = rt.variables(0);
-    if (!dir)
-    {
-        rt.no_directory_error();
-        return object::ERROR;
-    }
-
     object_g name = rt.stack(0);
     object_g value = cstval;
     if (!name || !value)
         return object::ERROR;
     object_g existing = directory::recall_all(name, true);
-
     if (!existing)
         return object::ERROR;
     rt.stack(0, existing);
@@ -793,7 +786,7 @@ static object::result store_op(object::id op, object_p cstval)
     if (object::result res = cmd->evaluate())
         return res;
     value = rt.top();
-    if (value && dir->store(name, value))
+    if (value && directory::store_here(name, value))
         return object::OK;
     return object::ERROR;
 }
@@ -822,13 +815,6 @@ static object::result recall_op(object::id op)
 //   Store with a given operation
 // ----------------------------------------------------------------------------
 {
-    directory *dir = rt.variables(0);
-    if (!dir)
-    {
-        rt.no_directory_error();
-        return object::ERROR;
-    }
-
     object_g name = rt.stack(0);
     if (!name)
         return object::ERROR;

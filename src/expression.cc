@@ -39,6 +39,7 @@
 #include "settings.h"
 #include "unit.h"
 #include "utf8.h"
+#include "variables.h"
 
 RECORDER(equation,      16, "Processing of equations and algebraic objects");
 RECORDER(equation_error,16, "Errors with equations");
@@ -2057,6 +2058,31 @@ GRAPH_BODY(expression)
         }
     }
     return result;
+}
+
+
+expression_p expression::current_equation()
+// ----------------------------------------------------------------------------
+//   Return content of EQ variable
+// ----------------------------------------------------------------------------
+{
+    object_p obj = directory::recall_all(static_object(ID_Equation), false);
+    if (!obj)
+    {
+        if (!rt.error())
+            rt.no_equation_error();
+        return nullptr;
+    }
+    id eqty = obj->type();
+    if (eqty != ID_expression && eqty != ID_polynomial)
+    {
+        rt.type_error();
+        return nullptr;
+    }
+    if (eqty == ID_expression)
+        obj = expression_p(obj)->as_difference_for_solve();
+
+    return expression_p(obj);
 }
 
 

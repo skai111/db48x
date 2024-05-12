@@ -1002,11 +1002,12 @@ SETTING(ErrorBeepDuration,      0, 500,         50)
 //
 // ============================================================================
 
-
 OP(AlgebraConfiguration,   "Ⓓ")        ALIAS(AlgebraConfiguration,  "CASDir")
 OP(AlgebraVariable,        "ⓧ")        ALIAS(AlgebraVariable,       "VX")
                                         ALIAS(AlgebraVariable,       "RclVX")
 OP(StoreAlgebraVariable,   "Storeⓧ")   ALIAS(StoreAlgebraVariable,  "StoVX")
+OP(StEq,                   "▶Equation") ALIAS(StEq, "StoreEquation")
+OP(RcEq,                   "Equation▶") ALIAS(RcEq, "RecallEquation")
 
 
 
@@ -1026,6 +1027,9 @@ CMD(VariablesMenuExecute)
 CMD(VariablesMenuRecall)
 CMD(VariablesMenuStore)
 
+CMD(SolvingMenuStore)
+CMD(SolvingMenuSolve)
+CMD(SolvingMenuRecall)
 
 
 
@@ -1110,6 +1114,7 @@ MENU(TextMenu)
 // Special menus
 MENU(EditMenu)
 CMD(VariablesMenu)
+CMD(SolvingMenu)
 CMD(ToolsMenu)
 CMD(Catalog)
 

@@ -111,6 +111,8 @@ struct expression : program
         return nullptr;
     }
 
+    static expression_p current_equation();
+
 
 
     // ========================================================================

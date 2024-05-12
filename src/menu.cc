@@ -1179,20 +1179,21 @@ MENU(SolverMenu,
 // ----------------------------------------------------------------------------
 //   The solver menu / application
 // ----------------------------------------------------------------------------
-     "Eq",      ID_Equation,
-     "Indep",   ID_Unimplemented,
+     "Eq▶",     ID_RcEq,
+     "ⓧ",      ID_AlgebraVariable,
      "Root",    ID_Root,
-     "MultiR",  ID_Unimplemented,
-     "PolyR",   ID_Unimplemented,
+     "Solve",   ID_SolvingMenu,
      "Num",     ID_NumericalSolverMenu,
-
-     "Diff",    ID_DifferentialSolverMenu,
      "Symb",    ID_SymbolicSolverMenu,
+
+     "▶Eq",     ID_StEq,
+     "Stoⓧ",    ID_StoreAlgebraVariable,
+     "Diff",    ID_DifferentialSolverMenu,
      "Poly",    ID_PolynomialSolverMenu,
      "Linear",  ID_LinearSolverMenu,
      "Multi",   ID_MultiSolverMenu,
-     "Finance", ID_FinanceSolverMenu,
 
+     "Finance", ID_FinanceSolverMenu,
      "Plot",    ID_PlotMenu,
      "L.R.",    ID_StatisticsMenu,
      "Eqns",    ID_EquationsMenu,

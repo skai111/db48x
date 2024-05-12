@@ -36,10 +36,12 @@
 #include "expression.h"
 #include "functions.h"
 #include "integer.h"
+#include "list.h"
 #include "recorder.h"
 #include "settings.h"
 #include "symbol.h"
 #include "tag.h"
+#include "variables.h"
 
 RECORDER(solve,         16, "Numerical solver");
 RECORDER(solve_error,   16, "Numerical solver errors");
@@ -312,4 +314,258 @@ algebraic_p solve(program_g eq, symbol_g name, object_g guess)
     else
         rt.no_solution_error();
     return lx;
+}
+
+
+
+// ============================================================================
+//
+//   Solving menu
+//
+// ============================================================================
+
+COMMAND_BODY(StEq)
+// ----------------------------------------------------------------------------
+//   Store expression in `Equation` variable
+// ----------------------------------------------------------------------------
+{
+    if (object_p obj = rt.top())
+    {
+        id objty = obj->type();
+        if (objty != ID_expression && objty != ID_polynomial)
+            rt.type_error();
+        else if (directory::store_here(static_object(ID_Equation), obj))
+            if (rt.drop())
+                return OK;
+    }
+    return ERROR;
+}
+
+
+COMMAND_BODY(RcEq)
+// ----------------------------------------------------------------------------
+//   Store expression in `Equation` variable
+// ----------------------------------------------------------------------------
+{
+    if (expression_p expr = expression::current_equation())
+        if (rt.push(expr))
+            return OK;
+    return ERROR;
+}
+
+
+MENU_BODY(SolvingMenu)
+// ----------------------------------------------------------------------------
+//   Process the MENU command for SolvingMenu
+// ----------------------------------------------------------------------------
+{
+    expression_p expr = expression::current_equation();
+    if (!expr)
+        return false;
+
+    list_g vars = expr->names();
+    if (!vars)
+        return false;
+
+    size_t nitems = vars->items();
+    items_init(mi, nitems, 3, 1);
+
+    uint skip = mi.skip;
+
+    // First row: Store variables
+    mi.plane  = 0;
+    mi.planes = 1;
+    for (auto name : *vars)
+        if (symbol_p sym = name->as<symbol>())
+            menu::items(mi, sym, menu::ID_SolvingMenuStore);
+
+    // Second row: Solve for variables
+    mi.plane  = 1;
+    mi.planes = 2;
+    mi.skip   = skip;
+    mi.index  = mi.plane * ui.NUM_SOFTKEYS;
+    for (auto name : *vars)
+        if (symbol_p sym = name->as<symbol>())
+            menu::items(mi, sym, menu::ID_SolvingMenuSolve);
+
+    // Third row: Recall variable
+    mi.plane  = 2;
+    mi.planes = 3;
+    mi.skip   = skip;
+    mi.index  = mi.plane * ui.NUM_SOFTKEYS;
+    for (auto name : *vars)
+    {
+        if (symbol_g sym = name->as<symbol>())
+        {
+            settings::SaveDisplayDigits sdd(3);
+            object_p value = directory::recall_all(sym, false);
+            if (!value)
+                value = symbol::make("?");
+            if (value)
+                sym = value->as_symbol(false);
+            menu::items(mi, sym, menu::ID_SolvingMenuRecall);
+        }
+    }
+
+    // Add markers
+    for (uint k = 0; k < ui.NUM_SOFTKEYS - (mi.pages > 1); k++)
+    {
+        ui.marker(k + 0 * ui.NUM_SOFTKEYS, L'▶', true);
+        ui.marker(k + 1 * ui.NUM_SOFTKEYS, L'?', false);
+        ui.marker(k + 2 * ui.NUM_SOFTKEYS, L'▶', false);
+    }
+    return true;
+}
+
+
+static symbol_p expression_variable(uint index)
+// ----------------------------------------------------------------------------
+//   Return the variable in EQ for a given index
+// ----------------------------------------------------------------------------
+{
+    if (expression_p expr = expression::current_equation())
+        if (list_g vars = expr->names())
+            if (object_p obj = vars->at(index))
+                if (symbol_p sym = obj->as<symbol>())
+                    return sym;
+    return nullptr;
+}
+
+
+static tag_p tagged_value(symbol_p sym, object_p value)
+// ----------------------------------------------------------------------------
+//  Tag a solver value with a symbol
+// ----------------------------------------------------------------------------
+{
+    size_t nlen = 0;
+    gcutf8 ntxt = sym->value(&nlen);
+    tag_p tagged = tag::make(ntxt, nlen, value);
+    return tagged;
+}
+
+
+static bool is_well_defined(expression_r expr, symbol_r sym)
+// ----------------------------------------------------------------------------
+//   Check if all variables but the one we solve for are defined
+// ----------------------------------------------------------------------------
+{
+    list_p vars = expr->names();
+    for (auto var : *vars)
+    {
+        if (symbol_p vsym = var->as<symbol>())
+        {
+            if (!sym->is_same_as(vsym))
+            {
+                if (!directory::recall_all(var, false))
+                {
+                    rt.some_undefined_name_error();
+                    return false;
+                }
+            }
+        }
+        else
+        {
+            rt.some_invalid_name_error();
+            return false;
+        }
+    }
+    return true;
+}
+
+
+COMMAND_BODY(SolvingMenuRecall)
+// ----------------------------------------------------------------------------
+//   Recall a variable from the SolvingMenu
+// ----------------------------------------------------------------------------
+{
+    int key = ui.evaluating;
+    if (key >= KEY_F1 && key <= KEY_F6)
+    {
+        uint index = key - KEY_F1 + 5 * ui.page();
+        if (symbol_g sym = expression_variable(index))
+            if (object_p value = directory::recall_all(sym, true))
+                if (tag_p tagged = tagged_value(sym, value))
+                    if (rt.push(tagged))
+                        return OK;
+    }
+
+    return ERROR;
+}
+
+
+INSERT_BODY(SolvingMenuRecall)
+// ----------------------------------------------------------------------------
+//   Insert the name of a variable with `Recall` after it
+// ----------------------------------------------------------------------------
+{
+    int key = ui.evaluating;
+    return ui.insert_softkey(key, " '", "' Recall ", false);
+}
+
+
+COMMAND_BODY(SolvingMenuStore)
+// ----------------------------------------------------------------------------
+//   Store a variable from the SolvingMenu
+// ----------------------------------------------------------------------------
+{
+    int key = ui.evaluating;
+    if (key >= KEY_F1 && key <= KEY_F6)
+    {
+        uint index = key - KEY_F1 + 5 * ui.page();
+        if (symbol_p sym = expression_variable(index))
+            if (object_p value = rt.pop())
+                if (directory::store_here(sym, value))
+                    if (ui.menu_refresh())
+                        return OK;
+    }
+    return ERROR;
+}
+
+
+INSERT_BODY(SolvingMenuStore)
+// ----------------------------------------------------------------------------
+//   Insert the name of a variable with `Store` after it
+// ----------------------------------------------------------------------------
+{
+    int key = ui.evaluating;
+    return ui.insert_softkey(key, " '", "' Store ", false);
+}
+
+
+COMMAND_BODY(SolvingMenuSolve)
+// ----------------------------------------------------------------------------
+//  Solve for a given variable
+// ----------------------------------------------------------------------------
+{
+    int key = ui.evaluating;
+    if (key >= KEY_F1 && key <= KEY_F6)
+    {
+        uint index = key - KEY_F1 + 5 * ui.page();
+        if (symbol_g sym = expression_variable(index))
+        {
+            object_g value = directory::recall_all(sym, false);
+            if (!value)
+                value = integer::make(0);
+            if (expression_g eq = expression::current_equation())
+                if (value && is_well_defined(eq, sym))
+                    if (algebraic_g result = solve(+eq, sym, value))
+                        if (directory::store_here(sym, result))
+                            if (tag_p tagged = tagged_value(sym, result))
+                                if (rt.push(tagged))
+                                    if (ui.menu_refresh())
+                                        return OK;
+        }
+    }
+
+    return ERROR;
+}
+
+
+INSERT_BODY(SolvingMenuSolve)
+// ----------------------------------------------------------------------------
+//   Insert the name of a variable
+// ----------------------------------------------------------------------------
+{
+    int key = ui.evaluating;
+    return ui.insert_softkey(key, " EQ '", "'  0 Root ", false);
 }
