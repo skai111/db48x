@@ -112,6 +112,7 @@ public:
     SIZE_DECL(tag);
     HELP_DECL(tag);
     RENDER_DECL(tag);
+    GRAPH_DECL(tag);
 };
 
 COMMAND_DECLARE(dtag,1);

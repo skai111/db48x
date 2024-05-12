@@ -28,6 +28,9 @@
 // ****************************************************************************
 
 #include "tag.h"
+
+#include "expression.h"
+#include "grob.h"
 #include "parser.h"
 #include "renderer.h"
 
@@ -113,6 +116,26 @@ RENDER_BODY(tag)
     obj->render(r);
 
     return r.size();
+}
+
+
+GRAPH_BODY(tag)
+// ----------------------------------------------------------------------------
+//   Render tag in graphical form
+// ----------------------------------------------------------------------------
+{
+    size_t   llen = 0;
+    utf8     ltxt = o->label_value(&llen);
+    object_p obj  = o->tagged_object();
+    grob_g   go   = obj->graph(g);
+    coord    vo   = g.voffset;
+    g.reduce_font();
+    symbol_g label = symbol::make(ltxt, llen);
+    if (!label)
+        return nullptr;
+    grob_g gl = object::do_graph(label, g);
+    gl = expression::infix(g, 0, gl, 0, ":", vo, go);
+    return gl;
 }
 
 
