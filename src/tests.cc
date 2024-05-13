@@ -6607,7 +6607,7 @@ void tests::insertion_of_variables_constants_and_units()
         .test(CLEAR, "\"NA\" CONST", ENTER)
         .expect("6.02213 67⁳²³ mol⁻¹");
     step("Programmatic equation lookup (text)")
-        .test(CLEAR, "\"PerfectGas\" LIBEQ", ENTER)
+        .test(CLEAR, "\"IdealGas\" LIBEQ", ENTER)
         .expect("'P·V=n·R·T'");
     step("Programmatic library lookup (text)")
         .test(CLEAR, "\"LibraryHelp\" XLIB", ENTER)
@@ -6616,7 +6616,7 @@ void tests::insertion_of_variables_constants_and_units()
         .test(CLEAR, "NotExistent CONST", ENTER)
         .error("Invalid or unknown constant");
     step("Programmatic equation lookup (error)")
-        .test(CLEAR, "\"ImperfectGas\" LIBEQ", ENTER)
+        .test(CLEAR, "\"StrangeGas\" LIBEQ", ENTER)
         .error("Not an equation or program");
     step("Programmatic library lookup (error)")
         .test(CLEAR, "\"Glop\" XLIB", ENTER)

@@ -57,7 +57,7 @@ static const cstring basic_equations[] =
     "Phys",     nullptr,
 
     "RelativityMassEnergy",             "'E=m*c^2'",
-    "PerfectGas",                       "'P*V=n*ⒸR*T'"
+    "IdealGas",                         "'P*V=n*ⒸR*T'"
 
 };
 //   clang-format on

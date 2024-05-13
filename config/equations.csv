@@ -1,4 +1,4 @@
 "Phys"
 
-"RelativityMassEnergy",             "'E=m*Ⓒc^2'"
-"PerfectGas",                       "'P*V=n*ⒸR*T'"
+"RelativityMassEnergy",         "'E=m*Ⓒc^2'"
+"IdealGas",                     "'P*V=n*ⒸR*T'"
