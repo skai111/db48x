@@ -161,7 +161,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        expression_operations();
+        insertion_of_variables_constants_and_units();
     }
     else
     {
@@ -6593,6 +6593,34 @@ void tests::insertion_of_variables_constants_and_units()
         .test(ENTER)
         .error("Invalid or unknown library entry")
         .test(EXIT);
+
+    step("Programmatic constant lookup (symbol)")
+        .test(CLEAR, "c CONST", ENTER)
+        .expect("299 792 458 m/s");
+    step("Programmatic equation lookup (symbol)")
+        .test(CLEAR, "RelativityMassEnergy LIBEQ", ENTER)
+        .expect("'E=m·c↑2'");
+    step("Programmatic library lookup (symbol)")
+        .test(CLEAR, "Dedicace XLIB", ENTER)
+        .expect("\"À tous ceux qui se souviennent de Maubert électronique\"");
+    step("Programmatic constant lookup (text)")
+        .test(CLEAR, "\"NA\" CONST", ENTER)
+        .expect("6.02213 67⁳²³ mol⁻¹");
+    step("Programmatic equation lookup (text)")
+        .test(CLEAR, "\"PerfectGas\" LIBEQ", ENTER)
+        .expect("'P·V=n·R·T'");
+    step("Programmatic library lookup (text)")
+        .test(CLEAR, "\"LibraryHelp\" XLIB", ENTER)
+        .expect("\"To modify the library, edit the config/library.csv file\"");
+    step("Programmatic constant lookup (error)")
+        .test(CLEAR, "NotExistent CONST", ENTER)
+        .error("Invalid or unknown constant");
+    step("Programmatic equation lookup (error)")
+        .test(CLEAR, "\"ImperfectGas\" LIBEQ", ENTER)
+        .error("Not an equation or program");
+    step("Programmatic library lookup (error)")
+        .test(CLEAR, "\"Glop\" XLIB", ENTER)
+        .error("Invalid or unknown library entry");
 
     step("Select units menu")
         .test(CLEAR, LSHIFT, KEY5, F4).image("units-menu",

@@ -251,6 +251,15 @@ HELP_BODY(ConstantValue)
 }
 
 
+COMMAND_BODY(Const)
+// ----------------------------------------------------------------------------
+//   Evaluate a library constant
+// ----------------------------------------------------------------------------
+{
+    return constant::lookup_command(constant::constants);
+}
+
+
 
 // ============================================================================
 //
@@ -871,4 +880,34 @@ constant_p constant::do_key(config_r cfg, int key)
             return do_lookup(cfg, txt, len, true);
     }
     return nullptr;
+}
+
+
+object::result constant::lookup_command(config_r cfg)
+// ----------------------------------------------------------------------------
+//   Process a command looking up in the given config
+// ----------------------------------------------------------------------------
+{
+    object_p name = rt.top();
+    id ty = name->type();
+    if (symbol_p sym = name->as_quoted<symbol>())
+    {
+        name = sym;
+        ty = name->type();
+    }
+    if (ty != ID_symbol && ty != ID_text)
+    {
+        rt.type_error();
+        return ERROR;
+    }
+
+    size_t      len    = 0;
+    utf8        txt    = text_p(name)->value(&len);
+    if (constant_p cst = constant::do_lookup(cfg, txt, len, false))
+        if (algebraic_p value = cst->do_value(cfg))
+            if (rt.top(value))
+                return OK;
+
+    cfg.error();
+    return ERROR;
 }

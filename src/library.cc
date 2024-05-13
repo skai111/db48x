@@ -265,3 +265,12 @@ HELP_BODY(XlibValue)
 {
     return XlibName::do_help(nullptr);
 }
+
+
+COMMAND_BODY(XLib)
+// ----------------------------------------------------------------------------
+//   Evaluate a library item
+// ----------------------------------------------------------------------------
+{
+    return xlib::lookup_command(xlib::library);
+}

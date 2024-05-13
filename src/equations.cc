@@ -295,3 +295,12 @@ HELP_BODY(EquationValue)
 {
     return EquationName::do_help(nullptr);
 }
+
+
+COMMAND_BODY(LibEq)
+// ----------------------------------------------------------------------------
+//   Evaluate a library equation
+// ----------------------------------------------------------------------------
+{
+    return equation::lookup_command(equation::equations);
+}

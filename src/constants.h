@@ -126,6 +126,8 @@ struct constant : algebraic
         return len == nlen && memcmp(ref, txt, len) == 0;
     }
 
+    static result lookup_command(config_r cfg);
+
 protected:
     static result     do_parsing(config_r cfg, parser &p);
     static size_t     do_rendering(config_r cfg, constant_p o, renderer &r);
@@ -178,5 +180,6 @@ public:
 
 COMMAND_DECLARE_INSERT_HELP(ConstantName,-1);
 COMMAND_DECLARE_INSERT_HELP(ConstantValue,-1);
+COMMAND_DECLARE(Const, 1);
 
 #endif // CONSTANT_H

@@ -105,5 +105,6 @@ struct library_menu : constant_menu
 
 COMMAND_DECLARE_INSERT_HELP(XlibName,-1);
 COMMAND_DECLARE_INSERT_HELP(XlibValue,-1);
+COMMAND_DECLARE(XLib, 1);
 
 #endif // LIBRARY_H
