@@ -30,6 +30,7 @@
 #include "expression.h"
 
 #include "arithmetic.h"
+#include "equations.h"
 #include "functions.h"
 #include "grob.h"
 #include "integer.h"
@@ -2074,6 +2075,16 @@ expression_p expression::current_equation()
         return nullptr;
     }
     id eqty = obj->type();
+    if (eqty == ID_equation)
+    {
+        obj = equation_p(obj)->value();
+        if (!obj)
+        {
+            rt.no_equation_error();
+            return nullptr;
+        }
+        eqty = obj->type();
+    }
     if (eqty != ID_expression && eqty != ID_polynomial)
     {
         rt.type_error();

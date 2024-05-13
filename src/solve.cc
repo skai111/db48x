@@ -332,7 +332,9 @@ COMMAND_BODY(StEq)
     if (object_p obj = rt.top())
     {
         id objty = obj->type();
-        if (objty != ID_expression && objty != ID_polynomial)
+        if (objty != ID_expression &&
+            objty != ID_polynomial &&
+            objty != ID_equation)
             rt.type_error();
         else if (directory::store_here(static_object(ID_Equation), obj))
             if (rt.drop())
