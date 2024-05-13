@@ -8415,6 +8415,7 @@ tests &tests::itest(cstring txt)
         case '\n': k = BSP;         alpha = true; xshift = true; break;
         case L'«': k = RUNSTOP;     alpha = false; shift = true; del = true; break;
         case L'»': k = RUNSTOP;     alpha = false; shift = true; bsp = true; break;
+        case L'▶': k = STO;         alpha = true;  shift = true; break;
         case L'→': k = STO;         alpha = true; xshift = true; break;
         case L'←': k = H;           alpha = true; xshift = true; break;
         case L'·': k = MUL;         alpha = true;  shift = true; break;
