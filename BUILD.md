@@ -42,12 +42,6 @@ The project has the following pre-requisites:
 
   * MacOS: `brew install freetype`
 
-* The [Intel® Decimal Floating-Point Math Library][intel], which unfortunately
-  does not appear to have any Intel-endorsed publicy available `git`
-  repository. Pre-build libraries for the DM42, as well as for Mac / Apple
-  Silicon and Linux / x86 are in this repository.
-
-[intel]: https://www.intel.com/content/www/us/en/developer/articles/tool/intel-decimal-floating-point-math-library.html
 
 
 ## Build

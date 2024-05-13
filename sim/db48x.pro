@@ -111,18 +111,13 @@ debug:DEFINES += DEBUG
 DEFINES += __packed= USE_QT
 macx:DEFINES += _WCHAR_T_DEFINED
 
-# COnfigure Intel Decimal Floating Point Library
-DEFINES += 	DECIMAL_CALL_BY_REFERENCE                       \
-		DECIMAL_GLOBAL_ROUNDING                         \
-		DECIMAL_GLOBAL_ROUNDING_ACCESS_FUNCTIONS        \
-		DECIMAL_GLOBAL_EXCEPTION_FLAGS                  \
-		DECIMAL_GLOBAL_EXCEPTION_FLAGS_ACCESS_FUNCTIONS \
-                HELPFILE_NAME=\\\"help/db48x.md\\\"
+# Configure help file
+DEFINES += 	HELPFILE_NAME=\\\"help/db48x.md\\\"
 
 color:DEFINES += CONFIG_COLOR
 
 # Additional external library HIDAPI linked statically into the code
-INCLUDEPATH += ../src/dm42 ../src/dmcp ../src ../inc
+INCLUDEPATH += ../src/dm42 ../src/dmcp ../src
 
 LIBS += gcc111libbid.a
 

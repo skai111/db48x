@@ -92,8 +92,7 @@ sim: sim/$(TARGET).mak
 sim/$(TARGET).mak: sim/$(TARGET).pro Makefile $(VERSION_H)
 	cd sim; qmake $(<F) -o $(@F) CONFIG+=$(QMAKE_$(OPT)) $(COLOR:%=CONFIG+=color)
 
-sim:	sim/gcc111libbid.a	\
-	recorder/config.h	\
+sim:	recorder/config.h	\
 	help/$(TARGET).md	\
 	fonts/EditorFont.cc	\
 	fonts/StackFont.cc	\
@@ -132,8 +131,6 @@ QMAKE_fastest=release
 TTF2FONT=$(TOOLS)/ttf2font/ttf2font
 $(TTF2FONT): $(TTF2FONT).cpp $(TOOLS)/ttf2font/Makefile src/ids.tbl
 	cd $(TOOLS)/ttf2font; $(MAKE) TARGET=
-sim/gcc111libbid.a: sim/gcc111libbid-$(shell uname)-$(shell uname -m).a
-	cp $< $@
 
 dist: all
 	cp $(BUILD)/$(TARGET)_qspi.bin  .
@@ -212,7 +209,7 @@ ASM_SOURCES = $(SDK)/startup_pgm.s
 #######################################
 
 # Includes
-C_INCLUDES += -Isrc/$(VARIANT) -Isrc/$(PLATFORM) -Isrc -Iinc
+C_INCLUDES += -Isrc/$(VARIANT) -Isrc/$(PLATFORM) -Isrc
 
 # C sources
 C_SOURCES +=
@@ -282,13 +279,8 @@ CXX_SOURCES +=				\
 # Additional defines
 #C_DEFS += -DXXX
 
-# Intel library related defines
+# Defines for the code
 DEFINES += \
-	DECIMAL_CALL_BY_REFERENCE \
-	DECIMAL_GLOBAL_ROUNDING \
-	DECIMAL_GLOBAL_ROUNDING_ACCESS_FUNCTIONS \
-	DECIMAL_GLOBAL_EXCEPTION_FLAGS \
-	DECIMAL_GLOBAL_EXCEPTION_FLAGS_ACCESS_FUNCTIONS \
 	$(DEFINES_$(OPT)) \
 	$(DEFINES_$(VARIANT)) \
 	HELPFILE_NAME=\"/help/$(TARGET).md\"
@@ -305,9 +297,6 @@ DEFINES_dm32 = 	DM32 				\
 DEFINES_dm42 = DM42
 
 C_DEFS += $(DEFINES:%=-D%)
-
-# Libraries
-LIBS += lib/gcc111libbid_hard.a
 
 # Recorder and dependencies
 recorder/config.h: recorder/recorder.h recorder/Makefile
