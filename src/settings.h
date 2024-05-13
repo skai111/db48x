@@ -233,12 +233,14 @@ public:
         SaveProgramLastArguments saveProgramLastArg;
         SaveSaveStack            saveLastStack;
         SaveSetAngleUnits        saveAngleUnits; // For sin, cos, tan
+        SaveNumericalResults     saveNumericalResults;
 
         PrepareForProgramEvaluation()
             : saveLastArgs(false),
               saveProgramLastArg(false),
               saveLastStack(false),
-              saveAngleUnits(false)
+              saveAngleUnits(false),
+              saveNumericalResults(true)
         {}
     };
 };
