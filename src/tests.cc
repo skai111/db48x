@@ -6623,8 +6623,7 @@ void tests::insertion_of_variables_constants_and_units()
         .error("Invalid or unknown library entry");
 
     step("Select units menu")
-        .test(CLEAR, LSHIFT, KEY5, F4).image("units-menu",
-                                             0, 240-3*22, 400, 3*22);
+        .test(CLEAR, LSHIFT, KEY5, F4).image_menus("units-menu", 3);
     step("Select meter")
         .test(CLEAR, KEY1, F1).expect("1 m");
     step("Convert to yards")
@@ -8881,7 +8880,7 @@ tests &tests::image_noheader(cstring name, uint ignoremenus, uint extrawait)
 // ----------------------------------------------------------------------------
 {
     const int header_h = 23;
-    const int menu_h = 22 * ignoremenus;
+    const int menu_h = 25 * ignoremenus;
     return image(name, 0, header_h, LCD_W, LCD_H - header_h - menu_h, extrawait);
 }
 
@@ -8891,7 +8890,7 @@ tests &tests::image_menus(cstring name, uint menus, uint extrawait)
 //   Image, skipping the header area
 // ----------------------------------------------------------------------------
 {
-    const int menu_h = 22 * menus;
+    const int menu_h = 25 * menus;
     return image(name, 0, LCD_H-menu_h, LCD_W, menu_h, extrawait);
 }
 

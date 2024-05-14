@@ -1303,12 +1303,13 @@ bool user_interface::draw_menus()
     lastt = time;
     dirtyMenu = false;
 
-    font_p font  = MenuFont;
-    int    mh    = font->height() + 2;
-    int    mw    = (LCD_W - 10) / 6;
-    int    sp    = (LCD_W - 5) - 6 * mw;
-    rect   clip  = Screen.clip();
-    bool   help  = showing_help();
+    font_p font   = MenuFont;
+    bool   square = Settings.SquareMenus();
+    int    mh     = font->height() + 5 - square;
+    int    mw     = (LCD_W - 10) / 6;
+    int    sp     = (LCD_W - 5) - 6 * mw;
+    rect   clip   = Screen.clip();
+    bool   help   = showing_help();
 
     if (period > time - last)
         period = time - last;
@@ -1320,9 +1321,8 @@ bool user_interface::draw_menus()
     id   menuStyle     = Settings.MenuAppearance();
     bool single        = menuStyle == object::ID_SingleRowMenus;
     bool flat          = menuStyle == object::ID_FlatMenus;
-    bool square        = Settings.SquareMenus();
     int  visiblePlanes = single ? 1 : planes;
-    uint newMenuHeight = 1 + visiblePlanes * mh;
+    uint newMenuHeight = visiblePlanes * mh;
     if (newMenuHeight != menuHeight)
     {
         menuHeight = newMenuHeight;
@@ -1373,7 +1373,7 @@ bool user_interface::draw_menus()
             if (plane != shplane)
                 continue;
 
-        int my = LCD_H - (plane * !single + 1) * mh;
+        int my = LCD_H - (plane * !single + 1) * mh + square;
         if (force || dirtyMenu)
         {
             pattern mbg = Settings.StackBackground();
@@ -1430,6 +1430,7 @@ bool user_interface::draw_menus()
                 mrect.inset(2, 0);
                 if (alt)
                     Screen.fill(mrect, fg);
+                mrect.inset(0, -1);
             }
 
 
@@ -1500,7 +1501,7 @@ bool user_interface::draw_menus()
                 {
                     x = (mrect.x1 + mrect.x2 - tw) / 2;
                 }
-                coord ty = mrect.y1 - (3 - square);
+                coord ty = mrect.y1 - 1;
                 x = Screen.text(x, ty, label, len, font, color);
                 if (marker)
                 {
