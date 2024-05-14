@@ -267,6 +267,9 @@ bool sparse_font::glyph(unicode codepoint, glyph_info &g) const
     byte_p            p      = payload();
     size_t UNUSED     size   = leb128<size_t>(p);
     fuint             height = leb128<fuint>(p);
+    bool              fixed  = (codepoint <= '9' && codepoint > '0' &&
+                                Settings.FixedWidthDigits());
+    fuint             digitWidth = 0;
 
     // Check if cached
     font_cache::data *data = FontCache.lookup(this, codepoint);
@@ -297,8 +300,12 @@ bool sparse_font::glyph(unicode codepoint, glyph_info &g) const
             fuint w = leb128<fuint>(p);
             fuint h = leb128<fuint>(p);
             fuint a = leb128<fuint>(p);
+            if (fixed && cp >= '1' && cp <= '9')
+                a = digitWidth;
             if (cp == codepoint)
                 data = FontCache.insert(this, codepoint, p, x, y, w, h, a);
+            else if (fixed && cp == '0')
+                digitWidth = a;
 
             size_t sparseBitmapBits = w * h;
             size_t sparseBitmapBytes = (sparseBitmapBits + 7) / 8;
@@ -355,6 +362,9 @@ bool dense_font::glyph(unicode codepoint, glyph_info &g) const
     fuint             height     = leb128<fuint>(p);
     fuint             width      = leb128<fuint>(p);
     byte_p            bitmap     = p;
+    bool              fixed  = (codepoint <= '9' && codepoint > '0' &&
+                                Settings.FixedWidthDigits());
+    fuint             digitWidth = 0;
 
     // Check if cached
     font_cache::data *data = FontCache.lookup(this, codepoint);
@@ -379,10 +389,13 @@ bool dense_font::glyph(unicode codepoint, glyph_info &g) const
         fuint lastCP = firstCP + numCPs;
         for (fuint cp = firstCP; cp < lastCP; cp++)
         {
-            fuint cw = leb128<fuint>(p);
+            fuint cw  = leb128<fuint>(p);
+            fuint adv = fixed && cp >= '1' && cp <= '9' ? digitWidth : cw;
             if (cp == codepoint)
                 data = FontCache.insert(this, cp,
-                                        bitmap, x, 0, cw, height, cw);
+                                        bitmap, x, 0, cw, height, adv);
+            else if (fixed && cp == '0')
+                digitWidth = cw;
             x += cw;
         }
     }
