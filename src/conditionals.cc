@@ -580,15 +580,6 @@ EVAL_BODY(case_skip_conditional)
 }
 
 
-PARSE_BODY(CaseThen)
-// ----------------------------------------------------------------------------
-//   Leverage the conditional loop parsing to process a case statement
-// ----------------------------------------------------------------------------
-{
-    return SKIP;
-}
-
-
 RENDER_BODY(CaseThen)
 // ----------------------------------------------------------------------------
 //   Render case statement
@@ -640,15 +631,6 @@ EVAL_BODY(case_then_conditional)
 {
     return loop::evaluate_condition(ID_case_then_conditional,
                                     &runtime::run_select_case);
-}
-
-
-PARSE_BODY(CaseWhen)
-// ----------------------------------------------------------------------------
-//   Leverage the conditional loop parsing to process a case statement
-// ----------------------------------------------------------------------------
-{
-    return SKIP;
 }
 
 

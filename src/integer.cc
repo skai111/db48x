@@ -432,10 +432,11 @@ PARSE_BODY(integer)
                     // If we are at the end, check if there is a fraction
                     if (is_dms == 3)
                     {
+                        size_t hasfrac = false;
                         s = gs;
                         last = p.source + p.length;
-                        bool hasfrac = false;
-                        for (utf8 p = s; p < last; p++)
+                        utf8   p;
+                        for (p = s; p < last; p++)
                         {
                             if (*p == '/')
                                 hasfrac = true;
@@ -444,7 +445,7 @@ PARSE_BODY(integer)
                         }
                         if (hasfrac)
                         {
-                            size_t sz = last - s;
+                            size_t   sz   = p - s;
                             object_p frac = object::parse(s, sz);
                             if (!frac || !frac->is_fraction())
                             {
@@ -456,6 +457,14 @@ PARSE_BODY(integer)
                             existing = existing + current * scale;
                             gs += sz;
                         }
+                        else if (p > s)
+                        {
+                            // Something like 1°2'3"4_dms is not valid
+                            if (!rt.error())
+                                rt.syntax_error().source(+gs);
+                            return ERROR;
+                        }
+
                         is_dms = 0;
                         is_fraction = 0;
                         number = +existing;

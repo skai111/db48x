@@ -38,6 +38,7 @@
 #include "runtime.h"
 #include "tag.h"
 #include "unit.h"
+#include "utf8.h"
 
 
 // ============================================================================
@@ -311,9 +312,16 @@ rectangular_g complex::as_rectangular() const
 }
 
 
-PARSE_BODY(complex)
+
+// ============================================================================
+//
+//   Specific code for rectangular form
+//
+// ============================================================================
+
+PARSE_BODY(rectangular)
 // ----------------------------------------------------------------------------
-//   Parse the various forms of complex number
+//   Parse the rectangular forms of complex number
 // ----------------------------------------------------------------------------
 //   We accept the following formats:
 //   a. (1;3)           Classic RPL
@@ -325,6 +333,7 @@ PARSE_BODY(complex)
 //   g. 1-3ⅈ
 //   h. 1∡30            ∡ as a separator
 //   i. ⅈ               Imaginary unit by itself
+//   j. 3.5ⅈ
 //   u. 1_km            _ as a separator for unit objects
 //
 //   Cases a-g generate a rectangular form, case i generates a polar form
@@ -333,302 +342,122 @@ PARSE_BODY(complex)
 //   In case (a), we do not accept (1,3) which classic RPL would accept,
 //   because in DB48X 1,000.000 is a valid real number with thousands separator
 {
-    gcutf8      src    = p.source;
-    size_t      max    = p.length;
-    id          type   = ID_object;
+    // Check if we have a real part
+    algebraic_g re = algebraic_p(+p.out);
+    if (re && re->is_complex())
+        return ERROR;
 
-    // Find the end of the possible complex number and check parentheses
-    utf8        first  = src;
-    utf8        last   = first;
-    utf8        ybeg   = nullptr;
-    size_t      xlen   = 0;
-    size_t      ylen   = 0;
-    uint        paren  = false;
-    bool        signok = false;
-    bool        ineq   = false;
-    char        sign   = 0;
-    unicode     angle  = 0;
-
-    while (size_t(last - first) < max)
-    {
-        unicode cp = utf8_codepoint(last);
-
-        // Check if we have an opening parenthese
-        if (last == first && cp == '(')
-        {
-            paren = true;
-            first++;
-        }
-
-        // Check if found a '+' or '-' (cases d-g)
-        else if (signok && (cp == '+' || cp == '-'))
-        {
-            if (sign)
-            {
-                // Cannot have two signs
-                return WARN;
-            }
-            sign = cp;
-            ybeg = last + 1;
-            if (type != ID_polar)
-                xlen = last - first;
-        }
-
-        // Check if we have equations in our complex
-        else if (cp == '\'')
-        {
-            if (p.precedence)
-                break;
-            ineq = !ineq;
-        }
-        else if (ineq)
-        {
-            // Skip the content of the equations
-        }
-
-        // Check if we found the ⅈ sign
-        else if (cp == I_MARK)
-        {
-            // Can't have two complex signs
-            if (type != ID_object)
-            {
-                rt.syntax_error().source(last);
-                return WARN;
-            }
-            type = ID_rectangular;
-
-            // Case of ⅈ as a separator (case c)
-            if (!sign)
-            {
-                ybeg = last + utf8_size(cp);
-                xlen = last - first;
-            }
-            // Case of prefix ⅈ (case d or e)
-            else if (last == ybeg)
-            {
-                ybeg = last + utf8_size(cp);
-            }
-            // Case of postfix ⅈ (case f or g)
-            else
-            {
-                ylen = last - ybeg;
-            }
-        }
-
-        // Check if we found the ∡ sign
-        else if (cp == ANGLE_MARK)
-        {
-            // Can't have two complex signs, or have that with a sign
-            if (type != ID_object || sign)
-            {
-                rt.syntax_error().source(last);
-                return WARN;
-            }
-            type = ID_polar;
-
-            // Case of ∡ as a separator (case h)
-            ybeg = last + utf8_size(cp);
-            xlen = last - first;
-        }
-
-        // Check if we found the _ sign for units
-        else if (cp == '_' || cp == settings::SPACE_UNIT)
-        {
-            // Can't have two complex signs, or have that with a sign
-            if (type != ID_object || sign)
-            {
-                rt.syntax_error().source(last);
-                return WARN;
-            }
-            type = ID_unit;
-
-            // Case of ∡ as a separator (case h)
-            ybeg = last + utf8_size(cp);
-            xlen = last - first;
-        }
-
-        // Check parentheses inside units
-        else if (type == ID_unit && cp == '(')
-        {
-            paren++;
-        }
-        else if (type == ID_unit && paren && cp == ')')
-        {
-            paren--;
-        }
-
-        // Check if we found a space or ';' inside parentheses
-        else if (paren && (cp == ' ' || cp == ';'))
-        {
-            // Can't have two complex signs
-            if (type != ID_object)
-            {
-                rt.syntax_error().source(last);
-                return WARN;
-            }
-            type = ID_rectangular;
-            ybeg = last + 1;
-            xlen = last - first;
-        }
-
-        // Check if we found characters that we don't expect in a complex
-        else if (cp == '"' || cp == '{' || cp == '[' || cp == L'«' || cp == ':')
-        {
-            return SKIP;
-        }
-
-        // Check if we have two parentheses
-        else if (paren && cp == '(')
-        {
-            rt.syntax_error().source(last);
-            return WARN;
-        }
-
-        // Check if we found the end of the complex number
-        else if (cp == ' ' || cp == '\n' || cp == '\t' ||
-                 cp == ')' || cp == '}'  || cp == ']'  || cp == L'»' ||
-                 cp == '\'')
-        {
-            break;
-        }
-
-        // Check if we found an angle marker
-        else if (cp == Settings.DEGREES_SYMBOL ||
-                 cp == Settings.RADIANS_SYMBOL ||
-                 cp == Settings.GRAD_SYMBOL    ||
-                 cp == Settings.PI_RADIANS_SYMBOL)
-        {
-            // If parsing 1°_hms, need to accept degrees but not as angle marker
-            bool deg_alone = (cp == Settings.DEGREES_SYMBOL &&
-                              ((last != first && type == ID_object) ||
-                               (last == ybeg && type == ID_unit)));
-
-            // Just parsing π should be allowed
-            if (!deg_alone)
-            {
-                if (last == first || type == ID_object)
-                    return SKIP;
-
-                if (angle || type != ID_polar)
-                {
-                    rt.syntax_error().source(last);
-                    return WARN;
-                }
-                angle = cp;
-                ylen = last - ybeg;
-            }
-        }
-
-        // We can have a sign except after exponent markers
-        signok = cp != 'e' && cp != 'E' && cp != L'⁳';
-
-        // Loop on next characters
-        last += utf8_size(cp);
-    }
-
-    // If we did not find the necessary structure, just skip
-    if (type == ID_object || (!xlen && type != ID_rectangular) || !ybeg)
+    size_t max = p.length;
+    if (!max)
         return SKIP;
 
-    // Check if we need to compute the length of y
-    if (!ylen)
+    // First character must be compatible with a rectangular complex value
+    size_t  offs = 0;
+    unicode cp  = utf8_codepoint(p.source + offs);
+    bool    neg = false;
+
+    // Cases 'a' and 'b'
+    if (!re && cp == '(')
     {
-        ylen = last - ybeg;
-        if (!ylen && type != ID_rectangular)
-        {
-            rt.syntax_error().source(utf8(ybeg));
+        offs++;
+
+        // Parse the real part
+        size_t   resz  = max - offs;
+        object_p reobj = parse(p.source + offs, resz);
+        if (!reobj)
             return ERROR;
-        }
-    }
+        if (!reobj->is_algebraic())
+            return SKIP;
+        re = algebraic_p(reobj);
+        offs += resz;
 
-    // If we just have the imaginary unit, e.g. `3i`, `i3`, or just `i`.
-    if (type == ID_rectangular && (!xlen || !ylen))
-    {
-        gcutf8 ysrc = ybeg;
-        algebraic_g x = xlen
-            ? algebraic_p(object::parse(first, xlen))
-            : integer::make(0);
-        algebraic_g y = ylen
-            ? algebraic_p(object::parse(ysrc, ylen))
-            : integer::make(1);
-        if (xlen && !ylen)
+        // Skip ';' if it's there. Also accept pure whitespace (case b)
+        offs += utf8_skip_whitespace(p.source + offs, max - offs);
+        cp = utf8_codepoint(p.source + offs);
+        if (cp == ';')
         {
-            // Case of `3i`
-            y = x;
-            x = integer::make(0);
+            offs++;
+            offs += utf8_skip_whitespace(p.source + offs, max - offs);
         }
-        rectangular_g result = rectangular::make(x, y);
-        p.out = +result;
-        p.end = last - first + 2*paren;
-        return OK;
-    }
 
-    // Compute size that we parsed
-    size_t parsed = last - first + 2*paren;
-
-    // Parse the first object
-    gcutf8 ysrc = ybeg;
-    size_t xsz = xlen;
-    algebraic_g x = algebraic_p(object::parse(first, xlen));
-    if (!x)
-        return ERROR;
-    if (xlen != xsz)
-    {
-        rt.syntax_error().source(utf8(src) + xlen);
-        return ERROR;
-    }
-
-    // Parse the second object
-    size_t ysz = ylen;
-    algebraic_g y   = type == ID_unit ? unit::parse_uexpr(ysrc, ylen)
-                                      : algebraic_p(object::parse(ysrc, ylen));
-    if (!y)
-        return ERROR;
-    if (ylen != ysz)
-    {
-        rt.syntax_error().source(utf8(ysrc) + ylen);
-        return ERROR;
-    }
-    if (sign == '-')
-    {
-        y = neg::run(y);
-        if (!y)
+        // Parse the imaginary part
+        size_t imsz = max - offs;
+        object_p imobj = parse(p.source + offs, imsz);
+        if (!imobj)
             return ERROR;
+        if (!imobj->is_algebraic())
+            return SKIP;
+        offs += imsz;
+
+        // Check that we end up on a closing parenthese
+        offs += utf8_skip_whitespace(p.source + offs, max - offs);
+        cp = utf8_codepoint(p.source + offs);
+        if (cp != ')')
+            return SKIP;
+
+        algebraic_g im = algebraic_p(imobj);
+        p.out = rectangular::make(re, im);
+        p.end = offs;
+        return p.out ? OK : ERROR;
     }
 
-    // Select forced angle mode if necessary
-    angle_unit unit = Settings.AngleMode();
-    switch(angle)
+    // Cases c, d, e or f
+    bool hadsign = re && (cp == '+' || cp == '-');
+    if (hadsign)
     {
-    case Settings.DEGREES_SYMBOL:
-        unit = ID_Deg;
-        break;
-    case Settings.RADIANS_SYMBOL:
-        unit = ID_Rad;
-        break;
-    case Settings.GRAD_SYMBOL:
-        unit = ID_Grad;
-        break;
-    case Settings.PI_RADIANS_SYMBOL:
-        unit = ID_PiRadians;
-        break;
+        neg = cp == '-';
+        if (max <= 1)
+            return SKIP;
+        offs = utf8_next(p.source, offs, max);
+        cp = utf8_codepoint(p.source + offs);
     }
 
-    // Build the resulting complex
-    complex_g result = complex::make(type, x, y, unit);
-    p.out = complex_p(result);
-    p.end = parsed;
+    bool imark = cp == I_MARK;
+    if (imark)
+    {
+        offs = utf8_next(p.source, offs, max);
+        cp = utf8_codepoint(p.source + offs);
+    }
+    bool     sp    = utf8_whitespace(cp);
+    size_t   imsz  = max - offs;
+    object_p imobj = sp ? nullptr : parse(p.source + offs, imsz, PARENTHESES);
+    if (!imobj)
+    {
+        rt.clear_error();
+        if (!imark)
+            return SKIP;
+        // Case i or 3+i: We only got the imaginary mark
+        algebraic_g im = re ? +re : algebraic_p(integer::make(neg ? -1 : 1));
+        re = integer::make(0);
+        p.out = rectangular::make(re, im);
+        p.end = offs;
+        return p.out ? OK : ERROR;
+    }
+    algebraic_g im = imobj->as_algebraic();
+    if (!im)
+        return SKIP;            // Case of 3+"Hello"
 
-    return OK;
+    offs += imsz;
+    if (!imark)
+    {
+        // Check case f and g
+        cp = utf8_codepoint(p.source + offs);
+        if (cp != I_MARK)
+            return SKIP;        // Case of something like 3+3
+        offs = utf8_next(p.source, offs, max);
+    }
+
+    // Check cases like `i3` or `3i`
+    if (!re)
+        re = integer::make(0);
+    if (neg)
+        im = neg::run(im);
+
+    p.out = rectangular::make(re, im);
+    p.end = offs;
+    return p.out ? OK : ERROR;
 }
 
-
-
-// ============================================================================
-//
-//   Specific code for rectangular form
-//
-// ============================================================================
 
 algebraic_g rectangular::mod() const
 // ----------------------------------------------------------------------------
@@ -739,7 +568,78 @@ RENDER_BODY(rectangular)
 //   common angles, like 1/4π, etc.
 //   When the argument is symbolic, it is not transformed. The assumption is
 //   that it represents an angle, irrespective of the angular unit.
+
+PARSE_BODY(polar)
+// ----------------------------------------------------------------------------
+//   Parsing
+// ----------------------------------------------------------------------------
+//   We accept the following formats:
+//   a. (1;3)           Classic RPL
+//   b. (1 3)           Classic RPL
+//   c. 1ⅈ3             ⅈ as a separator
+//   d. 1+ⅈ3            ⅈ as a prefix
+//   e. 1-ⅈ3
+//   f. 1+3ⅈ            ⅈ as a postfix
+//   g. 1-3ⅈ
+//   h. 1∡30            ∡ as a separator
+//   i. ⅈ               Imaginary unit by itself
+//   j. ∡30             ∡ to indicate unit complex number
+//   u. 1_km            _ as a separator for unit objects
 //
+//   Cases a-g generate a rectangular form, case i generates a polar form
+//   Cases c-h can be surrounded by parentheses as well
+//
+//   In case (a), we do not accept (1,3) which classic RPL would accept,
+//   because in DB48X 1,000.000 is a valid real number with thousands separator
+{
+    // Check if we have a real part
+    algebraic_g mod = algebraic_p(+p.out);
+    if (mod && mod->is_complex())
+        return ERROR;
+
+    size_t max = p.length;
+    if (!max)
+        return SKIP;
+
+    // First character must be compatible with a rectangular complex value
+    size_t  offs  = 0;
+    unicode cp    = utf8_codepoint(p.source + offs);
+    bool    amark = cp == ANGLE_MARK;
+    if (!amark)
+        return SKIP;
+    offs = utf8_next(p.source, offs, max);
+    size_t   imsz  = max - offs;
+    object_p imobj = parse(p.source + offs, imsz);
+    if (!imobj)
+        return ERROR;           // Case of ∡ by itself
+    algebraic_g im = imobj->as_algebraic();
+    if (!im)
+        return SKIP;            // Case of 3∡"Hello"
+    offs += imsz;
+
+    // Check cases like `∡3`, which is interpreted as 1∡3
+    if (!mod)
+        mod = integer::make(1);
+
+    angle_unit unit = Settings.AngleMode();
+    bool has_unit = true;
+    cp = offs < max ? utf8_codepoint(p.source + offs) : 0;
+    switch(cp)
+    {
+    case Settings.DEGREES_SYMBOL:       unit = ID_Deg;          break;
+    case Settings.RADIANS_SYMBOL:       unit = ID_Rad;          break;
+    case Settings.GRAD_SYMBOL:          unit = ID_Grad;         break;
+    case Settings.PI_RADIANS_SYMBOL:    unit = ID_PiRadians;    break;
+    default:                            has_unit = false;       break;
+    }
+    if (has_unit)
+        offs = utf8_next(p.source, offs, max);
+
+    p.out = polar::make(mod, im, unit);
+    p.end = offs;
+    return p.out ? OK : ERROR;
+}
+
 
 algebraic_g polar::re() const
 // ----------------------------------------------------------------------------
@@ -835,16 +735,6 @@ algebraic_g polar::arg(angle_unit unit) const
     algebraic_g a = y();
     a = convert_angle(a, object::ID_PiRadians, unit);
     return a;
-}
-
-
-PARSE_BODY(polar)
-// ----------------------------------------------------------------------------
-//   Parse a complex number in polar form
-// ----------------------------------------------------------------------------
-{
-    // This is really handled in the parser for 'rectangular'
-    return SKIP;
 }
 
 

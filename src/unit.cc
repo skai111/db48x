@@ -52,17 +52,52 @@ PARSE_BODY(unit)
 //    Try to parse this as an unit
 // ----------------------------------------------------------------------------
 {
-    // Actual work is done in the complex parser
-    return SKIP;
+    // Check if we have a real part
+    algebraic_g uval = algebraic_p(+p.out);
+    if (!uval)
+        return ERROR;
+
+    size_t max = p.length;
+    if (!max)
+        return SKIP;
+
+    // First character must be compatible with a rectangular complex value
+    size_t  offs  = 0;
+    unicode cp    = utf8_codepoint(p.source + offs);
+    bool    umark = cp == '_' || cp == settings::SPACE_UNIT;
+    if (!umark)
+        return SKIP;
+    offs = utf8_next(p.source, offs, max);
+    size_t   usz  = max - offs;
+    object_p uobj = parse_uexpr(p.source + offs, usz);
+    if (!uobj)
+        return ERROR;
+    algebraic_g uexpr = uobj->as_algebraic();
+    if (!uexpr)
+        return SKIP;
+    offs += usz;
+
+    p.out = unit::simple(uval, uexpr);
+    p.end = offs;
+    return p.out ? OK : ERROR;
 }
 
 
-algebraic_p unit::parse_uexpr(gcutf8 source, size_t len)
+algebraic_p unit::parse_uexpr(gcutf8 source, size_t &len)
 // ----------------------------------------------------------------------------
 //  Parse a uexpr as an expression without quotes
 // ----------------------------------------------------------------------------
 {
     save<bool> save(unit::mode, true);
+    for (size_t offs = 0; offs < len; offs = utf8_next(source, offs))
+    {
+        unicode cp = utf8_codepoint(+source + offs);
+        if (cp != '(' && cp != ')' && is_separator(cp))
+        {
+            len = offs;
+            break;
+        }
+    }
     parser p(source, len, MULTIPLICATIVE);
     object::result result = list::list_parse(ID_expression, p, 0, 0);
     if (result == object::OK)
@@ -1042,7 +1077,8 @@ unit_p unit::cycle() const
                 renderer r;
                 r.put(nprefix);
                 r.put(outxt + olen, oulen - olen);
-                algebraic_g nuexpr = parse_uexpr(r.text(), r.size());
+                oulen = r.size();
+                algebraic_g nuexpr = parse_uexpr(r.text(), oulen);
                 unit_g nunit = unit::make(integer::make(1), nuexpr);
                 if (nunit->convert(u))
                 {
@@ -1259,49 +1295,6 @@ symbol_g unit_file::next(bool menu)
 //   Build a units menu
 //
 // ============================================================================
-
-#if 0
-RENDER_BODY(unit_menu)
-// ----------------------------------------------------------------------------
-//   Render a unit menu name
-// ----------------------------------------------------------------------------
-{
-    id     type = o->type();
-    size_t len  = 0;
-    utf8   txt  = name(type, len);
-    r.put(txt, len);
-    r.put("UnitsMenu");
-    return r.size();
-}
-
-
-PARSE_BODY(unit_menu)
-// ----------------------------------------------------------------------------
-//   Parse a unit menu name
-// ----------------------------------------------------------------------------
-{
-    id      type   = p.candidate;
-    cstring source = cstring(utf8(p.source));
-    size_t  len    = 0;
-    size_t  ulen   = sizeof("UnitsMenu") - 1;
-    utf8    txt    = name(type, len);
-    size_t  maxlen = p.length;
-
-    if (len + ulen <= maxlen)
-    {
-        if (strncasecmp(source, cstring(txt), len) == 0 &&
-            strncasecmp(source + len, "UnitsMenu", ulen) == 0)
-        {
-            p.end = len + ulen;
-            p.out = rt.make<command>(type);
-            return OK;
-        }
-    }
-
-    return SKIP;
-}
-#endif // 0
-
 
 utf8 unit_menu::name(id type, size_t &len)
 // ----------------------------------------------------------------------------

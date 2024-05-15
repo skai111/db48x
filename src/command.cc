@@ -65,11 +65,6 @@ PARSE_BODY(command)
 //    Try to parse this as a command, using either short or long name
 // ----------------------------------------------------------------------------
 {
-    // We scan all the commands in one loop under 'Drop'. Skip all other
-    id i = p.candidate;
-    if (i != ID_Drop)
-        return SKIP;
-
     bool    eq     = p.precedence;
     id      type   = id(0);
     id      found  = id(0);
@@ -113,8 +108,8 @@ PARSE_BODY(command)
     }
 
     record(command,
-           "Parsing [%s] with id %u %+s (%+s), found %u len %u",
-           ref, i, name(i), fancy(i), found, len);
+           "Parsing [%s] found %u %+s %+s len %u",
+           ref, found, name(found), fancy(found), len);
 
     if (!found)
         return SKIP;

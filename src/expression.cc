@@ -2109,43 +2109,36 @@ PARSE_BODY(funcall)
 //    Parse a function call within an expression
 // ----------------------------------------------------------------------------
 {
-    // If not inside an expression, we can't have a function call
-    if (!p.precedence)
+    // If not inside an expression or no callee, we can't have a function call
+    if (!p.precedence || !p.out)
         return SKIP;
 
-    // We need to have a name followed by parentheses and comma-separated args
-    utf8    source = p.source;
-    size_t  max    = p.length;
-    size_t  parsed = 0;
-
-    // First character must be alphabetic
-    unicode cp = utf8_codepoint(source);
-    if (!is_valid_as_name_initial(cp))
+    // We need to have a valid callee as a function call
+    // Note that the list of valid callees is larger than for RPL,
+    // since we also accept arrays, lists and expressions
+    id nty = p.out->type();
+    if (nty != ID_symbol && nty != ID_local &&
+        nty != ID_expression && nty != ID_funcall &&
+        nty != ID_list && nty != ID_array)
         return SKIP;
-    parsed = utf8_next(source, parsed, max);
-
-    // Other characters must be alphabetic
-    while (parsed < max && is_valid_in_name(source + parsed))
-        parsed = utf8_next(source, parsed, max);
-    size_t namelen = parsed;
 
     // Skip whitespace
-    while (parsed < max && utf8_whitespace(utf8_codepoint(source + parsed)))
-        parsed = utf8_next(source, parsed, max);
+    utf8    source = p.source;
+    size_t  max    = p.length;
+    size_t  parsed = utf8_skip_whitespace(source, max);
 
     // Skip if this is not a function call
     if (parsed >= max || utf8_codepoint(source + parsed) != '(')
         return SKIP;
 
-    // Record the name
-    symbol_g name = rt.make<symbol>(ID_symbol, source, namelen);
-    source = p.source;          // In case of GC
+    // Record the callee
+    object_g callee = p.out;
 
     // Skip the opening parenthese
     parsed = utf8_next(source, parsed, max);
 
     scribble scr;
-    cp = utf8_codepoint(source + parsed);
+    unicode  cp = utf8_codepoint(source + parsed);
     while (parsed < max && cp != ')')
     {
         parser  child(p, source + parsed, LOWEST);
@@ -2183,12 +2176,11 @@ PARSE_BODY(funcall)
     }
 
     // Copy the name last
-    size_t namesize = name->size();
-    byte *namecopy = rt.allocate(namesize);
-    if (!namecopy)
+    size_t calleesize = callee->size();
+    byte *calleecopy = rt.allocate(calleesize);
+    if (!calleecopy)
         return ERROR;
-    memmove(namecopy, (byte *) name, namesize);
-
+    memmove(calleecopy, (byte *) callee, calleesize);
 
     // Create the function call object
     gcbytes scratch = scr.scratch();

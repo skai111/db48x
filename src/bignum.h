@@ -194,7 +194,6 @@ public:
 
 public:
     OBJECT_DECL(bignum);
-    PARSE_DECL(bignum);
     RENDER_DECL(bignum);
     HELP_DECL(bignum);
 };

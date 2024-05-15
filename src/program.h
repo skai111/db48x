@@ -74,7 +74,6 @@ struct block : program
 
 public:
     OBJECT_DECL(block);
-    PARSE_DECL(block);
     RENDER_DECL(block);
     EVAL_DECL(block);
 };

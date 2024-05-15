@@ -303,18 +303,15 @@ inline bool utf8_whitespace(unicode cp)
 }
 
 
-inline size_t utf8_skip_whitespace(utf8 &s, size_t size = ~0U)
+inline size_t utf8_skip_whitespace(utf8 s, size_t size = ~0U)
 // ----------------------------------------------------------------------------
 //   Skip whitespace at given string
 // ----------------------------------------------------------------------------
 //   Since we only have ASCII whitespace for now, can use ++ safely
 {
     size_t skipped = 0;
-    while (skipped < size && utf8_whitespace(*s))
-    {
-        s++;
+    while (skipped < size && utf8_whitespace(s[skipped]))
         skipped++;
-    }
     return skipped;
 }
 

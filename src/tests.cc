@@ -1727,7 +1727,7 @@ void tests::command_display_formats()
     // There is a trap in this command line
     cstring prgm =
         "«"
-        "  1 1.0"
+        "  1 1.0 "
         "+ - * / ^ "
         "sin cos tan asin acos atan "
         "LowerCase PurgeAll Precision "
@@ -5878,6 +5878,13 @@ void tests::hms_dms_operations()
         .test(42,DOT).editor("1°2′35″42/_dms")
         .test(100).editor("1°2′35″42/100_dms")
         .test(ENTER).expect("1°02′35″²¹/₅₀");
+    step("Error when no fraction is given")
+        .test(CLEAR)
+        .test(1, DOT).editor("1.")
+        .test(2,DOT).editor("1°2′_dms")
+        .test(35,DOT).editor("1°2′35″_dms")
+        .test(42).editor("1°2′35″42_dms")
+        .test(ENTER).error("Syntax error");
     step("Cancelling DMS with third dot")
         .test(CLEAR)
         .test(1, DOT).editor("1.")

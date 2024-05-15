@@ -139,7 +139,6 @@ struct CaseThen : conditional_loop
         : conditional_loop(type, condition, body) {}
 
     OBJECT_DECL(CaseThen);
-    PARSE_DECL(CaseThen);
     RENDER_DECL(CaseThen);
     EVAL_DECL(CaseThen);
     INSERT_DECL(CaseThen);
@@ -155,7 +154,6 @@ struct CaseWhen : conditional_loop
         : conditional_loop(type, value, body) {}
 
     OBJECT_DECL(CaseWhen);
-    PARSE_DECL(CaseWhen);
     RENDER_DECL(CaseWhen);
     EVAL_DECL(CaseWhen);
     INSERT_DECL(CaseWhen);

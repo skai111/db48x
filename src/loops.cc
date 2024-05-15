@@ -606,16 +606,6 @@ EVAL_BODY(StartNext)
 //
 // ============================================================================
 
-PARSE_BODY(StartStep)
-// ----------------------------------------------------------------------------
-//  Parser for start-step loops
-// ----------------------------------------------------------------------------
-{
-    // This is dealt with in StartNext
-    return SKIP;
-}
-
-
 RENDER_BODY(StartStep)
 // ----------------------------------------------------------------------------
 //   Renderer for start-step loop
@@ -716,15 +706,6 @@ EVAL_BODY(ForNext)
 //
 // ============================================================================
 
-PARSE_BODY(ForStep)
-// ----------------------------------------------------------------------------
-//  Parser for for-step loops
-// ----------------------------------------------------------------------------
-{
-    return SKIP;                                // Handled in ForNext
-}
-
-
 RENDER_BODY(ForStep)
 // ----------------------------------------------------------------------------
 //   Renderer for for-step loop
@@ -765,15 +746,6 @@ EVAL_BODY(ForStep)
 //   then it picks the first one pushed. Otherwise, it picks the second one.
 //   One of the two paths can be empty to terminate evaluation.
 //   It can also be the original loop to repeat
-
-PARSE_BODY(conditional)
-// ----------------------------------------------------------------------------
-//   A conditional can never be parsed
-// ----------------------------------------------------------------------------
-{
-    return SKIP;
-}
-
 
 RENDER_BODY(conditional)
 // ----------------------------------------------------------------------------

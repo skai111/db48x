@@ -80,9 +80,8 @@ object::result list::list_parse(id      type,
     size_t   non_alg    = 0;
     size_t   non_alg_len= 0;
 
-    record(list, "Parse %+s %lc%lc precedence %d length %u [%s]",
-           p.child ? "top-level" : "child", open, close, precedence, max,
-           utf8(s));
+    record(list, "Parse %lc%lc precedence %d length %u [%s]",
+           open, close, precedence, max, utf8(s));
 
     // Check if we have the opening marker
     unicode cp  = 0;

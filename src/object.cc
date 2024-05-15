@@ -178,6 +178,15 @@ const object::dispatch object::handler[NUM_IDS] =
 };
 
 
+static inline unicode tolow(unicode cp)
+// ----------------------------------------------------------------------------
+//  A cheap version of tolower for ASCII letters
+// ----------------------------------------------------------------------------
+{
+    return cp | 0x20;
+}
+
+
 object_p object::parse(utf8 source, size_t &size, int precedence)
 // ----------------------------------------------------------------------------
 //  Try parsing the object as a top-level temporary
@@ -190,60 +199,198 @@ object_p object::parse(utf8 source, size_t &size, int precedence)
            source, precedence, NUM_IDS);
 
     // Skip spaces and newlines
-    size_t skipped = utf8_skip_whitespace(source);
+    size_t skipped = utf8_skip_whitespace(source, size);
     if (skipped >= size)
         return nullptr;
     size -= skipped;
-
-    parser p(source, size, precedence);
-    utf8   err  = nullptr;
-    utf8   src  = source;
-    size_t slen = 0;
-    result r    = SKIP;
+    source += skipped;
 
     // Try parsing with the various handlers
-    do
-    {
-        r = SKIP;
-        for (uint i = 0; r == SKIP && i < NUM_IDS; i++)
-        {
-            // Parse ID_symbol last, we need to check commands first
-            uint candidate = (i + ID_symbol + 1) % NUM_IDS;
-            p.candidate = id(candidate);
-            record(parse_attempts, "Trying [%s] against %+s", src, name(id(i)));
-            r = handler[candidate].parse(p);
-            if (r == COMMENTED)
-            {
-                p.source += p.end;
-                skipped += p.end;
-                size_t skws = utf8_skip_whitespace(p.source);
-                skipped += skws;
-                break;
-            }
-            if (r != SKIP)
-                record(parse_attempts,
-                       "Result for ID %+s was %+s (%d) for [%s]",
-                       name(p.candidate), name(r), r, utf8(p.source));
-            if (r == WARN)
-            {
-                err = rt.error();
-                src = rt.source();
-                slen = rt.source_length();
-                rt.clear_error();
-                r = SKIP;
-            }
-        }
-    } while (r == COMMENTED);
+    parser  p(source, size, precedence);
+    result  r  = SKIP;
+    unicode cp = utf8_codepoint(source);
 
+retry:
+    switch (cp)
+    {
+    case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
+    case '+': case '-':
+    case '#':                   // Numbers
+        r = integer::do_parse(p);
+        if (cp != '#')
+        {
+            if (r == SKIP || r == WARN)
+                r = hwfp_base::do_parse(p);
+            if (r == SKIP)
+                r = decimal::do_parse(p);
+            if (r == OK)
+                rt.clear_error();
+        }
+        if (r == SKIP && (cp == '+' || cp == '-'))
+            r = command::do_parse(p);
+        break;
+    case '@':                   // Comments, processed above
+        r = comment::do_parse(p);
+        if (r == OK && p.out)
+            break;
+        if (r == COMMENTED)
+        {
+            size_t commented = p.end;
+            if (commented >= p.length)
+                return nullptr;
+            p.source += commented;
+            p.length -= commented;
+            skipped += commented;
+
+            size_t spaces = utf8_skip_whitespace(p.source, p.length);
+            if (spaces >= p.length)
+                return nullptr;
+            skipped += spaces;
+            p.source += spaces;
+            cp = utf8_codepoint(p.source);
+        }
+        goto retry;
+    case '\'':                  // Expressions
+        r = expression::do_parse(p);
+        break;
+    case '"':                   // Text
+        r = text::do_parse(p);
+        break;
+    case '{':                   // List
+        r = list::do_parse(p);
+        break;
+    case '[':                   // Arrays
+        r = array::do_parse(p);
+        break;
+    case L'«':                  // Programs
+        r = program::do_parse(p);
+        break;
+    case '(':
+        r = rectangular::do_parse(p);
+        if (r == SKIP && p.precedence)
+            r = expression::do_parse(p);
+        break;
+    case complex::I_MARK:       // Complex numbers in rectangular form
+        r = rectangular::do_parse(p);
+        break;
+    case complex::ANGLE_MARK:   // Polar complex numbers
+        r = polar::do_parse(p);
+        break;
+    case L'Ⓒ':                  // Constants
+        r = constant::do_parse(p);
+        break;
+    case L'Ⓔ':                  // Equations
+        r = equation::do_parse(p);
+        break;
+    case L'Ⓛ':                  // Library items
+        r = xlib::do_parse(p);
+        break;
+    case L'Ⓟ':                  // Polynomials
+        r = polynomial::do_parse(p);
+        break;
+    case ':':                   // Tagged objects
+        r = tag::do_parse(p);
+        break;
+
+    default:
+        // Symbols and commands
+        r = command::do_parse(p);
+        if (r == SKIP && is_valid_as_name_initial(cp))
+        {
+            if (r == SKIP && (cp == L'→' || cp == L'▶'))
+                r = locals::do_parse(p);
+            if (r == SKIP)
+            {
+                switch(tolow(cp))
+                {
+                case 'c':
+                    r = CaseStatement::do_parse(p);
+                    break;
+                case 'd':
+                    r = DoUntil::do_parse(p);
+                    if (r == SKIP)
+                        r = directory::do_parse(p);
+                    break;
+                case 'f':
+                    r = ForNext::do_parse(p);
+                    break;
+                case 'i':
+                    r = IfThen::do_parse(p);
+                    if (r == SKIP)
+                        r = IfErrThen::do_parse(p);
+                    break;
+                case 'w':
+                    r = WhileRepeat::do_parse(p);
+                    break;
+                case 's':
+                    r = StartNext::do_parse(p);
+                    break;
+                case 'g':
+                case 'b':
+                    r = grob::do_parse(p);
+                    break;
+                default:
+                    break;
+                }
+            }
+            if (r == SKIP)
+                r = local::do_parse(p);
+            if (r == SKIP)
+                r = symbol::do_parse(p);
+        }
+        break;
+    } // Switch statement
+
+
+    // Compute output size
     record(parse, "<Done parsing [%s], end is at %d", utf8(p.source), p.end);
     size = p.end + skipped;
 
-    if (r == SKIP)
+    // Check if there is a second part to the object
+    if (r == OK && p.out && p.end < p.length &&
+        cp != complex::I_MARK && cp != complex::ANGLE_MARK)
     {
-        if (err)
-            rt.error(err).source(src, slen);
-        else
-            rt.syntax_error().source(p.source, size);
+        result r2 = SKIP;
+        cp = utf8_codepoint(p.source + p.end);
+
+        bool maybe_rect  =
+            (precedence < ADDITIVE && (cp == '+' || cp == '-')) ||
+            (precedence < POWER && cp == complex::I_MARK);
+        bool maybe_polar = cp == complex::ANGLE_MARK;
+        bool maybe_unit  = cp == '_' || cp == settings::SPACE_UNIT;
+        bool maybe_fcall = p.precedence && (cp == '(' || utf8_whitespace(cp));
+
+        if (maybe_rect || maybe_polar || maybe_unit || maybe_fcall)
+        {
+            if (p.out->is_algebraic())
+            {
+                p.source += p.end;
+                p.length -= p.end;
+                p.end = 0;
+
+                if (maybe_rect)
+                    r2 = rectangular::do_parse(p);
+                else if (maybe_polar)
+                    r2 = polar::do_parse(p);
+                else if (maybe_unit)
+                    r2 = unit::do_parse(p);
+                else if (maybe_fcall)
+                    r2 = funcall::do_parse(p);
+
+                // Check if we found the second part
+                if (r2 == OK)
+                    size += p.end;
+            }
+        }
+    }
+
+    if (r == SKIP || r == WARN)
+    {
+        if (!rt.error())
+            rt.syntax_error();
+        if (!rt.source())
+            rt.source(p.source, size);
     }
 
     return r == OK ? p.out : nullptr;

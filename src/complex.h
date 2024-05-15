@@ -95,7 +95,6 @@ struct complex : algebraic
 
 public:
     SIZE_DECL(complex);
-    PARSE_DECL(complex);
     PREC_DECL(COMPLEX);
     HELP_DECL(complex);
 
@@ -171,7 +170,7 @@ struct rectangular : complex
 
 public:
     OBJECT_DECL(rectangular);
-    // PARSE_DECL(rectangular); is really in complex
+    PARSE_DECL(rectangular);
     RENDER_DECL(rectangular);
 };
 

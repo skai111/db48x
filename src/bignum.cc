@@ -102,15 +102,6 @@ integer_p bignum::as_integer() const
 }
 
 
-PARSE_BODY(bignum)
-// ----------------------------------------------------------------------------
-//    Bignums are parsed by integer parser, so we can skip here
-// ----------------------------------------------------------------------------
-{
-    return SKIP;
-}
-
-
 HELP_BODY(bignum)
 // ----------------------------------------------------------------------------
 //    Help topic for big integers

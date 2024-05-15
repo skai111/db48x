@@ -176,7 +176,6 @@ struct StartStep : StartNext
 
 public:
     OBJECT_DECL(StartStep);
-    PARSE_DECL(StartStep);
     EVAL_DECL(StartStep);
     RENDER_DECL(StartStep);
     INSERT_DECL(StartStep);
@@ -212,7 +211,6 @@ struct ForStep : ForNext
 
 public:
     OBJECT_DECL(ForStep);
-    PARSE_DECL(ForStep);
     EVAL_DECL(ForStep);
     RENDER_DECL(ForStep);
     INSERT_DECL(ForStep);
@@ -227,7 +225,6 @@ struct conditional : object
     conditional(id type) : object(type) {}
 public:
     OBJECT_DECL(conditional);
-    PARSE_DECL(conditional);
     RENDER_DECL(conditional);
     EVAL_DECL(conditional);
 };
