@@ -46,7 +46,7 @@ volatile uint test_command = 0;
 RECORDER(tests, 256, "Information about tests");
 RECORDER_DECLARE(errors);
 
-uint    tests::default_wait_time  = 500;
+uint    tests::default_wait_time  = 1000;
 uint    tests::key_delay_time     = 0;
 uint    tests::refresh_delay_time = 20;
 uint    tests::image_wait_time    = 500;
@@ -8016,7 +8016,7 @@ tests &tests::rpl_command(uint command, uint extrawait)
     if (test_command)
     {
         explain("RPL command ", command, " was not processed, "
-                "got ", test_command, " after waiting", wait_time, " ms");
+                "got ", test_command, " after waiting ", wait_time, " ms");
         fail();
     }
     return *this;
