@@ -255,7 +255,7 @@ inline bool add::bignum_ok(bignum_g &x, bignum_g &y)
 // ----------------------------------------------------------------------------
 {
     x = x + y;
-    return true;
+    return x;
 }
 
 
@@ -265,7 +265,7 @@ inline bool add::fraction_ok(fraction_g &x, fraction_g &y)
 // ----------------------------------------------------------------------------
 {
     x = x + y;
-    return true;
+    return x;
 }
 
 
@@ -275,7 +275,7 @@ inline bool add::complex_ok(complex_g &x, complex_g &y)
 // ----------------------------------------------------------------------------
 {
     x = x + y;
-    return true;
+    return x;
 }
 
 
@@ -388,7 +388,7 @@ inline bool sub::bignum_ok(bignum_g &x, bignum_g &y)
 // ----------------------------------------------------------------------------
 {
     x = x - y;
-    return true;
+    return x;
 }
 
 
@@ -398,7 +398,7 @@ inline bool sub::fraction_ok(fraction_g &x, fraction_g &y)
 // ----------------------------------------------------------------------------
 {
     x = x - y;
-    return true;
+    return x;
 }
 
 
@@ -408,7 +408,7 @@ inline bool sub::complex_ok(complex_g &x, complex_g &y)
 // ----------------------------------------------------------------------------
 {
     x = x - y;
-    return true;
+    return x;
 }
 
 
@@ -538,7 +538,7 @@ inline bool mul::bignum_ok(bignum_g &x, bignum_g &y)
 // ----------------------------------------------------------------------------
 {
     x = x * y;
-    return true;
+    return x;
 }
 
 
@@ -548,7 +548,7 @@ inline bool mul::fraction_ok(fraction_g &x, fraction_g &y)
 // ----------------------------------------------------------------------------
 {
     x = x * y;
-    return true;
+    return x;
 }
 
 
@@ -558,7 +558,7 @@ inline bool mul::complex_ok(complex_g &x, complex_g &y)
 // ----------------------------------------------------------------------------
 {
     x = x * y;
-    return true;
+    return x;
 }
 
 
@@ -701,7 +701,7 @@ inline bool div::bignum_ok(bignum_g &x, bignum_g &y)
         else
             x = bignum_p(fraction_p(big_fraction::make(x, y))); // Wrong-cast
     }
-    return result;
+    return result && x;
 }
 
 
@@ -716,7 +716,7 @@ inline bool div::fraction_ok(fraction_g &x, fraction_g &y)
         return false;
     }
     x = x / y;
-    return true;
+    return x;
 }
 
 
@@ -731,7 +731,7 @@ inline bool div::complex_ok(complex_g &x, complex_g &y)
         return false;
     }
     x = x / y;
-    return true;
+    return x;
 }
 
 
@@ -778,7 +778,7 @@ inline bool mod::bignum_ok(bignum_g &x, bignum_g &y)
         x = y->type() == ID_neg_bignum ? r - y : r + y;
     else
         x = r;
-    return true;
+    return x;
 }
 
 
@@ -795,7 +795,7 @@ inline bool mod::fraction_ok(fraction_g &x, fraction_g &y)
     x = x % y;
     if (x->is_negative() && !x->is_zero())
         x = y->is_negative() ? x - y : x + y;
-    return true;
+    return x;
 }
 
 
@@ -833,7 +833,7 @@ inline bool rem::bignum_ok(bignum_g &x, bignum_g &y)
 // ----------------------------------------------------------------------------
 {
     x = x % y;
-    return true;
+    return x;
 }
 
 
@@ -848,7 +848,7 @@ inline bool rem::fraction_ok(fraction_g &x, fraction_g &y)
         return false;
     }
     x = x % y;
-    return true;
+    return x;
 }
 
 
@@ -973,7 +973,7 @@ inline bool pow::bignum_ok(bignum_g &x, bignum_g &y)
     if (y->type() == ID_neg_bignum)
         return false;
     x = bignum::pow(x, y);
-    return true;
+    return x;
 }
 
 
@@ -983,7 +983,7 @@ inline bool pow::complex_ok(complex_g &x, complex_g &y)
 // ----------------------------------------------------------------------------
 {
     x = complex::exp(y * complex::log(x));
-    return true;
+    return x;
 }
 
 
