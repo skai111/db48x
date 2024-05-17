@@ -33,6 +33,7 @@
 #include "bignum.h"
 #include "functions.h"
 
+RECORDER_DECLARE(logical);
 
 struct logical : arithmetic
 // ----------------------------------------------------------------------------
@@ -89,6 +90,7 @@ struct derived : logical                                                \
     PREC_DECL(prec);                                                    \
     EVAL_DECL(derived)                                                  \
     {                                                                   \
+        record(logical, "Evaluating "#derived" binary logical %t", o);  \
         rt.command(o);                                                  \
         if (!rt.args(2))                                                \
             return ERROR;                                               \
@@ -118,6 +120,7 @@ struct derived : logical                                                \
     PREC_DECL(NONE);                                                    \
     EVAL_DECL(derived)                                                  \
     {                                                                   \
+        record(logical, "Evaluating "#derived" unary logical %t", o);   \
         rt.command(o);                                                  \
         if (!rt.args(1))                                                \
             return ERROR;                                               \

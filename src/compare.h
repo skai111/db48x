@@ -32,6 +32,8 @@
 #include "arithmetic.h"
 #include "functions.h"
 
+RECORDER_DECLARE(compare);
+
 struct comparison : arithmetic
 // ----------------------------------------------------------------------------
 //   Shared by all comparisons
@@ -66,6 +68,7 @@ struct derived : comparison                                             \
                                                                         \
     EVAL_DECL(derived)                                                  \
     {                                                                   \
+        record(compare, "Evaluating "#derived" comparison %t", o);      \
         rt.command(o);                                                  \
         if (!rt.args(ARITY))                                            \
             return ERROR;                                               \

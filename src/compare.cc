@@ -36,6 +36,9 @@
 #include "locals.h"
 
 
+RECORDER(compare,       16, "Comparison operations");
+RECORDER(compare_error, 16, "Errors during comparison operations");
+
 template <typename Cmp>
 object::result comparison::evaluate()
 // ----------------------------------------------------------------------------

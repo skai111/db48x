@@ -37,6 +37,8 @@
 
 struct renderer;
 
+RECORDER_DECLARE(settings);
+
 #define DB48X_MAXDIGITS    9999
 #define DB48X_MAXEXPONENT  (1LL<<60)
 
@@ -338,42 +340,44 @@ struct value_setting : setting
 
 #define ID(i)
 
-#define FLAG(Enable, Disable)                           \
-                                                        \
-struct Enable : setting                                 \
-{                                                       \
-    Enable(id i = ID_##Enable): setting(i) {}           \
-    OBJECT_DECL(Enable);                                \
-    EVAL_DECL(Enable)                                   \
-    {                                                   \
-        if (ui.evaluating_function_key())               \
-            Settings.Enable(!Settings.Enable());        \
-        else                                            \
-            Settings.Enable(true);                      \
-        return update(ID_##Enable);                     \
-    }                                                   \
-    MARKER_DECL(Enable)                                 \
-    {                                                   \
-        return Settings.mark(Settings.Enable());        \
-    }                                                   \
-};                                                      \
-                                                        \
-struct Disable : setting                                \
-{                                                       \
-    Disable(id i = ID_##Disable): setting(i) {}         \
-    OBJECT_DECL(Disable);                               \
-    EVAL_DECL(Disable)                                  \
-    {                                                   \
-        if (ui.evaluating_function_key())               \
-            Settings.Disable(!Settings.Disable());      \
-        else                                            \
-            Settings.Disable(true);                     \
-        return update(ID_##Disable);                    \
-    }                                                   \
-    MARKER_DECL(Disable)                                \
-    {                                                   \
-        return Settings.mark(Settings.Disable());       \
-    }                                                   \
+#define FLAG(Enable, Disable)                                           \
+                                                                        \
+struct Enable : setting                                                 \
+{                                                                       \
+    Enable(id i = ID_##Enable): setting(i) {}                           \
+    OBJECT_DECL(Enable);                                                \
+    EVAL_DECL(Enable)                                                   \
+    {                                                                   \
+        record(settings, "Evaluating " #Enable " enable %t", o);        \
+        if (ui.evaluating_function_key())                               \
+            Settings.Enable(!Settings.Enable());                        \
+        else                                                            \
+            Settings.Enable(true);                                      \
+        return update(ID_##Enable);                                     \
+    }                                                                   \
+    MARKER_DECL(Enable)                                                 \
+    {                                                                   \
+        return Settings.mark(Settings.Enable());                        \
+    }                                                                   \
+};                                                                      \
+                                                                        \
+struct Disable : setting                                                \
+{                                                                       \
+    Disable(id i = ID_##Disable): setting(i) {}                         \
+    OBJECT_DECL(Disable);                                               \
+    EVAL_DECL(Disable)                                                  \
+    {                                                                   \
+        record(settings, "Evaluating " #Disable " disable %t", o);      \
+        if (ui.evaluating_function_key())                               \
+            Settings.Disable(!Settings.Disable());                      \
+        else                                                            \
+            Settings.Disable(true);                                     \
+        return update(ID_##Disable);                                    \
+    }                                                                   \
+    MARKER_DECL(Disable)                                                \
+    {                                                                   \
+        return Settings.mark(Settings.Disable());                       \
+    }                                                                   \
 };
 
 
@@ -386,6 +390,7 @@ struct Name : setting                                                   \
     OBJECT_DECL(Name);                                                  \
     EVAL_DECL(Name)                                                     \
     {                                                                   \
+        record(settings, "Evaluating " #Name " setting %t", o);         \
         using type = typeof(Settings.Name());                           \
         type value = Settings.Name();                                   \
         if (!validate(ID_##Name, value, type(Low), type(High)))         \

@@ -47,8 +47,11 @@
 #include <random>
 #include <stdexcept>
 
-settings Settings;
 
+RECORDER(settings,              16, "Settings");
+RECORDER(settings_error,        16, "Errors during settings");
+
+settings Settings;
 
 settings::settings() :
 // ----------------------------------------------------------------------------

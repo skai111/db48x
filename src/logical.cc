@@ -33,6 +33,10 @@
 #include "integer.h"
 
 
+RECORDER(logical,       16, "Logical operations");
+RECORDER(logical_error, 16, "Errors during logical operations");
+
+
 object::result logical::evaluate(binary_fn native, big_binary_fn big, bool num)
 // ----------------------------------------------------------------------------
 //   Evaluation for binary logical operations

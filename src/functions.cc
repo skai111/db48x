@@ -44,6 +44,9 @@
 #include "unit.h"
 
 
+RECORDER(function,              16, "Evaluation of functions");
+RECORDER(function_error,        16, "Errors during evaluation of functions");
+
 bool function::should_be_symbolic(id type)
 // ----------------------------------------------------------------------------
 //   Check if we should treat the type symbolically

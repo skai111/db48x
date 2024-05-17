@@ -37,6 +37,7 @@
 #include "list.h"
 #include "runtime.h"
 
+RECORDER_DECLARE(function);
 
 struct function : algebraic
 // ----------------------------------------------------------------------------
@@ -125,6 +126,7 @@ public:                                                                 \
     PREC_DECL(FUNCTION);                                                \
     EVAL_DECL(derived)                                                  \
     {                                                                   \
+        record(function, "Evaluating " #derived " function %t", o);     \
         rt.command(o);                                                  \
         if (!rt.args(ARITY))                                            \
             return ERROR;                                               \
@@ -190,6 +192,7 @@ public:                                                                 \
     PREC_DECL(FUNCTION);                                                \
     EVAL_DECL(derived)                                                  \
     {                                                                   \
+        record(function, "Evaluating " #derived " function %t", o);     \
         rt.command(o);                                                  \
         if (!rt.args(ARITY))                                            \
             return ERROR;                                               \
@@ -261,6 +264,7 @@ public:                                                                 \
     PREC_DECL(FUNCTION);                                                \
     EVAL_DECL(derived)                                                  \
     {                                                                   \
+        record(function, "Evaluating " #derived " nfunction %t", o);    \
         rt.command(o);                                                  \
         return evaluate();                                              \
     }                                                                   \

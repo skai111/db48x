@@ -40,6 +40,8 @@
 #include "object.h"
 #include "runtime.h"
 
+RECORDER_DECLARE(command);
+
 struct command : object
 // ----------------------------------------------------------------------------
 //   Shared logic for all commands
@@ -73,22 +75,23 @@ public:
 
 
 // Macro to defined a simple command handler for derived classes
-#define COMMAND_DECLARE_SPECIAL(derived, base, nargs, special)   \
-struct derived : base                                            \
-{                                                                \
-    derived(id i = ID_##derived) : base(i) { }                   \
-                                                                 \
-    OBJECT_DECL(derived);                                        \
-    ARITY_DECL(nargs >= 0 ? nargs : ~nargs);                     \
-    EVAL_DECL(derived)                                           \
-    {                                                            \
-        rt.command(o);                                           \
-        if (nargs >= 0 && !rt.args(nargs))                       \
-            return ERROR;                                        \
-        return evaluate();                                       \
-    }                                                            \
-    special                                                      \
-    static result evaluate();                                    \
+#define COMMAND_DECLARE_SPECIAL(derived, base, nargs, special)          \
+struct derived : base                                                   \
+{                                                                       \
+    derived(id i = ID_##derived) : base(i) { }                          \
+                                                                        \
+    OBJECT_DECL(derived);                                               \
+    ARITY_DECL(nargs >= 0 ? nargs : ~nargs);                            \
+    EVAL_DECL(derived)                                                  \
+    {                                                                   \
+        record(command, "Evaluating " #derived " command %t", o);       \
+        rt.command(o);                                                  \
+        if (nargs >= 0 && !rt.args(nargs))                              \
+            return ERROR;                                               \
+        return evaluate();                                              \
+    }                                                                   \
+    special                                                             \
+    static result evaluate();                                           \
 }
 
 #define COMMAND_DECLARE(derived, nargs)               \
