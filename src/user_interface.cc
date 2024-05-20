@@ -4391,7 +4391,7 @@ bool user_interface::handle_functions(int key)
             {
             case PROGRAM:
             case MATRIX:
-                if (obj->is_program_cmd())
+                if (object::is_program_cmd(ty))
                 {
                     dirtyEditor = true;
                     edRows = 0;
@@ -4401,12 +4401,12 @@ bool user_interface::handle_functions(int key)
 
             case ALGEBRAIC:
             case PARENTHESES:
-                if (obj->type() == object::ID_Sto)
+                if (ty == object::ID_Sto)
                 {
                     if (!end_edit())
                         return false;
                 }
-                else if (obj->is_algebraic() || obj->is_program_cmd())
+                else if (object::is_algebraic(ty) || object::is_program_cmd(ty))
                 {
                     dirtyEditor = true;
                     edRows = 0;
