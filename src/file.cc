@@ -138,6 +138,7 @@ file::~file()
 #if SIMULATOR
 // DMCP is configured to only allows one open file at a time
 static int open_count = 0;
+static cstring last_open = nullptr;
 #endif
 
 
@@ -151,11 +152,11 @@ void file::open(cstring path)
     {
         errno = EMFILE;
         record(file_error,
-               "open is opening %u files at the same time",
-               open_count--);
+               "open is opening %u files at the same time"
+               " (%s and %s)", open_count--, last_open, path);
         return;
     }
-
+    last_open = path;
     data = fopen(path, "r");
     if (!data)
         record(file_error, "Error %s opening %s", strerror(errno), path);
@@ -178,11 +179,11 @@ void file::open_for_writing(cstring path)
     {
         errno = EMFILE;
         record(file_error,
-               "open_for_writing is opening %u files at the same time",
-               open_count--);
+               "open_for_writing is opening %u files at the same time"
+               "(%s and %s)", open_count--, last_open, path);
         return;
     }
-
+    last_open = path;
     data = fopen(path, "w");
     if (!data)
         record(file_error, "Error %s opening %s for writing",

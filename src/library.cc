@@ -85,6 +85,7 @@ const xlib::config xlib::library =
     .last_menu      = ID_LibraryMenu99,
     .name           = ID_XlibName,
     .value          = ID_XlibValue,
+    .command        = ID_object,
     .file           = "config/library.csv",
     .builtins       = basic_library,
     .nbuiltins      = sizeof(basic_library) / sizeof(*basic_library),

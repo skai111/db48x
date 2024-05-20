@@ -32,6 +32,8 @@
 #include "expression.h"
 #include "grob.h"
 #include "renderer.h"
+#include "solve.h"
+#include "variables.h"
 
 RECORDER(equations,         16, "Equation objects");
 RECORDER(equations_error,   16, "Error on equation objects");
@@ -85,6 +87,7 @@ const equation::config equation::equations =
     .last_menu      = ID_EquationsMenu99,
     .name           = ID_EquationName,
     .value          = ID_EquationValue,
+    .command        = ID_EquationSolver,
     .file           = "config/equations.csv",
     .builtins       = basic_equations,
     .nbuiltins      = sizeof(basic_equations) / sizeof(*basic_equations),
@@ -289,6 +292,48 @@ INSERT_BODY(EquationValue)
 
 
 HELP_BODY(EquationValue)
+// ----------------------------------------------------------------------------
+//   Put the help for a given equation value
+// ----------------------------------------------------------------------------
+{
+    return EquationName::do_help(nullptr);
+}
+
+
+
+COMMAND_BODY(EquationSolver)
+// ----------------------------------------------------------------------------
+//   Solve for a given equation
+// ----------------------------------------------------------------------------
+{
+    int key = ui.evaluating;
+    if (constant_p cst = equation::do_key(equation::equations, key))
+        if (equation_p eq = cst->as<equation>())
+            if (directory::store_here(static_object(ID_Equation), eq))
+                if (const SolvingMenu *smenu =
+                    object::static_object(ID_SolvingMenu)->as<SolvingMenu>())
+                    return smenu->update();
+    if (!rt.error())
+        rt.type_error();
+    return ERROR;
+}
+
+
+INSERT_BODY(EquationSolver)
+// ----------------------------------------------------------------------------
+//   Insert the code in a program to solve a library equation
+// ----------------------------------------------------------------------------
+{
+    int key = ui.evaluating;
+    if (constant_p cst = equation::do_key(equation::equations, key))
+        if (equation_p eq = cst->as<equation>())
+            if (rt.push(eq))
+                return ui.insert_object(eq, " ", " StEQ SolvingMenu ");
+    return ERROR;
+}
+
+
+HELP_BODY(EquationSolver)
 // ----------------------------------------------------------------------------
 //   Put the help for a given equation value
 // ----------------------------------------------------------------------------

@@ -69,6 +69,7 @@ struct constant : algebraic
         id         last_menu;   // Last possible menu, e.g. ID_EquationsMenu99
         id         name;        // Menu command for the name
         id         value;       // Menu command for the value
+        id         command;     // Menu command for third-level row
         cstring    file;        // CSV file for names and definitions
         builtins_p builtins;    // Builtins defintions
         size_t     nbuiltins;   // Number of entries in builtins[]

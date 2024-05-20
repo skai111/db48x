@@ -106,6 +106,7 @@ struct equation_menu : constant_menu
 
 COMMAND_DECLARE_INSERT_HELP(EquationName,-1);
 COMMAND_DECLARE_INSERT_HELP(EquationValue,-1);
+COMMAND_DECLARE_INSERT_HELP(EquationSolver,-1);
 COMMAND_DECLARE(LibEq, 1);
 
 #endif // EQUATIONS_H

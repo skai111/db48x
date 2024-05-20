@@ -386,6 +386,7 @@ const constant::config constant::constants =
     .last_menu      = ID_ConstantsMenu99,
     .name           = ID_ConstantName,
     .value          = ID_ConstantValue,
+    .command        = ID_object,
     .file           = "config/constants.csv",
     .builtins       = basic_constants,
     .nbuiltins      = sizeof(basic_constants) / sizeof(*basic_constants),
@@ -731,8 +732,8 @@ bool constant_menu::do_submenu(constant::config_r cfg, menu_info &mi) const
 
     // Insert the built-in constants after the ones from the file
     uint skip     = mi.skip;
-    uint planes   = 1 + !!cfg.value;
-    id   ids[2]   = { cfg.name, cfg.value };
+    uint planes   = 1 + !!cfg.value + !!cfg.command;
+    id   ids[3]   = { cfg.name, cfg.value, cfg.command };
     auto builtins = cfg.builtins;
     for (uint plane = 0; plane < planes; plane++)
     {
@@ -745,12 +746,7 @@ bool constant_menu::do_submenu(constant::config_r cfg, menu_info &mi) const
         if (matching)
         {
             cfile.seek(position);
-            if (plane == 0)
-            {
-                while (symbol_g mentry = cfile.next(false))
-                    items(mi, mentry, type);
-            }
-            else
+            if (plane == 1)
             {
                 while (symbol_g mentry = cfile.next(false))
                 {
@@ -763,6 +759,11 @@ bool constant_menu::do_submenu(constant::config_r cfg, menu_info &mi) const
                     if (mentry)
                         items(mi, mentry, type);
                 }
+            }
+            else
+            {
+                while (symbol_g mentry = cfile.next(false))
+                    items(mi, mentry, type);
             }
         }
         for (uint i = 0; i < count; i++)
