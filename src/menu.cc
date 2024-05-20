@@ -474,7 +474,7 @@ MENU(ComplexMenu,
      "→Polar",  ID_ToPolar,
      ID_conj,
      ID_sign,
-     ID_abs,
+     "|z|",     ID_abs,
      ID_arg,
 
      "2+i3",    ID_ComplexIBeforeImaginary,

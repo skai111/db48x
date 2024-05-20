@@ -22,7 +22,7 @@ OS2Version: 3
 OS2_WeightWidthSlopeOnly: 0
 OS2_UseTypoMetrics: 0
 CreationTime: 1346338579
-ModificationTime: 1714659589
+ModificationTime: 1716220983
 PfmFamily: 17
 TTFWeight: 700
 TTFWidth: 5
@@ -3016,15 +3016,15 @@ StartChar: bar
 Encoding: 124 124 96
 Width: 316
 GlyphClass: 1
-Flags: W
+Flags: WO
 LayerCount: 2
 Fore
 SplineSet
-111 -60 m 1,0,-1
+114 -188 m 5,0,-1
  111 817 l 1,1,-1
  207 817 l 1,2,-1
- 207 -60 l 1,3,-1
- 111 -60 l 1,0,-1
+ 210 -188 l 5,3,-1
+ 114 -188 l 5,0,-1
 EndSplineSet
 Validated: 1
 EndChar
@@ -32275,7 +32275,7 @@ SplineSet
  187 232 187 232 209.5 185.5 c 128,-1,98
  232 139 232 139 289 139 c 0,77,78
 EndSplineSet
-Validated: 524329
+Validated: 41
 EndChar
 
 StartChar: uni24BA
@@ -32338,7 +32338,7 @@ SplineSet
  242 497 242 497 236 424 c 1,68,-1
  409 424 l 1,63,64
 EndSplineSet
-Validated: 524329
+Validated: 41
 EndChar
 
 StartChar: uni24C1
@@ -32405,7 +32405,7 @@ SplineSet
  966 900 966 900 925 900 c 2,70,-1
  142 900 l 2,51,52
 EndSplineSet
-Validated: 524297
+Validated: 9
 EndChar
 
 StartChar: uni2669
@@ -32428,7 +32428,7 @@ SplineSet
  193 221 193 221 193 779 c 1,17,-1
  232 777 l 1,0,-1
 EndSplineSet
-Validated: 524321
+Validated: 33
 EndChar
 
 StartChar: uni266D
@@ -32456,7 +32456,7 @@ SplineSet
  139 431 139 431 104 381.883789062 c 1,23,-1
  104 150 l 1,13,14
 EndSplineSet
-Validated: 524321
+Validated: 33
 EndChar
 
 StartChar: uni266E
@@ -32482,7 +32482,7 @@ SplineSet
  101.580078125 208.780273438 l 1,11,-1
  299.360351562 265.540039062 l 1,8,-1
 EndSplineSet
-Validated: 524289
+Validated: 1
 EndChar
 
 StartChar: uni266F
@@ -32528,7 +32528,7 @@ SplineSet
  150.5 229.200195312 l 1,31,-1
  310 283.380859375 l 1,28,-1
 EndSplineSet
-Validated: 524289
+Validated: 1
 EndChar
 
 StartChar: uni24E7
@@ -32595,7 +32595,7 @@ SplineSet
  60.75 4.490234375 60.75 4.490234375 53.5625 7.044921875 c 132,-1,84
  46.375 9.599609375 46.375 9.599609375 18.25 24.2001953125 c 5,0,1
 EndSplineSet
-Validated: 524321
+Validated: 33
 EndChar
 
 StartChar: uni24B9
@@ -32687,13 +32687,13 @@ SplineSet
  187 232 187 232 209.5 185.5 c 132,-1,115
  232 139 232 139 289 139 c 4,94,95
 EndSplineSet
-Validated: 524329
+Validated: 41
 EndChar
 
 StartChar: uni24C5
 Encoding: 9413 9413 945
 Width: 1731
-Flags: WO
+Flags: W
 LayerCount: 2
 Fore
 SplineSet
@@ -32772,7 +32772,7 @@ SplineSet
  1573.05878136 898.941218638 1573.05878136 898.941218638 1532 899 c 2,99,-1
  135 901 l 2,81,82
 EndSplineSet
-Validated: 524329
+Validated: 41
 EndChar
 EndChars
 EndSplineFont
