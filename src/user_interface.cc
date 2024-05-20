@@ -799,20 +799,21 @@ void user_interface::update_mode()
 }
 
 
-bool user_interface::at_end_of_number()
+bool user_interface::at_end_of_number(bool want_polar)
 // ----------------------------------------------------------------------------
 //   Check if we are at the end of a number in the editor
 // ----------------------------------------------------------------------------
 {
-    size_t  len     = rt.editing();
-    utf8    ed      = rt.editor();
-    utf8    last    = ed + len;
-    utf8    curs    = ed + cursor;
-    uint    lastnum = ~0U;
-    bool    quoted  = false;
-    bool    numok   = true;
-    bool    hadexp  = false;
-    bool    inexp = false;
+    size_t len       = rt.editing();
+    utf8   ed        = rt.editor();
+    utf8   last      = ed + len;
+    utf8   curs      = ed + cursor;
+    uint   lastnum   = ~0U;
+    bool   quoted    = false;
+    bool   numok     = true;
+    bool   hadexp    = false;
+    bool   inexp     = false;
+    bool   had_polar = false;
 
     for (utf8 p = ed; p < last; p = utf8_next(p))
     {
@@ -844,6 +845,7 @@ bool user_interface::at_end_of_number()
             {
                 lastnum = ~0U;
                 numok = true;
+                had_polar = false;
             }
             continue;
         }
@@ -879,10 +881,12 @@ bool user_interface::at_end_of_number()
         }
 
         // If we had a space, keep position of last number, accept numbers
-        if (isspace(code) || is_separator(code))
+        if (isspace(code) || is_separator(code) ||
+            code == complex::I_MARK || code == complex::ANGLE_MARK)
         {
             numok = true;
             inexp = false;
+            had_polar = code == complex::ANGLE_MARK;
             continue;
         }
 
@@ -908,7 +912,7 @@ bool user_interface::at_end_of_number()
     // Move cursor here
     cursor_position(lastnum + 1);
     select = ~0U;
-    return true;
+    return !want_polar || had_polar;
 }
 
 
@@ -4385,6 +4389,22 @@ bool user_interface::handle_functions(int key)
                 size_t size  = 0;
                 if (current_word(start, size))
                     remove(start, size);
+            }
+
+            if ((ty >= object::ID_Deg && ty <= object::ID_PiRadians) &&
+                at_end_of_number(true))
+            {
+                unicode cp;
+                switch(ty)
+                {
+                case object::ID_Deg:        cp = Settings.DEGREES_SYMBOL; break;
+                case object::ID_Grad:       cp = Settings.GRAD_SYMBOL; break;
+                case object::ID_PiRadians:  cp = Settings.PI_RADIANS_SYMBOL; break;
+                default:
+                case object::ID_Rad:        cp = Settings.RADIANS_SYMBOL; break;
+                }
+                edit(cp, TEXT, false);
+                return true;
             }
 
             switch (mode)

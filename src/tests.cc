@@ -3555,21 +3555,21 @@ void tests::complex_types()
 
     step("Convert real to polar");
     test(CLEAR, LSHIFT, N, F1).noerror();
-    test(CLEAR, "1 2", LSHIFT, G, RSHIFT, F3)
+    test(CLEAR, "1 2", LSHIFT, G, RSHIFT, F2)
         .type(object::ID_polar)
         .expect("1∡2°");
-    test(CLEAR, "1.2 3.4", LSHIFT, G, RSHIFT, F3)
+    test(CLEAR, "1.2 3.4", LSHIFT, G, RSHIFT, F2)
         .type(object::ID_polar)
         .expect("1.2∡3.4°");
 
     step("Convert polar to real");
-    test(CLEAR, "1∡2", LSHIFT, G, RSHIFT, F4)
+    test(CLEAR, "1∡2", LSHIFT, G, RSHIFT, F3)
         .type(object::ID_tag)
         .expect("arg:2 °")
         .test(NOSHIFT, BSP)
         .type(object::ID_tag)
         .expect("mod:1");
-    test(CLEAR, "1.2∡3.4", LSHIFT, G, RSHIFT, F4)
+    test(CLEAR, "1.2∡3.4", LSHIFT, G, RSHIFT, F3)
         .type(object::ID_tag)
         .expect("arg:3.4 °")
         .test(NOSHIFT, BSP)
@@ -3578,19 +3578,19 @@ void tests::complex_types()
 
     step("Convert real to polar and back (add units, strip tags)");
     test(CLEAR, LSHIFT, N, F1).noerror();
-    test(CLEAR, "1 2", LSHIFT, G, RSHIFT, F3)
+    test(CLEAR, "1 2", LSHIFT, G, RSHIFT, F2)
         .type(object::ID_polar)
         .expect("1∡2°")
-        .test(RSHIFT, F4).expect("arg:2 °")
+        .test(RSHIFT, F3).expect("arg:2 °")
         .test("RAD", ENTER).expect("arg:2 °")
-        .test(RSHIFT, F3).expect("1∡0.03490 65850 4ʳ")
+        .test(RSHIFT, F2).expect("1∡0.03490 65850 4ʳ")
         .test("DEG", ENTER).expect("1∡2°");
-    test(CLEAR, "1.2 3.4", LSHIFT, G, RSHIFT, F3)
+    test(CLEAR, "1.2 3.4", LSHIFT, G, RSHIFT, F2)
         .type(object::ID_polar)
         .expect("1.2∡3.4°")
-        .test(RSHIFT, F4).expect("arg:3.4 °")
+        .test(RSHIFT, F3).expect("arg:3.4 °")
         .test("RAD", ENTER).expect("arg:3.4 °")
-        .test(RSHIFT, F3).expect("1.2∡0.05934 11945 68ʳ")
+        .test(RSHIFT, F2).expect("1.2∡0.05934 11945 68ʳ")
         .test("DEG", ENTER).expect("1.2∡3.4°");
 
     step("Short rectangular forms for i")

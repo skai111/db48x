@@ -149,7 +149,7 @@ struct user_interface
     void        cursor_position(uint p) { cursor = p; dirtyEditor = true; edRows = 0; }
     bool        current_word(size_t &start, size_t &size);
     bool        current_word(utf8 &start, size_t &size);
-    bool        at_end_of_number();
+    bool        at_end_of_number(bool want_polar=false);
     unicode     character_left_of_cursor();
     bool        replace_character_left_of_cursor(symbol_p sym);
     bool        replace_character_left_of_cursor(utf8 text, size_t len);

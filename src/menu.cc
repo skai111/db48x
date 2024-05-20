@@ -478,11 +478,10 @@ MENU(ComplexMenu,
      ID_arg,
 
      "2+i3",    ID_ComplexIBeforeImaginary,
-     "2+3i",    ID_ComplexIAfterImaginary,
      "ℝ∡ℝ→ℂ",   ID_RealToPolar,
      "ℂ→ℝ∡ℝ",   ID_PolarToReal,
      "Auto ℂ",  ID_ComplexResults,
-     "Only ℝ",  ID_RealResults);
+     "Angles",  ID_AnglesMenu);
 
 MENU(VectorMenu,
 // ----------------------------------------------------------------------------
