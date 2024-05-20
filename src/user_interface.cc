@@ -2687,6 +2687,7 @@ void user_interface::load_help(utf8 topic, size_t len)
         static char buffer[50];
         snprintf(buffer, sizeof(buffer), "No help for %.*s", int(len), topic);
         rt.error(buffer);
+        clear_help();
     }
 }
 
