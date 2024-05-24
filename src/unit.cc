@@ -127,6 +127,8 @@ unit_p unit::make(algebraic_g v, algebraic_g u, id ty)
     }
     if (expression_p eq = u->as<expression>())
         u = eq->simplify_products();
+    if (!u || !v)
+        return nullptr;
     return rt.make<unit>(ty, v, u);
 }
 
