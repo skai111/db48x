@@ -511,7 +511,7 @@ COMMAND_BODY(SolvingMenuStore)
     {
         uint index = key - KEY_F1 + 5 * ui.page();
         if (symbol_p sym = expression_variable(index))
-            if (object_p value = rt.pop())
+            if (object_p value = tag::strip(rt.pop()))
                 if (directory::store_here(sym, value))
                     if (ui.menu_refresh())
                         return OK;
