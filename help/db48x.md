@@ -6986,6 +6986,11 @@ DB48X supports an arbitrary precision for decimal numbers, limited only by
 memory and the size of built-in constants needed for the computation of
 transcendental functions.
 
+## SolverImprecision
+
+Set the number of digits that can be ignored when solving. The default value is
+6, meaning that if the current precision is 24, we only solve to an accuracy of
+18 digits (i.e. 24-6).
 
 # Base settings
 
