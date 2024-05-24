@@ -89,13 +89,21 @@ algebraic_p unit::parse_uexpr(gcutf8 source, size_t &len)
 // ----------------------------------------------------------------------------
 {
     save<bool> save(unit::mode, true);
+    uint       parens = 0;
     for (size_t offs = 0; offs < len; offs = utf8_next(source, offs))
     {
         unicode cp = utf8_codepoint(+source + offs);
-        if (cp != '(' && cp != ')' && is_separator(cp))
+        if (cp == '(')
+            parens++;
+        else if (cp == ')')
+            parens--;
+        if (is_separator(cp))
         {
-            len = offs;
-            break;
+            if (cp != '(' && (cp != ')' || parens + 1 == 0))
+            {
+                len = offs;
+                break;
+            }
         }
     }
     parser p(source, len, MULTIPLICATIVE);
