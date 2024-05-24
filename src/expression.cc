@@ -2062,7 +2062,7 @@ GRAPH_BODY(expression)
 }
 
 
-expression_p expression::current_equation()
+expression_p expression::current_equation(bool error, bool solving)
 // ----------------------------------------------------------------------------
 //   Return content of EQ variable
 // ----------------------------------------------------------------------------
@@ -2070,7 +2070,7 @@ expression_p expression::current_equation()
     object_p obj = directory::recall_all(static_object(ID_Equation), false);
     if (!obj)
     {
-        if (!rt.error())
+        if (error && !rt.error())
             rt.no_equation_error();
         return nullptr;
     }
@@ -2090,7 +2090,7 @@ expression_p expression::current_equation()
         rt.type_error();
         return nullptr;
     }
-    if (eqty == ID_expression)
+    if (solving && eqty == ID_expression)
         obj = expression_p(obj)->as_difference_for_solve();
 
     return expression_p(obj);

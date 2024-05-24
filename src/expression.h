@@ -111,7 +111,7 @@ struct expression : program
         return nullptr;
     }
 
-    static expression_p current_equation();
+    static expression_p current_equation(bool error, bool solving);
 
 
 

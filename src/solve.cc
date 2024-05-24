@@ -349,7 +349,7 @@ COMMAND_BODY(RcEq)
 //   Store expression in `Equation` variable
 // ----------------------------------------------------------------------------
 {
-    if (expression_p expr = expression::current_equation())
+    if (expression_p expr = expression::current_equation(true, false))
         if (rt.push(expr))
             return OK;
     return ERROR;
@@ -361,16 +361,12 @@ MENU_BODY(SolvingMenu)
 //   Process the MENU command for SolvingMenu
 // ----------------------------------------------------------------------------
 {
-    expression_p expr = expression::current_equation();
-    if (!expr)
-        return false;
-
-    list_g vars = expr->names();
+    expression_p expr = expression::current_equation(false, false);
+    list_g vars = expr ? expr->names() : nullptr;
+    size_t nitems = vars ? vars->items() : 0;
+    items_init(mi, nitems, 3, 1);
     if (!vars)
         return false;
-
-    size_t nitems = vars->items();
-    items_init(mi, nitems, 3, 1);
 
     uint skip = mi.skip;
 
@@ -425,7 +421,7 @@ static symbol_p expression_variable(uint index)
 //   Return the variable in EQ for a given index
 // ----------------------------------------------------------------------------
 {
-    if (expression_p expr = expression::current_equation())
+    if (expression_p expr = expression::current_equation(true, false))
         if (list_g vars = expr->names())
             if (object_p obj = vars->at(index))
                 if (symbol_p sym = obj->as<symbol>())
@@ -548,7 +544,7 @@ COMMAND_BODY(SolvingMenuSolve)
             object_g value = directory::recall_all(sym, false);
             if (!value)
                 value = integer::make(0);
-            if (expression_g eq = expression::current_equation())
+            if (expression_g eq = expression::current_equation(true, true))
                 if (value && is_well_defined(eq, sym))
                     if (algebraic_g result = solve(+eq, sym, value))
                         if (directory::store_here(sym, result))

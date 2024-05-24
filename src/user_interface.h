@@ -130,6 +130,7 @@ struct user_interface
     bool        draw_idle();
     bool        draw_editor();
     bool        draw_stack();
+    bool        draw_object(object_p obj, uint top, uint bottom);
     bool        draw_error();
     bool        draw_message(utf8 header, uint count, utf8 msg[]);
     bool        draw_message(cstring header, cstring = 0, cstring = 0);

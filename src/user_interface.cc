@@ -33,6 +33,7 @@
 #include "blitter.h"
 #include "command.h"
 #include "dmcp.h"
+#include "expression.h"
 #include "functions.h"
 #include "grob.h"
 #include "list.h"
@@ -2513,12 +2514,52 @@ bool user_interface::draw_stack()
     if (!force && !dirtyStack)
         return false;
     draw_busy();
-    Stack.draw_stack();
-    draw_dirty(0, HeaderFont->height() + 2, stack, LCD_H);
+    uint top = HeaderFont->height() + 2;
+    uint bottom = Stack.draw_stack();
+    if (menu_p m = menu())
+        if (m->type() == object::ID_SolvingMenu)
+            if (expression_p expr = expression::current_equation(false, false))
+                draw_object(expr, top, bottom);
+    draw_dirty(0, top, stack, LCD_H);
     draw_idle();
     dirtyStack = false;
     dirtyCommand = true;
     return true;
+}
+
+
+bool user_interface::draw_object(object_p obj, uint top, uint bottom)
+// ----------------------------------------------------------------------------
+//   Draw the current equation or other topical object if necessary
+// ----------------------------------------------------------------------------
+{
+    auto fid = Settings.ResultFont();
+    grapher g(LCD_W, bottom - top, fid,
+              grob::pattern::black, grob::pattern::white,
+              true);
+    g.reduce_font();
+    grob_g graph = nullptr;
+    do
+    {
+        graph = obj->graph(g);
+    } while (!graph && !rt.error() &&
+             Settings.AutoScaleStack() && g.reduce_font());
+
+    if (graph)
+    {
+        grob::surface s  = graph->pixels();
+        pattern       fg = Settings.ResultForeground();
+        pattern       bg = Settings.ResultBackground();
+        size          w  = s.width();
+        size          h  = s.height();
+        coord         x  = (LCD_W - w) / 2;
+        coord         y  = top + 3;
+        Screen.fill(x-1, y-1, x+w+1, y+h+1, pattern::gray50);
+        Screen.draw(s, x, y, fg);
+        Screen.draw_background(s, x, y, bg);
+        draw_dirty(x-1, y-1, x+w+1, y+h+1);
+    }
+    return graph;
 }
 
 

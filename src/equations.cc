@@ -312,7 +312,7 @@ COMMAND_BODY(EquationSolver)
             if (directory::store_here(static_object(ID_Equation), eq))
                 if (const SolvingMenu *smenu =
                     object::static_object(ID_SolvingMenu)->as<SolvingMenu>())
-                    return smenu->update();
+                    return smenu->object::evaluate();
     if (!rt.error())
         rt.type_error();
     return ERROR;

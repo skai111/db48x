@@ -42,7 +42,7 @@ struct stack
 {
     stack();
 
-    void draw_stack();
+    uint draw_stack();
 
 #if SIMULATOR
 public:

@@ -31,14 +31,15 @@
 
 #include "blitter.h"
 #include "dmcp.h"
+#include "expression.h"
 #include "grob.h"
 #include "renderer.h"
 #include "runtime.h"
 #include "settings.h"
 #include "target.h"
+#include "tests.h"
 #include "user_interface.h"
 #include "utf8.h"
-#include "tests.h"
 
 
 stack    Stack;
@@ -70,7 +71,7 @@ static inline uint countDigits(uint value)
 }
 
 
-void stack::draw_stack()
+uint stack::draw_stack()
 // ----------------------------------------------------------------------------
 //   Draw the stack on screen
 // ----------------------------------------------------------------------------
@@ -82,9 +83,9 @@ void stack::draw_stack()
         size_t srclen = rt.source_length();
         text_g command = rt.command();
         rt.clear_error();
-        draw_stack();
+        uint result = draw_stack();
         rt.error(errmsg).source(source, srclen).command(command);
-        return;
+        return result;
     }
 
     font_p font       = Settings.result_font();
@@ -108,7 +109,7 @@ void stack::draw_stack()
         bottom--;
     }
     if (!depth)
-        return;
+        return bottom;
 
     rect clip      = Screen.clip();
     Screen.fill(0, top, hdrx-1, bottom, Settings.StackLevelBackground());
@@ -116,6 +117,7 @@ void stack::draw_stack()
 
     char buf[16];
     coord y = bottom;
+    coord yresult = y;
     for (uint level = 0; level < depth; level++)
     {
         if (coord(y) <= top)
@@ -279,6 +281,9 @@ void stack::draw_stack()
                 Screen.text(LCD_W - 2 - w, y, out, len, font, fg);
             }
 
+            if (level == 0)
+                yresult = y;
+
             font = Settings.stack_font();
         }
 
@@ -299,5 +304,8 @@ void stack::draw_stack()
 
         lineHeight = font->height();
     }
+
     Screen.clip(clip);
+
+    return yresult;
 }
