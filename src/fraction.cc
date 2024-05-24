@@ -121,6 +121,8 @@ GRAPH_BODY(fraction)
             {
                 save<font_id> isave(g.font, fsave.saved);
                 ipart = quo->graph(g);
+                if (!ipart)
+                    return nullptr;
                 num = rem;
             }
         }
