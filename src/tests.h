@@ -84,6 +84,7 @@ struct tests
     void complex_types();
     void complex_arithmetic();
     void complex_functions();
+    void complex_promotion();
     void units_and_conversions();
     void list_functions();
     void sorting_functions();

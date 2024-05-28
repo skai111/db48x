@@ -104,6 +104,7 @@ TESTS(round,            "Rounding and truncating");
 TESTS(ctypes,           "Complex types");
 TESTS(carith,           "Complex arithmetic");
 TESTS(cfunctions,       "Complex functions");
+TESTS(autocplx,         "Automatic complex promotion");
 TESTS(units,            "Units and conversions");
 TESTS(lists,            "List operations");
 TESTS(sorting,          "Sorting operations");
@@ -161,7 +162,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        insertion_of_variables_constants_and_units();
+        complex_promotion();
     }
     else
     {
@@ -193,6 +194,7 @@ void tests::run(bool onlyCurrent)
         complex_types();
         complex_arithmetic();
         complex_functions();
+        complex_promotion();
         units_and_conversions();
         list_functions();
         sorting_functions();
@@ -3885,6 +3887,63 @@ void tests::complex_functions()
 
     step("Restore default 24-digit precision");
     test(CLEAR, "24 PRECISION 12 SIG", ENTER).noerror();
+}
+
+
+void tests::complex_promotion()
+// ----------------------------------------------------------------------------
+//   Complex promotion for real input, e.g. sqrt(-1)
+// ----------------------------------------------------------------------------
+{
+    BEGIN(autocplx);
+
+    step("Using degrees");
+    test(CLEAR, "DEG", ENTER).noerror();
+
+    step("Disable complex mode")
+        .test(CLEAR, "RealResults", ENTER).noerror()
+        .test("-103 FS?", ENTER).expect("False");
+
+    step("sqrt(-1) fails in real mode")
+        .test(CLEAR, "-1 sqrt", ENTER).error("Argument outside domain");
+    step("asin(-2) fails in real mode")
+        .test(CLEAR, "-2 asin", ENTER).error("Argument outside domain");
+    step("acos(-2) fails in real mode")
+        .test(CLEAR, "-2 acos", ENTER).error("Argument outside domain");
+    step("asin(-2) fails in real mode")
+        .test(CLEAR, "-2 asin", ENTER).error("Argument outside domain");
+    step("asin(-2) fails in real mode")
+        .test(CLEAR, "-2 asin", ENTER).error("Argument outside domain");
+    step("atanh(-2) fails in real mode")
+        .test(CLEAR, "-2 atanh", ENTER).error("Argument outside domain");
+    step("log(-2) fails in real mode")
+        .test(CLEAR, "-2 log", ENTER).error("Argument outside domain");
+
+    step("Enable complex mode")
+        .test(CLEAR, "ComplexResults", ENTER).noerror()
+        .test("-103 FS?", ENTER).expect("True");
+
+    step("sqrt(-1) succeeds in complex mode")
+        .test(CLEAR, "-1 sqrt", ENTER)
+        .expect("0+1.ⅈ");
+    step("asin(-2) succeeds in complex mode")
+        .test(CLEAR, "-2 asin", ENTER)
+        .expect("-1.57079 63267 9+1.31695 78969 2ⅈ °");
+    step("acos(-2) succeeds in complex mode")
+        .test(CLEAR, "-2 acos", ENTER)
+        .expect("3.14159 26535 9-1.31695 78969 2ⅈ °");
+    step("asin(-2) succeeds in complex mode")
+        .test(CLEAR, "-2 asin", ENTER)
+        .expect("-1.57079 63267 9+1.31695 78969 2ⅈ °");
+    step("asin(-2) succeeds in complex mode")
+        .test(CLEAR, "-2 asin", ENTER)
+        .expect("-1.57079 63267 9+1.31695 78969 2ⅈ °");
+    step("atanh(-2) succeeds in complex mode")
+        .test(CLEAR, "-2 atanh", ENTER)
+        .expect("-0.54930 61443 34+1.57079 63267 9ⅈ");
+    step("log(-2) succeeds in complex mode")
+        .test(CLEAR, "-2 log", ENTER)
+        .expect("0.69314 71805 6+3.14159 26535 9ⅈ");
 }
 
 

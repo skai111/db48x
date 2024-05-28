@@ -214,15 +214,15 @@ algebraic_p function::evaluate(algebraic_r xr, id op, ops_t ops)
     }
 
     // Call the right hardware-accelerated or decimal function
+    algebraic_p result = nullptr;
     if (hwfp_promotion(x))
     {
         if (hwfloat_p fp = x->as<hwfloat>())
-            return ops.fop(fp);
-        if (hwdouble_p dp = x->as<hwdouble>())
-            return ops.dop(dp);
+            result = ops.fop(fp);
+        else if (hwdouble_p dp = x->as<hwdouble>())
+            result = ops.dop(dp);
     }
-
-    if (decimal_promotion(x))
+    else if (decimal_promotion(x))
     {
         decimal_g xv = decimal_p(+x);
         xv = ops.decop(xv);
@@ -233,12 +233,25 @@ algebraic_p function::evaluate(algebraic_r xr, id op, ops_t ops)
             rt.domain_error();
             return nullptr;
         }
-        return xv;
+        result = +xv;
+    }
+    else
+    {
+        // All other cases: report an error
+        rt.type_error();
+        return nullptr;
     }
 
-    // All other cases: report an error
-    rt.type_error();
-    return nullptr;
+    // If we got a null result, try promoting to complex
+    if (!result && Settings.ComplexResults())
+    {
+        rt.clear_error();
+        complex_g z = rectangular::make(x, integer::make(0));
+        result = ops.zop(z);
+    }
+
+    return result;
+
 }
 
 
