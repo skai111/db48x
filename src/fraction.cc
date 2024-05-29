@@ -111,6 +111,9 @@ GRAPH_BODY(fraction)
     if (!num || !den)
         return nullptr;
 
+    if (num->is_negative())
+        num = -num;
+
     grob_g ipart = nullptr;
     if (Settings.MixedFractions())
     {
