@@ -276,6 +276,7 @@ protected:
 public:
     static grob_p   graph(grapher &g, uint depth, int &precedence);
     static grob_p   parentheses(grapher &g, grob_g x, uint padding = 0);
+    static grob_p   abs_norm(grapher &g, grob_g x, uint padding = 2);
     static grob_p   root(grapher &g, grob_g x);
     static grob_p   ratio(grapher &g, grob_g x, grob_g y);
     static grob_p   ratio(grapher &g, cstring x, grob_g y);

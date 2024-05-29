@@ -1365,6 +1365,37 @@ grob_p expression::parentheses(grapher &g, grob_g what, uint padding)
 }
 
 
+grob_p expression::abs_norm(grapher &g, grob_g what, uint padding)
+// ----------------------------------------------------------------------------
+//   Render a norm / abs (vertical bars, like |x| )
+// ----------------------------------------------------------------------------
+{
+    if (!what)
+        return nullptr;
+
+    pixsize inw    = what->width();
+    pixsize inh    = what->height();
+    pixsize asz    = 2;
+    pixsize rw     = inw + 2 * (asz + padding);
+    pixsize rh     = inh;
+    pixsize rx     = rw - asz;
+
+    grob_g result = g.grob(rw, rh);
+    if (!result)
+        return nullptr;
+
+    // Copy inner content
+    grob::surface ws = what->pixels();
+    grob::surface rs = result->pixels();
+    rs.fill(0, 0, rw, rh, g.background);
+    rs.copy(ws, asz + padding, 0);
+    rs.fill(0, 0, asz-1, rh-3, g.foreground);
+    rs.fill(rx, 0, rx+asz-1, rh-3, g.foreground);
+
+    return result;
+}
+
+
 grob_p expression::root(grapher &g, grob_g what)
 // ----------------------------------------------------------------------------
 //  Draw a square root around the expression
@@ -1806,7 +1837,7 @@ grob_p expression::graph(grapher &g, uint depth, int &precedence)
             int      maxp = oid == ID_neg ? precedence::MULTIPLICATIVE
                 : precedence::SYMBOL;
             bool paren = (argp < maxp &&
-                          oid != ID_sqrt && oid != ID_inv &&
+                          oid != ID_sqrt && oid != ID_inv && oid != ID_abs &&
                           oid != ID_exp && oid != ID_exp10 && oid != ID_exp2 &&
                           oid != ID_cbrt);
             if (paren)
@@ -1823,6 +1854,9 @@ grob_p expression::graph(grapher &g, uint depth, int &precedence)
             case ID_cubed:
                 precedence = precedence::FUNCTION_POWER;
                 return suscript(g, va, arg, 0, "3");
+            case ID_abs:
+                precedence = precedence::FUNCTION_POWER;
+                return abs_norm(g, arg);
             case ID_exp:
                 precedence = precedence::FUNCTION_POWER;
                 return suscript(g, 0, "e", va, arg);
