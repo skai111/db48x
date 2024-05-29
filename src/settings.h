@@ -234,13 +234,20 @@ public:
         SaveSaveLastArguments    saveLastArgs;
         SaveProgramLastArguments saveProgramLastArg;
         SaveSaveStack            saveLastStack;
-        SaveSetAngleUnits        saveAngleUnits; // For sin, cos, tan
-        SaveNumericalResults     saveNumericalResults;
 
         PrepareForProgramEvaluation()
             : saveLastArgs(false),
               saveProgramLastArg(false),
-              saveLastStack(false),
+              saveLastStack(false)
+        {}
+    };
+    struct PrepareForFunctionEvaluation : PrepareForProgramEvaluation
+    {
+        SaveSetAngleUnits        saveAngleUnits; // For sin, cos, tan
+        SaveNumericalResults     saveNumericalResults;
+
+        PrepareForFunctionEvaluation()
+            : PrepareForProgramEvaluation(),
               saveAngleUnits(false),
               saveNumericalResults(true)
         {}

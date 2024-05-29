@@ -162,7 +162,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        complex_promotion();
+        auto_simplification();
     }
     else
     {
@@ -392,7 +392,7 @@ void tests::keyboard_entry()
         .editor("«7 A B + + »");
     step("Space key in immediate mode evaluates")
         .test(ENTER).want("« 7 A B + + »")
-        .test(SPACE).expect("'7+(A+B)'");
+        .test(SPACE).expect("'A+B+7'");
     step("F key inserts equation")
         .test(CLEAR, F).editor("''")
         .test(KEY1).editor("'1'");
@@ -523,11 +523,11 @@ void tests::data_types()
          XEQ, "Y", ENTER, SHIFT, SQRT, XEQ, "Z", ENTER,
          "CUBED", ENTER, ADD, ADD)
         .type(object::ID_expression)
-        .expect("'X⁻¹+(Y²+Z³)'");
+        .expect("'X⁻¹+Y²+Z³'");
     step("Equation fancy parsing from editor");
     test(DOWN, SPACE, SPACE, SPACE,
          RSHIFT, DOWN, SHIFT, F3, " 1 +", ENTER)
-        .type(object::ID_expression).expect("'X⁻¹+(Y²+Z³)+1'");
+        .type(object::ID_expression).expect("'X⁻¹+Y²+Z³+1'");
 
     step("Fractions");
     test(CLEAR, "1/3", ENTER).type(object::ID_fraction).expect("¹/₃");
@@ -1435,6 +1435,9 @@ void tests::for_loops()
 {
     BEGIN(for_loops);
 
+    step("Disable auto-simplification")
+        .test(CLEAR, "noautosimplify", ENTER).noerror();
+
     step("Simple 1..10");
     cstring pgm  = "« 0 1 10 FOR i i SQ + NEXT »";
     cstring pgmo = "« 0 1 10 for i i x² + next »";
@@ -1500,6 +1503,10 @@ void tests::for_loops()
     pgmo = "« 'X' 10 1 for i i x² + next »";
     test(CLEAR, pgm, ENTER).noerror().type(object::ID_program).want(pgmo);
     test(RUNSTOP).noerror().type(object::ID_expression).expect("'X+100'");
+
+    step("Restore auto-simplification")
+        .test(CLEAR, "'noautosimplify' purge", ENTER).noerror();
+
 }
 
 
@@ -4041,7 +4048,7 @@ void tests::units_and_conversions()
         .test(SHIFT, KEY5, KEY4, KEY2, F2, F3).expect("42 km/h")
         .test(ADD).expect("101.54572 8 km/h");
     step("Unit parsing on command line")
-        .test(CLEAR, "12_km/s^2", ENTER).expect("12 km/s↑2");
+        .test(CLEAR, "12_km/s^2", ENTER).expect("12 km/s²");
     step("Parsing degrees as a unit")
         .test(CLEAR, "DEG", ENTER).noerror()
         .test("1∡90", ENTER).expect("1∡90°")
@@ -4515,8 +4522,7 @@ void tests::matrix_functions()
         .want("[[ 3 ¹/₁₁ -4 ⁸/₁₁ -3 ¹⁰/₁₁ ] [ 335 ⁷/₁₀ -1 342 ⁷/₁₀ -1 643 ³/₁₀ ] [ -¹⁹/₂₂ 3 ⁹/₂₂ 5 ³/₂₂ ]]");
     step("Division (symbolic)");
     test(CLEAR, "[[a b][c d]][[e f][g h]] /", ENTER)
-        .want("[[ '(e⁻¹-f÷e·((-g)÷(e·h-g·f)))·a+(-(f÷e·(e÷(e·h-g·f))))·c' '(e⁻¹-f÷e·((-g)÷(e·h-g·f)))·b+(-(f÷e·(e÷(e·h-g·f))))·d' ] [ '(-g)÷(e·h-g·f)·a+e÷(e·h-g·f)·c' '(-g)÷(e·h-g·f)·b+e÷(e·h-g·f)·d' ]]");
-
+        .want("[[ '(e⁻¹-f÷e·(-g)÷(e·h-g·f))·a+(-(f÷e·e÷(e·h-g·f)))·c' '(e⁻¹-f÷e·(-g)÷(e·h-g·f))·b+(-(f÷e·e÷(e·h-g·f)))·d' ] [ '(-g)÷(e·h-g·f)·a+e÷(e·h-g·f)·c' '(-g)÷(e·h-g·f)·b+e÷(e·h-g·f)·d' ]]");
     step("Addition of constant (extension)");
     test(CLEAR, "[[1 2] [3 4]] 3 +", ENTER)
         .want("[[ 4 5 ] [ 6 7 ]]");
@@ -4571,7 +4577,7 @@ void tests::matrix_functions()
               " [ 1 ²/₁₅ ¹/₁₅ -¹/₅ ]"
               " [ ¹/₁₀ -¹/₅ ¹/₁₀ ]]");
     test(CLEAR, "[[a b][c d]] INV", ENTER)
-        .want("[[ 'a⁻¹-b÷a·((-c)÷(a·d-c·b))' '-(b÷a·(a÷(a·d-c·b)))' ] [ '(-c)÷(a·d-c·b)' 'a÷(a·d-c·b)' ]]");
+        .want("[[ 'a⁻¹-b÷a·(-c)÷(a·d-c·b)' '-(b÷a·a÷(a·d-c·b))' ] [ '(-c)÷(a·d-c·b)' 'a÷(a·d-c·b)' ]]");
 
     step("Invert with zero determinant");       // HP48 gets this one wrong
     test(CLEAR, "[[1 2 3][4 5 6][7 8 9]] INV", ENTER)
@@ -4727,6 +4733,107 @@ void tests::auto_simplification()
     test(CLEAR, "{ 1 2 3 } 0 +", ENTER)
         .expect("{ 1 2 3 0 }");
 
+    step("Fold constants: additions")
+        .test(CLEAR, "'1+X+2'", ENTER).expect("'1+X+2'")
+        .test(RUNSTOP).expect("'X+3'");
+    step("Fold constants: subtractions")
+        .test(CLEAR, "'2+X-1'", ENTER).expect("'2+X-1'")
+        .test(RUNSTOP).expect("'X+1'");
+    step("Fold constants: multiplications")
+        .test(CLEAR, "'2*X*3'", ENTER).expect("'2·X·3'")
+        .test(RUNSTOP).expect("'6·X'");
+    step("Fold constants: divisions")
+        .test(CLEAR, "'4*X/2'", ENTER).expect("'4·X÷2'")
+        .test(RUNSTOP).expect("'2·X'");
+    step("Fold constants: power")
+        .test(CLEAR, "'X*2^3'", ENTER).expect("'X·2↑3'")
+        .test(RUNSTOP).expect("'8·X'");
+    step("Fold constants: complicated expression")
+        .test(CLEAR, "'X*2^3+3+2*X-1'", ENTER).expect("'X·2↑3+3+2·X-1'")
+        .test(RUNSTOP).expect("'10·X+2'");
+
+    step("Zero elimination")
+        .test(CLEAR, "'X-0+Y+0'", ENTER).expect("'X-0+Y+0'")
+        .test(RUNSTOP).expect("'X+Y'");
+    step("Adding to self")
+        .test(CLEAR, "'(X+X)+(X+X)'", ENTER).expect("'X+X+(X+X)'")
+        .test(RUNSTOP).expect("'4·X'");
+    step("Subtracting to self")
+        .test(CLEAR, "'(X+X)-(X*2)'", ENTER).expect("'X+X-X·2'")
+        .test(RUNSTOP).expect("0");
+    step("Reordering terms")
+        .test(CLEAR, "'(4+X+3)+2*3'", ENTER).expect("'4+X+3+2·3'")
+        .test(RUNSTOP).expect("'X+13'");
+    step("Double-negation")
+        .test(CLEAR, "'-(-(-((4+X+3)+2*3)))'", ENTER).expect("'-(-(-(4+X+3+2·3)))'")
+        .test(RUNSTOP).expect("'-(X+13)'");
+    step("Cancelled invert")
+        .test(CLEAR, "'inv(inv(X))'", ENTER).expect("'(X⁻¹)⁻¹'")
+        .test(RUNSTOP).expect("'X'");
+    step("Cancelled division")
+        .test(CLEAR, "'7/(7/X)'", ENTER).expect("'7÷(7÷X)'")
+        .test(RUNSTOP).expect("'X'");
+    step("Reversed division")
+        .test(CLEAR, "'7/(3/X)'", ENTER).expect("'7÷(3÷X)'")
+        .test(RUNSTOP).expect("'⁷/₃·X'");
+    step("Factoring terms")
+        .test(CLEAR, "'3*X+2*X-X+3*X+X'", ENTER).expect("'3·X+2·X-X+3·X+X'")
+        .test(RUNSTOP).expect("'8·X'");
+    step("Auto-squaring and auto-cubing")
+        .test(CLEAR, "'A*A*A+B*B'", ENTER).expect("'A·A·A+B·B'")
+        .test(RUNSTOP).expect("'A³+B²'");
+    step("Auto-powers")
+        .test(CLEAR, "'Z*(Z*Z*Z)*(Z*Z)*Z'", ENTER).expect("'Z·(Z·Z·Z)·(Z·Z)·Z'")
+        .test(RUNSTOP).expect("'Z↑7'");
+    step("Auto-powers from square and cubed")
+        .test(CLEAR, "'sq A * cubed B'", ENTER).expect("'A²·B³'")
+        .test(RUNSTOP).expect("'A²·B³'");
+    step("Divide by self is one")
+        .test(CLEAR, "'sin(X)/sin(0+X)'", ENTER).expect("'sin X÷sin(0+X)'")
+        .test(RUNSTOP).expect("1");
+    step("Power simplification")
+        .test(CLEAR, "'X^3*X+Y*Y^5'", ENTER).expect("'X↑3·X+Y·Y↑5'")
+        .test(RUNSTOP).expect("'X↑4+Y↑6'");
+    step("Power one and power zero")
+        .test(CLEAR, "'X^0+Y^1'", ENTER).expect("'X↑0+Y↑1'")
+        .test(RUNSTOP).expect("'Y+1'");
+
+    step("sin simplification")
+        .test(CLEAR, "'1+sin(asin(X))+asin(sin(Y))'", ENTER)
+        .expect("'1+sin (sin⁻¹ X)+sin⁻¹ (sin Y)'")
+        .test(RUNSTOP).expect("'X+sin⁻¹ (sin Y)+1'");
+    step("cos simplification")
+        .test(CLEAR, "'1+cos(acos(X))+acos(cos(Y))'", ENTER)
+        .expect("'1+cos (cos⁻¹ X)+cos⁻¹ (cos Y)'")
+        .test(RUNSTOP).expect("'X+cos⁻¹ (cos Y)+1'");
+    step("tan simplification")
+        .test(CLEAR, "'1+tan(atan(X))+atan(tan(Y))'", ENTER)
+        .expect("'1+tan (tan⁻¹ X)+tan⁻¹ (tan Y)'")
+        .test(RUNSTOP).expect("'X+tan⁻¹ (tan Y)+1'");
+
+    step("sinh simplification")
+        .test(CLEAR, "'1+sinh(asinh(X))+asinh(sinh(Y))'", ENTER)
+        .expect("'1+sinh (sinh⁻¹ X)+sinh⁻¹ (sinh Y)'")
+        .test(RUNSTOP).expect("'X+Y+1'");
+    step("cosh simplification")
+        .test(CLEAR, "'1+cosh(acosh(X))+acosh(cosh(Y))'", ENTER)
+        .expect("'1+cosh (cosh⁻¹ X)+cosh⁻¹ (cosh Y)'")
+        .test(RUNSTOP).expect("'X+Y+1'");
+    step("tanh simplification")
+        .test(CLEAR, "'1+tanh(atanh(X))+atanh(tanh(Y))'", ENTER)
+        .expect("'1+tanh (tanh⁻¹ X)+tanh⁻¹ (tanh Y)'")
+        .test(RUNSTOP).expect("'X+Y+1'");
+
+    step("abs simplification")
+        .test(CLEAR, "'1+abs(abs(X))+abs(-Y)'", ENTER)
+        .expect("'1+abs (abs X)+abs(-Y)'")
+        .test(RUNSTOP).expect("'abs X+abs Y+1'");
+
+    step("sqrt simplification")
+        .test(CLEAR, "'1+abs(abs(X))+abs(-Y)'", ENTER)
+        .expect("'1+abs (abs X)+abs(-Y)'")
+        .test(RUNSTOP).expect("'abs X+abs Y+1'");
+
     step("Disable auto simplification");
     test(CLEAR, "NoAutoSimplify", ENTER).noerror();
 
@@ -4837,9 +4944,9 @@ void tests::rewrite_engine()
 
     step("Matching integers");
     test(CLEAR, "'(A+B)^3' { 'X^K' 'X*X^(K-1)' }", RSHIFT, KEY7, LSHIFT, F1, F1)
-        .expect("2")
+        .expect("3")
         .test(BSP)
-        .expect("'(A+B)·(A+B)²'");
+        .expect("'(A+B)·((A+B)·((A+B)·(A+B)↑0))'");
 
     step("Matching sorted integers (success)");
     test(CLEAR, "'3+5' { 'i+j' '21*(j-i)' }", RSHIFT, KEY7, LSHIFT, F1, F1)
@@ -4897,8 +5004,8 @@ void tests::rewrite_engine()
         .test("'cos(2*A)+cos(3*B)+sin(4*C)' "
               "{ '&K*&Y' '(&K-1)*&Y+&Y' } "
               "↓match", ENTER)
-        .expect("6")
-        .test(BSP).expect("'cos(A+A)+cos(B+B+B)+sin(C+C+C+C)'");
+        .expect("9")
+        .test(BSP).expect("'cos(0·A+A+A)+cos(0·B+B+B+B)+sin(0·C+C+C+C+C)'");
     step("Restoring default for wildcards")
         .test(CLEAR, "'ExplicitWildcards' Purge", ENTER).noerror();
 }
@@ -7058,26 +7165,26 @@ void tests::sum_and_product()
 
     step("Symbolic sum of integers")
         .test(CLEAR, "I 1 10 '(A+I)^3' Σ", ENTER)
-        .expect("'(A+1)↑3+(A+2)↑3+(A+3)↑3+(A+4)↑3+(A+5)↑3"
-                "+(A+6)↑3+(A+7)↑3+(A+8)↑3+(A+9)↑3+(A+10)↑3'");
+        .expect("'(A+1)³+(A+2)³+(A+3)³+(A+4)³+(A+5)³+"
+                "(A+6)³+(A+7)³+(A+8)³+(A+9)³+(A+10)³'");
     step("Symbolic product of integers")
         .test(CLEAR, "I 1 10 '(A+I)^3' ∏", ENTER)
-        .expect("'(A+1)↑3·(A+2)↑3·(A+3)↑3·(A+4)↑3·(A+5)↑3"
-                "·(A+6)↑3·(A+7)↑3·(A+8)↑3·(A+9)↑3·(A+10)↑3'");
+        .expect("'(A+1)³·(A+2)³·(A+3)³·(A+4)³·(A+5)³·"
+                "(A+6)³·(A+7)³·(A+8)³·(A+9)³·(A+10)³'");
     step("Symbolic sum of decimal")
         .test(CLEAR, "I 1.2 10.2 '(A+I)^3' Σ", ENTER)
-        .expect("'(A+1.2)↑3+(A+2.2)↑3+(A+3.2)↑3+(A+4.2)↑3+(A+5.2)↑3"
-                "+(A+6.2)↑3+(A+7.2)↑3+(A+8.2)↑3+(A+9.2)↑3+(A+10.2)↑3'");
+        .expect("'(A+1.2)³+(A+2.2)³+(A+3.2)³+(A+4.2)³+(A+5.2)³+"
+                "(A+6.2)³+(A+7.2)³+(A+8.2)³+(A+9.2)³+(A+10.2)³'");
     step("Symbolic product of decimal")
         .test(CLEAR, "I 1.2 10.2 '(A+I)^3' ∏", ENTER)
-        .expect("'(A+1.2)↑3·(A+2.2)↑3·(A+3.2)↑3·(A+4.2)↑3·(A+5.2)↑3"
-                "·(A+6.2)↑3·(A+7.2)↑3·(A+8.2)↑3·(A+9.2)↑3·(A+10.2)↑3'");
+        .expect("'(A+1.2)³·(A+2.2)³·(A+3.2)³·(A+4.2)³·(A+5.2)³·"
+                "(A+6.2)³·(A+7.2)³·(A+8.2)³·(A+9.2)³·(A+10.2)³'");
     step("Symbolic sum of fraction")
         .test(CLEAR, "I 1/3 10/3 '(A+I)^3' Σ", ENTER)
-        .expect("'(A+¹/₃)↑3+(A+⁴/₃)↑3+(A+⁷/₃)↑3+(A+¹⁰/₃)↑3'");
+        .expect("'(A+¹/₃)³+(A+⁴/₃)³+(A+⁷/₃)³+(A+¹⁰/₃)³'");
     step("Symbolic product of fraction")
         .test(CLEAR, "I 1/3 10/3 '(A+I)^3' ∏", ENTER)
-        .expect("'(A+¹/₃)↑3·(A+⁴/₃)↑3·(A+⁷/₃)↑3·(A+¹⁰/₃)↑3'");
+        .expect("'(A+¹/₃)³·(A+⁴/₃)³·(A+⁷/₃)³·(A+¹⁰/₃)³'");
 
     step("Empty sum")
         .test(CLEAR, "I 10 1 'I^3' Σ", ENTER)

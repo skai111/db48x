@@ -580,7 +580,7 @@ size_t expression::required_memory(id type, id op,
 //   - a, b, c: Constant values (numbers), i.e. is_real returns true
 //   - i, j   : Positive integer values,i.e. type is ID_integer
 //   - k, l, m: Non-zero positive integer values,i.e. type is ID_integer
-//   - n, o, p: Names, i.e. is_symbol returns true
+//   - s, t   : Symbols, i.e. is_symbol returns true
 //   - u, v, w: Unique sub-expressions, i.e. u!=v, v!=w, u!=w
 //   - x, y, z: Arbitrary expression, can be identical to one another
 //
@@ -660,12 +660,12 @@ static inline bool must_be_nonzero(symbol_p symbol)
 }
 
 
-static inline bool must_be_name(symbol_p symbol)
+static inline bool must_be_symbol(symbol_p symbol)
 // ------------------------------------------------------------------------
-//   Convention for identifying names in rewrite rules
+//   Convention for identifying symbols in rewrite rules
 // ----------------------------------------------------------------------------
 {
-    return must_be(symbol, 'n', 'p');
+    return must_be(symbol, 's', 't');
 }
 
 
@@ -768,7 +768,7 @@ static size_t check_match(size_t eq, size_t eqsz,
                             return 0;
                     }
                 }
-                else if (must_be_name(name))
+                else if (must_be_symbol(name))
                 {
                     if (!ftop->as_quoted<symbol>())
                         return 0;
@@ -2233,6 +2233,7 @@ static object::result match_up_down(bool down)
         return object::ERROR;
     }
     expression_g cond = expression::as_expression(*it++);
+    settings::SaveAutoSimplify noas(false);
     uint rwcount = 0;
     cond = eq->rewrite(from, to, cond, &rwcount, down);
     if (!cond)
@@ -2282,9 +2283,8 @@ static eq_symbol<'j'>     j;
 static eq_symbol<'k'>     k;    // Positive non-zero integers
 static eq_symbol<'l'>     l;
 static eq_symbol<'m'>     m;
-static eq_symbol<'n'>     n;    // Symbols
-static eq_symbol<'o'>     o;
-static eq_symbol<'p'>     p;
+static eq_symbol<'n'>     s;    // Symbols
+static eq_symbol<'o'>     t;
 static eq_symbol<'u'>     u;    // Unique subexpressions
 static eq_symbol<'v'>     v;
 static eq_symbol<'w'>     w;
@@ -2301,9 +2301,8 @@ static eq_symbol<'J'>     J;
 static eq_symbol<'K'>     K;    // Positive non-zero integers
 static eq_symbol<'L'>     L;
 static eq_symbol<'M'>     M;
-static eq_symbol<'N'>     N;    // Symbols
-static eq_symbol<'O'>     O;
-static eq_symbol<'P'>     P;
+static eq_symbol<'N'>     S;    // Symbols
+static eq_symbol<'O'>     T;
 static eq_symbol<'U'>     U;    // Unique subexpressions
 static eq_symbol<'V'>     V;
 static eq_symbol<'W'>     W;
@@ -2317,6 +2316,7 @@ static eq_neg_integer<-1> mone;
 static eq_integer<1>      one;
 static eq_integer<2>      two;
 static eq_integer<3>      three;
+static eq_integer<4>      four;
 static eq_always          always;
 
 expression_p expression::as_difference_for_solve() const
@@ -2547,41 +2547,109 @@ expression_p expression::reorder_terms() const
 
 expression_p expression::simplify() const
 // ----------------------------------------------------------------------------
-//   Run various rewrites to simplify equation
+//   Run various rewrites to simplify equations
 // ----------------------------------------------------------------------------
 {
     return rewrites(
-        A+B,         A+B,
-        A*B,         A*B,
-        A-B,         A-B,
-        A/B,         A/B,
-        A^B,         A^B,
 
-        X * A,       A * X,
-        X + X,       two * X,
-        A * X + X,   (A + one) * X,
-        (X ^ K) * X, X ^ (K + one),
-        X * (X ^ K), X ^ (K + one),
-        (X^A)*(x^B), X ^ (A + B),
+        // Compute constant sub-expressions
+        A+B,            A+B,
+        A*B,            A*B,
+        A-B,            A-B,
+        A/B,            A/B,
+        A^B,            A^B,
+        sq(A),          A*A,
+        cubed(A),       A*A*A,
 
-        one * X,     X,
-        zero * X,    zero,
-        X * (Y * Z), (X * Y) * Z,
+        // Addition simplifications
+        A+X,            X+A,
+        X+zero,         X,
+        X+X,            two*X,
+        X+(Y+Z),        (X+Y)+Z,
+        X+A+B,          X+(A+B),
+        (X+A)+Y,        (X+Y)+A,
 
-        X + Y - Y,   X,
-        X - Y + Y,   X,
-        X + (Y + Z), (X + Y) + Z,
-        X + (Y - Z), (X + Y) - Z,
-        X - Y + Z,   (X + Z) - Y,
-        v + u,       u + v,
-        X + v + v,   X + two * v,
-        X + A*U + U, X + (A + one) * U,
-        X + v + u,   X + u + v,
+        // Subtraction simplifications
+        X-zero,         X,
+        zero-X,         -X,
+        X-X,            zero,
+        X+Y-Y,          X,
+        X-Y+Y,          X,
+        X+(Y-Z),        (X+Y)-Z,
+        X-Y+Z,          (X+Z)-Y,
+        X+A-B,          X+(A-B),
+        (X-A)+Y,        (X+Y)-A,
+        (X+A)-Y,        (X-Y)+A,
+        (X-A)-Y,        (X-Y)-A,
+        -(-X),          X,
 
-        v * u,       u * v,
-        X * U * U,   X * (U ^ two),
-        X *(U^A)* U, X * (U^(A + one)),
-        X * V * U,   X * U * V);
+        // Multiplication simplification
+        X*A,            A*X,
+        zero*X,         zero,
+        one*X,          X,
+        A*X+X,          (A+one)*X,
+        X+A*X,          (A+one)*X,
+        A*X+B*X,        (A+B)*X,
+        A*X-B*X,        (A-B)*X,
+        A*X-X,          (A-one)*X,
+        X-A*X,          (one-A)*X,
+        X*(Y*Z),        (X*Y)*Z,
+        X*X*X,          cubed(X),
+        X*X,            sq(X),
+        sq(X)*X,        cubed(X),
+        X*sq(X),        cubed(X),
+        cubed(X)*X,     X^four,
+        X*cubed(X),     X^four,
+        sq(X)*sq(X),    X^four,
+        sq(sq(X)),      X^four,
+
+        // Division simplification
+        X*(Y/Z),        (X*Y)/Z,
+        A*X/B,          (A/B)*X,
+        X/X,            one,
+        A/(B/X),        (A/B)*X,
+        one/X,          inv(X),
+        inv(inv(X)),    X,
+
+        // Power simplifications
+        (X^A)*X,        X^(A+one),
+        X*(X^A),        X^(A+one),
+        sq(X)*(X^A),    X^(A+two),
+        (X^A)*sq(X),    X^(A+two),
+        cubed(X)*(X^A), X^(A+three),
+        (X^A)*cubed(X), X^(A+three),
+        (X^A)*(X^B),    X^(A+B),
+        X^three,        cubed(X),
+        X^two,          sq(X),
+        X^one,          X,
+        X^zero,         one,
+
+        // Function simplifications
+        sin(asin(X)),   X,
+        cos(acos(X)),   X,
+        tan(atan(X)),   X,
+        sinh(asinh(X)), X,
+        cosh(acosh(X)), X,
+        tanh(atanh(X)), X,
+        asinh(sinh(X)), X,
+        acosh(cosh(X)), X,
+        atanh(tanh(X)), X,
+        abs(abs(X)),    abs(X),
+        abs(-X),        abs(X),
+        sqrt(abs(X)),   sqrt(X),
+        sqrt(sq(X)),    abs(X),
+        sq(sqrt(X)),    X,
+        sq(X^Y),        X^(two*Y),
+        sqrt(X^Y),      X^(Y/two),
+        cubed(X^Y),     X^(three*Y),
+        cbrt(X^Y),      X^(Y/three),
+        cbrt(cubed(X)), X,
+        cubed(cbrt(X)), X,
+        log(exp(X)),    X,
+        exp(log(X)),    X,
+        log10(exp10(X)),X,
+        exp10(log10(X)),X
+);
 }
 
 

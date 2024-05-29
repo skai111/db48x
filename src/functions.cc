@@ -63,7 +63,10 @@ algebraic_p function::symbolic(id op, algebraic_r x)
 {
     if (!x)
         return nullptr;
-    return expression::make(op, x);
+    expression_p result = expression::make(op, x);
+    if (result && Settings.AutoSimplify())
+        result = result->simplify();
+    return result;
 }
 
 
@@ -759,7 +762,7 @@ FUNCTION_BODY(sq)
     if (!+x)
         return nullptr;
     if (x->is_symbolic())
-        return expression::make(ID_sq, x);
+        return symbolic(ID_sq, x);
     return x * x;
 }
 
@@ -782,7 +785,7 @@ FUNCTION_BODY(cubed)
     if (!x)
         return nullptr;
     if (x->is_symbolic())
-        return expression::make(ID_cubed, x);
+        return symbolic(ID_cubed, x);
     return x * x * x;
 }
 
@@ -795,7 +798,7 @@ FUNCTION_BODY(mant)
     if (!x)
         return nullptr;
     if (x->is_symbolic())
-        return expression::make(ID_mant, x);
+        return symbolic(ID_mant, x);
     algebraic_g a = x;
     if (!decimal_promotion(a))
     {
@@ -818,7 +821,7 @@ FUNCTION_BODY(xpon)
     if (!x)
         return nullptr;
     if (x->is_symbolic())
-        return expression::make(ID_xpon, x);
+        return symbolic(ID_xpon, x);
     algebraic_g a = x;
     if (!decimal_promotion(a))
     {
@@ -1067,7 +1070,7 @@ FUNCTION_BODY(fact)
         return nullptr;
 
     if (x->is_symbolic())
-        return expression::make(ID_fact, x);
+        return symbolic(ID_fact, x);
 
     if (integer_p ival = x->as<integer>())
     {

@@ -135,7 +135,7 @@ algebraic_p solve(program_g eq, symbol_g name, object_g guess)
     record(solve, "Initial range %t-%t", +lx, +hx);
 
     // We will run programs, do not save stack, etc.
-    settings::PrepareForProgramEvaluation wilLRunPrograms;
+    settings::PrepareForFunctionEvaluation willEvaluateFunctions;
 
     // Set independent variable
     save<symbol_g *> iref(expression::independent, &name);

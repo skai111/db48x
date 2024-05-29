@@ -1341,6 +1341,10 @@ algebraic_p arithmetic::evaluate(id          op,
             }
         }
         x = expression::make(op, x, y);
+        if (x)
+            if (expression_p expr = x->as<expression>())
+                if (Settings.AutoSimplify())
+                    x = expr->simplify();
         return x;
     }
 
