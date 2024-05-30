@@ -785,6 +785,8 @@ object_p object::at(object_p index, object_p value) const
     if (ty == ID_list || ty == ID_array)
     {
         object_g first = ref->at(idx);
+        if (!first)
+            return nullptr;
 
         // Check if we need to recurse
         if (tail && tail->length())

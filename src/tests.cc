@@ -162,7 +162,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        auto_simplification();
+        list_functions();
     }
     else
     {
@@ -4163,6 +4163,36 @@ void tests::list_functions()
     test(CLEAR, "[ A [ D E [ 1 2 \"Hello World\" ] F ] 2 3 ]", ENTER,
          "[ 2 3 3 5 ] GET", ENTER)
         .expect("\"o\"");
+
+    step("Variable access with GET")
+        .test(CLEAR, "{ 11 22 33 44 } 'L' STO", ENTER).noerror()
+        .test("'L' 1 GET", ENTER).expect("11")
+        .test("'L' 3 GET", ENTER).expect("33");
+    step("Variable access with GETI")
+        .test(CLEAR, "'L' 1 GETI", ENTER).expect("11").test(BSP).expect("2")
+        .test(LSHIFT, SUB, F6)
+        .test(F3).expect("22").test(BSP).expect("3")
+        .test(F3).expect("33").test(BSP).expect("4")
+        .test(F3).expect("44").test(BSP).expect("1")
+        .test(F3).expect("11").test(BSP).expect("2");
+
+    step("Putting in a list")
+        .test(CLEAR, "{ 11 22 33 } 1 55 PUT", ENTER).expect("{ 55 22 33 }")
+        .test(ENTER, "2", F1).expect("22")
+        .test("3", MUL).expect("66")
+        .test("2", NOSHIFT, M, F2).expect("{ 55 66 33 }");
+    step("Putting out of range")
+        .test(CLEAR, "{ 11 22 33 } 4 55 PUT", ENTER)
+        .error("Index out of range");
+    step("Incremental put (PUTI)")
+        .test(CLEAR, "{ 11 22 33 } 3 55 PUTI", ENTER).expect("1")
+        .test(NOSHIFT, M).expect("{ 11 22 55 }")
+        .test(NOSHIFT, M, "88", F4).expect("2")
+        .test(NOSHIFT, M).expect("{ 88 22 55 }")
+        .test(EXIT);
+    step("Index error when putting out of range with PUTI")
+        .test(CLEAR, "{ 11 22 33 } 5 55 PUTI", ENTER)
+        .error("Index out of range");
 
     step("Concatenation of lists");
     test(CLEAR, "{ A B C D } { F G H I } +", ENTER)
