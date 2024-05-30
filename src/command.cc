@@ -714,6 +714,12 @@ COMMAND_BODY(Cycle)
             }
             break;
 #endif // CONFIG_FIXED_BASED_OBJECTS
+        case ID_constant:
+        case ID_equation:
+        case ID_xlib:
+        case ID_symbol:
+        case ID_text:
+        case ID_tag:
         case ID_expression:
             Settings.GraphicResultDisplay(!Settings.GraphicResultDisplay());
             if (!Settings.GraphicResultDisplay())
@@ -730,9 +736,6 @@ COMMAND_BODY(Cycle)
         case ID_list:                   type = ID_array;        break;
         case ID_array:                  type = ID_program;      break;
         case ID_program:                type = ID_list;         break;
-        case ID_symbol:                 type = ID_text;         break;
-        case ID_text:                   type = ID_symbol;       break;
-        case ID_tag:                    cmd  = ID_dtag;         break;
         case ID_unit:
         {
             // Cycle prefix

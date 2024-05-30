@@ -5199,9 +5199,9 @@ void tests::cycle_test()
         .test(O).want("« 1 2 3 »");
     step("Convert program to list")
         .test(O).expect("{ 1 2 3 }");
-    step("Delete tag")
+    step("Tags are unchanged")
         .test(CLEAR, ":ABC:1.25", ENTER).expect("ABC :1.25")
-        .test(O).expect("1.25");
+        .test(O).expect("ABC :1.25");
     step("Cycle unit orders of magnitude up (as fractions)")
         .test(CLEAR, "1_kN", ENTER).expect("1 kN")
         .test(O).expect("¹/₁ ₀₀₀ MN")
