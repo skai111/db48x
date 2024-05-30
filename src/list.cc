@@ -1774,7 +1774,7 @@ bool list::names_insert(size_t depth, symbol_p sym, unit_p uobj)
 }
 
 
-list_p list::names(id type, bool units) const
+list_p list::names(bool units, id type) const
 // ----------------------------------------------------------------------------
 //   Return the list of names in an expression
 // ----------------------------------------------------------------------------
@@ -1823,7 +1823,7 @@ static list_p list_variables(object_p obj, object::id type, bool units)
         objty == object::ID_block      ||
         objty == object::ID_list       ||
         objty == object::ID_array)
-        return list_p(obj)->names(type, units);
+        return list_p(obj)->names(units, type);
 
     rt.type_error();
     return nullptr;

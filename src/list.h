@@ -132,7 +132,7 @@ struct list : text
         return object_p(value(size));
     }
 
-    list_p      names(id type = ID_list, bool units = false) const;
+    list_p      names(bool units = false, id type = ID_list) const;
     bool        names_enumerate(size_t depth, bool with_units) const;
     static bool names_insert(size_t depth, symbol_p sym, unit_p unit);
 

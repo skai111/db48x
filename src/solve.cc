@@ -41,6 +41,7 @@
 #include "settings.h"
 #include "symbol.h"
 #include "tag.h"
+#include "unit.h"
 #include "variables.h"
 
 RECORDER(solve,         16, "Numerical solver");
@@ -430,6 +431,28 @@ static symbol_p expression_variable(uint index)
 }
 
 
+static algebraic_p expression_variable_or_unit(uint index)
+// ----------------------------------------------------------------------------
+//   Return the unit in EQ for a given index if there is one, otherwise name
+// ----------------------------------------------------------------------------
+{
+    if (expression_p expr = expression::current_equation(true, false))
+    {
+        if (list_g vars = expr->names(true))
+        {
+            if (object_p obj = vars->at(index))
+            {
+                if (symbol_p sym = obj->as<symbol>())
+                    return sym;
+                if (unit_p u = obj->as<unit>())
+                    return u;
+            }
+        }
+    }
+    return nullptr;
+}
+
+
 static tag_p tagged_value(symbol_p sym, object_p value)
 // ----------------------------------------------------------------------------
 //  Tag a solver value with a symbol
@@ -510,11 +533,47 @@ COMMAND_BODY(SolvingMenuStore)
     if (key >= KEY_F1 && key <= KEY_F6)
     {
         uint index = key - KEY_F1 + 5 * ui.page();
-        if (symbol_p sym = expression_variable(index))
+        if (algebraic_p entry = expression_variable_or_unit(index))
+        {
             if (object_p value = tag::strip(rt.pop()))
-                if (directory::store_here(sym, value))
-                    if (ui.menu_refresh())
-                        return OK;
+            {
+                if (symbol_p sym = entry->as<symbol>())
+                    if (directory::store_here(sym, value))
+                        if (ui.menu_refresh())
+                            return OK;
+
+                if (unit_g uvar = entry->as<unit>())
+                {
+                    if (symbol_g sym = symbol_p(uvar->value()))
+                    {
+                        if (algebraic_g sval = value->as_algebraic())
+                        {
+                            unit_g uval = value->as<unit>();
+                            if (uval)
+                            {
+                                if (!uvar->convert(uval))
+                                    return ERROR;
+                                sval = +uval;
+                            }
+
+                            else
+                            {
+                                sval = unit::simple(sval, uvar->uexpr());
+                            }
+
+                            if (directory::store_here(sym, sval))
+                                if (ui.menu_refresh())
+                                    return OK;
+                        }
+                        else
+                        {
+                            rt.type_error();
+                        }
+                    }
+                }
+
+            }
+        }
     }
     return ERROR;
 }
