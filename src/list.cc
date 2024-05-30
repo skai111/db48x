@@ -41,6 +41,7 @@
 #include "renderer.h"
 #include "runtime.h"
 #include "symbol.h"
+#include "unit.h"
 #include "utf8.h"
 #include "variables.h"
 
@@ -1678,7 +1679,7 @@ COMMAND_BODY(ReverseList)
 //
 // ============================================================================
 
-bool list::names_enumerate(size_t depth) const
+bool list::names_enumerate(size_t depth, bool units) const
 // ----------------------------------------------------------------------------
 //   Enumerate the names in the object
 // ----------------------------------------------------------------------------
@@ -1697,14 +1698,21 @@ bool list::names_enumerate(size_t depth) const
             switch(obj->type())
             {
             case ID_symbol:
-                if (!names_insert(depth, symbol_p(obj)))
+                if (!names_insert(depth, symbol_p(obj), nullptr))
                     return false;
                 break;
             case ID_expression:
             case ID_funcall:
             case ID_polynomial:
-                if (!expression_p(obj)->names_enumerate(depth))
+                if (!expression_p(obj)->names_enumerate(depth, units))
                     return false;
+                break;
+            case ID_unit:
+                if (algebraic_p value = unit_p(obj)->value())
+                    if (symbol_p sym = value->as_quoted<symbol>())
+                        if (!names_insert(depth, sym,
+                                          units ? unit_p(obj) : nullptr))
+                            return false;
                 break;
             default:
                 break;
@@ -1716,7 +1724,7 @@ bool list::names_enumerate(size_t depth) const
         polynomial_g p = polynomial_p(this);
         vars = p->variables();
         for (size_t v = 0; v < vars; v++)
-            if (!names_insert(depth, p->variable(v)))
+            if (!names_insert(depth, p->variable(v), nullptr))
                 return false;
         break;
     }
@@ -1727,7 +1735,7 @@ bool list::names_enumerate(size_t depth) const
 }
 
 
-bool list::names_insert(size_t depth, symbol_p sym)
+bool list::names_insert(size_t depth, symbol_p sym, unit_p uobj)
 // ----------------------------------------------------------------------------
 //   Insert a name according to LNAME sorting order
 // ----------------------------------------------------------------------------
@@ -1739,7 +1747,9 @@ bool list::names_insert(size_t depth, symbol_p sym)
     size_t level;
     for (level = 0; level < existing; level++)
     {
-        symbol_p other = symbol_p(rt.stack(level));
+        object_p oobj  = rt.stack(level);
+        unit_p   ounit = oobj->as<unit>();
+        symbol_p other = ounit ? symbol_p(ounit->value()) : symbol_p(oobj);
         size_t   olen  = 0;
         utf8     oname = other->value(&olen);
         cmp = olen - len;
@@ -1751,19 +1761,20 @@ bool list::names_insert(size_t depth, symbol_p sym)
     if (cmp)
     {
         symbol_g s = sym;
+        unit_g   u = uobj;
         if (!rt.push(+sym))
             return false;
         for (size_t i = 0; i < level; i++)
             if (!rt.stack(i, rt.stack(i+1)))
                 return false;
-        if (!rt.stack(level, s))
+        if (!rt.stack(level, uobj ? object_p(+u) : object_p(+s)))
             return false;
     }
     return true;
 }
 
 
-list_p list::names(id type) const
+list_p list::names(id type, bool units) const
 // ----------------------------------------------------------------------------
 //   Return the list of names in an expression
 // ----------------------------------------------------------------------------
@@ -1774,7 +1785,7 @@ list_p list::names(id type) const
     size_t   depth = rt.depth();
     scribble scr;
 
-    if (!names_enumerate(depth))
+    if (!names_enumerate(depth, units))
         goto error;
 
     // Copy the items to the list
@@ -1798,8 +1809,7 @@ error:
 }
 
 
-static list_p list_variables(object_p obj,
-                             object::id type = object::ID_array)
+static list_p list_variables(object_p obj, object::id type, bool units)
 // ----------------------------------------------------------------------------
 //   List all variables in an expressions
 // ----------------------------------------------------------------------------
@@ -1813,7 +1823,7 @@ static list_p list_variables(object_p obj,
         objty == object::ID_block      ||
         objty == object::ID_list       ||
         objty == object::ID_array)
-        return list_p(obj)->names(type);
+        return list_p(obj)->names(type, units);
 
     rt.type_error();
     return nullptr;
@@ -1826,7 +1836,7 @@ COMMAND_BODY(XVars)
 // ----------------------------------------------------------------------------
 {
     if (object_p obj = rt.top())
-        if (list_p result = list_variables(obj, ID_list))
+        if (list_p result = list_variables(obj, ID_list, true))
             if (rt.top(result))
                 return OK;
     return ERROR;
@@ -1839,7 +1849,7 @@ COMMAND_BODY(LName)
 // ----------------------------------------------------------------------------
 {
     if (object_p obj = rt.top())
-        if (list_p result = list_variables(obj, ID_array))
+        if (list_p result = list_variables(obj, ID_array, false))
             if (rt.push(result))
                 return OK;
     return ERROR;

@@ -44,6 +44,7 @@
 
 
 GCP(list);
+GCP(unit);
 
 
 struct list : text
@@ -131,9 +132,9 @@ struct list : text
         return object_p(value(size));
     }
 
-    list_p      names(id type = ID_list) const;
-    bool        names_enumerate(size_t depth) const;
-    static bool names_insert(size_t depth, symbol_p sym);
+    list_p      names(id type = ID_list, bool units = false) const;
+    bool        names_enumerate(size_t depth, bool with_units) const;
+    static bool names_insert(size_t depth, symbol_p sym, unit_p unit);
 
 
     // Iterator, built in a way that is robust to garbage collection in loops

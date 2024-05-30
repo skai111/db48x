@@ -7829,10 +7829,12 @@ Names are sorted in decreasing order of size, and for the same size,
 in alphabetical order.
 
 `'A*Foo*G(X;Y;cos Z)`  ▶ `'A*Foo*G(X;Y;cos Z)` `[ Foo A G X Y Z ]`
+`'(U_V)=(I_A)*(R_Ω)'`  ▶ `'(U_V)=(I_A)*(R_Ω)'` `[ I R U ]`
 
 As a DB50X extension, this command also applies to programs, list and
-arrays. Another extension is the
-[`ExpressionVariables`](#expressionvariables) command.
+arrays. Another extension is the [`ExpressionVariables`](#expressionvariables)
+command, which extracts the units associated with the variables if there are
+any. The `LName` command only returns the names, without the associated unit.
 
 
 ## ExpressionVariables (XVars)
@@ -7841,8 +7843,11 @@ List all variables used in an expression or polynomial, returning the result as
 a list.
 Names are sorted in decreasing order of size, and for the same size,
 in alphabetical order.
+If there are units in the expression, the units are returned in the resulting
+list.
 
-`'A*Foo*G(X;Y;cos Z)`  ▶ `'A*Foo*G(X;Y;cos Z)` `[ Foo A G X Y Z ]`
+`'A*Foo*G(X;Y;cos Z)`  ▶ `{ Foo A G X Y Z }`
+`'(U_V)=(I_A)*(R_Ω)'`  ▶ `{ (I_A) (R_Ω) (U_V) }`
 
 This is a variation of the HP command [`LNAME`](#listexpressionnames), which is
 a bit more convenient to use in programs.
