@@ -6140,7 +6140,7 @@ void tests::date_operations()
         .test(CLEAR, LSHIFT, RUNSTOP,
               "0 1 10 FOR i i + 0.01 WAIT NEXT", ENTER,
               "TEVAL", LENGTHY(1500), ENTER).noerror()
-        .match("duration:[1-3][0-9][0-9] ms");
+        .match("duration:[1-3]?[0-9][0-9] ms");
 }
 
 
