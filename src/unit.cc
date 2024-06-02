@@ -254,6 +254,9 @@ HELP_BODY(unit)
 // This variable is true while evaluating a uexpr
 bool unit::mode = false;
 
+// This variable is true to ignore units while solving an equation
+bool unit::ignore = false;
+
 
 static const cstring basic_units[] =
 // ----------------------------------------------------------------------------

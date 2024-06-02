@@ -2124,11 +2124,53 @@ expression_p expression::current_equation(bool error, bool solving)
         rt.type_error();
         return nullptr;
     }
+    expression_p eq = expression_p(obj);
     if (solving && eqty == ID_expression)
-        obj = expression_p(obj)->as_difference_for_solve();
+        eq = eq->strip_units();
 
-    return expression_p(obj);
+    return eq;
 }
+
+
+expression_p expression::strip_units() const
+// ----------------------------------------------------------------------------
+//   If an expression contains unit variables, replace with symbols
+// ----------------------------------------------------------------------------
+{
+    expression_g expr    = this;
+    id           type    = expr->type();
+    bool         changed = false;
+    scribble     scr;
+
+    for (object_p obj : *expr)
+    {
+        if (unit_p u = obj->as<unit>())
+        {
+            algebraic_p value = u->value();
+            if (symbol_p sym = value->as_quoted<symbol>())
+            {
+                obj = sym;
+                changed = true;
+            }
+        }
+        else if (obj->type() == ID_TestEQ)
+        {
+            obj = object::static_object(ID_sub);
+            changed = true;
+        }
+        size_t sz = obj->size();
+        byte *p = rt.allocate(sz);
+        memmove(p, byte_p(obj), sz);
+    }
+    if (!changed)
+        return expr;
+
+    gcbytes scratch = scr.scratch();
+    size_t  alloc   = scr.growth();
+    expression_p result = rt.make<expression>(type, scratch, alloc);
+    return result;
+}
+
 
 
 

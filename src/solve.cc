@@ -95,7 +95,7 @@ COMMAND_BODY(Root)
 
     // Actual solving
     program_g eq = program_p(+eqobj);
-    if (algebraic_g x = solve(eq, name, guess))
+    if (algebraic_g x = solve(eq, +name, guess))
     {
         size_t nlen = 0;
         gcutf8 ntxt = name->value(&nlen);
@@ -109,7 +109,7 @@ COMMAND_BODY(Root)
 
 
 
-algebraic_p solve(program_g eq, symbol_g name, object_g guess)
+algebraic_p solve(program_g eq, algebraic_g name_or_unit, object_g guess)
 // ----------------------------------------------------------------------------
 //   The core of the solver
 // ----------------------------------------------------------------------------
@@ -118,6 +118,18 @@ algebraic_p solve(program_g eq, symbol_g name, object_g guess)
     algebraic_g x, dx, lx, hx;
     algebraic_g y, dy, ly, hy;
     object::id gty = guess->type();
+    if (gty == object::ID_unit)
+    {
+        unit_g uguess = unit_p(+guess);
+        if (unit_g uname = name_or_unit->as<unit>())
+        {
+            if (!uname->convert(uguess))
+                return nullptr;
+            guess = +uguess;
+        }
+        guess = unit_p(+guess)->value();
+        gty = guess->type();
+    }
     if (object::is_real(gty) || object::is_complex(gty))
     {
         lx = algebraic_p(+guess);
@@ -132,13 +144,37 @@ algebraic_p solve(program_g eq, symbol_g name, object_g guess)
         if (!lx || !hx)
             return nullptr;
     }
+    else
+    {
+        rt.type_error();
+        return nullptr;
+    }
     x = lx;
     record(solve, "Initial range %t-%t", +lx, +hx);
 
     // We will run programs, do not save stack, etc.
     settings::PrepareForFunctionEvaluation willEvaluateFunctions;
+    save<bool> ignore_units(unit::ignore, true);
 
     // Set independent variable
+    symbol_g    name  = name_or_unit->as_quoted<symbol>();
+    unit_p      uname = name_or_unit->as<unit>();
+    algebraic_g uexpr;
+    if (!name)
+    {
+        if (!uname)
+        {
+            rt.type_error();
+            return nullptr;
+        }
+        name = uname->value()->as_quoted<symbol>();
+        uexpr = uname->uexpr();
+        if (!name)
+        {
+            rt.some_invalid_name_error();
+            return nullptr;
+        }
+    }
     save<symbol_g *> iref(expression::independent, &name);
     int              prec = Settings.Precision() - Settings.SolverImprecision();
     algebraic_g      eps = decimal::make(1, prec <= 0 ? -1 : -prec);
@@ -171,6 +207,8 @@ algebraic_p solve(program_g eq, symbol_g name, object_g guess)
             {
                 record(solve, "[%u] Solution=%t value=%t",
                        i, +x, +y);
+                if (uexpr)
+                    x = unit::simple(x, uexpr);
                 return x;
             }
 
@@ -605,12 +643,13 @@ COMMAND_BODY(SolvingMenuSolve)
                 value = integer::make(0);
             if (expression_g eq = expression::current_equation(true, true))
                 if (value && is_well_defined(eq, sym))
-                    if (algebraic_g result = solve(+eq, sym, value))
-                        if (directory::store_here(sym, result))
-                            if (tag_p tagged = tagged_value(sym, result))
-                                if (rt.push(tagged))
-                                    if (ui.menu_refresh())
-                                        return OK;
+                    if (algebraic_p var = expression_variable_or_unit(index))
+                        if (algebraic_g result = solve(+eq, var, value))
+                            if (directory::store_here(sym, result))
+                                if (tag_p tagged = tagged_value(sym, result))
+                                    if (rt.push(tagged))
+                                        if (ui.menu_refresh())
+                                            return OK;
         }
     }
 

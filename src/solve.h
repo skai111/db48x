@@ -34,7 +34,7 @@
 #include "menu.h"
 #include "symbol.h"
 
-algebraic_p solve(program_g eq, symbol_g name, object_g guess);
+algebraic_p solve(program_g eq, algebraic_g name, object_g guess);
 
 COMMAND_DECLARE(Root,3);
 

@@ -249,6 +249,7 @@ struct expression : program
     expression_p reorder_terms() const;
     expression_p simplify() const;
     expression_p as_difference_for_solve() const; // Transform A=B into A-B
+    expression_p strip_units() const;
     object_p     outermost_operator() const;
     size_t       render(renderer &r, bool quoted = false) const
     {
