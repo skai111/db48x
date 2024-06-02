@@ -2286,6 +2286,58 @@ You can edit it by recalling its content on the stack using
 back to disk using `"config:equations.csv" STO`.
 # Release notes
 
+## Release 0.7.7 "Forgiving" - Units in equations
+
+This release keeps marching towards full support for an equation library.
+The primary focus was support for units in equations.
+
+
+### New features
+
+* solver: Accept equations in solver menu
+* solver: Add shortcut to solve an equation from the library
+* solver: Display the current equation above the stack
+* solver: Solve expressions containing units
+* solver: Add units for solver variables when entering them
+* equations: Add option to list variables with units
+* programs: Enforce numerical values for solver / plotter
+* constants: Implement programmatic lookup
+* fonts: Add support for fixed-width digits
+* keyboard: Interpret `ASN` as `AsNumber` (convert to decimal)
+* complex: Allow insertion of angle while entering phasors
+* complex: Implement auto-complex promotion
+* graph: Render abs(X) with bars (e.g. |X|)
+* functions: Automatic simplification of expressions
+
+
+### Bug fixes
+
+* arithmetic: Avoid null-dereference in complex operations
+* help: Close help file if topic not found
+* solver: Do not store tag for tagged values
+* graph: Gracefully fallback if fraction integral part does not render
+* units: Avoid null-dereference if unit simplification fails
+* units: Count parentheses while parsing units
+* put: Fix null-dereference checking the index
+* fractions: Do not render two negative signs in graphical mode
+
+
+### Improvements
+
+* cycle: Update behaviour for several data types
+* menu: Replace `abs` with `|z|` in complex menu
+* ui: Micro-optimization to avoid reading object type twice
+* parser: Accelerate and improve object parsing
+* recorder: Add recorder entries for evaluation
+* build: Remove any leftover references to Intel decimal library
+* tests: Add `▶` entry in tests
+* tests: Increase default wait time to 1000ms
+* tests: do not error out if `teval` takes less than 100ms
+* equations: Rename `PerfectGas` equation to `IdealGas`
+* menus: Adjust size of menus to make descenders visible
+* solver: Replace `SolverPrecision` with `SolverImprecision`
+
+
 ## Release 0.7.6 "United" - Equation Solving Menu
 
 This release is primarily about implementing a dynamic solving menu that makes
