@@ -220,6 +220,7 @@ retry:
         r = integer::do_parse(p);
         if (cp != '#')
         {
+    case '.': case ',':
             if (r == SKIP || r == WARN)
                 r = hwfp_base::do_parse(p);
             if (r == SKIP)

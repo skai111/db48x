@@ -162,7 +162,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        list_functions();
+        data_types();
     }
     else
     {
@@ -473,6 +473,40 @@ void tests::data_types()
 
     step("Do not parse #7D as a decimal (#371)")
         .test(CLEAR, "#7D", ENTER).expect("#7D₁₆");
+
+    step("Decimal value")
+        .test(CLEAR, "123.456", ENTER)
+        .type(object::ID_decimal).expect("123.456");
+    step("Decimal with trailing dot")
+        .test(CLEAR, "123.", ENTER).type(object::ID_decimal).expect("123.");
+    step("Negative decimal with leading zero")
+        .test(CLEAR, "0.123", ENTER).type(object::ID_decimal).expect("0.123");
+    step("Decimal with leading dot")
+        .test(CLEAR, ".123", ENTER).type(object::ID_decimal).expect("0.123");
+    step("Negative decimal")
+        .test(CLEAR, "-0.123", ENTER)
+        .type(object::ID_neg_decimal).expect("-0.123");
+    step("Negative decimal with leading dot")
+        .test(CLEAR, "-.123", ENTER)
+        .type(object::ID_neg_decimal).expect("-0.123");
+    step("Decimal with exponent")
+        .test(CLEAR, "123E1", ENTER).type(object::ID_decimal).expect("1 230.");
+    step("Decimal with negative exponent")
+        .test(CLEAR, "123E-1", ENTER).type(object::ID_decimal).expect("12.3");
+    step("Decimal with exponent")
+        .test(CLEAR, "12.3E1", ENTER).type(object::ID_decimal).expect("123.");
+    step("Decimal with negative exponent")
+        .test(CLEAR, "12.3E-1", ENTER).type(object::ID_decimal).expect("1.23");
+
+    step("Comma as decimal dot is accepted by default")
+        .test(CLEAR, "0,123").editor("0,123").test(ENTER)
+        .type(object::ID_decimal).expect("0.123");
+    step("Selecting comma as decimal dot")
+        .test(CLEAR, LSHIFT, O, LSHIFT, F6, F6);
+    step("Comma as decimal dot is accepted after changing flag")
+        .test(CLEAR, "0,123", ENTER).type(object::ID_decimal).expect("0,123");
+    step("Restoring dot as decimal separator")
+        .test(F5, ENTER, BSP).type(object::ID_decimal).expect("0.123");;
 
     step("Symbols");
     cstring symbol = "ABC123Z";
@@ -1610,7 +1644,7 @@ void tests::logical_operations()
     cstring octalf = "#1777₈";
     test(CLEAR, octal, ENTER).type(object::ID_oct_integer).expect(octalf);
 
-    step("Decimal number");
+    step("Decimal based number");
     cstring decimal  = "#12345d";
     cstring decimalf = "#1 2345₁₀";
     test(CLEAR, decimal, ENTER).type(object::ID_dec_integer).expect(decimalf);
@@ -8617,7 +8651,7 @@ tests &tests::itest(cstring txt)
         case '*': k = MUL;          alpha = true; xshift = true; break;
         case '/': k = DIV;          alpha = true; xshift = true; break;
         case '.': k = DOT;          shift = alpha; break;
-        case ',': k = DOT;          shift = !alpha; break;
+        case ',': k = DOT;          alpha = true;  break;
         case ' ': k = RUNSTOP;      alpha = true;  break;
         case '?': k = KEY7;         alpha = true; xshift = true; break;
         case '!': k = ADD;          alpha = true; xshift = true; break;
