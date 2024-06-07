@@ -190,8 +190,7 @@ symbol_p expression::render(uint depth, int &precedence, bool editing)
             int      prec = obj->precedence();
             if (prec != precedence::FUNCTION)
             {
-                id oid  = obj->type();
-                if (oid == ID_mod || oid == ID_rem)
+                if (op->is_alpha())
                 {
                     op = symbol::make(' ') + op;
                     op = op + symbol::make(' ');

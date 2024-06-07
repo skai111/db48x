@@ -195,6 +195,17 @@ bool symbol::starts_with(utf8 otxt, size_t osz) const
 }
 
 
+bool symbol::is_alpha() const
+// ----------------------------------------------------------------------------
+//   Check if the symbol begins with an alphabetic symbolc
+// ----------------------------------------------------------------------------
+{
+    size_t sz;
+    utf8 txt = value(&sz);
+    return ::is_alpha(txt);
+}
+
+
 int symbol::compare(utf8 x, utf8 y, size_t len)
 // ----------------------------------------------------------------------------
 //   Compare two names, ignoring case or not depending on settings

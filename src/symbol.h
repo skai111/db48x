@@ -87,6 +87,8 @@ struct symbol : text
     }
     bool     starts_with(utf8 name, size_t len) const;
 
+    bool     is_alpha() const;
+
     static int compare(utf8 x, utf8 y, size_t len);
 
 public:

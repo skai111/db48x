@@ -459,4 +459,23 @@ inline bool is_unicode_space(unicode c)
         || c == L' ' || c == L' ' || c == L' ' || c == L' ' || c == L' ';
 }
 
+
+inline bool is_alpha(unicode cp)
+// ----------------------------------------------------------------------------
+//   Return true if this is an alpha
+// ----------------------------------------------------------------------------
+{
+    return (cp >= 'A' && cp <= 'Z') || (cp >= 'a' && cp <= 'z');
+}
+
+
+inline bool is_alpha(utf8 s)
+// ----------------------------------------------------------------------------
+//   Return true if string begins with alpha
+// ----------------------------------------------------------------------------
+{
+    return is_alpha(utf8_codepoint(s));
+}
+
+
 #endif // UTF8_H

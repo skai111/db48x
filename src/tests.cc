@@ -162,7 +162,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        regression_checks();
+        editor_operations();
     }
     else
     {
@@ -746,7 +746,24 @@ void tests::editor_operations()
         .test(RUNSTOP).expect("'F'")
         .test("DEPTH TOLIST", ENTER)
         .expect("{ 1 5 1 024 'x' 'y' 'z' 'G' 'F' }");
-}
+
+    step("Enter X mod Y and checking it can be edited")
+        .test(CLEAR, NOSHIFT, F, "X", RSHIFT, L, F3, "Y")
+        .editor("'X mod Y'")
+        .test(ENTER)
+        .expect("'X mod Y'")
+        .test(DOWN)
+        .editor("'X mod Y'")
+        .test(ENTER);
+    step("Enter X and Y and checking it can be edited")
+        .test(CLEAR, NOSHIFT, F, "x", LSHIFT, KEY4, F2, "y")
+        .editor("'x and y'")
+        .test(ENTER)
+        .expect("'x and y'")
+        .test(DOWN)
+        .editor("'x and y'")
+        .test(ENTER);
+    }
 
 
 void tests::stack_operations()

@@ -210,6 +210,7 @@ object::result user_interface::edit(utf8 text, size_t len, modes m)
     bool editing = rt.editing();
     byte *ed = rt.editor();
     bool skip = m == POSTFIX && is_algebraic(mode);
+    bool alpha_infix = m == INFIX && is_alpha(text);
 
     // Skip the x in postfix operators (x⁻¹, x², x³ or x!)
     if (skip)
@@ -230,7 +231,8 @@ object::result user_interface::edit(utf8 text, size_t len, modes m)
     else if ((!is_algebraic(mode) || !is_algebraic(m)) &&
              cursor > 0 && ed[cursor-1] != ' ')
     {
-        if (!skip && (!is_algebraic(mode) || (m != INFIX && m != CONSTANT)))
+        if (!skip && (!is_algebraic(mode) || ((m != INFIX || alpha_infix) &&
+                                              m != CONSTANT)))
             insert(cursor, ' ');
     }
 
@@ -244,12 +246,13 @@ object::result user_interface::edit(utf8 text, size_t len, modes m)
     if (m == TEXT)
     {
     }
-    else if ((m == POSTFIX || m == INFIX || m == CONSTANT) &&
+    else if ((m == POSTFIX || (m == INFIX && !alpha_infix) || m == CONSTANT) &&
              is_algebraic(mode))
     {
         /* nothing */
     }
-    else if (!is_algebraic(mode) || !is_algebraic(m))
+    else if (!is_algebraic(mode) || !is_algebraic(m) ||
+             (m == INFIX && alpha_infix))
     {
         insert(cursor, ' ');
     }
