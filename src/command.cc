@@ -512,10 +512,12 @@ COMMAND_BODY(Type)
 // ----------------------------------------------------------------------------
 {
     if (object_p top = rt.top())
-        if (int tval = top->type_value())
-            if (integer_p type = integer::make(tval))
-                if (rt.top(type))
-                    return OK;
+    {
+        int tval = top->type_value();
+        if (integer_p type = integer::make(tval))
+            if (rt.top(type))
+                return OK;
+    }
     return ERROR;
 }
 

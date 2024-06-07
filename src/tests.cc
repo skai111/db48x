@@ -162,7 +162,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        data_types();
+        regression_checks();
     }
     else
     {
@@ -7542,6 +7542,9 @@ void tests::regression_checks()
         .test(NOSHIFT, A, EXIT).expect("123")
         .test(KEY1).editor("1")
         .test(ENTER).expect("1");
+
+    step("Bug 961: Type for decimal values")
+        .test(CLEAR, "123.4 TYPE", ENTER).expect("0");
 }
 
 
