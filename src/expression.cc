@@ -48,10 +48,11 @@ RECORDER(rewrites,      16, "Expression rewrites");
 RECORDER(rewrites_done, 16, "Successful expression rewrites");
 
 
-symbol_g *expression::independent = nullptr;
+symbol_g *expression::independent       = nullptr;
 object_g *expression::independent_value = nullptr;
-symbol_g *expression::dependent = nullptr;
-object_g *expression::dependent_value = nullptr;
+symbol_g *expression::dependent         = nullptr;
+object_g *expression::dependent_value   = nullptr;
+bool      expression::in_algebraic      = false;
 
 
 
@@ -60,6 +61,18 @@ object_g *expression::dependent_value = nullptr;
 //    Equation
 //
 // ============================================================================
+
+EVAL_BODY(expression)
+// ----------------------------------------------------------------------------
+//   Evaluate expressions, indicating that we are in algebraic mode
+// ----------------------------------------------------------------------------
+{
+    save<bool> savealg(in_algebraic, true);
+    if (running)
+        return rt.push(o) ? OK : ERROR;
+    return o->run_program();
+}
+
 
 PARSE_BODY(expression)
 // ----------------------------------------------------------------------------
@@ -204,6 +217,8 @@ symbol_p expression::render(uint depth, int &precedence, bool editing)
             }
             else
             {
+                if (obj->type() == ID_xroot)
+                    std::swap(ltxt, rtxt);
                 symbol_g arg = ltxt + symbol::make(';') + rtxt;
                 arg = parentheses(arg);
                 precedence = precedence::FUNCTION;

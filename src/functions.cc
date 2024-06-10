@@ -1010,14 +1010,14 @@ NFUNCTION_BODY(xroot)
 //   Compute the x-th root
 // ----------------------------------------------------------------------------
 {
-    if (args[0]->is_zero())
+    algebraic_g &x = args[expression::in_algebraic ? 1 : 0];
+    if (x->is_zero())
     {
         rt.domain_error();
     }
     else
     {
-        algebraic_g &x = args[0];
-        algebraic_g &y = args[1];
+        algebraic_g &y = args[expression::in_algebraic ? 0 : 1];
         bool is_int = x->is_integer();
         bool is_neg = false;
         if (!is_int && x->is_decimal())

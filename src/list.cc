@@ -66,20 +66,22 @@ object::result list::list_parse(id      type,
 //   of complex objects, like { { A B { C D } } }
 {
     // We have to be careful that we may have to GC to make room for list
-    gcutf8   s          = p.source;
-    size_t   max        = p.length;
-    object_g infix      = nullptr;
-    object_g prefix     = nullptr;
-    object_g postfix    = nullptr;
-    object_g obj        = nullptr;
-    bool     negate     = false;
-    int      precedence = p.precedence;
-    int      lowest     = precedence;
-    uint     arity      = 0;
-    uint     arg        = 0;
-    size_t   objcount   = 0;
-    size_t   non_alg    = 0;
-    size_t   non_alg_len= 0;
+    gcutf8   s           = p.source;
+    size_t   max         = p.length;
+    object_g infix       = nullptr;
+    object_g prefix      = nullptr;
+    object_g postfix     = nullptr;
+    object_g obj         = nullptr;
+    object_g xroot_arg   = nullptr;
+    bool     negate      = false;
+    int      precedence  = p.precedence;
+    int      lowest      = precedence;
+    uint     arity       = 0;
+    uint     arg         = 0;
+    size_t   objcount    = 0;
+    size_t   non_alg     = 0;
+    size_t   non_alg_len = 0;
+    bool     xroot       = false;
 
     record(list, "Parse %lc%lc precedence %d length %u [%s]",
            open, close, precedence, max, utf8(s));
@@ -242,6 +244,10 @@ object::result list::list_parse(id      type,
                     {
                         arity = prefix->arity();
                         arg = 0;
+
+                        // xroot is the one command that parses args backwards
+                        if (prefix->type() == ID_xroot)
+                            xroot = true;
                     }
                     obj = nullptr;
                     precedence = -SYMBOL;
@@ -266,6 +272,14 @@ object::result list::list_parse(id      type,
             }
         }
 
+        if (xroot && obj && !xroot_arg)
+        {
+            xroot_arg = obj;
+            xroot = false;
+            obj = nullptr;
+            precedence = -precedence;
+        }
+
         if (obj)
         {
             // Copy the parsed object to the scratch pad (may GC)
@@ -286,7 +300,13 @@ object::result list::list_parse(id      type,
                     return ERROR;
                 memmove(objcopy, (byte *) obj, objsize);
 
-                if (prefix)
+                if (xroot_arg)
+                {
+                    obj = xroot_arg;
+                    xroot_arg = nullptr;
+                    arg++;
+                }
+                else if (prefix)
                 {
                     if (arity > 1 && arg < arity)
                     {

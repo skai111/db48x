@@ -732,6 +732,12 @@ void tests::editor_operations()
         .test(CLEAR, "'product(j;a;b;2^j)'", ENTER).expect("'∏(j;a;b;2↑j)'")
         .test(CLEAR, "'xroot(x+1;5)'", ENTER).expect("'xroot(x+1;5)'");
 
+    step("Order of xroot arguments")
+        .test(CLEAR, "A B", RSHIFT, INV)
+        .expect("'xroot(B;A)'").image_noheader("xroot-order")
+        .test(DOWN).editor("'xroot(B;A)'")
+        .test(ENTER).image_noheader("xroot-order");
+
     step("Error parsing n-ary expressions")
         .test(CLEAR, "'Σ(i;1)'", ENTER).error("Unterminated")
         .test(CLEAR, "'sum(i;1;10;i^3;42)'", ENTER).error("Unterminated")

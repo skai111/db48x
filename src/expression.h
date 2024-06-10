@@ -323,6 +323,7 @@ public:
     PARSE_DECL(expression);
     RENDER_DECL(expression);
     GRAPH_DECL(expression);
+    EVAL_DECL(expression);
     HELP_DECL(expression);
 
 public:
@@ -331,6 +332,7 @@ public:
     static object_g    *independent_value;
     static symbol_g    *dependent;
     static object_g    *dependent_value;
+    static bool         in_algebraic;
 };
 
 
