@@ -762,6 +762,14 @@ void tests::editor_operations()
         .test(DOWN).editor("'Σ(X;-1;10;X)'")
         .test(ENTER, EXIT).image_noheader("sum-negation3");
 
+    step("Variable in sum must be a variable")
+        .test(CLEAR, "'Σ(-X;1;10;X)'", ENTER)
+        .error("Expected variable name");
+
+    step("Variable in product must be a variable")
+        .test(CLEAR, "'∏(-X;1;10;X)'", ENTER)
+        .error("Expected variable name");
+
     step("Error parsing n-ary expressions")
         .test(CLEAR, "'Σ(i;1)'", ENTER).error("Unterminated")
         .test(CLEAR, "'sum(i;1;10;i^3;42)'", ENTER).error("Unterminated")

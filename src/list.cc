@@ -156,6 +156,22 @@ object::result list::list_parse(id      type,
                     obj = child.out;
                     if (!obj)
                         return ERROR;
+
+                    // A sum must have a name as first argument
+                    if (arg == 1 && prefix)
+                    {
+                        id pty = prefix->type();
+                        if (pty == ID_Sum || pty == ID_Product)
+                        {
+                            if (obj->as_quoted<symbol>() == nullptr)
+                            {
+                                rt.missing_variable_error()
+                                    .source(+s+1, child.end-2);
+                                return ERROR;
+                            }
+                        }
+                    }
+
                     s = s + child.end;
                     record(list_parse,
                            "Child parsed as %t length %u",
@@ -163,6 +179,7 @@ object::result list::list_parse(id      type,
                     precedence = -precedence; // Stay in postfix mode
                     cp = utf8_codepoint(s);
                     length = 0;
+
                 }
 
                 // Check to see if we have a sign
