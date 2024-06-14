@@ -2521,7 +2521,7 @@ bool user_interface::draw_stack()
     uint bottom = Stack.draw_stack();
     if (menu_p m = menu())
         if (m->type() == object::ID_SolvingMenu)
-            if (expression_p expr = expression::current_equation(false, false))
+            if (expression_p expr = expression::current_equation(false, true, true))
                 draw_object(expr, top, bottom);
     draw_dirty(0, top, stack, LCD_H);
     draw_idle();

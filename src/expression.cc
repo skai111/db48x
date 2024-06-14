@@ -2110,7 +2110,9 @@ GRAPH_BODY(expression)
 }
 
 
-expression_p expression::current_equation(bool error, bool solving)
+expression_p expression::current_equation(bool error,
+                                          bool solving,
+                                          bool keep_constants)
 // ----------------------------------------------------------------------------
 //   Return content of EQ variable
 // ----------------------------------------------------------------------------
@@ -2140,13 +2142,13 @@ expression_p expression::current_equation(bool error, bool solving)
     }
     expression_p eq = expression_p(obj);
     if (solving && eqty == ID_expression)
-        eq = eq->strip_units();
+        eq = eq->strip_units(keep_constants);
 
     return eq;
 }
 
 
-expression_p expression::strip_units() const
+expression_p expression::strip_units(bool keep_constants) const
 // ----------------------------------------------------------------------------
 //   If an expression contains unit variables, replace with symbols
 // ----------------------------------------------------------------------------
@@ -2158,6 +2160,15 @@ expression_p expression::strip_units() const
 
     for (object_p obj : *expr)
     {
+        if (!keep_constants)
+        {
+            if (constant_p cst = obj->as<constant>())
+            {
+                obj = cst->value();
+                if (!obj)
+                    return nullptr;
+            }
+        }
         if (unit_p u = obj->as<unit>())
         {
             algebraic_p value = u->value();
@@ -2167,7 +2178,7 @@ expression_p expression::strip_units() const
                 changed = true;
             }
         }
-        else if (obj->type() == ID_TestEQ)
+        else if (obj->type() == ID_TestEQ && !keep_constants)
         {
             obj = object::static_object(ID_sub);
             changed = true;

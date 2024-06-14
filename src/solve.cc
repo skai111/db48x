@@ -108,7 +108,6 @@ COMMAND_BODY(Root)
 }
 
 
-
 algebraic_p solve(program_g eq, algebraic_g name_or_unit, object_g guess)
 // ----------------------------------------------------------------------------
 //   The core of the solver
@@ -388,7 +387,7 @@ COMMAND_BODY(RcEq)
 //   Store expression in `Equation` variable
 // ----------------------------------------------------------------------------
 {
-    if (expression_p expr = expression::current_equation(true, false))
+    if (expression_p expr = expression::current_equation(true))
         if (rt.push(expr))
             return OK;
     return ERROR;
@@ -400,7 +399,7 @@ MENU_BODY(SolvingMenu)
 //   Process the MENU command for SolvingMenu
 // ----------------------------------------------------------------------------
 {
-    expression_p expr = expression::current_equation(false, false);
+    expression_p expr = expression::current_equation(false);
     list_g vars = expr ? expr->names() : nullptr;
     size_t nitems = vars ? vars->items() : 0;
     items_init(mi, nitems, 3, 1);
@@ -460,7 +459,7 @@ static symbol_p expression_variable(uint index)
 //   Return the variable in EQ for a given index
 // ----------------------------------------------------------------------------
 {
-    if (expression_p expr = expression::current_equation(true, false))
+    if (expression_p expr = expression::current_equation(true))
         if (list_g vars = expr->names())
             if (object_p obj = vars->at(index))
                 if (symbol_p sym = obj->as<symbol>())
@@ -474,7 +473,7 @@ static algebraic_p expression_variable_or_unit(uint index)
 //   Return the unit in EQ for a given index if there is one, otherwise name
 // ----------------------------------------------------------------------------
 {
-    if (expression_p expr = expression::current_equation(true, false))
+    if (expression_p expr = expression::current_equation(true))
     {
         if (list_g vars = expr->names(true))
         {

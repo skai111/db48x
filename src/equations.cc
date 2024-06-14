@@ -133,6 +133,8 @@ RENDER_BODY(equation)
         if (object_g obj = eq->value())
         {
             r.put(':');
+            if (expression_p expr = obj->as<expression>())
+                obj = expr->strip_units(true);
             obj->render(r);
         }
     }
@@ -150,6 +152,8 @@ GRAPH_BODY(equation)
     {
         if (algebraic_g val = eq->value())
         {
+            if (expression_p expr = val->as<expression>())
+                val = expr->strip_units(true);
             size_t namelen = 0;
             utf8 name = eq->name(&namelen);
             if (symbol_g namesym = symbol::make(name, namelen))
