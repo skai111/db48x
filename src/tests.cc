@@ -738,6 +738,30 @@ void tests::editor_operations()
         .test(DOWN).editor("'xroot(B;A)'")
         .test(ENTER).image_noheader("xroot-order");
 
+    step("Position of negation parsing xroot")
+        .test(CLEAR, "'XROOT(A;-B)'", ENTER, EXIT)
+        .expect("'xroot(A;-B)'").image_noheader("xroot-negation")
+        .test(DOWN).editor("'xroot(A;-B)'")
+        .test(ENTER, EXIT).image_noheader("xroot-negation");
+
+    step("Position of negation parsing summand")
+        .test(CLEAR, "'Σ(X;1;10;-X)'", ENTER, EXIT)
+        .expect("'Σ(X;1;10;-X)'").image_noheader("sum-negation")
+        .test(DOWN).editor("'Σ(X;1;10;-X)'")
+        .test(ENTER, EXIT).image_noheader("sum-negation");
+
+    step("Position of negation parsing sum end")
+        .test(CLEAR, "'Σ(X;1;-10;X)'", ENTER, EXIT)
+        .expect("'Σ(X;1;-10;X)'").image_noheader("sum-negation2")
+        .test(DOWN).editor("'Σ(X;1;-10;X)'")
+        .test(ENTER, EXIT).image_noheader("sum-negation2");
+
+    step("Position of negation parsing sum start")
+        .test(CLEAR, "'Σ(X;-1;10;X)'", ENTER, EXIT)
+        .expect("'Σ(X;-1;10;X)'").image_noheader("sum-negation3")
+        .test(DOWN).editor("'Σ(X;-1;10;X)'")
+        .test(ENTER, EXIT).image_noheader("sum-negation3");
+
     step("Error parsing n-ary expressions")
         .test(CLEAR, "'Σ(i;1)'", ENTER).error("Unterminated")
         .test(CLEAR, "'sum(i;1;10;i^3;42)'", ENTER).error("Unterminated")

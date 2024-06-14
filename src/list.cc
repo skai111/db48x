@@ -124,15 +124,6 @@ object::result list::list_parse(id      type,
         {
             if (precedence > 0)
             {
-                // Check to see if we have a sign
-                if (cp == '-' || cp == '+')
-                {
-                    if (cp == '-')
-                        negate = !negate;
-                    s = utf8_next(s);
-                    continue;
-                }
-
                 // Check if we see parentheses, or if we have `sin sin X`
                 bool parenthese = (cp == '(' || arity > 1) && !infix;
                 if (parenthese  || infix || prefix)
@@ -173,6 +164,16 @@ object::result list::list_parse(id      type,
                     cp = utf8_codepoint(s);
                     length = 0;
                 }
+
+                // Check to see if we have a sign
+                else if (cp == '-' || cp == '+')
+                {
+                    if (cp == '-')
+                        negate = !negate;
+                    s = utf8_next(s);
+                    continue;
+                }
+
             }
             if (precedence < 0)
             {
