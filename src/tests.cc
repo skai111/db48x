@@ -6894,7 +6894,7 @@ void tests::insertion_of_variables_constants_and_units()
         .expect("299 792 458 m/s");
     step("Programmatic equation lookup (symbol)")
         .test(CLEAR, "RelativityMassEnergy LIBEQ", ENTER)
-        .expect("'E=m·c↑2'");
+        .expect("'(E J)=(m kg)·c↑2'");
     step("Programmatic library lookup (symbol)")
         .test(CLEAR, "Dedicace XLIB", ENTER)
         .expect("\"À tous ceux qui se souviennent de Maubert électronique\"");
@@ -6903,7 +6903,7 @@ void tests::insertion_of_variables_constants_and_units()
         .expect("6.02213 67⁳²³ mol⁻¹");
     step("Programmatic equation lookup (text)")
         .test(CLEAR, "\"IdealGas\" LIBEQ", ENTER)
-        .expect("'P·V=n·R·T'");
+        .expect("'(P Pa)·(V m³)=(n mol)·R·(T K)'");
     step("Programmatic library lookup (text)")
         .test(CLEAR, "\"LibraryHelp\" XLIB", ENTER)
         .expect("\"To modify the library, edit the config/library.csv file\"");

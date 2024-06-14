@@ -538,7 +538,7 @@ static const cstring basic_units[] =
 
     "J",        "1_kg*m^2/s^2",         // Joule
     "erg",      "1/10000000_J",         // erg
-    "Kcal",     "=",                    // Large calorige
+    "Kcal",     "=",                    // Large calorie
     "cal",      "41868/10000_J",        // International calorie (1929, 1956)
     "Btu",      "1055.05585262_J",      // British thermal unit
 

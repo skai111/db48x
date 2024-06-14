@@ -58,8 +58,8 @@ static const cstring basic_equations[] =
 
     "Phys",     nullptr,
 
-    "RelativityMassEnergy",             "'E=m*c^2'",
-    "IdealGas",                         "'P*V=n*ⒸR*T'"
+    "RelativityMassEnergy",             "'(E_J)=(m_kg)*Ⓒc^2'",
+    "IdealGas",                         "'(P_Pa)*(V_m^3)=(n_mol)*ⒸR*(T_K)'"
 
 };
 //   clang-format on
