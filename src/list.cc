@@ -283,6 +283,11 @@ object::result list::list_parse(id      type,
                     precedence = -objprec;
                     obj = nullptr;
                 }
+                else if (!infix)
+                {
+                    // Implicit multiplication
+                    infix = static_object(ID_mul);
+                }
             }
             else
             {

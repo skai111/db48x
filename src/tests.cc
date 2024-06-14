@@ -785,6 +785,9 @@ void tests::editor_operations()
         .test("DEPTH TOLIST", ENTER)
         .expect("{ 1 5 1 024 'x' 'y' 'z' 'G' 'F' }");
 
+    step("Implicit multiplication")
+        .test(CLEAR, "'2X'", ENTER).expect("'2·X'");
+
     step("Enter X mod Y and checking it can be edited")
         .test(CLEAR, NOSHIFT, F, "X", RSHIFT, L, F3, "Y")
         .editor("'X mod Y'")
