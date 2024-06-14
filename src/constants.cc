@@ -768,7 +768,7 @@ bool constant_menu::do_submenu(constant::config_r cfg, menu_info &mi) const
         }
         for (uint i = 0; i < count; i++)
         {
-            cstring   label = builtins[first + 2 * i + plane];
+            cstring   label = builtins[first + 2 * i + plane % 2];
             items(mi, label, type);
         }
     }
