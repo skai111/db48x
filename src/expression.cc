@@ -1249,8 +1249,7 @@ algebraic_p expression::simplify_products() const
             return algebraic_p(inner);
 
     // Save auto-simplify and set it
-    bool auto_simplify = Settings.AutoSimplify();
-    Settings.AutoSimplify(true);
+    settings::SaveAutoSimplify sas(true);
     save<bool> save(unit::mode, false);
 
     // Need a GC pointer since stack operations may move us
@@ -1270,10 +1269,7 @@ algebraic_p expression::simplify_products() const
                 algebraic_g scale, exponent;
                 algebraic_g rest = factor_out(+eq, +sym, scale, exponent);
                 if (!rest || !scale || !exponent)
-                {
-                    Settings.AutoSimplify(auto_simplify);
                     return nullptr;
-                }
                 if (exponent->is_negative(false))
                     den = den * pow(+sym, -exponent);
                 else
@@ -1304,7 +1300,6 @@ algebraic_p expression::simplify_products() const
     }
 
     num = num / den;
-    Settings.AutoSimplify(auto_simplify);
     return num;
 }
 
