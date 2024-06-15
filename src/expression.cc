@@ -2168,10 +2168,10 @@ expression_p expression::strip_units(bool keep_constants) const
         {
             algebraic_p value = u->value();
             if (symbol_p sym = value->as_quoted<symbol>())
-            {
                 obj = sym;
-                changed = true;
-            }
+            else
+                obj = value;
+            changed = true;
         }
         else if (obj->type() == ID_TestEQ && !keep_constants)
         {
