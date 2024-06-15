@@ -40,6 +40,7 @@
 #include "parser.h"
 #include "renderer.h"
 #include "settings.h"
+#include "tag.h"
 #include "user_interface.h"
 
 
@@ -1789,6 +1790,25 @@ COMMAND_BODY(ConvertToUnitPrefix)
     object_p value = rt.top();
     if (!value)
         return ERROR;
+
+    // Check if it is tagged
+    if (tag_g tagged = value->as<tag>())
+    {
+        size_t len = 0;
+        gcutf8 label = tagged->label_value(&len);
+        rt.top(tagged->tagged_object());
+        result rc = ConvertToUnitPrefix::evaluate();
+        value = rt.top();
+        if (rc != OK || !value)
+        {
+            rt.top(tagged);
+            return rc;
+        }
+        tagged = tag::make(label, len, value);
+        if (rt.top(tagged))
+            return OK;
+        return ERROR;
+    }
 
     // This must be a unit type with a simple name
     unit_g   un  = value->as<unit>();
