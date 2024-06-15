@@ -721,7 +721,6 @@ COMMAND_BODY(Cycle)
         case ID_xlib:
         case ID_symbol:
         case ID_text:
-        case ID_tag:
         case ID_expression:
             Settings.GraphicResultDisplay(!Settings.GraphicResultDisplay());
             if (!Settings.GraphicResultDisplay())
@@ -745,6 +744,21 @@ COMMAND_BODY(Cycle)
             uobj = uobj->cycle();
             if (uobj && rt.top(uobj))
                 return OK;
+            return ERROR;
+        }
+        case ID_tag:
+        {
+            // Cycle tagged object, keep tag
+            tag_g tagged = tag_p(top);
+            size_t len = 0;
+            gcutf8 label = tagged->label_value(&len);
+            if (object_g obj = tagged->tagged_object())
+                if (rt.top(obj))
+                    if (Cycle::evaluate() == OK)
+                        if ((obj = rt.top()))
+                            if ((tagged = tag::make(label, len, obj)))
+                                if (rt.top(tagged))
+                                        return OK;
             return ERROR;
         }
 
