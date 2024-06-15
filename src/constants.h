@@ -73,7 +73,8 @@ struct constant : algebraic
         cstring    file;        // CSV file for names and definitions
         builtins_p builtins;    // Builtins defintions
         size_t     nbuiltins;   // Number of entries in builtins[]
-        runtime &  (*error)();   // Emit error message
+        runtime &  (*error)();  // Emit error message
+        symbol_p   (*label)(symbol_r); // Menu label adustment
     };
     typedef const config &config_r;
 

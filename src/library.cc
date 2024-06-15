@@ -89,7 +89,8 @@ const xlib::config xlib::library =
     .file           = "config/library.csv",
     .builtins       = basic_library,
     .nbuiltins      = sizeof(basic_library) / sizeof(*basic_library),
-    .error          = invalid_xlib_error
+    .error          = invalid_xlib_error,
+    .label          = nullptr
 };
 
 

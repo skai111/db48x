@@ -390,7 +390,8 @@ const constant::config constant::constants =
     .file           = "config/constants.csv",
     .builtins       = basic_constants,
     .nbuiltins      = sizeof(basic_constants) / sizeof(*basic_constants),
-    .error          = invalid_constant_error
+    .error          = invalid_constant_error,
+    .label          = nullptr
 };
 
 
@@ -756,6 +757,8 @@ bool constant_menu::do_submenu(constant::config_r cfg, menu_info &mi) const
                     cfile.seek(position);
                     mentry = cfile.lookup(mtxt, mlen, false, false);
                     cfile.seek(posafter);
+                    if (cfg.label)
+                        mentry = cfg.label(mentry);
                     if (mentry)
                         items(mi, mentry, type);
                 }
@@ -769,7 +772,16 @@ bool constant_menu::do_submenu(constant::config_r cfg, menu_info &mi) const
         for (uint i = 0; i < count; i++)
         {
             cstring   label = builtins[first + 2 * i + plane % 2];
-            items(mi, label, type);
+            if (plane == 1 && cfg.label)
+            {
+                symbol_g mentry = symbol::make(label);
+                mentry = cfg.label(mentry);
+                items(mi, mentry, type);
+            }
+            else
+            {
+                items(mi, label, type);
+            }
         }
     }
 
@@ -787,7 +799,8 @@ utf8 constant_menu::do_menu_help(constant::config_r cfg,
     size_t len = 0;
     utf8 base = do_name(cfg, cst->type(), len);
     snprintf(buf, sizeof(buf), "%.*s %s", int(len), base, cfg.menu_help);
-    return utf8(buf);}
+    return utf8(buf);
+}
 
 
 bool constant::do_collection_menu(constant::config_r cfg, menu_info &mi)

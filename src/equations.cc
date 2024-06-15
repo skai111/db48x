@@ -74,6 +74,25 @@ static runtime &invalid_equation_error()
 }
 
 
+static symbol_p equation_label(symbol_r sym)
+// ----------------------------------------------------------------------------
+//   Simplify equations to show then in menu label
+// ----------------------------------------------------------------------------
+{
+    if (sym)
+    {
+        size_t   len    = 0;
+        utf8     source = sym->value(&len);
+        if (object_p obj = object::parse(source, len))
+            if (expression_p expr = obj->as<expression>())
+                if (expression_p simpl = expr->strip_units(true))
+                    if (symbol_p ssym = simpl->as_symbol(false))
+                        return ssym;
+    }
+    return sym;
+}
+
+
 const equation::config equation::equations =
 // ----------------------------------------------------------------------------
 //  Define the configuration for the equations
@@ -91,7 +110,8 @@ const equation::config equation::equations =
     .file           = "config/equations.csv",
     .builtins       = basic_equations,
     .nbuiltins      = sizeof(basic_equations) / sizeof(*basic_equations),
-    .error          = invalid_equation_error
+    .error          = invalid_equation_error,
+    .label          = equation_label
 };
 
 
