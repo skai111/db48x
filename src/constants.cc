@@ -595,6 +595,7 @@ algebraic_p constant::do_value(config_r cfg) const
             return decimal::e();
 
         utf8 cdef = csym->value(&clen);
+        error_save esave;
         if (object_p obj = object::parse(cdef, clen))
         {
             if (algebraic_p alg = obj->as_algebraic())

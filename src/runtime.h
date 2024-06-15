@@ -1115,4 +1115,18 @@ struct stack_depth_restore
     size_t depth;
 };
 
+
+struct error_save
+// ----------------------------------------------------------------------------
+//   Save the current runtime error and clear it for internal evaluation
+// ----------------------------------------------------------------------------
+{
+    error_save();
+    ~error_save();
+    gcutf8    errmsg;
+    gcutf8    source;
+    size_t    srclen;
+    gcp<text> command;
+};
+
 #endif // RUNTIME_H

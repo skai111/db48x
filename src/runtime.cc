@@ -1635,3 +1635,26 @@ runtime &runtime::name##_error()                \
     return error(msg);                          \
 }
 #include "errors.tbl"
+
+
+
+error_save::error_save()
+// ----------------------------------------------------------------------------
+//  Save the current error state for local evaluation
+// ----------------------------------------------------------------------------
+    : errmsg(rt.error()),
+      source(rt.source()),
+      srclen(rt.source_length()),
+      command(rt.command())
+{
+    rt.clear_error();
+}
+
+
+error_save::~error_save()
+// ----------------------------------------------------------------------------
+//  Restore saved error state
+// ----------------------------------------------------------------------------
+{
+    rt.error(errmsg).source(source, srclen).command(+command);
+}

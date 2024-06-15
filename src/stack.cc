@@ -77,15 +77,10 @@ uint stack::draw_stack()
 // ----------------------------------------------------------------------------
 {
     // Do not redraw if there is an error
-    if (utf8 errmsg = rt.error())
+    if (rt.error())
     {
-        utf8 source = rt.source();
-        size_t srclen = rt.source_length();
-        text_g command = rt.command();
-        rt.clear_error();
-        uint result = draw_stack();
-        rt.error(errmsg).source(source, srclen).command(command);
-        return result;
+        error_save errs;
+        return draw_stack();
     }
 
     font_p font       = Settings.result_font();
