@@ -162,7 +162,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        editor_operations();
+        graphic_commands();
     }
     else
     {
@@ -7838,9 +7838,11 @@ void tests::graphic_commands()
 {
     BEGIN(graphics);
 
-    step("Clear LCD");
-    test(CLEAR, "ClearLCD", ENTER)
-        .noerror().image("cllcd").test(ENTER);
+    step("Clear LCD")
+        .test(CLEAR, "ClearLCD", ENTER)
+        .noerror().image("cllcd").test(ENTER)
+        .test(CLEAR, "CLLCD 1 1 DISP CLLCD", ENTER)
+        .noerror().image("cllcd");
 
     step("Draw graphic objects")
         .test(CLEAR,

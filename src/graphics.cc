@@ -1024,7 +1024,7 @@ COMMAND_BODY(ClLCD)
 //   Clear the LCD screen before drawing stuff on it
 // ----------------------------------------------------------------------------
 {
-    ui.draw_graphics();
+    ui.draw_graphics(true);
     refresh_dirty();
     return OK;
 }
