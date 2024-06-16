@@ -1,5 +1,43 @@
 # Release notes
 
+## Release 0.7.8 "Mustard" - Constants in equations
+
+This release keeps marching towards full support for an equation library.
+The primary focus was support for constants in equations, including constants
+with units like the speed of light, as well as fixing various user-reported
+issues.
+
+
+## Features
+
+* cycle: Apply to value of tagged object
+* equations: Add units to built-in equations
+* equations: Adjust menu label to remove units
+* equations: Strip units but not constants when rendering
+* expressions: Treat `2X` as an implicit product
+* solver: Strip units from constants
+* units: Unit prefix should preserve the tag
+
+## Bug fixes
+
+* clearlcd: Fix erasure of screen when not in graphics mode
+* constants: Count number of menu entries correctly for builtin menus
+* decimal: Accept leading `.` or `,` for decimal values
+* expressions: Parse negation after parentheses
+* sum: Do not accept a non-name in a sum or product
+* type: Return a type value for decimals
+* ui: Fix insertion/editing of infix with alphabetic names
+* units: Do not read units from variable if they exist
+* xroot: Reverse `xroot` arguments in algebraic parsing
+
+## Improvements
+
+* editor: Shuft-up returns to beginning of line if on first row
+* errors: Add `error_save` class, use it in `constant::value`
+* expressions: Use the `SaveAutoSimplify` class in `simplify_products`
+* units: Split `Eng` to `Elec` and `Visc`
+
+
 ## Release 0.7.7 "Forgiving" - Units in equations
 
 This release keeps marching towards full support for an equation library.
