@@ -2056,6 +2056,9 @@ bool user_interface::draw_editor()
                up ? "up" : "", down ? "down" : "",
                edrow, tgt, cursor, cursx, edColumn);
 
+        if (done)
+            cursor = 0;
+
         for (utf8 p   = ed; p < last && !done; p = utf8_next(p))
         {
             if (*p == '\n')
