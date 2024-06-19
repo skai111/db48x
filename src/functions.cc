@@ -64,7 +64,7 @@ algebraic_p function::symbolic(id op, algebraic_r x)
     if (!x)
         return nullptr;
     expression_p result = expression::make(op, x);
-    if (result && Settings.AutoSimplify())
+    if (result && !unit::factoring && Settings.AutoSimplify())
         result = result->simplify();
     return result;
 }

@@ -1248,9 +1248,10 @@ algebraic_p expression::simplify_products() const
         if (inner->is_algebraic())
             return algebraic_p(inner);
 
-    // Save auto-simplify and set it
+    // Save auto-simplify and set it, and evaluate units normally
     settings::SaveAutoSimplify sas(true);
-    save<bool> save(unit::mode, false);
+    save<bool> smode(unit::mode, false);
+    save<bool> sexpr(unit::factoring, true);
 
     // Need a GC pointer since stack operations may move us
     expression_g eq   = this;

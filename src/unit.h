@@ -62,6 +62,7 @@ struct unit : complex
     unit_p custom_cycle(symbol_r sym) const;
 
     static bool mode;           // Set to true to evaluate units
+    static bool factoring;      // Set to true when factoring out units
     static bool ignore;         // Set to true to drop units from variables
 
 public:

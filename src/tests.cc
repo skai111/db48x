@@ -4140,7 +4140,7 @@ void tests::units_and_conversions()
         .test(SHIFT, KEY5, KEY4, KEY2, F2, F3).expect("42 km/h")
         .test(ADD).expect("101.54572 8 km/h");
     step("Unit parsing on command line")
-        .test(CLEAR, "12_km/s^2", ENTER).expect("12 km/s²");
+        .test(CLEAR, "12_km/s^2", ENTER).expect("12 km/s↑2");
     step("Parsing degrees as a unit")
         .test(CLEAR, "DEG", ENTER).noerror()
         .test("1∡90", ENTER).expect("1∡90°")
@@ -6904,7 +6904,7 @@ void tests::insertion_of_variables_constants_and_units()
         .expect("6.02213 67⁳²³ mol⁻¹");
     step("Programmatic equation lookup (text)")
         .test(CLEAR, "\"IdealGas\" LIBEQ", ENTER)
-        .expect("'(P Pa)·(V m³)=(n mol)·R·(T K)'");
+        .expect("'(P Pa)·(V m↑3)=(n mol)·R·(T K)'");
     step("Programmatic library lookup (text)")
         .test(CLEAR, "\"LibraryHelp\" XLIB", ENTER)
         .expect("\"To modify the library, edit the config/library.csv file\"");

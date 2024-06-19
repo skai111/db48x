@@ -51,16 +51,19 @@ EVAL_BODY(symbol)
 //   Evaluate a symbol by looking it up
 // ----------------------------------------------------------------------------
 {
-    if (unit::mode)
-        if (unit_p u = unit::lookup(o))
-            if (rt.push(u))
-                return OK;
-    if (object_p found = directory::recall_all(o, false))
+    if (!unit::factoring)
     {
-        if (unit::ignore)
-            if (unit_p uval = found->as<unit>())
-                found = uval->value();
-        return program::run_program(found);
+        if (unit::mode)
+            if (unit_p u = unit::lookup(o))
+                if (rt.push(u))
+                    return OK;
+        if (object_p found = directory::recall_all(o, false))
+        {
+            if (unit::ignore)
+                if (unit_p uval = found->as<unit>())
+                    found = uval->value();
+            return program::run_program(found);
+        }
     }
     if (object_g eq = expression::make(o))
         if (rt.push(eq))
