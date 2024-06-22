@@ -723,6 +723,7 @@ Additional contributors to the project include:
 * Conrado Seibel (help file fix)
 - Kjell Christenson (simulator fix)
 - Václav Kadlčík (documentation fix)
+- Franco Trimboli (WASM port)
 
 The authors would like to acknowledge
 

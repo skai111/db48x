@@ -31,18 +31,44 @@
 
 #include "dmcp.h"
 #include "sim-dmcp.h"
-
-#include <QBitmap>
-#include <QGraphicsPixmapItem>
-#include <QTimer>
 #include <target.h>
 
-
-SimScreen *SimScreen::theScreen = nullptr;
 
 // A copy of the LCD buffer
 pixword lcd_copy[sizeof(lcd_buffer) / sizeof(*lcd_buffer)];
 
+#ifdef WASM
+
+uintptr_t ui_update_pixmap()
+// ----------------------------------------------------------------------------
+//   Recompute the pixmap
+// ----------------------------------------------------------------------------
+//   This should be done on the RPL thread to get a consistent picture
+{
+    // Monochrome screen
+    pixword mask = ~(~0U << color::BPP);
+    surface s(lcd_buffer, LCD_W, LCD_H, LCD_SCANLINE);
+    for (int y = 0; y < SIM_LCD_H; y++)
+    {
+        for (int xw = 0; xw < SIM_LCD_SCANLINE*color::BPP/32; xw++)
+        {
+            unsigned woffs = y * (SIM_LCD_SCANLINE*color::BPP/32) + xw;
+            if (uint32_t diffs = lcd_copy[woffs] ^ lcd_buffer[woffs])
+                lcd_copy[woffs] = lcd_buffer[woffs];
+        }
+    }
+    return uintptr_t(lcd_buffer);
+}
+
+
+
+#else // Qt simulator
+
+#include <QBitmap>
+#include <QGraphicsPixmapItem>
+#include <QTimer>
+
+SimScreen *SimScreen::theScreen = nullptr;
 
 SimScreen::SimScreen(QWidget *parent)
 // ----------------------------------------------------------------------------
@@ -163,3 +189,4 @@ void SimScreen::refreshScreen()
     QGraphicsView::update();
     redraws++;
 }
+#endif // WASM

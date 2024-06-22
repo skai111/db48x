@@ -1,0 +1,15 @@
+{
+  "name": "DB48X",
+  "short_name": "DB48X",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#000",
+  "description": "",
+  "icons": [
+    {
+      "src": "./logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

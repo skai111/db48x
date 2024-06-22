@@ -101,4 +101,10 @@ int       ui_wrap_io(file_sel_fn callback,
                      void       *data,
                      bool        writing);
 
+#ifdef WASM
+int       ui_init();
+uintptr_t ui_update_pixmap();
+void      ui_run_rpl();
+#  endif // WASM
+         //
 #endif // SIM_DMCP

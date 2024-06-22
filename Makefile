@@ -6,6 +6,7 @@ PLATFORM = dmcp
 VARIANT = dm42
 SDK = dmcp/dmcp
 PGM = pgm
+PGM_TARGET = $(TARGET).$(PGM)
 
 ######################################
 # Building variables
@@ -57,7 +58,7 @@ VERSION_H=src/$(PLATFORM)/version.h
 #==============================================================================
 
 # default action: build all
-all: $(TARGET).$(PGM) help/$(TARGET).md
+all: $(PGM_TARGET) help/$(TARGET).md
 	@echo "# Built $(VERSION)"
 
 dm32:	dm32-all
@@ -100,6 +101,22 @@ sim:	recorder/config.h	\
 	fonts/HelpFont.cc	\
 	keyboard		\
 	.ALWAYS
+
+WASM_TARGET=wasm/$(TARGET).js
+wasm: emsdk $(WASM_TARGET) $(WASM_HTML)
+
+ifneq ($(VARIANT),wasm)
+$(WASM_TARGET): $(SOURCES) Makefile
+	(source emsdk/emsdk_env.sh && \
+	 make VARIANT=wasm PGM=js PGM_TARGET=wasm/$(TARGET).js SDK=sim )
+endif
+
+emsdk: emsdk/emsdk
+	emcc --version > /dev/null || \
+	(cd emsdk && ./emsdk install latest && ./emsdk activate latest)
+
+emsdk/emsdk:
+	git submodule update --init --recursive
 
 clangdb: sim/$(TARGET).mak .ALWAYS
 	cd sim && rm -f *.o && compiledb make -f $(TARGET).mak && mv compile_commands.json ..
@@ -197,16 +214,11 @@ fastest-%:
 	$(MAKE) $* OPT=fastest
 
 
-######################################
-# System sources
-######################################
-C_INCLUDES += -I$(SDK)
-C_SOURCES += $(SDK)/sys/pgm_syscalls.c
-ASM_SOURCES = $(SDK)/startup_pgm.s
-
 #######################################
 # Custom section
 #######################################
+
+SOURCES=$(C_SOURCES) $(CXX_SOURCES)
 
 # Includes
 C_INCLUDES += -Isrc/$(VARIANT) -Isrc/$(PLATFORM) -Isrc
@@ -271,7 +283,8 @@ CXX_SOURCES +=				\
 	src/unit.cc			\
 	src/user_interface.cc		\
 	src/util.cc			\
-	src/variables.cc
+	src/variables.cc		\
+	$(PLATFORM_SOURCES)
 
 # ASM sources
 #ASM_SOURCES += src/xxx.s
@@ -285,16 +298,17 @@ DEFINES += \
 	$(DEFINES_$(VARIANT)) \
 	HELPFILE_NAME=\"/help/$(TARGET).md\"
 DEFINES_debug=DEBUG
-DEFINES_release=RELEASE
-DEFINES_small=RELEASE
-DEFINES_fast=RELEASE
-DEFINES_faster=RELEASE
-DEFINES_fastes=RELEASE
+DEFINES_release=NDEBUG
+DEFINES_small=NDEBUG
+DEFINES_fast=NDEBUG
+DEFINES_faster=NDEBUG
+DEFINES_fastes=NDEBUG
 DEFINES_dm32 = 	DM32 				\
 		CONFIG_FIXED_BASED_OBJECTS	\
 		DEOPTIMIZE_CATALOG
 
 DEFINES_dm42 = DM42
+DEFINES_wasm = $(DEFINES_dm32) SIMULATOR WASM
 
 C_DEFS += $(DEFINES:%=-D%)
 
@@ -309,6 +323,22 @@ $(BUILD)/recorder.o $(BUILD)/recorder_ring.o: recorder/config.h
 #######################################
 # binaries
 #######################################
+
+#------------------------------------------------------------------------------
+ifeq ($(VARIANT),wasm)
+#------------------------------------------------------------------------------
+CC = emcc
+CXX = emcc -x c++ -std=gnu++17
+PLATFORM_SOURCES=src/wasp/dmcp.cc src/wasm/sim-screen.cc src/wasm/sim-window.cc
+C_SOURCES += recorder/recorder.c
+CFLAGS += 	-O3
+LDFLAGS +=	-s MODULARIZE=0				\
+		-s RESERVED_FUNCTION_POINTERS=20	\
+		 --bind
+
+#------------------------------------------------------------------------------
+else
+#------------------------------------------------------------------------------
 CC = arm-none-eabi-gcc
 CXX = arm-none-eabi-g++
 AS = arm-none-eabi-gcc -x assembler-with-cpp
@@ -317,6 +347,24 @@ AR = arm-none-eabi-ar
 SIZE = arm-none-eabi-size
 HEX = $(OBJCOPY) -O ihex
 BIN = $(OBJCOPY) -O binary -S
+CPUFLAGS += -mthumb -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16
+PLATFORM_FLAGS = -Wno-packed-bitfield-compat -Wall -fdata-sections -ffunction-sections
+CXX_PLATFORM_FLAGS = -fno-rtti
+C_LIST_FLAGS = -Wa,-a,-ad,-alms=$(BUILD)/$(notdir $(<:.c=.lst))
+CXX_LIST_FLAGS = -Wa,-a,-ad,-alms=$(BUILD)/$(notdir $(<:.cc=.lst))
+ASM_SOURCES = $(SDK)/startup_pgm.s
+LINK_OPTS=					\
+	-Wl,-Map=$(BUILD)/$(TARGET).map,--cref	\
+	-Wl,--gc-sections			\
+	-Wl,--wrap=_malloc_r
+
+# System sources
+C_INCLUDES += -I$(SDK)
+C_SOURCES += $(SDK)/sys/pgm_syscalls.c
+
+#------------------------------------------------------------------------------
+endif
+#------------------------------------------------------------------------------
 
 #######################################
 # CFLAGS
@@ -326,12 +374,9 @@ AS_DEFS =
 C_DEFS += -D__weak="__attribute__((weak))" -D__packed="__attribute__((__packed__))"
 AS_INCLUDES =
 
-
-CPUFLAGS += -mthumb -march=armv7e-m -mfloat-abi=hard -mfpu=fpv4-sp-d16
-
 # compile gcc flags
-ASFLAGS = $(CPUFLAGS) $(AS_DEFS) $(AS_INCLUDES) $(ASFLAGS_$(OPT)) -Wall -fdata-sections -ffunction-sections
-CFLAGS  = $(CPUFLAGS) $(C_DEFS) $(C_INCLUDES) $(CFLAGS_$(OPT)) -Wall -fdata-sections -ffunction-sections
+ASFLAGS = $(CPUFLAGS) $(PLATFORM_FLAGS) $(AS_DEFS) $(AS_INCLUDES) $(ASFLAGS_$(OPT))
+CFLAGS += $(CPUFLAGS) $(PLATFORM_FLAGS)  $(C_DEFS) $(C_INCLUDES) $(CFLAGS_$(OPT))
 CFLAGS += -Wno-misleading-indentation
 DBGFLAGS = $(DBGFLAGS_$(OPT))
 DBGFLAGS_debug = -g
@@ -357,12 +402,7 @@ CFLAGS += -MD -MP -MF .dep/$(@F).d
 # link script
 LDSCRIPT = src/$(VARIANT)/stm32_program.ld
 LIBDIR =
-LDFLAGS = $(CPUFLAGS) -T$(LDSCRIPT) $(LIBDIR) $(LIBS) \
-	-Wl,-Map=$(BUILD)/$(TARGET).map,--cref \
-	-Wl,--gc-sections \
-	-Wl,--wrap=_malloc_r
-
-
+LDFLAGS += $(CPUFLAGS) -T$(LDSCRIPT) $(LIBDIR) $(LIBS) $(LINK_OPTS)
 
 
 #######################################
@@ -378,16 +418,26 @@ vpath %.cc $(sort $(dir $(CXX_SOURCES)))
 OBJECTS += $(addprefix $(BUILD)/,$(notdir $(ASM_SOURCES:.s=.o)))
 vpath %.s $(sort $(dir $(ASM_SOURCES)))
 
-CXXFLAGS = $(CFLAGS) -fno-exceptions -fno-rtti -Wno-packed-bitfield-compat
+CXXFLAGS = $(CFLAGS) -fno-exceptions $(CXX_PLATFORM_FLAGS)
 
 $(BUILD)/%.o: %.c Makefile | $(BUILD)/.exists
-	$(CC) -c $(CFLAGS) -Wa,-a,-ad,-alms=$(BUILD)/$(notdir $(<:.c=.lst)) $< -o $@
+	$(CC) -c $(CFLAGS) $(C_LIST_FLAGS) $< -o $@
 
 $(BUILD)/%.o: %.cc Makefile | $(BUILD)/.exists
-	$(CXX) -c $(CXXFLAGS) -Wa,-a,-ad,-alms=$(BUILD)/$(notdir $(<:.cc=.lst)) $< -o $@
+	$(CXX) -c $(CXXFLAGS) $(CXX_LIST_FLAGS) $< -o $@
+
+$(BUILD)/%.o: %.cpp Makefile | $(BUILD)/.exists
+	$(CXX) -c $(CXXFLAGS) $(CXX_LIST_FLAGS) $< -o $@
 
 $(BUILD)/%.o: %.s Makefile | $(BUILD)/.exists
 	$(AS) -c $(CFLAGS) $< -o $@
+
+ifeq ($(VARIANT),wasm)
+
+$(WASM_TARGET): $(OBJECTS) Makefile
+	$(CC) $(OBJECTS) $(LDFLAGS) -o $@
+
+else
 
 $(BUILD)/$(TARGET).elf: $(OBJECTS) Makefile
 	$(CC) $(OBJECTS) $(LDFLAGS) -o $@
@@ -401,6 +451,8 @@ $(TARGET).$(PGM): $(BUILD)/$(TARGET).elf Makefile $(CRCFIX)
 	$(TOOLS)/add_pgm_chsum $(BUILD)/$(TARGET)_flash.bin $@
 	$(SIZE) $<
 	wc -c $@
+
+endif
 
 DECIMAL_CONSTANTS=pi e
 DECIMAL_SOURCES=$(DECIMAL_CONSTANTS:%=src/decimal-%.h)

@@ -6,6 +6,7 @@ This software was brought to you by the DB48X authors below:
 - Conrado Seibel <conrado.seibel@novatechautomation.com> (help file fix)
 - Kjell Christenson <kjell.christenson@gmail.com> (simulator fix)
 - Václav Kadlčík <vkadlcik@redhat.com> (documentation fix)
+- Franco Trimboli <sunpazed@gmail.com> (WASM port)
 
 Copyright (c) 2022-2024, the DB48X authors
 
