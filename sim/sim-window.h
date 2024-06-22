@@ -29,6 +29,8 @@
 //   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // ****************************************************************************
 
+#ifndef WASM
+
 #include "sim-rpl.h"
 #include "tests.h"
 #include "ui_sim-window.h"
@@ -190,12 +192,5 @@ static void postToThread(F && fun, QThread *thread = qApp->thread())
    QMetaObject::invokeMethod(obj, std::forward<F>(fun));
 }
 
-
-
-// ============================================================================
-//
-//   Audio support (lifted from QT audiooutput example)
-//
-// ============================================================================
-
+#endif // WASM
 #endif // SIM_WINDOW_H

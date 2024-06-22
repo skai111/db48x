@@ -316,6 +316,25 @@ bool power_check(bool draw_off_image)
 }
 
 
+#ifdef WASM
+uint          memory_size    = 100;
+volatile uint test_command   = 0;
+bool          noisy_tests    = false;
+bool          tests::running = false;
+
+
+void ui_init()
+// ----------------------------------------------------------------------------
+//   Initialization for the JavaScript version
+// ----------------------------------------------------------------------------
+{
+    program_init();
+    redraw_lcd(true);
+    last_keystroke_time = sys_current_ms();
+}
+#endif // WASM
+
+
 extern "C" void program_main()
 // ----------------------------------------------------------------------------
 //   DMCP main entry point and main loop

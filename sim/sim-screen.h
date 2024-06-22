@@ -29,6 +29,8 @@
 //   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // ****************************************************************************
 
+#ifndef WASM
+
 #include <QGraphicsView>
 #include <QGraphicsPixmapItem>
 
@@ -69,5 +71,7 @@ public:
     static void refresh_lcd()   { theScreen->refreshScreen(); }
     static uint redraw_count()  { return theScreen->redraws; }
 };
+
+#endif // WASM
 
 #endif // SIMSCREEN_H
