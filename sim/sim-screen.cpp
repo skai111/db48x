@@ -34,30 +34,19 @@
 #include <target.h>
 
 
-// A copy of the LCD buffer
-pixword lcd_copy[sizeof(lcd_buffer) / sizeof(*lcd_buffer)];
+#if WASM
 
-#ifdef WASM
+uintptr_t wasm_updated_screen = 0;
 
-uintptr_t ui_update_pixmap()
+uintptr_t ui_lcd_buffer()
 // ----------------------------------------------------------------------------
 //   Recompute the pixmap
 // ----------------------------------------------------------------------------
 //   This should be done on the RPL thread to get a consistent picture
 {
-    // Monochrome screen
-    pixword mask = ~(~0U << color::BPP);
-    surface s(lcd_buffer, LCD_W, LCD_H, LCD_SCANLINE);
-    for (int y = 0; y < SIM_LCD_H; y++)
-    {
-        for (int xw = 0; xw < SIM_LCD_SCANLINE*color::BPP/32; xw++)
-        {
-            unsigned woffs = y * (SIM_LCD_SCANLINE*color::BPP/32) + xw;
-            if (uint32_t diffs = lcd_copy[woffs] ^ lcd_buffer[woffs])
-                lcd_copy[woffs] = lcd_buffer[woffs];
-        }
-    }
-    return uintptr_t(lcd_buffer);
+    uintptr_t result = wasm_updated_screen;
+    wasm_updated_screen = 0;
+    return result;
 }
 
 
@@ -69,6 +58,10 @@ uintptr_t ui_update_pixmap()
 #include <QTimer>
 
 SimScreen *SimScreen::theScreen = nullptr;
+
+// A copy of the LCD buffer
+pixword lcd_copy[sizeof(lcd_buffer) / sizeof(*lcd_buffer)];
+
 
 SimScreen::SimScreen(QWidget *parent)
 // ----------------------------------------------------------------------------

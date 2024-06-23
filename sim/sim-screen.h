@@ -29,7 +29,7 @@
 //   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // ****************************************************************************
 
-#ifndef WASM
+#if !WASM
 
 #include <QGraphicsView>
 #include <QGraphicsPixmapItem>

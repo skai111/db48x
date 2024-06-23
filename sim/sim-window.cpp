@@ -36,7 +36,7 @@
 #include "target.h"
 #include "tests.h"
 
-#ifdef WASM
+#if WASM
 #include "emcc.h"
 #else
 #include "sim-rpl.h"
@@ -67,7 +67,7 @@ extern bool db48x_keyboard;
 extern bool shift_held;
 extern bool alt_held;
 
-#ifndef WASM
+#if !WASM
 
 MainWindow *MainWindow::mainWindow = nullptr;
 qreal MainWindow::devicePixelRatio = 1.0;
@@ -1061,12 +1061,18 @@ bool tests::image_match(cstring file, int x, int y, int w, int h, bool force)
 //
 // ============================================================================
 
+static uint refresh_count = 0;
+
+RECORDER(wasm, 16, "WASM interface");
+
 void ui_refresh()
 // ----------------------------------------------------------------------------
 //   Request a refresh of the LCD
 // ----------------------------------------------------------------------------
 {
-
+    refresh_count++;
+    record(wasm, "Refresh count=%u", refresh_count);
+    wasm_updated_screen = uintptr_t(lcd_buffer);
 }
 
 
@@ -1075,7 +1081,7 @@ uint ui_refresh_count()
 //   Return the number of times the display was actually udpated
 // ----------------------------------------------------------------------------
 {
-    return 0;
+    return refresh_count;
 }
 
 
@@ -1193,16 +1199,6 @@ void ui_stop_buzzer()
 // ----------------------------------------------------------------------------
 {
 }
-
-
-void ui_run_rpl()
-// ----------------------------------------------------------------------------
-//   Thread entry point
-// ----------------------------------------------------------------------------
-{
-    program_main();
-}
-
 
 
 int ui_wrap_io(file_sel_fn callback, const char *path, void *data, bool)

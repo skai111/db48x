@@ -316,35 +316,14 @@ bool power_check(bool draw_off_image)
 }
 
 
-#ifdef WASM
-uint          memory_size    = 100;
-volatile uint test_command   = 0;
-bool          noisy_tests    = false;
-bool          tests::running = false;
-
-
-int ui_init()
-// ----------------------------------------------------------------------------
-//   Initialization for the JavaScript version
-// ----------------------------------------------------------------------------
-{
-    program_init();
-    redraw_lcd(true);
-    last_keystroke_time = sys_current_ms();
-    return 42;
-}
-#endif // WASM
-
-
 extern "C" void program_main()
 // ----------------------------------------------------------------------------
 //   DMCP main entry point and main loop
 // ----------------------------------------------------------------------------
 {
-    static int  key        = 0;
-    static bool transalpha = false;
+    int  key        = 0;
+    bool transalpha = false;
 
-#ifndef WASM
     // Initialization
     program_init();
     redraw_lcd(true);
@@ -356,7 +335,6 @@ extern "C" void program_main()
         // Check power state, and switch off if necessary
         if (power_check(true))
             continue;
-#endif // WASM
 
         // Key is ready -> clear auto off timer
         bool hadKey = false;
@@ -368,7 +346,7 @@ extern "C" void program_main()
             hadKey = true;
             record(main, "Got key %d", key);
 
-#ifndef WASM
+#if !WASM
 #if SIMULATOR
             // Process test-harness commands
             record(tests_rpl, "Processing key %d, last=%d, command=%u",
@@ -385,7 +363,7 @@ extern "C" void program_main()
 #else // Real hardware
 #define read_key __sysfn_read_key
 #endif // SIMULATOR
-#endif // WASM
+#endif // !WASM
 
             // Check transient alpha mode
             if (key == KEY_UP || key == KEY_DOWN)
@@ -423,9 +401,9 @@ extern "C" void program_main()
         record(main, "Testing key %d (%+s)", key, hadKey ? "had" : "nope");
         if (key >= 0 && hadKey)
         {
-#if SIMULATOR
+#if SIMULATOR && !WASM
             process_test_key(key);
-#endif // SIMULATOR
+#endif // SIMULATOR && !WASM
 
             record(main, "Handle key %d last %d", key, last_key);
             handle_key(key, repeating, transalpha);
@@ -445,14 +423,47 @@ extern "C" void program_main()
             if (sys_timer_timeout(TIMER1))
                 redraw_periodics();
         }
-#if SIMULATOR
+#if SIMULATOR && !WASM
         if (tests::running && test_command && key_empty())
             process_test_commands();
-#endif // SIMULATOR
-#ifndef WASM
+#endif // SIMULATOR && !WASM
+
     }
-#endif // WASM
 }
+
+
+#if WASM
+uint            memory_size           = 100;
+volatile uint   test_command          = 0;
+bool            noisy_tests           = false;
+bool            tests::running        = false;
+
+static void *rpl_thread(void *)
+// ----------------------------------------------------------------------------
+//   Run the RPL thread
+// ----------------------------------------------------------------------------
+{
+    record(main, "Entering main thread");
+    program_main();
+    return nullptr;
+}
+
+
+int ui_init()
+// ----------------------------------------------------------------------------
+//   Initialization for the JavaScript version
+// ----------------------------------------------------------------------------
+{
+    recorder_trace_set(".*error.*|.*warn.*");
+    record(main, "ui_init invoked");
+    pthread_t rpl;
+    int rc = pthread_create(&rpl, nullptr, rpl_thread, nullptr);
+    record(main, "pthread_create returned %d, %s", rc, strerror(rc));
+    return 42;
+}
+
+#endif // WASM
+
 
 
 #if SIMULATOR

@@ -256,7 +256,9 @@
                 }
                 Module.ui_push_key(key);
                 Module.ui_push_key(0);
+                return true;
             }
+            return false;
         }
 
         // add an event listener to the canvas so we can parse the key presses
@@ -285,71 +287,73 @@
 
         // parse the LCD data and draw to the canvas
         const drawBitmap = function(canvasId, dataArray, width, height) {
-          const canvas = document.getElementById(canvasId);
-          const ctx = canvas.getContext('2d');
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
 
-          canvas.width = SIM_LCD_SCANLINE - SIM_LCD_OFFSET;
-          canvas.height = SIM_LCD_H;
+            canvas.width = SIM_LCD_SCANLINE - SIM_LCD_OFFSET;
+            canvas.height = SIM_LCD_H;
 
-          const imageData = ctx.createImageData(width, height);
-          const data = imageData.data;
+            const imageData = ctx.createImageData(width, height);
+            const data = imageData.data;
 
-          for (let i = 0; i < dataArray.length; i++) {
-              const bitmask = dataArray[i];
-              for (let bit = 0; bit < 32; bit++) {
-                  const value = (bitmask >> bit) & 1;
-                  const pixelIndex = i * 32 + bit;
-                  const x = pixelIndex % width;
-                  const y = Math.floor(pixelIndex / width);
-                  const mirroredX = width - 1 - x; // Mirroring the x position
-                  const index = (y * width + mirroredX) * 4;
-                  // const index = (y * width + x) * 4;
+            for (let i = 0; i < dataArray.length; i++) {
+                const bitmask = dataArray[i];
+                for (let bit = 0; bit < 32; bit++) {
+                    const value = (bitmask >> bit) & 1;
+                    const pixelIndex = i * 32 + bit;
+                    const x = pixelIndex % width;
+                    const y = Math.floor(pixelIndex / width);
+                    const mirroredX = width - 1 - x; // Mirroring the x position
+                    const index = (y * width + mirroredX) * 4;
+                    // const index = (y * width + x) * 4;
 
-                  const color = value === 1 ? 213 : 0;
-                  data[index] = color;
-                  data[index + 1] = color;
-                  data[index + 2] = color;
-                  data[index + 3] = 255; // Alpha channel
-              }
-          }
+                    const color = value === 1 ? 213 : 0;
+                    data[index] = color;
+                    data[index + 1] = color;
+                    data[index + 2] = color;
+                    data[index + 3] = 255; // Alpha channel
+                }
+            }
 
-          // offset -16 pixels to the left
-          ctx.putImageData(imageData, -SIM_LCD_OFFSET, 0);
+            // offset -16 pixels to the left
+            ctx.putImageData(imageData, -SIM_LCD_OFFSET, 0);
         }
 
 
       Module.onRuntimeInitialized = function() {
 
-        // initialise the calculator
-        console.log("loaded wasm...");
-        console.log("ui_init()", Module.ui_init());
+          // initialise the calculator
+          console.log("loaded wasm...");
+          var init = Module.ui_init();
+          console.log("ui_init()", init);
+          var rpl_lcd = 0;
 
-        // fetch and display the LCD
-        const getLCD = function() {
-          var heap = Module.ui_update_pixmap();
-          const lcd_buffer = []
-          for (let v=0; v < (13*240); v++) {
-            lcd_buffer.push( Module.HEAP32[heap/Int32Array.BYTES_PER_ELEMENT+v] )
+          const redraw = function() {
+              if (rpl_lcd) {
+                  if (DEBUG)
+                      console.log("Display changed");
+                  var lcd_buffer = [];
+                  for (let v=0; v < (13*240); v++) {
+                      var index = rpl_lcd/Int32Array.BYTES_PER_ELEMENT+v;
+                      var word = Module.HEAP32[index]
+                      lcd_buffer.push(word)
+                  }
+                  rpl_lcd = 0
+                  drawBitmap('lcdCanvas',
+                             lcd_buffer, SIM_LCD_SCANLINE, SIM_LCD_H);
+              }
           }
-          drawBitmap('lcdCanvas', lcd_buffer, SIM_LCD_SCANLINE, SIM_LCD_H);
-        }
 
-        // thread to draw the LCD and run the calculator
-        const drawThread = function() {
-          let now = new Date().getTime();
-          let dt = now - threadSince;
-          processKey();
-          if (dt > threadInterval) {
-            Module.ui_run_rpl();
-            getLCD();
-            threadSince = now;
+          // fetch and display the RPL display
+          const checkRPL = function() {
+              if (!rpl_lcd)
+                  rpl_lcd = Module.ui_lcd_buffer();
+              if (processKey() || rpl_lcd)
+                  window.requestAnimationFrame(redraw)
+              window.setTimeout(checkRPL, 50);
           }
-          window.requestAnimationFrame(drawThread);
-        }
 
-        window.requestAnimationFrame(drawThread);
-
-
+          window.requestAnimationFrame(checkRPL);
       }
     </script>
 

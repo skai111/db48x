@@ -105,12 +105,6 @@ sim:	recorder/config.h	\
 WASM_TARGET=wasm/$(TARGET).js
 wasm: emsdk $(WASM_TARGET) $(WASM_HTML)
 
-ifneq ($(VARIANT),wasm)
-$(WASM_TARGET): $(SOURCES) Makefile
-	(source emsdk/emsdk_env.sh && \
-	 make VARIANT=wasm PGM=js PGM_TARGET=wasm/$(TARGET).js SDK=sim )
-endif
-
 emsdk: emsdk/emsdk
 	emcc --version > /dev/null || \
 	(cd emsdk && ./emsdk install latest && ./emsdk activate latest)
@@ -330,11 +324,12 @@ ifeq ($(VARIANT),wasm)
 CC = emcc
 CXX = emcc -x c++ -std=gnu++17
 PLATFORM_SOURCES=src/wasp/dmcp.cc src/wasm/sim-screen.cc src/wasm/sim-window.cc
-C_SOURCES += recorder/recorder.c
-CFLAGS += 	-O3
+C_SOURCES += recorder/recorder.c recorder/recorder_ring.c
+CFLAGS += 	-O3 -pthread
 LDFLAGS +=	-s MODULARIZE=0				\
 		-s RESERVED_FUNCTION_POINTERS=20	\
-		 --bind
+		-s PTHREAD_POOL_SIZE=4			\
+		--bind -pthread
 
 #------------------------------------------------------------------------------
 else
@@ -438,6 +433,10 @@ $(WASM_TARGET): $(OBJECTS) Makefile
 	$(CC) $(OBJECTS) $(LDFLAGS) -o $@
 
 else
+
+$(WASM_TARGET): $(SOURCES) Makefile
+	(source emsdk/emsdk_env.sh && \
+	 make VARIANT=wasm PGM=js PGM_TARGET=wasm/$(TARGET).js SDK=sim )
 
 $(BUILD)/$(TARGET).elf: $(OBJECTS) Makefile
 	$(CC) $(OBJECTS) $(LDFLAGS) -o $@
