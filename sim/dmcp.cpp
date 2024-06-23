@@ -721,7 +721,7 @@ inline void lcd_writeTextInternal(disp_stat_t *ds, const char *text, int write)
     int                xspc     = ds->xspc;
     int                x        = ds->x + xspc;
     int                y        = ds->y + ds->ln_offs;
-    int                inv      = ds->inv != 0;
+    int                color    = ds->inv == 0;
     const byte        *p        = (const byte *) text;
 
     if (write)
@@ -730,7 +730,7 @@ inline void lcd_writeTextInternal(disp_stat_t *ds, const char *text, int write)
         record(lcd, "Skip text [%s] at (%d, %d)", text, x, y);
 
     if (ds->lnfill)
-        lcd_fill_rect(ds->xoffs, y, LCD_W, height, inv);
+        lcd_fill_rect(ds->xoffs, y, LCD_W, height, color);
 
     while ((c = *p++))
     {
@@ -752,7 +752,7 @@ inline void lcd_writeTextInternal(disp_stat_t *ds, const char *text, int write)
 
             for (int r = 0; r < cy; r++)
                 for (int c = 0; c < cx + cols; c++)
-                    lcd_pixel(x+c, y+r, inv);
+                    lcd_pixel(x+c, y+r, color);
 
             for (int r = 0; r < rows; r++)
             {
@@ -761,19 +761,19 @@ inline void lcd_writeTextInternal(disp_stat_t *ds, const char *text, int write)
                     data |= *dp++ << c;
 
                 for (int c = 0; c < cx; c++)
-                    lcd_pixel(x+c, y+r, inv);
+                    lcd_pixel(x+c, y+r, color);
 
                 for (int c = 0; c < cols; c++)
                 {
                     int val = (data >> (cols - c - 1)) & 1;
                     if (val || ds->bgfill)
-                        lcd_pixel(x + c + cx, y + r + cy, val != inv);
+                        lcd_pixel(x + c + cx, y + r + cy, val != color);
                 }
             }
 
             for (uint r = cy + rows; r < height; r++)
                 for (int c = 0; c < cx + cols; c++)
-                    lcd_pixel(x+c, y+r, inv);
+                    lcd_pixel(x+c, y+r, color);
 
 
             x += cx + cols + xspc;
