@@ -162,7 +162,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        graphic_commands();
+        complex_types();
     }
     else
     {
@@ -3703,6 +3703,10 @@ void tests::complex_types()
     step("Short rectangular forms for i12.05")
         .test(CLEAR, "ⅈ12.05", ENTER)
         .type(object::ID_rectangular).expect("0+12.05ⅈ");
+
+    step("Syntax error for empty phase")
+        .test(CLEAR, "1∡", ENTER)
+        .error("Syntax error");
 }
 
 

@@ -611,7 +611,11 @@ PARSE_BODY(polar)
     size_t   imsz  = max - offs;
     object_p imobj = parse(p.source + offs, imsz);
     if (!imobj)
+    {
+        if (!rt.error())
+            rt.syntax_error().source(p.source+offs, imsz);
         return ERROR;           // Case of ∡ by itself
+    }
     algebraic_g im = imobj->as_algebraic();
     if (!im)
         return SKIP;            // Case of 3∡"Hello"
