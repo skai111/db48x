@@ -1822,8 +1822,10 @@ bool user_interface::draw_annunciators()
     coord   alpha_x = battery_left - alpha_w;
     coord   ann_x   = alpha_x - ann_width;
 
-    if (busy_right > alpha_x)
+    if (!adraw && busy_right > alpha_x)
         adraw = true;
+    if (!sdraw && busy_right > ann_x)
+        sdraw = true;
 
     busy_right = battery_left - 1;
     if (adraw)
