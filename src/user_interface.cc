@@ -1251,7 +1251,7 @@ void user_interface::draw_dirty(coord x1, coord y1, coord x2, coord y2)
 //   Indicates that a component dirtied a given area of the screen
 // ----------------------------------------------------------------------------
 {
-    draw_dirty(rect(min(x1,x2), min(y1,y2), max(x1,x2)+1, max(y1,y2)+1));
+    draw_dirty(rect(min(x1,x2), min(y1,y2), max(x1,x2), max(y1,y2)));
 }
 
 
@@ -1277,7 +1277,7 @@ bool user_interface::draw_graphics(bool erase)
         draw_start(false);
         graphics = true;
         Screen.fill(pattern(Settings.Background()));
-        draw_dirty(0, 0, LCD_W, LCD_H);
+        draw_dirty(0, 0, LCD_W-1, LCD_H-1);
         return true;
     }
     return false;
@@ -1548,7 +1548,7 @@ bool user_interface::draw_menus()
     if (animate)
         draw_refresh(period);
     if (!animating)
-        draw_dirty(0, LCD_H - menuHeight, LCD_W, LCD_H);
+        draw_dirty(0, LCD_H - 1 - menuHeight, LCD_W, LCD_H-1);
 
     return true;
 }
@@ -2105,7 +2105,7 @@ bool user_interface::draw_editor()
     int   lineHeight      = font->height();
     int   errorHeight     = rt.error() ? LCD_H / 3 + 10 : 0;
     int   top             = HeaderFont->height() + errorHeight + 2;
-    int   bottom          = LCD_H - menuHeight;
+    int   bottom          = LCD_H-1 - menuHeight;
     int   availableHeight = bottom - top;
     int   fullRows        = availableHeight / lineHeight;
     int   clippedRows     = (availableHeight + lineHeight - 1) / lineHeight;
@@ -2526,7 +2526,7 @@ bool user_interface::draw_stack()
         if (m->type() == object::ID_SolvingMenu)
             if (expression_p expr = expression::current_equation(false, true, true))
                 draw_object(expr, top, bottom);
-    draw_dirty(0, top, stack, LCD_H);
+    draw_dirty(0, top, stack, LCD_H-1);
     draw_idle();
     dirtyStack = false;
     dirtyCommand = true;
@@ -2563,7 +2563,7 @@ bool user_interface::draw_object(object_p obj, uint top, uint bottom)
         Screen.fill(x-1, y-1, x+w+1, y+h+1, pattern::gray50);
         Screen.draw(s, x, y, fg);
         Screen.draw_background(s, x, y, bg);
-        draw_dirty(x-1, y-1, x+w+1, y+h+1);
+        draw_dirty(x-1, y-1, x+w, y+h);
     }
     return graph;
 }
