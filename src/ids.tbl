@@ -980,6 +980,7 @@ SETTING(BatteryLevelForeground, ularge(0), ~ularge(0), ~ularge(0))
 SETTING(HalfBatteryForeground,  ularge(0), ~ularge(0), ~ularge(0))
 SETTING(LowBatteryForeground,   ularge(0), ~ularge(0), ~ularge(0))
 SETTING(ChargingForeground,     ularge(0), ~ularge(0), ~ularge(0))
+SETTING(BatteryRefresh,         uint(100),  uint(3600000), uint(3000))
 
 SETTING_ENUM(DateSlash,         nullptr,        DateSeparatorCommand)
 SETTING_ENUM(DateDash,          nullptr,        DateSeparatorCommand)

@@ -121,7 +121,6 @@ void redraw_lcd(bool force)
            "Refresh at %u (%u later), period %u", then, then - now, period);
 
     // Refresh screen moving elements after the requested period
-    sys_timer_disable(TIMER1);
     sys_timer_start(TIMER1, period);
 }
 

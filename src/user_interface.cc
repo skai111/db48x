@@ -1648,7 +1648,6 @@ bool user_interface::draw_header()
             r.printf(" ");
             pattern timecol = Settings.TimeForeground();
             x = Screen.text(x, 0, r.text(), r.size(), HeaderFont, timecol);
-            draw_refresh(Settings.ShowSeconds() ? 1000 : 1000 * (60 - second));
         }
 
         renderer r;
@@ -1663,6 +1662,8 @@ bool user_interface::draw_header()
             x = header_width;
         busy_left = x;
     }
+    if (Settings.ShowTime() || Settings.ShowDate())
+        draw_refresh(Settings.ShowSeconds() ? 1000 : 1000 * (60 - second));
     return changed;
 }
 
@@ -1687,15 +1688,20 @@ bool user_interface::draw_battery()
     static bool low = false;
     static bool usb = false;
 
-    if (time - last > 2000)
+    uint delay = time - last;
+    uint refresh = Settings.BatteryRefresh();
+    if (delay > refresh)
     {
         vdd  = (int) read_power_voltage();
         low  = get_lowbat_state();
         usb  = usb_powered();
-        last = time;
     }
     else if (!force)
     {
+        delay = refresh - delay;
+        if (delay < 20)
+            delay = 20;
+        draw_refresh(delay);
         return false;
     }
 
@@ -1771,7 +1777,8 @@ bool user_interface::draw_battery()
 
     battery_left = x;
     draw_dirty(x, 0, LCD_W-1, h);
-    draw_refresh(2000);
+    draw_refresh(refresh);
+    last = time;
 
     // Power off if battery power is really low
     if (vdd < BATTERY_VOFF)
