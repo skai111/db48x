@@ -745,6 +745,7 @@ unit_p unit::lookup(symbol_p name, int *prefix_info)
     uint      maxs = sizeof(si_prefixes) / sizeof(si_prefixes[0]);
     unit_file ufile;
 
+    record(units, "Lookup %t", name);
     for (uint si = 0; si < maxs; si++)
     {
         utf8    ntxt   = gtxt;
@@ -841,6 +842,8 @@ unit_p unit::lookup(symbol_p name, int *prefix_info)
 
                         // Check if we must evaluate, e.g. 1_min -> seconds
                         ufile.close();
+
+                        settings::SaveAutoSimplify sas(false);
                         uexpr = u->evaluate();
                         if (!uexpr || uexpr->type() != ID_unit)
                         {
