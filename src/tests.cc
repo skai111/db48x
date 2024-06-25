@@ -162,7 +162,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        global_variables();
+        hms_dms_operations();
     }
     else
     {
@@ -6190,6 +6190,12 @@ void tests::hms_dms_operations()
         .test(DOT).editor("\"1..\"")
         .test(DOT).editor("\"1...\"")
         .test(ENTER).expect("\"1...\"");
+    step("Invalid DMS value should display correctly")
+        .test(CLEAR, "ABC_dms", ENTER).expect("'ABC' dms");
+    step("Invalid HMS value should display correctly")
+        .test(CLEAR, "ABC_hms", ENTER).expect("'ABC' hms");
+    step("Invalid date value should display correctly")
+        .test(CLEAR, "ABC_date", ENTER).expect("'ABC' date");
 
     step("Converting DMS to HMS")
         .test(CLEAR)

@@ -179,15 +179,18 @@ RENDER_BODY(unit)
     bool        ed    = r.editing();
     if (symbol_p sym = uexpr->as_quoted<symbol>())
     {
-        if (sym->matches("dms"))
-            sz = render_dms(r, value, "°", "′", "″");
-        else if (sym->matches("hms"))
-            sz = ed ? render_dms(r, value, "°", "′", "″")
+        if (value->is_real())
+        {
+            if (sym->matches("dms"))
+                sz = render_dms(r, value, "°", "′", "″");
+            else if (sym->matches("hms"))
+                sz = ed ? render_dms(r, value, "°", "′", "″")
                     : render_dms(r, value, ":", ":", "");
-        else if (sym->matches("date") && !ed)
-            sz = render_date(r, value);
-        if (sz && !ed)
-            return sz;
+            else if (sym->matches("date") && !ed)
+                sz = render_date(r, value);
+            if (sz && !ed)
+                return sz;
+        }
     }
     if (sz)
     {

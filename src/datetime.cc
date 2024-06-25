@@ -523,7 +523,7 @@ void render_time(renderer &r, algebraic_g &value,
 //   Render a time (or an angle) as hours/minutes/seconds
 // ----------------------------------------------------------------------------
 {
-    if (!value)
+    if (!value || !value->is_real())
         return;
     bool as_time = *hrs == ':';
     uint h = value->as_uint32(0, false);
@@ -544,7 +544,7 @@ void render_time(renderer &r, algebraic_g &value,
     r.put(sec);
 
     value = value % one;
-    if (value && !value->is_zero())
+    if (value && !value->is_zero(false))
     {
         if (as_time && algebraic::to_decimal(value))
         {
@@ -571,6 +571,8 @@ size_t render_dms(renderer &r, algebraic_g value,
 //   Render a number as "degrees / minutes / seconds"
 // ----------------------------------------------------------------------------
 {
+    if (!value || !value->is_real())
+        return 0;
     bool neg = value->is_negative(false);
     if (neg)
     {
