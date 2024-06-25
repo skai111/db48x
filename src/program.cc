@@ -330,7 +330,7 @@ COMMAND_BODY(MultipleSteps)
 {
     if (object_p obj = rt.top())
     {
-        if (uint steps = obj->as_uint32())
+        if (uint steps = obj->as_uint32(0, true))
         {
             rt.pop();
             program::stepping = steps;

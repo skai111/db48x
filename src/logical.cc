@@ -385,7 +385,7 @@ bignum_g logical::bit(bignum_r X)
 {
     bignum_g one = bignum::make(1);
     uint ws = Settings.WordSize();
-    uint shift = X->as_uint32();
+    uint shift = X->as_uint32(0, true);
     if (shift > ws)
         return bignum::make(0);
     return bignum::shift(one, shift, false, false);

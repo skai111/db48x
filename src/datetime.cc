@@ -70,14 +70,14 @@ bool to_time(object_p tobj, tm_t &tm, bool error)
     }
 
     algebraic_g factor = integer::make(scale);
-    uint hour = time->as_uint32(false);
+    uint hour = time->as_uint32(0, false);
     time = (time * factor) % factor;
-    uint min = time->as_uint32(false);
+    uint min = time->as_uint32(0, false);
     time = (time * factor) % factor;
-    uint sec = time->as_uint32(false);
+    uint sec = time->as_uint32(0, false);
     factor = integer::make(100);
     time = (time * factor) % factor;
-    uint csec = time->as_uint32(false);
+    uint csec = time->as_uint32(0, false);
     if (hour >= 24 || min >= 60 || sec >= 60)
     {
         if (error)
@@ -121,11 +121,11 @@ uint to_date(object_p dtobj, dt_t &dt, tm_t &tm, bool error)
     algebraic_g time = integer::make(1);
     time = date % time;
 
-    uint d = date->as_uint32(false) % 100;
+    uint d = date->as_uint32(0, false) % 100;
     date = date / factor;
-    uint m = date->as_uint32(false) % 100;
+    uint m = date->as_uint32(0, false) % 100;
     date = date / factor;
-    uint y = date->as_uint32(false);
+    uint y = date->as_uint32(0,false);
 
     const uint days[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
     bool bisext = m == 2 && y % 4 == 0 && (y % 100 != 0 || y % 400 == 0);
@@ -143,13 +143,13 @@ uint to_date(object_p dtobj, dt_t &dt, tm_t &tm, bool error)
     if (time && !time->is_zero())
     {
         time = time * factor;
-        uint hour = time->as_uint32(false);
+        uint hour = time->as_uint32(0, false);
         time = (time * factor) % factor;
-        uint min = time->as_uint32(false);
+        uint min = time->as_uint32(0, false);
         time = (time * factor) % factor;
-        uint sec = time->as_uint32(false);
+        uint sec = time->as_uint32(0, false);
         time = (time * factor) % factor;
-        uint csec = time->as_uint32(false);
+        uint csec = time->as_uint32(0, false);
         if (hour >= 24 || min >= 60 || sec >= 60)
         {
             if (error)
@@ -251,7 +251,7 @@ algebraic_p date_from_julian_day(object_p jdn, bool error)
 
     if (algebraic_g jval = jdn->as_real())
     {
-        large jdn = jval->as_int64(error);
+        large jdn = jval->as_int64(0, error);
 
         enum
         {
@@ -285,7 +285,7 @@ algebraic_p date_from_julian_day(object_p jdn, bool error)
         {
             algebraic_g factor = integer::make(86400);
             fp = fp * factor;
-            ularge hval = fp->as_uint64(false);
+            ularge hval = fp->as_uint64(0, false);
             uint hour = hval / 3600;
             uint min = (hval / 60) % 60;
             uint sec = hval % 60;
@@ -526,7 +526,7 @@ void render_time(renderer &r, algebraic_g &value,
     if (!value)
         return;
     bool as_time = *hrs == ':';
-    uint h = value->as_uint32(false);
+    uint h = value->as_uint32(0, false);
     r.flush();
     r.printf("%u", h);
     r.put(hrs);
@@ -534,12 +534,12 @@ void render_time(renderer &r, algebraic_g &value,
     algebraic_g one = integer::make(1);
     algebraic_g factor = integer::make(base);
     value = (value * factor) % factor;
-    uint m = value ? value->as_uint32(false) : 0;
+    uint m = value ? value->as_uint32(0, false) : 0;
     r.printf("%02u", m);
     r.put(min);
 
     value = (value * factor) % factor;
-    uint s = value ? value->as_uint32() : 0;
+    uint s = value ? value->as_uint32(0, false) : 0;
     r.printf("%02u", s);
     r.put(sec);
 
@@ -571,7 +571,7 @@ size_t render_dms(renderer &r, algebraic_g value,
 //   Render a number as "degrees / minutes / seconds"
 // ----------------------------------------------------------------------------
 {
-    bool neg = value->is_negative();
+    bool neg = value->is_negative(false);
     if (neg)
     {
         r.put('-');
@@ -599,11 +599,11 @@ size_t render_date(renderer &r, algebraic_g date)
     algebraic_g factor = integer::make(100);
     algebraic_g time = integer::make(1);
     time = date % time;
-    uint day = date->as_uint32(false) % 100;
+    uint day = date->as_uint32(0, false) % 100;
     date = date / factor;
-    uint month = date->as_uint32(false) % 100;
+    uint month = date->as_uint32(0, false) % 100;
     date = date / factor;
-    uint year = date->as_uint32(false);
+    uint year = date->as_uint32(0, false);
 
     char mname[4];
     if (Settings.ShowMonthName() && month >=1 && month <= 12)

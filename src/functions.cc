@@ -1201,8 +1201,8 @@ static algebraic_p sum_product(object::id op,
     if (init->is_integer() && last->is_integer())
     {
         program_g        prg  = program_p(+expr);
-        large            a    = init->as_int64();
-        large            b    = last->as_int64();
+        large            a    = init->as_int64(0, false);
+        large            b    = last->as_int64(0, false);
         save<symbol_g *> iref(expression::independent, &name);
 
         if (op == object::ID_mul)

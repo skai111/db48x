@@ -831,7 +831,7 @@ COMMAND_BODY(doerr)
         }
         else
         {
-            uint32_t ival = obj->as_uint32();
+            uint32_t ival = obj->as_uint32(0, true);
             if (ival || !rt.error())
             {
                 if (!ival)

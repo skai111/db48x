@@ -419,10 +419,10 @@ struct object
     // ------------------------------------------------------------------------
 
 
-    uint32_t as_uint32(uint32_t def = 0, bool err = true) const;
-    int32_t  as_int32 (int32_t  def = 0, bool err = true)  const;
-    uint64_t as_uint64(uint64_t def = 0, bool err = true) const;
-    int64_t  as_int64 (int64_t  def = 0, bool err = true)  const;
+    uint32_t as_uint32(uint32_t def, bool err) const;
+    int32_t  as_int32 (int32_t  def, bool err)  const;
+    uint64_t as_uint64(uint64_t def, bool err) const;
+    int64_t  as_int64 (int64_t  def, bool err)  const;
     // ------------------------------------------------------------------------
     //   Return the object as an integer, possibly erroring out for bad type
     // ------------------------------------------------------------------------
