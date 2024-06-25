@@ -162,7 +162,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        complex_types();
+        global_variables();
     }
     else
     {
@@ -1365,8 +1365,9 @@ void tests::global_variables()
 
     step("Purge global variable");
     test(CLEAR, XEQ, "A", ENTER, "PURGE", ENTER).noerror();
-    test(CLEAR, XEQ, "MyINCR", ENTER, "PURGE", ENTER).noerror();
-    test(CLEAR, XEQ, "SomeLongVariable", ENTER, "PURGE", ENTER).noerror();
+    test(CLEAR,
+         "{ MyINCR SomeLongVariable }", ENTER,
+         "PURGE", ENTER).noerror();
 
     test(CLEAR, XEQ, "A", ENTER, "RCL", ENTER).error("Undefined name").clear();
     test(CLEAR, XEQ, "MyINCR", ENTER, "RCL", ENTER)

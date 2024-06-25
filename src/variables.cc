@@ -527,6 +527,15 @@ size_t directory::purge(object_p name)
 #include "ids.tbl"
         return settings::purge(nty);
 
+    case ID_list:
+    case ID_array:
+    {
+        size_t size = 0;
+        for (object_p obj : *list_p(name))
+            size += purge(obj);
+        return size;
+    }
+
     case ID_integer:
         if (Settings.NumberedVariables())
             break;
