@@ -64,6 +64,8 @@ int  last_key            = 0;
 RECORDER(main,          16, "Main RPL thread");
 RECORDER(main_error,    16, "Errors in the main RPL thread");
 RECORDER(tests_rpl,    256, "Test request processing on RPL");
+RECORDER(refresh,       16, "Refresh requests");
+
 
 void refresh_dirty()
 // ----------------------------------------------------------------------------
@@ -80,6 +82,7 @@ void refresh_dirty()
         top = max(coord(0), min(height, top));
         bottom = max(coord(0), min(height, bottom));
         lcd_refresh_lines(top, bottom - top + 1);
+        record(refresh, "Refresh %u lines from %u", bottom-top+1, top);
     }
     ui.draw_clean();
 }

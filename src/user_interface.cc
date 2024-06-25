@@ -1879,7 +1879,7 @@ bool user_interface::draw_annunciators()
     if (shift || xshift)
         busy_right = ann_x - 1;
 
-    rect dirty(busy_right+1, 0, battery_left - 1, h);
+    rect dirty(busy_right, 0, battery_left, h);
     draw_dirty(dirty);
     return true;
 }
