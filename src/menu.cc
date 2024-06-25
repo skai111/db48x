@@ -1335,7 +1335,7 @@ MENU(ClearThingsMenu,
 //  Clearing various things
 // ----------------------------------------------------------------------------
      "Stack",   ID_ClearStack,
-     "Dir",     ID_Unimplemented,
+     "Purge",   ID_Purge,
      "Stats",   ID_ClearData,
      "Mem",     ID_Unimplemented,
      "Error",   ID_err0,
