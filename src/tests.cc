@@ -6196,6 +6196,15 @@ void tests::hms_dms_operations()
         .test(CLEAR, "ABC_hms", ENTER).expect("'ABC' hms");
     step("Invalid date value should display correctly")
         .test(CLEAR, "ABC_date", ENTER).expect("'ABC' date");
+    step("Inserting zeros automatically")
+        .test(CLEAR, DOT, KEY3, DOT, ENTER)
+        .expect("0°03′00″");
+    step("Inserting zeros automatically")
+        .test(CLEAR, KEY3, DOT, DOT, ENTER)
+        .expect("3°00′00″");
+    step("Inserting zeros automatically")
+        .test(CLEAR, DOT, DOT, KEY3, ENTER)
+        .expect("0°00′03″");
 
     step("Converting DMS to HMS")
         .test(CLEAR)

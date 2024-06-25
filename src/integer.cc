@@ -292,14 +292,20 @@ PARSE_BODY(integer)
                 // Unterminated DMS number, e.g. 1°3
                 s = p.source + dms_end;
 
+            // Parsed no digit: try something else
+            if (!is_fraction && !is_dms)
+                return WARN;
+
+            // Check incomplete fractions or DMS
             if (is_fraction || is_dms)
             {
                 number = numerator;
-                break;
+                if (is_dms < 1)
+                    break;
+                else
+                    s++;
             }
 
-            // Parsed no digit: try something else
-            return WARN;
         }
 
         // Check if we need bignum

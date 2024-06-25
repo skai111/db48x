@@ -4172,14 +4172,13 @@ bool user_interface::handle_digits(int key)
                 else if (cp == dm)
                 {
                     found = p;
-                    if (uint(found - ed) == cursor - utf8_size(cp))
+                    remove (found - ed, utf8_size(cp));
+                    if (uint(found - ed - 1) == cursor - utf8_size(cp))
                     {
-                        remove (found - ed, utf8_size(cp));
                         c = L'°';
                     }
                     else
                     {
-                        remove(found - ed, utf8_size(cp));
                         insert(found - ed, unicode(L'°'));
                         c = L'′';
                     }
@@ -4196,6 +4195,18 @@ bool user_interface::handle_digits(int key)
                 {
                     break;
                 }
+            }
+            if (found)
+            {
+                bool haddigit = p > ed;
+                if (haddigit)
+                {
+                    utf8 pp = utf8_previous(p);
+                    unicode cpp = utf8_codepoint(pp);
+                    haddigit = cpp >= '0' && cpp <= '9';
+                }
+                if (!haddigit)
+                    insert(found - ed, unicode('0'));
             }
         }
         edit(c, DIRECT);
