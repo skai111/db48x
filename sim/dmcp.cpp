@@ -850,11 +850,14 @@ static struct timer
 
 void sys_sleep()
 {
+    uint32_t entry = sys_current_ms();
     while (!test_command && key_empty())
     {
         uint32_t now = sys_current_ms();
         for (int i = 0; i < 4; i++)
-            if (timers[i].enabled && int(timers[i].deadline - now) < 0)
+            if (timers[i].enabled &&
+                int(timers[i].deadline - now) < 0 &&
+                int(timers[i].deadline - entry) >= 0)
                 goto done;
         ui_ms_sleep(tests::running ? 1 : 20);
     }
@@ -889,9 +892,11 @@ int sys_timer_active(int timer_ix)
 
 int sys_timer_timeout(int timer_ix)
 {
-    uint32_t now = sys_current_ms();
     if (timers[timer_ix].enabled)
+    {
+        uint32_t now = sys_current_ms();
         return int(timers[timer_ix].deadline - now) < 0;
+    }
     return false;
 }
 
