@@ -6342,13 +6342,13 @@ void tests::online_help()
         .test(BSP).noerror()
         .image_noheader("help-page6");
     step("Next link with F5")
-        .test(F2, F3, F3, F5, ENTER).noerror()
+        .test(F3, UP, F4, F5, ENTER).noerror()
         .image_noheader("help-keyboard");
     step("Back with F6")
         .test(F6).noerror()
         .image_noheader("help-page7");
     step("Previous topic with F4")
-        .test(F4).noerror()
+        .test(UP, F4).noerror()
         .image_noheader("help-page8");
     step("Select topic with ENTER")
         .test(LENGTHY(200), ENTER).noerror()

@@ -10,6 +10,7 @@ language with its rich set of data types and built-in functions.
 This project is presently targeting the **SwissMicro DM32 calculator**
 and leveraging its built-in software platform, known as **DMCP**. This is
 presumably the calculator you are currently running this software on.
+You can also [try it in your browser](http://48calc.org).
 
 ## Table of contents
 
@@ -8630,4 +8631,3 @@ Create a backup on a remote machine
 
 ## USBRESTORE
 Restore a backup from a remote machine
-

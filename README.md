@@ -10,7 +10,8 @@ The project in this repository is presently targeting the
 [DM32](https://www.swissmicros.com/product/dm42) calculators. It leverages their
 built-in software platform, known as
 [DMCP](https://technical.swissmicros.com/dmcp/doc/DMCP-ifc-html/). There is also
-a simulator that is tested on macOS or Linux.
+a simulator that is tested on macOS or Linux, and you can even
+[try it in your browser](http://c3d.github.com/db48x)
 
 In the long-term, the vision is to be able to port DB48X on a number of
 [different physical calculator platforms](https://www.youtube.com/watch?v=34pPycq8ia8),
