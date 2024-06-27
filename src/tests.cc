@@ -162,7 +162,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        hms_dms_operations();
+        units_and_conversions();
     }
     else
     {
@@ -4168,6 +4168,16 @@ void tests::units_and_conversions()
         .test(CLEAR, "1_s", ENTER, "1", NOSHIFT, DIV)
         .noerror()
         .expect("1 s");
+
+    step("Sqrt for units")
+        .test(CLEAR, "12_km/h", ENTER, LSHIFT, C).expect("144 km↑2/h↑2")
+        .test(C).expect("12. km/h");
+    step("Cube root for units")
+        .test(CLEAR, "12_km/h", ENTER, "3", LSHIFT, B).expect("1 728 km↑3/h↑3")
+        .test("CBRT", ENTER).expect("12. km/h");
+    step("xroot for units")
+        .test(CLEAR, "12_km/h", ENTER, "3", LSHIFT, B).expect("1 728 km↑3/h↑3")
+        .test("3", RSHIFT, B).expect("12. km/h");
 }
 
 void tests::list_functions()

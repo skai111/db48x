@@ -194,6 +194,23 @@ algebraic_p function::evaluate(algebraic_r xr, id op, ops_t ops)
         }
     }
 
+    // Check if we need to deal with units specially
+    if (op == ID_sqrt || op == ID_cbrt)
+    {
+        if (unit_p u = xr->as<unit>())
+        {
+            algebraic_g value = u->value();
+            algebraic_g uexpr = u->uexpr();
+            value = evaluate(value, op, ops);
+            uint divisor = 2 + (op == ID_cbrt);
+            algebraic_g exponent = +fraction::make(integer::make(1),
+                                                   integer::make(divisor));
+            uexpr = pow(uexpr, exponent);
+            return unit::make(value, uexpr);
+        }
+
+    }
+
     // Convert arguments to numeric if necessary
     if (Settings.NumericalResults())
         (void) to_decimal(x, true);   // May fail silently, and that's OK
@@ -1032,7 +1049,7 @@ NFUNCTION_BODY(xroot)
         if (is_int)
         {
             bool is_odd = x->as_int32(0, false) & 1;
-            is_neg = y->is_negative();
+            is_neg = y->is_negative(false);
             if (is_neg && !is_odd)
             {
                 // Root of a negative number
