@@ -119,8 +119,6 @@ color:DEFINES += CONFIG_COLOR
 # Additional external library HIDAPI linked statically into the code
 INCLUDEPATH += ../src/dm42 ../src/dmcp ../src
 
-LIBS += gcc111libbid.a
-
 win32:   LIBS += -lsetupapi
 android: LIBS +=
 freebsd: LIBS += -lthr -liconv

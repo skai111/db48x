@@ -141,7 +141,7 @@ QMAKE_fastest=release
 
 TTF2FONT=$(TOOLS)/ttf2font/ttf2font
 $(TTF2FONT): $(TTF2FONT).cpp $(TOOLS)/ttf2font/Makefile src/ids.tbl
-	cd $(TOOLS)/ttf2font; $(MAKE) TARGET=
+	cd $(TOOLS)/ttf2font; $(MAKE) TARGET=opt
 
 dist: all
 	cp $(BUILD)/$(TARGET)_qspi.bin  .
@@ -308,7 +308,7 @@ C_DEFS += $(DEFINES:%=-D%)
 
 # Recorder and dependencies
 recorder/config.h: recorder/recorder.h recorder/Makefile
-	cd recorder && $(MAKE) TARGET=
+	cd recorder && $(MAKE) TARGET=opt
 $(BUILD)/recorder.o $(BUILD)/recorder_ring.o: recorder/config.h
 
 # ---
@@ -476,7 +476,7 @@ $(BUILD)/.exists:
 $(CRCFIX): $(CRCFIX).c $(dir $(CRCFIX))/Makefile
 	cd $(dir $(CRCFIX)); $(MAKE)
 $(DECIMIZE): $(DECIMIZE).cpp $(dir $(DECIMIZE))/Makefile
-	cd $(dir $(DECIMIZE)); $(MAKE)
+	cd $(dir $(DECIMIZE)); $(MAKE) TARGET=opt
 
 
 #######################################
