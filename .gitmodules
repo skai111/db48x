@@ -3,10 +3,10 @@
 	url = https://github.com/c3d/recorder.git
 [submodule "dmcp5"]
 	path = dmcp5
-	url = git@github.com:c3d/DMCP5_SDK.git
+	url = https://github.com/c3d/DMCP5_SDK.git
 [submodule "dmcp"]
 	path = dmcp
-	url = git@github.com:c3d/SDKdemo.git
+	url = https://github.com/c3d/SDKdemo.git
 [submodule "emsdk"]
 	path = emsdk
-	url = git@github.com:emscripten-core/emsdk.git
+	url = https://github.com/emscripten-core/emsdk.git
