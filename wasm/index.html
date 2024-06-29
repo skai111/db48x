@@ -8,25 +8,20 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="apple-touch-icon" href="./logo.png">
+    <link rel="icon" type="image/png" href="/user/themes/quark/images/favicon.png" />
+
+    <link href="/user/plugins/markdown-notices/assets/notices.css" type="text/css" rel="stylesheet">
+<link href="/user/plugins/form/assets/form-styles.css" type="text/css" rel="stylesheet">
+<link href="/user/themes/quark/css-compiled/spectre.min.css" type="text/css" rel="stylesheet">
+<link href="/user/themes/quark/css-compiled/theme.min.css" type="text/css" rel="stylesheet">
+<link href="/user/themes/quark/css/custom.css" type="text/css" rel="stylesheet">
+<link href="/user/themes/quark/css/line-awesome.min.css" type="text/css" rel="stylesheet">
+
+    <script src="/system/assets/jquery/jquery-3.x.min.js"></script>
+
     <script src="coi-serviceworker.js"></script>
     <script src="db48x.js"></script>
     <style>
-      html, body {
-        padding: 0;
-        margin: auto auto;
-        background-color: black;
-        overflow: hidden;
-        display: flex;
-        height: 100vh;
-        width: 100vw;
-        flex-direction: row;
-        align-items: center;
-        justify-items: center;
-        -webkit-user-select: none; /* Safari */
-        -ms-user-select: none; /* IE 10 and IE 11 */
-        user-select: none; /* Standard syntax */
-      }
-
       canvas {
         display: block;
         margin: 0 auto;
@@ -59,15 +54,187 @@
         flex-direction: column;
         align-items: center;
         justify-items: center;
+        width: 420px;
       }
 
     </style>
+
   </head>
-  <body>
-    <div id="calcContainer">
-      <canvas id="lcdCanvas"></canvas>
-      <canvas id="keyCanvas"></canvas>
+  <body id="top" class="title-center title-h1h2 header-fixed header-animated sticky-footer">>
+    <div id="page-wrapper">
+      <section id="header" class="section">
+        <section class="container grid-lg">
+          <nav class="navbar">
+            <section class="navbar-section logo">
+              <a href="/" class="navbar-brand mr-10">
+                <img src="/user/themes/quark/images/logo/DB48X-MiniLogo.png" alt="DB48X" />
+            </a>                    </section>
+            <section class="navbar-section desktop-menu">
+
+              <nav class="dropmenu animated">
+
+                <ul >
+                  <li>
+                    <a href="/" class="active">
+                      Home
+                    </a>
+                  </li>
+                  <li>
+                    <a href="/project" class="">
+                      Project
+                    </a>
+                  </li>
+                  <li>
+                    <a href="/download" class="">
+                      Download
+                    </a>
+                  </li>
+                  <li>
+                    <a href="/documentation" class="">
+                      Documentation
+                    </a>
+                  </li>
+
+                </ul>
+              </nav>
+
+
+            </section>
+          </nav>
+        </section>
+      </section>
+      <div class="mobile-menu">
+        <div class="button_container" id="toggle">
+          <span class="top"></span>
+          <span class="middle"></span>
+          <span class="bottom"></span>
+        </div>
+      </div>
+
+      <section id="start">
+        <section id="body-wrapper" class="section">
+          <section class="container grid-lg">
+
+            <h1>DB48X</h1>
+            <h2>A modern tribute to Hewlett-Packard RPL Calculators</h2>
+            <p>
+              DB48X is a modern scientific calculator in the spirit of the
+              Hewlett-Packard HP48X, featuring a complete, from-scratch
+              reimplementation of the Reverse Polish Lisp (RPL) programming
+              language.
+            </p>
+            <p>You can try the calculator directly in your browser below (you may need to click on image):</p>
+
+            <div id="calcContainer">
+              <canvas id="lcdCanvas"></canvas>
+              <canvas id="keyCanvas"></canvas>
+            </div>
+
+            <div id="try-this" style="overflow:scroll; height:200px;">
+              <h2>Try this: Plotting a function</h2>
+              <p>
+                Try the following key sequence, where you need to hit the Shift
+                key as a separate key, and observe what happens with each key:
+              </p>
+              <p align="center">
+                <table width="640px">
+                  <tr><th>Key to type</th><th>What happens</th></tr>
+                  <tr><td>F</td>          <td>Enter expression</td></tr>
+                  <tr><td>Shift</td>      <td>Left Shift</td></tr>
+                  <tr><td>ENTER</td>      <td>ALPHA mode</td></tr>
+                  <tr><td>X</td>          <td>Enter variable name X</td></tr>
+                  <tr><td>ENTER</td>      <td>Put X on the stack</td></tr>
+                  <tr><td>ENTER</td>      <td>Duplicate X</td></tr>
+                  <tr><td>3</td>          <td>Enter number 3</td></tr>
+                  <tr><td>.</td>          <td>3.</td></tr>
+                  <tr><td>4</td>          <td>3.4</td></tr>
+                  <tr><td>2</td>          <td>3.42</td></tr>
+                  <tr><td>*</td>          <td>Put 3.42 times X on stack</td></tr>
+                  <tr><td>J</td>          <td>Compute sin(3.42·X)</td></tr>
+                  <tr><td>M</td>          <td>Swap stack levels 1 and 2</td></tr>
+                  <tr><td>K</td>          <td>Compute cos(X)</td></tr>
+                  <tr><td>/</td>          <td>Compute sin(3.42·X)/cos(X)</td></tr>
+                  <tr><td>Shift</td>      <td>Left shift</td></tr>
+                  <tr><td>N</td>          <td>Select MODES menu</td></tr>
+                  <tr><td>F2</td>         <td>Select Radians mode</td></tr>
+                  <tr><td>Shift</td>      <td>Left Shift</td></tr>
+                  <tr><td>Shift</td>      <td>Right Shift</td></tr>
+                  <tr><td>O</td>          <td>PLOT menu</td></tr>
+                  <tr><td>F1</td>         <td>Draw function</td></tr>
+                </table>
+              </p>
+
+              <h2>Try this: Computing 200 digits of pi</h2>
+              <p>
+                Try the following key sequence, where you need to hit the Shift
+                key as a separate key, and observe what happens with each key:
+              </p>
+              <p align="center">
+                <table width="640px">
+                  <tr><th>Key to type</th><th>What happens</th></tr>
+                  <tr><td>Shift</td>      <td>Left Shift</td></tr>
+                  <tr><td>N</td>          <td>MODES menu</td></tr>
+                  <tr><td>F2</td>         <td>RADIANS mode</td></tr>
+                  <tr><td>Shift</td>      <td>Left Shift</td></tr>
+                  <tr><td>O</td>          <td>DISP menu</td></tr>
+                  <tr><td>2</td>          <td>Enter number 2</td></tr>
+                  <tr><td>0</td>          <td>20</td></tr>
+                  <tr><td>0</td>          <td>200</td></tr>
+                  <tr><td>F6</td>         <td>200-digit precision</td></tr>
+                  <tr><td>Shift</td>      <td>Left Shift</td></tr>
+                  <tr><td>M</td>          <td>Last Arg (Recall 200)</td></tr>
+                  <tr><td>F5</td>         <td>200 significant digits shown</td></tr>
+
+                  <tr><td>1</td>         <td>Enter number 1</td></tr>
+                  <tr><td>Shift</td>     <td>Left Shift</td></tr>
+                  <tr><td>L</td>         <td>Compute arc-tangent of 1</td></tr>
+                  <tr><td>4</td>         <td>Enter number 4</td></tr>
+                  <tr><td>*</td>         <td>Compute pi</td></tr>
+                  <tr><td>Shift</td>     <td>Left Shift</td></tr>
+                  <tr><td>.</td>         <td>SHOW function (show full screen)</td></tr>
+                </table>
+              </p>
+            </div>
+          </section>
+        </section>
+      </section>
+
     </div>
+
+    <section id="footer" class="section bg-gray">
+      <section class="container grid-lg">
+        <p><a href="http://48calc.org">DB48X</a> was <i class="fa fa-code"></i> with <i class="fa fa-heart-o pulse "></i> by <a href="https://c3d.github.com">Christophe de Dinechin</a>.</p>
+      </section>
+    </section>
+
+    <div class="mobile-container">
+      <div class="overlay" id="overlay">
+        <div class="mobile-logo">
+          <a href="/" class="navbar-brand mr-10">
+            <img src="/user/themes/quark/images/logo/DB48X-MiniLogo.png" alt="DB48X" />
+          </a>
+        </div>
+        <nav class="overlay-menu">
+
+          <ul class="tree">
+            <li>
+              <a href="/" class="active">
+                Home
+              </a>
+            </li>
+            <li>
+              <a href="/project" class="">
+                Project
+              </a>
+            </li>
+
+          </ul>
+        </nav>
+      </div>
+    </div>
+
+    <script src="/user/themes/quark/js/jquery.treemenu.js"></script>
+    <script src="/user/themes/quark/js/site.js"></script>
 
 <script>
     document.getElementsByTagName('body')[0].onscroll = function(event) {
