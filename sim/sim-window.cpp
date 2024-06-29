@@ -913,12 +913,16 @@ int ui_file_selector(const char *title,
     while (!done)
         sys_sleep();
 
-    std::cout << "Got path: " << path.toStdString() << "\n";
-    QFileInfo fi(path);
-    QString name = fi.fileName();
-    int ret = callback(path.toStdString().c_str(),
+    int ret = MRET_EXIT;
+    if (!path.isNull())
+    {
+        std::cout << "Got path: " << path.toStdString() << "\n";
+        QFileInfo fi(path);
+        QString name = fi.fileName();
+        ret = callback(path.toStdString().c_str(),
                        name.toStdString().c_str(),
                        data);
+    }
     return ret;
 }
 
