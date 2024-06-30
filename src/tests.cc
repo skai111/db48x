@@ -8827,6 +8827,7 @@ tests &tests::itest(cstring txt)
         case L'∠': itest(RSHIFT, KEY2, F3, F6, F6, F6, F6, F6, F3); NEXT;
         case L'Ⓓ': itest(RSHIFT, KEY2, F1, F6, F6, F1); NEXT;
         case L'ⓧ': itest(RSHIFT, KEY2, F1, F6, F6, F2); NEXT;
+        case L'°': itest(RSHIFT, KEY2, F1, F6, SHIFT, F3); NEXT;
 #undef NEXT
         }
 
