@@ -1,5 +1,51 @@
 # Release notes
 
+## Release 0.7.9 "Just Asleep" - Online WASM simulator
+
+This release includes a number of bug fixes, facilitates build from scratch by
+third-parties, and delivers a WASM-based simulator that runs on the
+https://48calc.org web site.
+
+## Features
+
+* menu: Add `Purge` to the `ClearThingsMenu`
+* purge: Add support for lists
+* units: Accept units for `sqrt`, `cbrt` and `xroot`
+* wasm: Add variant for `48calc.org`
+* wasm: Implement WASM support
+
+## Bug fixes
+
+* complex: Give `Syntax error` for phasor without an angle
+* dms/hms: Parse empty numbers in DMS entry
+* dms/hms: Protect display against bad input
+* editor: Make sure we reposition after shift-up and shift-down
+* parser: Parse degrees as an angle unit in phasors
+* simulator: Avoid high CPU usage when a timer is active
+* simulator: Use the correct color for firmware text
+* ui: Compute the correct refresh rate even when nothing is displayed
+* ui: Create a non-empty dirty rectangle when clearing annunciators
+* ui: Do not refresh beyond LCD size
+* ui: Ensure we redraw the shift region to clear busy
+* units: Disable simplification during unit definition evaluation
+
+## Improvements
+
+* build: Fix the clean build
+* object: Remove defaults for `as_uint32` and similar
+* parser: Cache parser::length when possible
+* parser: Merge the `parser::end` and `parser::length` fields
+* parser: Optimize integer parsing early exit
+* simulator: Avoid `Cancel` in file save dialog
+* simulator: Use `https` as a protocol for git submodules
+* tests: Add support for degrees sign
+* tests: Add test for polar angle conversion.
+* units: Add `factoring` variable to limit simplifications
+* wasm: Add link to deployed WASM simulator in the README
+* wasm: Add script to add COOP / COEP headers
+* wasm: Run the RPL thread in a separate thread
+
+
 ## Release 0.7.8 "Mustard" - Constants in equations
 
 This release keeps marching towards full support for an equation library.
