@@ -2000,6 +2000,7 @@ bool user_interface::draw_editor()
     wed[len] = 0;               // Ensure utf8_next does not go into the woods
 
     // Count rows to check if we need to switch to stack font
+reposition:
     if (!edRows)
     {
         for (utf8 p = ed; p < last; p = utf8_next(p))
@@ -2059,6 +2060,7 @@ bool user_interface::draw_editor()
         coord c    = 0;
         int   tgt  = edrow - (up && edrow > 0) + down;
         bool  done = up && edrow == 0;
+        bool  repo = false;
 
         record(text_editor,
                "Moving %+s%+s edrow=%d target=%d curs=%d cursx=%d edcx=%d",
@@ -2066,7 +2068,10 @@ bool user_interface::draw_editor()
                edrow, tgt, cursor, cursx, edColumn);
 
         if (done)
+        {
             cursor = 0;
+            repo = true;
+        }
 
         for (utf8 p   = ed; p < last && !done; p = utf8_next(p))
         {
@@ -2096,6 +2101,7 @@ bool user_interface::draw_editor()
         {
             cursor = len;
             edrow = rows - 1;
+            repo = true;
         }
         record(text_editor, "Moved %+s%+s row=%d curs=%d",
                up ? "up" : "", down ? "down" : "",
@@ -2104,6 +2110,11 @@ bool user_interface::draw_editor()
         up   = false;
         down = false;
         edRow = edrow;
+        if (repo)
+        {
+            edRows = 0;
+            goto reposition;
+        }
     }
     else
     {
