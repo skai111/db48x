@@ -179,7 +179,8 @@ PARSE_BODY(locals)
     p.out = rt.make<locals>(ID_locals, scratch, alloc);
 
     // Adjust size of parsed text for what we parsed before program
-    p.end += decls;
+    p.source += -decls;
+    p.length += decls;
 
     return OK;
 }
@@ -307,9 +308,9 @@ PARSE_BODY(local)
                 if (nlen == len && symbol::compare(+names, source, nlen) == 0)
                 {
                     // Found a local name, return it
-                    gcutf8 text   = source;
-                    p.end         = len;
-                    p.out         = rt.make<local>(ID_local, index);
+                    gcutf8 text = source;
+                    p.length    = len;
+                    p.out       = rt.make<local>(ID_local, index);
                     return OK;
                 }
                 names += nlen;

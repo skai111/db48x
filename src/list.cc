@@ -166,16 +166,16 @@ object::result list::list_parse(id      type,
                             if (obj->as_quoted<symbol>() == nullptr)
                             {
                                 rt.missing_variable_error()
-                                    .source(+s+1, child.end-2);
+                                    .source(+s+1, child.length-2);
                                 return ERROR;
                             }
                         }
                     }
 
-                    s = s + child.end;
+                    s = s + child.length;
                     record(list_parse,
                            "Child parsed as %t length %u",
-                           object_p(obj), child.end);
+                           object_p(obj), child.length);
                     precedence = -precedence; // Stay in postfix mode
                     cp = utf8_codepoint(s);
                     length = 0;
@@ -420,8 +420,8 @@ object::result list::list_parse(id      type,
     }
 
     // Create the object
-    p.end           = parsed;
-    p.out           = rt.make<list>(type, scratch, alloc);
+    p.length = parsed;
+    p.out    = rt.make<list>(type, scratch, alloc);
 
     record(list_parse, "Parsed as %t length %u", object_p(p.out), parsed);
 

@@ -420,7 +420,7 @@ object::result constant::do_parsing(config_r cfg, parser &p)
 
     size_t     len = parsed - first;
     constant_p cst = do_lookup(cfg, source + first, len, true);
-    p.end          = parsed;
+    p.length       = parsed;
     p.out          = cst;
     return cst ? OK : ERROR;
 }

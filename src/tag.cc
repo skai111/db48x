@@ -91,8 +91,8 @@ PARSE_BODY(tag)
         return ERROR;
     }
 
-    p.end         = parsed + remaining;
-    p.out         = rt.make<tag>(ID_tag, lbl, llen, obj);
+    p.length = parsed + remaining;
+    p.out    = rt.make<tag>(ID_tag, lbl, llen, obj);
 
     return p.out ? OK : ERROR;
 }

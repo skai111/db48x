@@ -527,7 +527,7 @@ PARSE_BODY(integer)
     }
 
     // Record output
-    p.end = (utf8) s - (utf8) p.source;
+    p.length = (utf8) s - (utf8) p.source;
     p.out = number;
 
     return OK;

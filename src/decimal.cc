@@ -283,8 +283,8 @@ PARSE_BODY(decimal)
     // Success: build the resulting number
     gcp<kint> kigits = rb;
     size_t    nkigs  = rs;
-    p.end = +s - +source;
-    p.out = rt.make<decimal>(type, exponent, nkigs, kigits);
+    p.length         = +s - +source;
+    p.out            = rt.make<decimal>(type, exponent, nkigs, kigits);
 
     return p.out ? OK : ERROR;
 }

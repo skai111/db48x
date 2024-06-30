@@ -397,7 +397,7 @@ PARSE_BODY(rectangular)
 
         algebraic_g im = algebraic_p(imobj);
         p.out = rectangular::make(re, im);
-        p.end = offs;
+        p.length = offs;
         return p.out ? OK : ERROR;
     }
 
@@ -430,7 +430,7 @@ PARSE_BODY(rectangular)
         algebraic_g im = re ? +re : algebraic_p(integer::make(neg ? -1 : 1));
         re = integer::make(0);
         p.out = rectangular::make(re, im);
-        p.end = offs;
+        p.length = offs;
         return p.out ? OK : ERROR;
     }
     algebraic_g im = imobj->as_algebraic();
@@ -454,7 +454,7 @@ PARSE_BODY(rectangular)
         im = neg::run(im);
 
     p.out = rectangular::make(re, im);
-    p.end = offs;
+    p.length = offs;
     return p.out ? OK : ERROR;
 }
 
@@ -640,7 +640,7 @@ PARSE_BODY(polar)
         offs = utf8_next(p.source, offs, max);
 
     p.out = polar::make(mod, im, unit);
-    p.end = offs;
+    p.length = offs;
     return p.out ? OK : ERROR;
 }
 

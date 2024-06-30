@@ -82,7 +82,7 @@ program_p program::parse(utf8 source, size_t size)
     parser p(source, size);
     result r = list_parse(ID_program, p, 0, 0);
     record(program, "<Command line [%s], end at %u, result %p",
-           utf8(p.source), p.end, object_p(p.out));
+           utf8(p.source), p.length, object_p(p.out));
     if (r != OK)
         return nullptr;
     object_p  obj  = p.out;

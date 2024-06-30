@@ -456,7 +456,7 @@ PARSE_BODY(CaseStatement)
     size_t   alloc   = outer_scr.growth();
     object_p prog    = rt.make<program>(ID_block, scratch, alloc);
     object_p cases   = rt.make<CaseStatement>(prog, obj1);
-    p.end            = parsed;
+    p.length         = parsed;
     p.out            = cases;
 
     return OK;

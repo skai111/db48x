@@ -115,7 +115,7 @@ PARSE_BODY(command)
         return SKIP;
 
     // Record output - Dynamically generate ID for use in programs
-    p.end = len;
+    p.length = len;
     p.out = rt.make<command>(found);
 
     return OK;

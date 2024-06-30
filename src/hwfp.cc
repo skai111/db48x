@@ -150,7 +150,7 @@ PARSE_BODY(hwfp_base)
 
     // Convert to floating point
     cstring src = cstring(scr.scratch());
-    p.end = +s - +source;
+    p.length = +s - +source;
     if (prec > 7)
     {
         double fp = std::strtod(src, nullptr);

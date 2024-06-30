@@ -88,7 +88,7 @@ PARSE_BODY(text)
     size_t parsed = s - source;
     size_t slen   = parsed - 2;
     gcutf8 txt    = source + 1;
-    p.end         = parsed;
+    p.length      = parsed;
     p.out         = rt.make<text>(ID_text, txt, slen, quotes);
 
     return p.out ? OK : ERROR;

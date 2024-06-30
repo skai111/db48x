@@ -302,7 +302,7 @@ object::result loop::object_parser(parser  &p,
     }
 
     size_t parsed = utf8(src) - utf8(p.source);
-    p.end         = parsed;
+    p.length      = parsed;
     p.out         =
           name
         ? rt.make<ForNext>(type, obj2, name)

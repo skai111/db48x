@@ -102,8 +102,8 @@ PARSE_BODY(directory)
                 }
 
                 // If we passed all these tests, build a directory
-                p.out = rt.make<directory>(ID_directory, start, size);
-                p.end = maxlen + len;
+                p.out    = rt.make<directory>(ID_directory, start, size);
+                p.length = maxlen + len;
                 return OK;
             }
         }

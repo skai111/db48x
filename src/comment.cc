@@ -53,7 +53,7 @@ PARSE_BODY(comment)
     size_t parsed = s - source;
     size_t slen   = parsed - 1;
     gcutf8 txt    = source + 1;
-    p.end         = parsed;
+    p.length      = parsed;
     if (!remove)
         p.out = rt.make<text>(ID_comment, txt, slen);
 

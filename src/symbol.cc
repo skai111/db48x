@@ -93,8 +93,8 @@ PARSE_BODY(symbol)
 
     // Build the resulting symbol
     gcutf8 text   = source;
-    p.end         = parsed;
-    p.out = rt.make<symbol>(ID_symbol, text, parsed);
+    p.length      = parsed;
+    p.out         = rt.make<symbol>(ID_symbol, text, parsed);
 
     return OK;
 }

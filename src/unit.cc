@@ -78,8 +78,8 @@ PARSE_BODY(unit)
         return SKIP;
     offs += usz;
 
-    p.out = unit::simple(uval, uexpr);
-    p.end = offs;
+    p.out    = unit::simple(uval, uexpr);
+    p.length = offs;
     return p.out ? OK : ERROR;
 }
 

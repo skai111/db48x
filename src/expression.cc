@@ -2245,7 +2245,7 @@ PARSE_BODY(funcall)
         object_g obj = child.out;
         if (!obj)
             return ERROR;
-        parsed += child.end;
+        parsed += child.length;
 
         size_t objsize = obj->size();
         if (expression_p eq = obj->as<expression>())
@@ -2282,7 +2282,7 @@ PARSE_BODY(funcall)
     // Create the function call object
     gcbytes scratch = scr.scratch();
     size_t  alloc   = scr.growth();
-    p.end           = parsed;
+    p.length        = parsed;
     p.out           = rt.make<funcall>(ID_funcall, scratch, alloc);
     return p.out ? OK : ERROR;
 }

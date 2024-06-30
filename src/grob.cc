@@ -154,8 +154,8 @@ PARSE_BODY(grob)
     if (grob)
         bitflip(d0, w, h, true);
 
-    p.end = s - cstring(src);
-    p.out = +g;
+    p.length = s - cstring(src);
+    p.out    = +g;
 
     return OK;
 }

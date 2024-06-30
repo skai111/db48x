@@ -1104,7 +1104,6 @@ PARSE_BODY(polynomial)
     p.precedence = 0;
     p.source = +p.source - parsed;
     p.length += parsed;
-    p.end += parsed;
 
     if (result != OK)
         return result;
@@ -1119,7 +1118,7 @@ PARSE_BODY(polynomial)
             }
         }
     }
-    rt.invalid_polynomial_error().source(p.source, p.end);
+    rt.invalid_polynomial_error().source(p.source, p.length);
     return ERROR;
 }
 

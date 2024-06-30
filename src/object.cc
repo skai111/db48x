@@ -240,7 +240,7 @@ retry:
             break;
         if (r == COMMENTED)
         {
-            size_t commented = p.end;
+            size_t commented = p.length;
             if (commented >= length)
                 return nullptr;
             length -= commented;
@@ -349,15 +349,15 @@ retry:
 
 
     // Compute output size
-    record(parse, "<Done parsing [%s], end is at %d", utf8(p.source), p.end);
-    size = p.end + skipped;
+    record(parse, "<Done parsing [%s], end is at %d", utf8(p.source), p.length);
+    size = p.length + skipped;
 
     // Check if there is a second part to the object
-    if (r == OK && p.out && p.end < length &&
+    if (r == OK && p.out && p.length < length &&
         cp != complex::I_MARK && cp != complex::ANGLE_MARK)
     {
         result r2 = SKIP;
-        cp = utf8_codepoint(p.source + p.end);
+        cp = utf8_codepoint(p.source + p.length);
 
         bool maybe_rect  =
             (precedence < ADDITIVE && (cp == '+' || cp == '-')) ||
@@ -370,10 +370,10 @@ retry:
         {
             if (p.out->is_algebraic())
             {
-                length -= p.end;
+                size_t parsed = p.length;
+                length -= parsed;
                 p.length = length;
-                p.source += p.end;
-                p.end = 0;
+                p.source += parsed;
 
                 if (maybe_rect)
                     r2 = rectangular::do_parse(p);
@@ -386,7 +386,7 @@ retry:
 
                 // Check if we found the second part
                 if (r2 == OK)
-                    size += p.end;
+                    size += p.length;
             }
         }
     }
