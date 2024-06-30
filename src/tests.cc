@@ -162,7 +162,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        units_and_conversions();
+        complex_types();
     }
     else
     {
@@ -3615,11 +3615,16 @@ void tests::complex_types()
     test(CLEAR, "c∡d", ENTER)
         .type(object::ID_polar).expect("c∡d");
 
-    step("Polar angle conversions");
-    test(CLEAR, "1∡90", ENTER).expect("1∡90°");
-    test("GRAD", ENTER).expect("1∡100ℊ");
-    test("PiRadians", ENTER).expect("1∡¹/₂ℼ");
-    test("RAD", ENTER).expect("1∡1.57079 63267 9ʳ");
+    step("Polar angle conversions")
+        .test(CLEAR, "1∡90", ENTER).expect("1∡90°")
+        .test("GRAD", ENTER).expect("1∡100ℊ")
+        .test("PiRadians", ENTER).expect("1∡¹/₂ℼ")
+        .test("RAD", ENTER).expect("1∡1.57079 63267 9ʳ");
+
+    step("Angle mode conversions during polar entry")
+        .test(CLEAR, "GRAD", ENTER).noerror()
+        .test("1∡90°", ENTER).expect("1∡100ℊ")
+        .test("1", LSHIFT, G, F2, LSHIFT, N, F1, "90").expect("1∡100ℊ");
 
     step("Convert real to rectangular");
     test(CLEAR, "1 2", LSHIFT, G, F3)
