@@ -218,6 +218,8 @@ retry:
     case '+': case '-':
     case '#':                   // Numbers
         r = integer::do_parse(p);
+        if (r == OK)
+            break;
         if (cp != '#')
         {
     case '.': case ',':
