@@ -64,7 +64,7 @@ PARSE_BODY(unit)
 
     // First character must be compatible with a rectangular complex value
     size_t  offs  = 0;
-    unicode cp    = utf8_codepoint(p.source + offs);
+    unicode cp    = p.separator;
     bool    umark = cp == '_' || cp == settings::SPACE_UNIT;
     if (!umark)
         return SKIP;

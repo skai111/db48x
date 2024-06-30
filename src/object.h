@@ -456,9 +456,10 @@ struct object
     }
 
 
-    static object_p parse(utf8     source,
-                          size_t  &size,
-                          int      precedence = 0);
+    static object_p parse(utf8    source,
+                          size_t &size,
+                          int     precedence = 0,
+                          unicode separator  = 0);
     // ------------------------------------------------------------------------
     //  Try parsing the object as a top-level temporary
     // ------------------------------------------------------------------------

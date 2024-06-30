@@ -187,7 +187,10 @@ static inline unicode tolow(unicode cp)
 }
 
 
-object_p object::parse(utf8 source, size_t &size, int precedence)
+object_p object::parse(utf8    source,
+                       size_t &size,
+                       int     precedence,
+                       unicode separator)
 // ----------------------------------------------------------------------------
 //  Try parsing the object as a top-level temporary
 // ----------------------------------------------------------------------------
@@ -209,7 +212,7 @@ object_p object::parse(utf8 source, size_t &size, int precedence)
     size_t  length = size;
     result  r      = SKIP;
     unicode cp     = utf8_codepoint(source);
-    parser  p(source, size, precedence);
+    parser  p(source, size, precedence, separator);
 
 retry:
     switch (cp)
@@ -353,7 +356,7 @@ retry:
     size = p.length + skipped;
 
     // Check if there is a second part to the object
-    if (r == OK && p.out && p.length < length &&
+    if (r == OK && p.out && !p.separator && p.length < length &&
         cp != complex::I_MARK && cp != complex::ANGLE_MARK)
     {
         result r2 = SKIP;
@@ -374,6 +377,7 @@ retry:
                 length -= parsed;
                 p.length = length;
                 p.source += parsed;
+                p.separator = cp;
 
                 if (maybe_rect)
                     r2 = rectangular::do_parse(p);

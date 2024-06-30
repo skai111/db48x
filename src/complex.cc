@@ -603,13 +603,13 @@ PARSE_BODY(polar)
 
     // First character must be compatible with a rectangular complex value
     size_t  offs  = 0;
-    unicode cp    = utf8_codepoint(p.source + offs);
+    unicode cp    = p.separator;
     bool    amark = cp == ANGLE_MARK;
     if (!amark)
         return SKIP;
     offs = utf8_next(p.source, offs, max);
     size_t   imsz  = max - offs;
-    object_p imobj = parse(p.source + offs, imsz);
+    object_p imobj = parse(p.source + offs, imsz, 0, p.separator);
     if (!imobj)
     {
         if (!rt.error())

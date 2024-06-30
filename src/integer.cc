@@ -384,7 +384,7 @@ PARSE_BODY(integer)
             return ERROR;
 
         // Check if we parse a DMS fraction
-        if (is_real(type) && (s < last || is_dms))
+        if (is_real(type) && !p.separator && (s < last || is_dms))
         {
             if (s < last)
             {

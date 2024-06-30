@@ -39,22 +39,23 @@ struct parser
 {
     typedef object::id id;
 
-    parser(utf8 source, size_t length, int precedence = 0)
+    parser(utf8 source, size_t length, int precedence = 0, unicode separator=0)
         : source(source), length(length), out(nullptr),
-          precedence(precedence)
+          precedence(precedence), separator(separator)
     {}
 
     parser(const parser &from, utf8 source, int precedence)
         : source(source),
           length(from.length - (+source - +from.source)),
           out(nullptr),
-          precedence(precedence) {}
+          precedence(precedence), separator() {}
 
 public:
     gcutf8      source;         // Text to parse
     size_t      length;         // Length to parse -> length parsed
     object_g    out;            // Output object if any
     int         precedence;     // Precedence level in equations
+    unicode     separator;      // Separator in multi-part objects
 };
 
 #endif // PARSER_H
