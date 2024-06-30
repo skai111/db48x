@@ -94,9 +94,10 @@ PARSE_BODY(integer)
             value[c] = c - 'a' + 10;
     }
 
-    byte_p s    = (byte_p) p.source;
-    byte_p last = s + p.length;
-    byte_p endp = nullptr;
+    byte_p s      = (byte_p) p.source;
+    size_t length = p.length;
+    byte_p last   = s + length;
+    byte_p endp   = nullptr;
 
     if (*s == '-')
     {
@@ -440,7 +441,7 @@ PARSE_BODY(integer)
                     {
                         size_t hasfrac = false;
                         s = gs;
-                        last = p.source + p.length;
+                        last = p.source + length;
                         utf8   p;
                         for (p = s; p < last; p++)
                         {

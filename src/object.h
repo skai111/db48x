@@ -926,7 +926,6 @@ struct object
         return (byte *) t - (byte *) u;
     }
 
-
 protected:
     static const dispatch   handler[NUM_IDS];
 

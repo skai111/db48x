@@ -206,9 +206,10 @@ object_p object::parse(utf8 source, size_t &size, int precedence)
     source += skipped;
 
     // Try parsing with the various handlers
+    size_t  length = size;
+    result  r      = SKIP;
+    unicode cp     = utf8_codepoint(source);
     parser  p(source, size, precedence);
-    result  r  = SKIP;
-    unicode cp = utf8_codepoint(source);
 
 retry:
     switch (cp)
@@ -240,13 +241,14 @@ retry:
         if (r == COMMENTED)
         {
             size_t commented = p.end;
-            if (commented >= p.length)
+            if (commented >= length)
                 return nullptr;
+            length -= commented;
+            p.length = length;
             p.source += commented;
-            p.length -= commented;
             skipped += commented;
 
-            size_t spaces = utf8_skip_whitespace(p.source, p.length);
+            size_t spaces = utf8_skip_whitespace(p.source, length);
             if (spaces >= p.length)
                 return nullptr;
             skipped += spaces;
@@ -351,7 +353,7 @@ retry:
     size = p.end + skipped;
 
     // Check if there is a second part to the object
-    if (r == OK && p.out && p.end < p.length &&
+    if (r == OK && p.out && p.end < length &&
         cp != complex::I_MARK && cp != complex::ANGLE_MARK)
     {
         result r2 = SKIP;
@@ -368,8 +370,9 @@ retry:
         {
             if (p.out->is_algebraic())
             {
+                length -= p.end;
+                p.length = length;
                 p.source += p.end;
-                p.length -= p.end;
                 p.end = 0;
 
                 if (maybe_rect)

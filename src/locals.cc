@@ -131,7 +131,8 @@ PARSE_BODY(locals)
     }
 
     // If we did not get a program after the names, fail
-    if (!is_program_separator(cp))
+    size_t decls = utf8(s) - utf8(p.source);
+    if (!is_program_separator(cp) || p.length <= decls)
     {
         object_p cmd = static_object(ID_locals);
         rt.syntax_error().command(cmd).source(s);
@@ -150,7 +151,6 @@ PARSE_BODY(locals)
 
     // Build the program with the context pointing to the names
     locals_stack frame((byte_p)countp);
-    size_t decls = utf8(s) - utf8(p.source);
     p.source += decls;
     p.length -= decls;
 
