@@ -894,8 +894,13 @@ MENU(DebugMenu,
      "Steps",           ID_MultipleSteps,
      "Continue",        ID_Continue,
      "Kill",            ID_Kill,
+
      "Halt",            ID_Halt,
      "Step↑",           ID_StepOut,
+     "DoErr",           ID_doerr,
+     "ErrMsg",          ID_errm,
+     "ErrNum",          ID_errn,
+     "ClrErr",          ID_err0,
      "Prog",            ID_ProgramMenu);
 
 
@@ -913,7 +918,7 @@ MENU(TestsMenu,
      "IfThen",          ID_IfThen,
      "IfElse",          ID_IfThenElse,
      "IfErr",           ID_IfErrThen,
-     "IfErrElse",       ID_IfErrThen,
+     "IfErrElse",       ID_IfErrThenElse,
      "IFT",             ID_IFT,
      "IFTE",            ID_IFTE,
 
