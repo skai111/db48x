@@ -1287,11 +1287,11 @@ CMD(MenuFirstPage)
 //
 // ============================================================================
 
-CMD(IfErrThen)                  // Special tests
-CMD(IfErrThenElse)              // Last programmable command
-
 CMD(ReplaceChar)
 CMD(SelfInsert)                 // Last immediate command
+
+CMD(IfErrThen)                  // Special tests
+CMD(IfErrThenElse)              // Last programmable command
 
 
 

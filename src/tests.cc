@@ -162,7 +162,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        complex_types();
+        conditionals();
     }
     else
     {
@@ -1682,6 +1682,62 @@ void tests::conditionals()
         .expect("#0₁₆")
         .test(BSP)
         .expect("\"\"");
+
+    // Same thing with menus
+    step("Menu if-Then (true)");
+    test(CLEAR,
+         LSHIFT, KEY3, LSHIFT, F2, LSHIFT, RUNSTOP,
+         "PASS", LSHIFT, F1, "0 0", F3, RSHIFT, DOWN, F3, " FAIL", ENTER,
+         RUNSTOP)
+        .expect("'PASS'");
+    step("Menu if-Then (false)");
+    test(CLEAR,
+         LSHIFT, KEY3, LSHIFT, F2, LSHIFT, RUNSTOP,
+         "FAIL", LSHIFT, F1, "0 0", F2, RSHIFT, DOWN, F3, " PASS", ENTER,
+         RUNSTOP)
+        .expect("'PASS'");
+    step("If-Then-Else (true)");
+    test(CLEAR,
+         LSHIFT, KEY3, LSHIFT, F2, LSHIFT, RUNSTOP,
+         LSHIFT, F2, "1 0", F3,
+         RSHIFT, DOWN, F3, " PASS",
+         RSHIFT, DOWN, F3, " FAIL", ENTER,
+         RUNSTOP)
+        .expect("'PASS'");
+    step("Menu If-Then-Else (false)");
+    test(CLEAR,
+         LSHIFT, KEY3, LSHIFT, F2, LSHIFT, RUNSTOP,
+         LSHIFT, F2, "1 0", F2,
+         RSHIFT, DOWN, F3, " FAIL",
+         RSHIFT, DOWN, F3, " PASS", ENTER,
+         RUNSTOP)
+        .expect("'PASS'");
+
+    step("Menu IFT command (true)");
+    test(CLEAR,
+         LSHIFT, KEY3, LSHIFT, F2, LSHIFT, RUNSTOP,
+         "FAIL 1 0", F3, " PASS", LSHIFT, F5, ENTER,
+         RUNSTOP)
+        .expect("'PASS'");
+    step("Menu IFT command (false)");
+    test(CLEAR,
+         LSHIFT, KEY3, LSHIFT, F2, LSHIFT, RUNSTOP,
+         "PASS 0 FAIL", LSHIFT, F5, ENTER,
+         RUNSTOP)
+        .expect("'PASS'");
+    step("Menu IFTE command (true)");
+    test(CLEAR,
+         LSHIFT, KEY3, LSHIFT, F2, LSHIFT, RUNSTOP,
+         "1 0", F2, " FAIL PASS", LSHIFT, F6, ENTER,
+         RUNSTOP)
+        .expect("'PASS'");
+    step("Menu IFTE command (false)");
+    test(CLEAR,
+         LSHIFT, KEY3, LSHIFT, F2, LSHIFT, RUNSTOP,
+         "0 FAIL PASS", LSHIFT, F6, ENTER,
+         RUNSTOP)
+        .expect("'PASS'");
+
 }
 
 

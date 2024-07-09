@@ -122,7 +122,7 @@ RENDER_BODY(IfThenElse)
 // ----------------------------------------------------------------------------
 {
     // Source objects
-    byte_p   p      = payload(o);
+    byte_p   p      = o->payload();
 
     // Isolate condition, true and false part
     object_g cond   = object_p(p);
