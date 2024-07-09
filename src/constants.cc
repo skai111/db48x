@@ -477,10 +477,13 @@ constant_p constant::do_lookup(config_r cfg, utf8 txt, size_t len, bool error)
     // Check built-in constants
     for (size_t b = 0; b < maxb; b += 2)
     {
-        ctxt = builtins[b];
-        if (ctxt[len] == 0 && memcmp(ctxt, txt, len) == 0)
-            return constant::make(cfg.type, idx);
-        idx++;
+        if (builtins[b+1] && *builtins[b+1])
+        {
+            ctxt = builtins[b];
+            if (ctxt[len] == 0 && memcmp(ctxt, txt, len) == 0)
+                return constant::make(cfg.type, idx);
+            idx++;
+        }
     }
 
     if (error)
@@ -518,14 +521,17 @@ utf8 constant::do_name(config_r cfg, size_t *len) const
     // Check built-in constants
     for (size_t b = 0; b < maxb; b += 2)
     {
-        ctxt = builtins[b];
-        if (!idx)
+        if (builtins[b+1] && *builtins[b+1])
         {
-            if (len)
-                *len = strlen(ctxt);
-            return utf8(ctxt);
+            ctxt = builtins[b];
+            if (!idx)
+            {
+                if (len)
+                    *len = strlen(ctxt);
+                return utf8(ctxt);
+            }
+            idx--;
         }
-        idx--;
     }
     return nullptr;
 }
@@ -572,13 +578,16 @@ algebraic_p constant::do_value(config_r cfg) const
     // Check built-in constants
     for (size_t b = 0; !csym && b < maxb; b += 2)
     {
-        if (!idx)
+        if (builtins[b+1] && *builtins[b+1])
         {
-            cname = symbol::make(builtins[b]);
-            csym = symbol::make(builtins[b+1]);
-            break;
+            if (!idx)
+            {
+                cname = symbol::make(builtins[b]);
+                csym = symbol::make(builtins[b+1]);
+                break;
+            }
+            idx--;
         }
-        idx--;
     }
 
     // If we found a definition, use that
