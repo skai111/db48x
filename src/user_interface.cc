@@ -4453,9 +4453,16 @@ bool user_interface::handle_functions(int key)
            "Handle function for key %d (plane %d) ", key, shift_plane());
     if (object_p obj = object_for_key(key))
     {
-        save<int> saveEvaluating(evaluating, key);
+        save<int>  saveEvaluating(evaluating, key);
         object::id ty = obj->type();
-        bool imm = object::is_immediate(ty);
+        if (object::is_forced_entry(ty))
+        {
+            dirtyEditor = true;
+            edRows = 0;
+            return obj->insert() != object::ERROR;
+        }
+
+        bool imm     = object::is_immediate(ty);
         bool editing = rt.editing();
         if (editing && !imm)
         {

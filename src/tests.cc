@@ -162,7 +162,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        complex_arithmetic();
+        editor_operations();
     }
     else
     {
@@ -804,7 +804,20 @@ void tests::editor_operations()
         .test(DOWN)
         .editor("'x and y'")
         .test(ENTER);
-    }
+
+    step("Insert if-then from menu")
+        .test(CLEAR, LSHIFT, KEY3, LSHIFT, F2, LSHIFT, F1)
+        .editor("if  then  end ");
+    step("Insert if-then-else from menu")
+        .test(CLEAR, LSHIFT, KEY3, LSHIFT, F2, LSHIFT, F2)
+        .editor("if  then  else  end ");
+    step("Insert iferr-then from menu")
+        .test(CLEAR, LSHIFT, KEY3, LSHIFT, F2, LSHIFT, F3)
+        .editor("iferr  then  end ");
+    step("Insert iferr-then-else from menu")
+        .test(CLEAR, LSHIFT, KEY3, LSHIFT, F2, LSHIFT, F4)
+        .editor("iferr  then  else  end ");
+}
 
 
 void tests::stack_operations()
