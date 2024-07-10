@@ -162,7 +162,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        conditionals();
+        complex_arithmetic();
     }
     else
     {
@@ -3886,6 +3886,12 @@ void tests::complex_arithmetic()
     step("Do not promote symbols to complex");
     test(CLEAR, "2+3ⅈ 'A' +", ENTER)
         .expect("'(2+3ⅈ)+A'");
+
+    step("Complex expression involving constants")
+        .test(CLEAR, LSHIFT, I, F1, F2, F3, F1, MUL, LSHIFT, B)
+        .expect("'e↑(ⅈ·π)'")
+        .test(LSHIFT, KEY1)
+        .expect("1.∡180.°");
 }
 
 

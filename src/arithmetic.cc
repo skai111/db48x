@@ -892,7 +892,7 @@ algebraic_p arithmetic::non_numeric<struct pow>(algebraic_r x, algebraic_r y)
     // Deal with X^N where N is a positive  or negative integer
     id   yt   = y->type();
     bool negy = yt == ID_neg_integer;
-    bool posy = yt == ID_integer || y->is_zero() || y->is_one();
+    bool posy = yt == ID_integer || y->is_zero(false) || y->is_one(false);
     if (negy || posy)
     {
         // Defer computations for integer values to integer_ok
