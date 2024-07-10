@@ -1319,6 +1319,7 @@ ID(case_then_conditional)
 ID(case_when_conditional)
 ID(case_skip_conditional)
 ID(case_end_conditional)
+ID(need_conditional)
 
 #undef ID
 #undef OP

@@ -94,7 +94,10 @@ object::result loop::evaluate_condition(id type, bool (runtime::*method)(bool))
         // Evaluate expressions in conditionals
         if (cond->is_program())
         {
-            if (program::defer(type) && program::run_program(cond) == OK)
+            // This defers the execution of that conditional
+            if (program::defer(type) &&
+                program::defer(ID_need_conditional) &&
+                program::run_program(cond) == OK)
                 return OK;
         }
         else
@@ -443,6 +446,8 @@ EVAL_BODY(DoUntil)
     object_g body = object_p(p);
     object_g cond = body->skip();
 
+    rt.command(o);
+
     // We loop until the condition becomes true
     if (rt.run_conditionals(nullptr, o) &&
         defer(ID_conditional)           &&
@@ -499,6 +504,8 @@ EVAL_BODY(WhileRepeat)
     byte    *p    = (byte *) payload(o);
     object_g cond = object_p(p);
     object_g body = cond->skip();
+
+    rt.command(o);
 
     // We loop while the condition is true
     if (rt.run_conditionals(o, body)            &&
@@ -596,6 +603,7 @@ EVAL_BODY(StartNext)
 //   Evaluate a for..next loop
 // ----------------------------------------------------------------------------
 {
+    rt.command(o);
     return counted_loop(ID_start_next_conditional, o);
 }
 
@@ -629,6 +637,7 @@ EVAL_BODY(StartStep)
 //   Evaluate a for..step loop
 // ----------------------------------------------------------------------------
 {
+    rt.command(o);
     return counted_loop(ID_start_step_conditional, o);
 }
 
@@ -695,6 +704,7 @@ EVAL_BODY(ForNext)
 //   Evaluate a for..next loop
 // ----------------------------------------------------------------------------
 {
+    rt.command(o);
     return counted_loop(ID_for_next_conditional, o);
 }
 
@@ -730,6 +740,7 @@ EVAL_BODY(ForStep)
 //   Evaluate a for..step loop
 // ----------------------------------------------------------------------------
 {
+    rt.command(o);
     return counted_loop(ID_for_step_conditional, o);
 }
 
@@ -762,7 +773,37 @@ EVAL_BODY(conditional)
 //  Picks which branch to choose at runtime
 // ----------------------------------------------------------------------------
 {
+    rt.command(o);
     return loop::evaluate_condition(ID_conditional, &runtime::run_select);
+}
+
+
+RENDER_BODY(need_conditional)
+// ----------------------------------------------------------------------------
+//   Display for debugging purpose
+// ----------------------------------------------------------------------------
+{
+    r.put("<need-conditional>");
+    return r.size();
+}
+
+
+EVAL_BODY(need_conditional)
+// ----------------------------------------------------------------------------
+//  Ensure that after evaluation of a program/expression, we get a boolean
+// ----------------------------------------------------------------------------
+{
+    rt.command(o);
+    if (object_p cond = rt.top())
+    {
+        int truth = cond->as_truth(true);
+        if (truth >= 0)
+        {
+            rt.top(static_object(truth ? ID_True : ID_False));
+            return OK;
+        }
+    }
+    return ERROR;
 }
 
 
@@ -781,6 +822,7 @@ EVAL_BODY(while_conditional)
 //  Picks which branch of a while loop to choose at runtime
 // ----------------------------------------------------------------------------
 {
+    rt.command(o);
     return loop::evaluate_condition(ID_while_conditional,
                                     &runtime::run_select_while);
 }
@@ -801,6 +843,7 @@ EVAL_BODY(start_next_conditional)
 //  Picks which branch of a start next to choose at runtime
 // ----------------------------------------------------------------------------
 {
+    rt.command(o);
     if (rt.run_select_start_step(false, false))
         return OK;
     return ERROR;
@@ -822,6 +865,7 @@ EVAL_BODY(start_step_conditional)
 //  Picks which branch of a start step to choose at runtime
 // ----------------------------------------------------------------------------
 {
+    rt.command(o);
     if (rt.run_select_start_step(false, true))
         return OK;
     return ERROR;
@@ -843,6 +887,7 @@ EVAL_BODY(for_next_conditional)
 //  Picks which branch of a start next to choose at runtime
 // ----------------------------------------------------------------------------
 {
+    rt.command(o);
     if (rt.run_select_start_step(true, false))
         return OK;
     return ERROR;
@@ -864,6 +909,7 @@ EVAL_BODY(for_step_conditional)
 //  Picks which branch of a start next to choose at runtime
 // ----------------------------------------------------------------------------
 {
+    rt.command(o);
     if (rt.run_select_start_step(true, true))
         return OK;
     return ERROR;

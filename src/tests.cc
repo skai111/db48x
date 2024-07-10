@@ -1738,6 +1738,19 @@ void tests::conditionals()
          RUNSTOP)
         .expect("'PASS'");
 
+    // Make sure we enforce conditionals when evaluating conditions
+    step("Conditionals forward progress")
+        .test(CLEAR, "if FAIL then else end", ENTER)
+        .error("Bad argument type");
+    step("Conditionals forward progress with program")
+        .test(CLEAR, "if 0 PASS FAIL IFTE then else end", ENTER)
+        .error("Bad argument type");
+    step("Conditionals forward progress with true condition")
+        .test(CLEAR, "if 0 1 2 IFTE then PASS else FAIL end", ENTER)
+        .expect("'PASS'");
+    step("Conditionals forward progress with false condition")
+        .test(CLEAR, "if 0 1 0 IFTE then FAIL else PASS end", ENTER)
+        .expect("'PASS'");
 }
 
 

@@ -230,6 +230,19 @@ public:
 };
 
 
+struct need_conditional : object
+// ----------------------------------------------------------------------------
+//   A non-parseable object used to ensure a conditional is a truth value
+// ----------------------------------------------------------------------------
+{
+    need_conditional(id type) : object(type) {}
+public:
+    OBJECT_DECL(need_conditional);
+    RENDER_DECL(need_conditional);
+    EVAL_DECL(need_conditional);
+};
+
+
 struct while_conditional : conditional
 // ----------------------------------------------------------------------------
 //   A non-parseable object used to select branches in while loops
