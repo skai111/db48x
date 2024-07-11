@@ -1110,29 +1110,29 @@ MENU(StackMenu,
 // ----------------------------------------------------------------------------
 //   Operations on the stack
 // ----------------------------------------------------------------------------
+     "Dup",     ID_Dup,
+     "Drop",    ID_Drop,
      "Rot↑",    ID_Rot,
      "Roll↑",   ID_Roll,
      "Over",    ID_Over,
-     "Pick",    ID_Pick,
-     "Depth",   ID_Depth,
 
-     "Rot↓",    ID_UnRot,
-     "Roll↓",   ID_RollD,
      "Dup2",    ID_Dup2,
      "Drop2",   ID_Drop2,
-     "LastArg", ID_LastArg,
+     "Rot↓",    ID_UnRot,
+     "Roll↓",   ID_RollD,
+     "Pick",    ID_Pick,
 
-     "ClrStk",  ID_ClearStack,
-     "Nip",     ID_Nip,
      "DupN",    ID_DupN,
      "DropN",   ID_DropN,
-     "LastX",   ID_LastX,
-
-     "Dup",     ID_Dup,
-     "Drop",    ID_Drop,
+     "Depth",   ID_Depth,
+     "Nip",     ID_Nip,
      "Pick3",   ID_Pick3,
+
      "Swap",    ID_Swap,
+     "LastArg", ID_LastArg,
+     "LastX",   ID_LastX,
      "Undo",    ID_Undo,
+     "ClrStk",  ID_ClearStack,
 
      "NDupN",   ID_NDupN);
 

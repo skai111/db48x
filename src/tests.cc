@@ -162,7 +162,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        editor_operations();
+        stack_operations();
     }
     else
     {
@@ -882,15 +882,15 @@ void tests::stack_operations()
         .test(BSP).error("Too few arguments");
 
     step("Over in stack menu")
-        .test(CLEAR, I, "13 25", F3, DIV, ADD).expect("14 ¹²/₁₃");
+        .test(CLEAR, I, "13 25", F5, DIV, ADD).expect("14 ¹²/₁₃");
     step("Rot in stack menu")
-        .test(CLEAR, "13 17 25", F1, DIV, ADD).expect("18 ¹²/₁₃");
+        .test(CLEAR, "13 17 25", F3, DIV, ADD).expect("18 ¹²/₁₃");
     step("Depth in stack menu")
-        .test(CLEAR, "13 17 25", F5).expect("3");
+        .test(CLEAR, "13 17 25", RSHIFT, F3).expect("3");
     step("Pick in stack menu")
-        .test(CLEAR, "13 17 25 2", F4).expect("17");
+        .test(CLEAR, "13 17 25 2", LSHIFT, F5).expect("17");
     step("Roll in stack menu")
-        .test(CLEAR, "13 17 25 42 21 372 3", F2).expect("42")
+        .test(CLEAR, "13 17 25 42 21 372 3", F4).expect("42")
         .test(BSP).expect("372")
         .test(BSP).expect("21")
         .test(BSP).expect("25")
@@ -899,7 +899,7 @@ void tests::stack_operations()
         .test(BSP).noerror()
         .test(BSP).error("Too few arguments");
     step("RollDn in stack menu")
-        .test(CLEAR, "13 17 25 42 21 372 4", LSHIFT, F2).expect("21")
+        .test(CLEAR, "13 17 25 42 21 372 4", LSHIFT, F4).expect("21")
         .test(BSP).expect("42")
         .test(BSP).expect("25")
         .test(BSP).expect("372")
@@ -908,12 +908,12 @@ void tests::stack_operations()
         .test(BSP).noerror()
         .test(BSP).error("Too few arguments");
     step("DropN in stack menu")
-        .test(CLEAR, "13 17 25 42 21 372 4", RSHIFT, F4).expect("17")
+        .test(CLEAR, "13 17 25 42 21 372 4", RSHIFT, F2).expect("17")
         .test(BSP).expect("13")
         .test(BSP).noerror()
         .test(BSP).error("Too few arguments");
     step("DupN in stack menu")
-        .test(CLEAR, "13 17 25 42 21 372 4", RSHIFT, F3).expect("372")
+        .test(CLEAR, "13 17 25 42 21 372 4", RSHIFT, F1).expect("372")
         .test(BSP).expect("21")
         .test(BSP).expect("42")
         .test(BSP).expect("25")
@@ -926,7 +926,7 @@ void tests::stack_operations()
         .test(BSP).noerror()
         .test(BSP).error("Too few arguments");
     step("Drop2 in stack menu")
-        .test(CLEAR, "13 17 25 42 21 372 4", LSHIFT, F4).expect("21")
+        .test(CLEAR, "13 17 25 42 21 372 4", LSHIFT, F2).expect("21")
         .test(BSP).expect("42")
         .test(BSP).expect("25")
         .test(BSP).expect("17")
@@ -934,7 +934,7 @@ void tests::stack_operations()
         .test(BSP).noerror()
         .test(BSP).error("Too few arguments");
     step("Dup2 in stack menu")
-        .test(CLEAR, "13 17 25 42", LSHIFT, F3).expect("42")
+        .test(CLEAR, "13 17 25 42", LSHIFT, F1).expect("42")
         .test(BSP).expect("25")
         .test(BSP).expect("42")
         .test(BSP).expect("25")
@@ -943,13 +943,13 @@ void tests::stack_operations()
         .test(BSP).noerror()
         .test(BSP).error("Too few arguments");
     step("Nip in stack menu")
-        .test(CLEAR, "13 17 25 42", RSHIFT, F2).expect("42")
+        .test(CLEAR, "13 17 25 42", RSHIFT, F4).expect("42")
         .test(BSP).expect("17")
         .test(BSP).expect("13")
         .test(BSP).noerror()
         .test(BSP).error("Too few arguments");
     step("Pick3 in stack menu")
-        .test(CLEAR, "13 17 25 42", F6, F3, F6).expect("17")
+        .test(CLEAR, "13 17 25 42", RSHIFT, F5).expect("17")
         .test(BSP).expect("42")
         .test(BSP).expect("25")
         .test(BSP).expect("17")
@@ -976,11 +976,11 @@ void tests::stack_operations()
               F1, F2, F3, F4, F5,
               LSHIFT, F1,
               F6, ENTER)
-        .want("« Rot Roll Over Pick Depth"
-              " UnRot RollDown Duplicate2 Drop2 LastArguments"
-              " Clear Nip DuplicateN DropN LastX"
-              " Duplicate Drop Pick3 Swap"
-              " NDuplicateN »")
+        .want("« Duplicate Drop Rot Roll Over "
+              "Duplicate2 Drop2 UnRot RollDown Pick "
+              "DuplicateN DropN Depth Nip Pick3 "
+              "Swap LastArguments LastX Clear "
+              "NDuplicateN »")
         .test(BSP).noerror()
         .test(BSP).error("Too few arguments");
 
@@ -1000,13 +1000,13 @@ void tests::stack_operations()
 
     step("LastX")
         .test(CLEAR, "1 2", NOSHIFT, ADD).expect("3")
-        .test(NOSHIFT, I, RSHIFT, F5).expect("2")
+        .test(NOSHIFT, I, F6, F3).expect("2")
         .test(BSP).expect("3")
         .test(BSP).noerror()
         .test(BSP).error("Too few arguments");
     step("ClearStk")
         .test(CLEAR, "1 2 3 4", ENTER)
-        .test(RSHIFT, F1).noerror()
+        .test(RSHIFT, F5).noerror()
         .test(BSP).error("Too few arguments");
 
     step("LastArg with Dup")
@@ -1026,18 +1026,18 @@ void tests::stack_operations()
 
     step("LastArg with DupN")
         .test(CLEAR, "111 222 333 444 555", ENTER)
-        .test("3", NOSHIFT, I, RSHIFT, F3,
-              LSHIFT, M, NOSHIFT, I, F5, RSHIFT, N, LSHIFT, F1)
+        .test("3", LSHIFT, KEY4, NOSHIFT, I, RSHIFT, F1,
+              LSHIFT, M, NOSHIFT, I, RSHIFT, F3, RSHIFT, N, LSHIFT, F1)
         .expect("{ 111 222 333 444 555 333 444 555 333 444 555 3 }");
     step("LastArg with DropN")
         .test(CLEAR, "111 222 333 444 555", ENTER)
-        .test("3", NOSHIFT, I, RSHIFT, F4).expect("222")
-        .test(LSHIFT, M, NOSHIFT, I, F5, RSHIFT, N, LSHIFT, F1)
+        .test("3", NOSHIFT, I, RSHIFT, F2).expect("222")
+        .test(LSHIFT, M, NOSHIFT, I, RSHIFT, F3, RSHIFT, N, LSHIFT, F1)
         .expect("{ 111 222 333 444 555 3 }");
     step("LastArg with Pick")
         .test(CLEAR, "111 222 333 444 555", ENTER)
-        .test("3", NOSHIFT, I, NOSHIFT, F4).expect("333")
-        .test(LSHIFT, M, NOSHIFT, I, F5, RSHIFT, N, LSHIFT, F1)
+        .test("3", NOSHIFT, I, LSHIFT, F5).expect("333")
+        .test(LSHIFT, M, NOSHIFT, I, RSHIFT, F3, RSHIFT, N, LSHIFT, F1)
         .expect("{ 111 222 333 444 555 333 3 }");
 }
 
@@ -7763,7 +7763,7 @@ void tests::plotting()
         .noerror().image("plot-eq");
     step("Function plot: Program");
     test(CLEAR, SHIFT, RUNSTOP,
-         NOSHIFT, I, F6, F1, L, M, 41, MUL, J, MUL, ENTER, ENTER,
+         NOSHIFT, I, F1, L, M, 41, MUL, J, MUL, ENTER, ENTER,
          RSHIFT, O, LENGTHY(200), F1)
         .noerror().image("plot-pgm");
     step("Function plot: Disable curve filling");
