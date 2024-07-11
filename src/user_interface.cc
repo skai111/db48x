@@ -3639,6 +3639,28 @@ bool user_interface::handle_editing(int key)
     bool   consumed = false;
     size_t editing  = rt.editing();
 
+    if (Stack.interactive && !shift && !xshift && rt.depth())
+    {
+        switch (key)
+        {
+        case KEY_UP:
+            if (++Stack.interactive > rt.depth())
+                Stack.interactive = rt.depth();
+            dirtyStack = true;
+            return true;
+        case KEY_DOWN:
+            if (--Stack.interactive == 0)
+                Stack.interactive = 1;
+            dirtyStack = true;
+            return true;
+        case KEY_ENTER:
+        case KEY_EXIT:
+            Stack.interactive = 0;
+            dirtyStack = true;
+            return true;
+        }
+    }
+
     // Some editing keys that do not depend on data entry mode
     if (!alpha)
     {
@@ -3923,6 +3945,13 @@ bool user_interface::handle_editing(int key)
             if (xshift)
             {
                 editor_history();
+                return true;
+            }
+            else if (!shift)
+            {
+                if (++Stack.interactive > rt.depth())
+                    Stack.interactive = rt.depth();
+                dirtyStack = true;
                 return true;
             }
             break;

@@ -44,6 +44,8 @@ struct stack
 
     uint draw_stack();
 
+    uint interactive;
+
 #if SIMULATOR
 public:
     struct data

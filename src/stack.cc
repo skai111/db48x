@@ -52,8 +52,9 @@ stack::stack()
 // ----------------------------------------------------------------------------
 //   Constructor does nothing at the moment
 // ----------------------------------------------------------------------------
+    : interactive(0)
 #if SIMULATOR
-    : history(), writer(0), reader(0)
+    , history(), writer(0), reader(0)
 #endif  // SIMULATOR
 {
 }
@@ -121,8 +122,8 @@ uint stack::draw_stack()
         grob_g   graph = nullptr;
         object_g obj   = rt.stack(level);
         size     w = 0;
-        if (level ? Settings.GraphicStackDisplay()
-                  : Settings.GraphicResultDisplay())
+        if (!interactive && (level ? Settings.GraphicStackDisplay()
+                             : Settings.GraphicResultDisplay()))
         {
             auto    fid = !level ? Settings.ResultFont() : Settings.StackFont();
             grapher g(avail - 2,
@@ -181,8 +182,8 @@ uint stack::draw_stack()
         else
         {
             // Text rendering
-            bool     ml = (level ? Settings.MultiLineStack()
-                                 : Settings.MultiLineResult());
+            bool     ml = !interactive && (level ? Settings.MultiLineStack()
+                                           : Settings.MultiLineResult());
             renderer r(nullptr, ~0U, true, ml);
             size_t   len = obj->render(r);
             utf8     out = r.text();
@@ -293,8 +294,24 @@ uint stack::draw_stack()
         Screen.clip(0, ytop, hdrx, bottom);
         snprintf(buf, sizeof(buf), "%u", level + 1);
         size hw = idxfont->width(utf8(buf));
-        Screen.text(hdrx - hw, y + idxOffset, utf8(buf), idxfont,
-                    Settings.StackLevelForeground());
+        if (interactive == level + 1)
+        {
+            uint half = idxHeight / 2;
+            Screen.fill(0, y + idxOffset, hdrx, y + idxOffset + idxHeight,
+                        Settings.StackLevelForeground());
+            Screen.clip(0, ytop, hdrx + half, bottom);
+            for (uint i = 0; i < half; i++)
+                Screen.fill(hdrx, y + idxOffset + half - i - 1,
+                            hdrx + half - i - 1, y + idxOffset + half + i,
+                            Settings.StackLevelForeground());
+            Screen.text(hdrx - hw, y + idxOffset, utf8(buf), idxfont,
+                        Settings.StackLevelBackground());
+        }
+        else
+        {
+            Screen.text(hdrx - hw, y + idxOffset, utf8(buf), idxfont,
+                        Settings.StackLevelForeground());
+        }
         Screen.clip(clip);
 
         lineHeight = font->height();
