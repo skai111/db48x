@@ -598,14 +598,24 @@ COMMAND_BODY(Show)
 //   Show the top-level of the stack graphically, using entire screen
 // ----------------------------------------------------------------------------
 {
-    if (object_g obj = rt.top())
+    object_g obj = rt.top();
+    return show(obj);
+}
+
+
+object::result show(object_r obj)
+// ----------------------------------------------------------------------------
+//   Draw an obejct
+// ----------------------------------------------------------------------------
+{
+    if (obj)
     {
         grob_g graph = obj->graph();
         if (!graph)
         {
             if (!rt.error())
                 rt.graph_does_not_fit_error();
-            return ERROR;
+            return object::ERROR;
         }
 
         ui.draw_graphics();
@@ -728,7 +738,7 @@ COMMAND_BODY(Show)
         }
         redraw_lcd(true);
     }
-    return OK;
+    return object::OK;
 }
 
 

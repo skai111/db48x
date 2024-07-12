@@ -52,7 +52,7 @@ stack::stack()
 // ----------------------------------------------------------------------------
 //   Constructor does nothing at the moment
 // ----------------------------------------------------------------------------
-    : interactive(0)
+    : interactive(0), interactive_base(0)
 #if SIMULATOR
     , history(), writer(0), reader(0)
 #endif  // SIMULATOR
@@ -107,6 +107,19 @@ uint stack::draw_stack()
     if (!depth)
         return bottom;
 
+    if (interactive)
+    {
+        uint height = rt.editing() ? 3 : 4;
+        if (interactive < interactive_base + 1)
+            interactive_base = interactive - 1;
+        else if (interactive > interactive_base + height)
+            interactive_base = interactive - height;
+    }
+    else
+    {
+        interactive_base = 0;
+    }
+
     rect clip      = Screen.clip();
     Screen.fill(0, top, hdrx-1, bottom, Settings.StackLevelBackground());
     Screen.fill(hdrx, top, hdrx, bottom, Settings.StackLineForeground());
@@ -114,7 +127,7 @@ uint stack::draw_stack()
     char buf[16];
     coord y = bottom;
     coord yresult = y;
-    for (uint level = 0; level < depth; level++)
+    for (uint level = interactive_base; level < depth; level++)
     {
         if (coord(y) <= top)
             break;

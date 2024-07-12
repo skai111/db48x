@@ -115,6 +115,12 @@ inline uint ScreenHeight()
 }
 
 
+object::result show(object_r obj);
+// ----------------------------------------------------------------------------
+//   Show the given object full screen
+// ----------------------------------------------------------------------------
+
+
 COMMAND_DECLARE(Disp,2);
 COMMAND_DECLARE(DispXY,3);
 COMMAND_DECLARE(Show,1);

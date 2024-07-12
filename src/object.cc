@@ -438,7 +438,7 @@ size_t object::render(char *output, size_t length) const
 }
 
 
-cstring object::edit() const
+size_t object::edit() const
 // ----------------------------------------------------------------------------
 //   Render an object into the scratchpad, then move it into editor
 // ----------------------------------------------------------------------------
@@ -453,7 +453,7 @@ cstring object::edit() const
         rt.edit();
         r.clear();
     }
-    return (cstring) rt.editor();
+    return size;
 }
 
 

@@ -45,6 +45,7 @@ struct stack
     uint draw_stack();
 
     uint interactive;
+    uint interactive_base;
 
 #if SIMULATOR
 public:

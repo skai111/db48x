@@ -807,6 +807,29 @@ HELP_BODY(list)
 //
 // ============================================================================
 
+object::result to_list(uint depth)
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+{
+    scribble scr;
+    for (uint i = 0; i < depth; i++)
+    {
+        if (object_g obj = rt.stack(depth - 1 - i))
+        {
+            size_t objsz = obj->size();
+            byte_p objp = byte_p(obj);
+            if (!rt.append(objsz, objp))
+                return object::ERROR;
+        }
+    }
+    object_g list = list::make(scr.scratch(), scr.growth());
+    if (rt.drop(depth) && rt.push(list))
+        return object::OK;
+    return object::ERROR;
+}
+
+
 COMMAND_BODY(ToList)
 // ----------------------------------------------------------------------------
 //   Convert elements to a list
@@ -819,24 +842,7 @@ COMMAND_BODY(ToList)
             return ERROR;
 
         if (rt.pop())
-        {
-            scribble scr;
-            for (uint i = 0; i < depth; i++)
-            {
-                if (object_g obj = rt.stack(depth - 1 - i))
-                {
-                    size_t objsz = obj->size();
-                    byte_p objp = byte_p(obj);
-                    if (!rt.append(objsz, objp))
-                        return ERROR;
-                }
-            }
-            object_g list = list::make(scr.scratch(), scr.growth());
-            if (!rt.drop(depth))
-                return ERROR;
-            if (rt.push(list))
-                return OK;
-        }
+            return to_list(depth);
     }
     return ERROR;
 }
@@ -1576,7 +1582,7 @@ static int memory_compare(object_p *xp, object_p *yp)
 }
 
 
-static int value_compare(object_p *xp, object_p *yp)
+int value_compare(object_p *xp, object_p *yp)
 // ----------------------------------------------------------------------------
 //   Sort items according to value
 // ----------------------------------------------------------------------------
