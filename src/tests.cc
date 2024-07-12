@@ -162,7 +162,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        stack_operations();
+        editor_operations();
     }
     else
     {
@@ -817,6 +817,52 @@ void tests::editor_operations()
     step("Insert iferr-then-else from menu")
         .test(CLEAR, LSHIFT, KEY3, LSHIFT, F2, LSHIFT, F4)
         .editor("iferr  then  else  end ");
+
+    step("Interactive stack")
+        .test(CLEAR, "111 222 333 444 555 666 'inv(sqrt(2*X))' 888 999", ENTER,
+              "X 2", NOSHIFT, MUL, C, B, ENTER, UP)
+        .image_noheader("istack-1");
+    step("Interactive stack level 2")
+        .test(UP)
+        .image_noheader("istack-2");
+    step("Interactive stack level scroll")
+        .test(UP, UP, UP, UP, UP)
+        .image_noheader("istack-3a");
+    step("Interactive stack level reach end")
+        .test(UP, UP, UP, UP, UP)
+        .image_noheader("istack-3b");
+    step("Interactive stack level down")
+        .test(DOWN, DOWN)
+        .image_noheader("istack-3c");
+    step("Interactive stack level down scroll")
+        .test(DOWN, DOWN, DOWN, DOWN, DOWN)
+        .image_noheader("istack-3d");
+    step("Interactive stack ->List")
+        .test(F6)
+        .image_noheader("istack-4");
+    step("Interactive stack Pick")
+        .test(F5)
+        .image_noheader("istack-5");
+    step("Interactive stack Roll Down")
+        .test(F4)
+        .image_noheader("istack-6");
+    step("Interactive stack Level")
+        .test(F3)
+        .image_noheader("istack-7");
+    step("Interactive stack going down")
+        .test(DOWN)
+        .image_noheader("istack-8");
+    step("Interactive stack Show")
+        .test(F2)
+        .image_noheader("istack-9", 0, 1000);
+    step("Interactive stack Show after EXIT")
+        .test(EXIT)
+        .image_noheader("istack-9b", 0, 1000);
+    step("Interactive stack Edit")
+        .test(UP, F1, UP, F1, DOWN, F1)
+        .image_noheader("istack-10")
+        .editor("666 555 666 ")
+        .test(CLEAR, EXIT);
 }
 
 

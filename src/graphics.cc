@@ -734,6 +734,10 @@ object::result show(object_r obj)
                     beep(440, 20);
                     break;
                 }
+#if SIMULATOR && !WASM
+                if (tests::running && test_command && key_empty())
+                    process_test_commands();
+#endif // SIMULATOR && !WASM
             }
         }
         redraw_lcd(true);

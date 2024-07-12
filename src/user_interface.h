@@ -146,6 +146,7 @@ struct user_interface
     int         stack_screen_bottom()   { return stack; }
     int         menu_screen_bottom()    { return menuHeight; }
     bool        showing_help()          { return help + 1 != 0; }
+    bool        showing_graphics()      { return graphics; }
     uint        cursor_position()       { return cursor; }
     void        cursor_position(uint p) { cursor = p; dirtyEditor = true; edRows = 0; }
     bool        current_word(size_t &start, size_t &size);

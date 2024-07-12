@@ -508,7 +508,8 @@ void process_test_commands()
     {
         record(tests_rpl, "Key sync requested");
     }
-    redraw_lcd(true);
+    if (!ui.showing_graphics())
+        redraw_lcd(true);
     record(tests_rpl, "Done redrawing LCD after command %u, last=%d",
            test_command, last_key);
     test_command = 0;

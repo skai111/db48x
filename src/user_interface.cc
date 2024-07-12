@@ -2140,7 +2140,7 @@ reposition:
     int   errorHeight     = rt.error() ? LCD_H / 3 + 10 : 0;
     int   bottom          = LCD_H-1 - menuHeight;
     int   top             = (Stack.interactive
-                             ? bottom - HeaderFont->height()
+                             ? bottom - lineHeight
                              : HeaderFont->height() + errorHeight + 2);
     int   availableHeight = bottom - top;
     int   fullRows        = availableHeight / lineHeight;
