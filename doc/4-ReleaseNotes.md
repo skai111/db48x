@@ -1,5 +1,29 @@
 # Release notes
 
+## Release 0.7.10 "Hospitality" - Interactive stack
+
+This release primarily adds the "interactive stack" feature of HP calculators.
+
+### Features
+
+* stack: Interactive stack and associated menu
+* functions: Very basic random number generator
+* demo: Add `CountPrimes` and `RandomPlot` examples
+
+### Bug fixes
+
+* menus: Do not execute if-then-else and similar
+* expressions: Avoid error testing for zero/one in power operator
+* condidionals: Avoid infinite loop evaluating condition
+* menu: Insert `iferr-then-else` correctly from menu
+* constants: Skip menu entries
+
+### Improvements
+
+* menus: Reorganize stack menu to put `Dup` and `Drop` on first page
+* menu: Add error functions to `Debug` menu
+
+
 ## Release 0.7.9 "Just Asleep" - Online WASM simulator
 
 This release includes a number of bug fixes, facilitates build from scratch by
