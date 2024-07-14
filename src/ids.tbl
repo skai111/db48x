@@ -749,6 +749,9 @@ CMD(ExponentialFit)                     ALIAS(ExponentialFit,           "ExpFit"
 CMD(PowerFit)                           ALIAS(PowerFit,                 "PwrFit")
 CMD(LogarithmicFit)                     ALIAS(LogarithmicFit,           "LogFit")
 
+CMD(RandomNumber)                       ALIAS(RandomNumber,             "rand")
+CMD(RandomSeed)                         ALIAS(RandomSeed,               "rdz")
+CMD(Random)
 
 
 // ============================================================================

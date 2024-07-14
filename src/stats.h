@@ -194,4 +194,8 @@ COMMAND_DECLARE(ExponentialFit,0);
 COMMAND_DECLARE(PowerFit,0);
 COMMAND_DECLARE(LogarithmicFit,0);
 
+COMMAND_DECLARE(RandomNumber, 0);
+COMMAND_DECLARE(RandomSeed, 1);
+COMMAND_DECLARE(Random, 2);
+
 #endif // STATS_H

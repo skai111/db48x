@@ -35,6 +35,9 @@
 #include "tag.h"
 #include "variables.h"
 
+#include <random>
+
+
 
 // ============================================================================
 //
@@ -1494,4 +1497,103 @@ COMMAND_BODY(LogarithmicFit)
 // ----------------------------------------------------------------------------
 {
     return set_fit(ID_LogarithmicFit);
+}
+
+
+
+// ============================================================================
+//
+//   Random number generation
+//
+// ============================================================================
+
+static std::minstd_rand prng;
+
+static algebraic_p random_number()
+// ----------------------------------------------------------------------------
+//   Compute a random number between 0 and 1 from the PRNG
+// ----------------------------------------------------------------------------
+{
+    if (algebraic_g min = integer::make(prng.min()))
+        if (algebraic_g max = integer::make(prng.max()))
+            if (algebraic_g val = integer::make(prng()))
+                if (algebraic_p r = (val - min) / (max - min))
+                    return r;
+    return nullptr;
+}
+
+
+COMMAND_BODY(Random)
+// ----------------------------------------------------------------------------
+//   Generate a random number between the two input values
+// ----------------------------------------------------------------------------
+{
+
+    if (algebraic_g val = random_number())
+    {
+        if (algebraic_g max = rt.stack(0)->as_algebraic())
+        {
+            if (algebraic_g min = rt.stack(1)->as_algebraic())
+            {
+                if (algebraic_g scaled = val * (max - min) + min)
+                {
+                    if (min->is_integer() && max->is_integer())
+                    {
+                        algebraic_g one = integer::make(1);
+                        algebraic_g two = integer::make(2);
+                        scaled = scaled + one / two;
+                        algebraic_g fp = rem::evaluate(scaled, one);
+                        scaled = scaled - fp;
+                    }
+                    if (rt.drop() && rt.top(+scaled))
+                        return OK;
+                }
+            }
+        }
+        if (!rt.error())
+            rt.type_error();
+    }
+    return ERROR;
+}
+
+
+COMMAND_BODY(RandomNumber)
+// ----------------------------------------------------------------------------
+//   Generate a random number between 0 and 1 (1 is excluded)
+// ----------------------------------------------------------------------------
+{
+    if (algebraic_g val = random_number())
+    {
+        if (Settings.NumericalResults())
+            algebraic::to_decimal(val, true);
+        if (rt.push(+val))
+            return OK;
+    }
+    return ERROR;
+}
+
+
+COMMAND_BODY(RandomSeed)
+// ----------------------------------------------------------------------------
+//   Select the random seed for random number generation
+// ----------------------------------------------------------------------------
+{
+    if (object_p seedobj = rt.top())
+    {
+        if (algebraic_p seed = seedobj->as_real())
+        {
+            if (seed->is_zero(false))
+            {
+                seed = integer::make(sys_current_ms());
+                seed = inv::run(seed);
+            }
+            algebraic_g scale = integer::make(0xFFFFFFFF);
+            seed = seed * scale;
+            uint32_t iseed = seed->as_uint32(sys_current_ms(), false);
+            prng.seed(iseed);
+            return OK;
+        }
+        rt.type_error();
+    }
+    return ERROR;
 }

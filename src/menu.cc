@@ -429,8 +429,9 @@ MENU(NumbersMenu,
      "NextPr",  ID_Unimplemented,
      "PrevPr",  ID_Unimplemented,
      "Factors", ID_Unimplemented,
-     "Random",  ID_Unimplemented,
-     "Seed",    ID_Unimplemented);
+     "Ran#",    ID_RandomNumber,
+     "Random",  ID_Random,
+     "Seed",    ID_RandomSeed);
 
 
 MENU(AnglesMenu,
@@ -662,14 +663,14 @@ MENU(ProbabilitiesMenu,
      "Comb",    ID_comb,
      "Perm",    ID_perm,
      "x!",      ID_fact,
-     "",        ID_Unimplemented,
-     "Random",  ID_Unimplemented,
+     "Ran#",    ID_RandomNumber,
+     "Random",  ID_Random,
 
      "Γ",        ID_tgamma,
      "ln(Γ)",    ID_lgamma,
      ID_erf,
      ID_erfc,
-     "RSeed",   ID_Unimplemented,
+     "RSeed",   ID_RandomSeed,
 
      // LTND: Lower Tail Normal Distribution, see HP20b
      "Normal",  ID_Unimplemented,
