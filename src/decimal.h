@@ -115,6 +115,8 @@ struct decimal : algebraic
         p = leb128(p, exp);
         p = leb128(p, nkigs);
         const kint *kigsp = kigs.Safe();
+        if (nkigs)
+            p[(nkigs * 10 + 7) / 8 - 1] = 0;
         for (uint i = 0; i < nkigs; i++)
             kigit(p, i, kigsp[i]);
     }
@@ -148,6 +150,8 @@ struct decimal : algebraic
         exp += iexp;
         p = leb128(p, exp);
         p = leb128(p, nkigits);
+        if (nkigits)
+            p[(nkigits * 10 + 7) / 8 - 1] = 0;
         for (uint i = 0; i < nkigits; i++)
         {
             kigit(p, i, (value * mul / div) % 1000);
@@ -200,6 +204,7 @@ struct decimal : algebraic
 
     static decimal_p from_integer(integer_p value);
     static decimal_p from_bignum(bignum_p value);
+    static decimal_p from_random_seed(bignum_p value);
     static decimal_p from_fraction(fraction_p value);
     static decimal_p from_big_fraction(big_fraction_p value);
     // ------------------------------------------------------------------------

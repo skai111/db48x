@@ -222,6 +222,7 @@ using bin_bignum   = special_bignum<object::ID_bin_bignum>;
 using dec_bignum   = special_bignum<object::ID_dec_bignum>;
 #endif // CONFIG_FIXED_BASED_OBJECTS
 using based_bignum = special_bignum<object::ID_based_bignum>;
+GCP_EXISTING(based_bignum);
 
 template <typename Int>
 bignum_p bignum::make(Int value)

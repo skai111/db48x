@@ -137,6 +137,7 @@ TESTS(sumprod,          "Sums and products");
 TESTS(poly,             "Polynomials");
 TESTS(quorem,           "Quotient and remainder");
 TESTS(expr,             "Operations on expressions");
+TESTS(random,           "Random number generation");
 
 EXTRA(plotfns,          "Plot all functions");
 EXTRA(sysflags,         "Enable/disable every RPL flag");
@@ -162,7 +163,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        editor_operations();
+        random_number_generation();
     }
     else
     {
@@ -230,6 +231,7 @@ void tests::run(bool onlyCurrent)
         polynomials();
         quotient_and_remainder();
         expression_operations();
+        random_number_generation();
         regression_checks();
     }
     summary();
@@ -7684,6 +7686,75 @@ void tests::expression_operations()
         .expect("{ X Y }")
         .test(BSP, BSP)
         .error("Too few arguments");
+}
+
+
+void tests::random_number_generation()
+// ----------------------------------------------------------------------------
+//   Test the generation of random numbers
+// ----------------------------------------------------------------------------
+{
+    BEGIN(random);
+
+    step("Set a known seed 17")
+        .test(CLEAR, "17 RandomSeed", ENTER).noerror();
+
+    step("Clear statistics data")
+        .test(CLEAR, LSHIFT, S, RSHIFT, F3);
+
+    step("Generate 1000 random numbers")
+        .test(CLEAR, "1 1000 START RAND Σ+ NEXT", ENTER).noerror();
+
+    step("Check statistics total")
+        .test(CLEAR, LSHIFT, S, F3).expect("503.03593 6495");
+    step("Check statistics mean")
+        .test(F4).expect("0.50303 59364 95");
+    step("Check statistics min and max")
+        .test(LSHIFT, F3).expect("0.00621 35929 6")
+        .test(LSHIFT, F4).expect("0.99967 04518 08");
+
+
+    step("Set a known seed 42.42")
+        .test(CLEAR, "42.42 RandomSeed", ENTER).noerror();
+
+    step("Clear statistics data to try again")
+        .test(CLEAR, LSHIFT, S, RSHIFT, F3);
+
+    step("Generate 1000 random numbers")
+        .test(CLEAR, "1 1000 START RAND Σ+ NEXT", ENTER).noerror();
+
+    step("Check statistics total")
+        .test(CLEAR, LSHIFT, S, F3).expect("509.25246 401");
+    step("Check statistics mean")
+        .test(F4).expect("0.50925 24640 1");
+    step("Check statistics min and max")
+        .test(LSHIFT, F3).expect("0.00101 85847 61")
+        .test(LSHIFT, F4).expect("0.99994 94163 52");
+
+    step("Set a known seed 123.456")
+        .test(CLEAR, "123.456 RandomSeed", ENTER).noerror();
+
+    step("Clear statistics data to try again")
+        .test(CLEAR, LSHIFT, S, RSHIFT, F3);
+
+    step("Generate 1000 random numbers")
+        .test(CLEAR, "1 1000 START -1000 1000 RANDOM Σ+ NEXT", ENTER).noerror();
+
+    step("Check statistics total")
+        .test(CLEAR, LSHIFT, S, F3).expect("-32 132");
+    step("Check statistics mean")
+        .test(F4).expect("-32 ³³/₂₅₀");
+    step("Check statistics min and max")
+        .test(LSHIFT, F3).expect("-998")
+        .test(LSHIFT, F4).expect("999");
+
+    step("Random graphing")
+        .test(CLEAR,
+              "5121968 RDZ "
+              "0 2500 start "
+              "{} 0 399 random R→B + 0 239 random R→B + pixon "
+              "next", LENGTHY(2500), ENTER)
+        .image("random-graph");
 }
 
 

@@ -790,6 +790,36 @@ decimal_p decimal::from_bignum(bignum_p valuep)
 }
 
 
+decimal_p decimal::from_random_seed(bignum_p valuep)
+// ----------------------------------------------------------------------------
+//    Create a decimal number from a bignum interpreted as a random seed
+// ----------------------------------------------------------------------------
+{
+    if (!valuep)
+        return nullptr;
+    id        itype  = valuep->type();
+    id        type   = ID_decimal;
+    decimal_g result = make(type, 0);
+    decimal_g digits;
+    large     exp    = 0;
+    bignum_g  value  = valuep;
+    bignum_g  div    = bignum::make(1000000000000UL);
+    bignum_g  kigit;
+
+    while (!value->is_zero())
+    {
+        exp -= 12;
+        if (!bignum::quorem(value, div, itype, &value, &kigit))
+            return nullptr;
+        ularge kigval = kigit->value<ularge>();
+        digits = make(type, kigval, exp);
+        result = result + digits;
+    }
+
+    return result;
+}
+
+
 decimal_p decimal::from_fraction(fraction_p value)
 // ----------------------------------------------------------------------------
 //   Build a decimal number from a fraction

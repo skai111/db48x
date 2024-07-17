@@ -424,14 +424,19 @@ MENU(NumbersMenu,
      "Σ",       ID_Sum,
      "∏",       ID_Product,
      "QuoRem",  ID_Div2,
+     "Factors", ID_Unimplemented,
+
+     "Ran#",    ID_RandomNumber,
+     "Random",  ID_Random,
 
      "IsPrime", ID_Unimplemented,
      "NextPr",  ID_Unimplemented,
      "PrevPr",  ID_Unimplemented,
-     "Factors", ID_Unimplemented,
-     "Ran#",    ID_RandomNumber,
-     "Random",  ID_Random,
-     "Seed",    ID_RandomSeed);
+
+     "R#Seed",  ID_RandomSeed,
+     RandomGeneratorBits::label, ID_RandomGeneratorBits,
+     RandomGeneratorOrder::label, ID_RandomGeneratorOrder
+    );
 
 
 MENU(AnglesMenu,
@@ -683,7 +688,11 @@ MENU(ProbabilitiesMenu,
      "Studnt⁻¹",ID_Unimplemented,
      "Chi²⁻¹",  ID_Unimplemented,
      "F-Dist⁻¹",ID_Unimplemented,
-     "FFT⁻¹",   ID_Unimplemented);
+     "FFT⁻¹",   ID_Unimplemented,
+
+     RandomGeneratorBits::label, ID_RandomGeneratorBits,
+     RandomGeneratorOrder::label, ID_RandomGeneratorOrder
+);
 
 
 MENU(StatisticsMenu,

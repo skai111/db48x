@@ -1004,6 +1004,9 @@ SETTING(TabWidth,               1U, 200U, 30U)
 SETTING(ErrorBeepFrequency,     0, 25000,       1400)
 SETTING(ErrorBeepDuration,      0, 500,         50)
 
+SETTING(RandomGeneratorOrder, 10U,  256U,       32U)
+SETTING(RandomGeneratorBits,  32U, 4096U,      128U)
+
 
 
 // ============================================================================

@@ -120,6 +120,7 @@ struct tests
     void polynomials();
     void quotient_and_remainder();
     void expression_operations();
+    void random_number_generation();
     void regression_checks();
 
     enum key

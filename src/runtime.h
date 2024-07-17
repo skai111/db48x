@@ -984,12 +984,15 @@ using gcmutf8   = gcm<byte>;
 using object_g  = gcp<object>;
 using object_r  = const object_g &;
 
-#define GCP(T)                                  \
-    struct T;                                   \
+#define GCP_EXISTING(T)                         \
     typedef const T *           T##_p;          \
     typedef gcp<T>              T##_g;          \
     typedef gcm<T>              T##_m;          \
     typedef const T##_g &       T##_r;
+
+#define GCP(T)                                  \
+    struct T;                                   \
+    GCP_EXISTING(T)
 
 
 // ============================================================================

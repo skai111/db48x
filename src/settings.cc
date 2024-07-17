@@ -703,6 +703,10 @@ cstring setting::label(object::id ty)
         return printf("Freq %u", s.ErrorBeepFrequency());
     case ID_ErrorBeepDuration:
         return printf("Dur %u", s.ErrorBeepDuration());
+    case ID_RandomGeneratorBits:
+        return printf("R# %u bits", s.RandomGeneratorBits());
+    case ID_RandomGeneratorOrder:
+        return printf("R# %u iter", s.RandomGeneratorOrder());
     default:
         break;
     }

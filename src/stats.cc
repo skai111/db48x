@@ -30,13 +30,14 @@
 #include "stats.h"
 
 #include "arithmetic.h"
+#include "bignum.h"
 #include "compare.h"
+#include "dmcp.h"
 #include "integer.h"
 #include "tag.h"
 #include "variables.h"
 
 #include <random>
-
 
 
 // ============================================================================
@@ -1506,20 +1507,108 @@ COMMAND_BODY(LogarithmicFit)
 //   Random number generation
 //
 // ============================================================================
+//   The algorithm uses an additive congruential random number generator,
+//   aka ACORN, see http://acorn.wikramaratna.org/concept.html.
+//   The reason for this choice is that it's simple, fast, passes all the
+//   TESTU01 tests, can be easily adapated for variable precision,
+//   and uses relatively little memory (the memory being RPL-manageeable)
 
-static std::minstd_rand prng;
+RECORDER(acorn, 16, "Additive congruential random number generator (ACORN)");
 
-static algebraic_p random_number()
+static bignum_g        *acorn       = nullptr;
+static size_t           acorn_order = 0;
+
+
+static void random_seed(ularge seed)
 // ----------------------------------------------------------------------------
-//   Compute a random number between 0 and 1 from the PRNG
+//   Initialize the random number generator with the given seed
 // ----------------------------------------------------------------------------
 {
-    if (algebraic_g min = integer::make(prng.min()))
-        if (algebraic_g max = integer::make(prng.max()))
-            if (algebraic_g val = integer::make(prng()))
-                if (algebraic_p r = (val - min) / (max - min))
-                    return r;
-    return nullptr;
+    record(acorn, "Setting seed %lu", seed);
+
+    // The ACORN must be a relative prime to the modulus, which is a power of 2
+    // So if it's even, we make it odd.
+    if (~seed & 1)
+        seed = ~seed;
+
+    for (size_t i = 0; i < acorn_order; i++)
+    {
+        acorn[i] = rt.make<based_bignum>(seed);
+        record(acorn, "  [%u] = %lu", i, seed);
+        seed *= 0x1081 + (i << 13);
+    }
+}
+
+
+static void random_init()
+// ----------------------------------------------------------------------------
+//   Initialization of the random number generator data
+// ----------------------------------------------------------------------------
+{
+    if (!acorn || acorn_order != Settings.RandomGeneratorOrder())
+    {
+        record(acorn, "Initializing from %p order %u to %u",
+               acorn, acorn_order, Settings.RandomGeneratorOrder());
+
+        ularge seed;
+        if (acorn)
+        {
+            seed = acorn[0]->value<ularge>();
+            record(acorn, "Freeing %p size %u, seed %lu",
+                   acorn, acorn_order, seed);
+
+            // No operator new[] nor operator delete[] in embedded runtime
+            for (size_t i = acorn_order; i --> 0; )
+                (acorn + i)->~bignum_g();
+            free(acorn);
+            acorn = nullptr;
+        }
+        else
+        {
+            seed = 3 * sys_current_ms();
+            record(acorn, "Initialize with random seed %lu", seed);
+        }
+        acorn_order = Settings.RandomGeneratorOrder();
+
+        // No operator new[] nor operator delete[] in embedded runtime
+        acorn = (bignum_g *) calloc(acorn_order, sizeof(bignum_g));
+        record(acorn, "Allocated %p size %u", acorn, acorn_order);
+        if (!acorn)
+        {
+            acorn_order = 0;
+            rt.out_of_memory_error();
+        }
+        else
+        {
+            // Initialize the smart pointers
+            for (size_t i = 0; i < acorn_order; i++)
+                new(acorn + i) bignum_g;
+
+            // Populate the original seed
+            random_seed(seed);
+        }
+    }
+}
+
+
+static decimal_p random_number()
+// ----------------------------------------------------------------------------
+//   Compute a random number between 0 and 1 using ACORN algorithm
+// ----------------------------------------------------------------------------
+//   This is computed using the current wordsize
+{
+    random_init();
+
+    // Compute the next iteration for ACORN
+    settings::SaveWordSize sws(Settings.RandomGeneratorBits());
+    bignum_p last = nullptr;
+    for (size_t k = 1; k < acorn_order; k++)
+        last = acorn[k] = acorn[k] + acorn[k-1];
+
+    // Now generate a decimal between 0 and 1 with it
+    decimal_p result = decimal::from_random_seed(last);
+    record(acorn, "Random number %t decimal %t", last, result);
+    return result;
 }
 
 
@@ -1528,7 +1617,6 @@ COMMAND_BODY(Random)
 //   Generate a random number between the two input values
 // ----------------------------------------------------------------------------
 {
-
     if (algebraic_g val = random_number())
     {
         if (algebraic_g max = rt.stack(0)->as_algebraic())
@@ -1539,11 +1627,9 @@ COMMAND_BODY(Random)
                 {
                     if (min->is_integer() && max->is_integer())
                     {
-                        algebraic_g one = integer::make(1);
-                        algebraic_g two = integer::make(2);
-                        scaled = scaled + one / two;
-                        algebraic_g fp = rem::evaluate(scaled, one);
-                        scaled = scaled - fp;
+                        algebraic_g half = decimal::make(5,-1);
+                        scaled = scaled + half;
+                        scaled = decimal_p(+scaled)->to_bignum();
                     }
                     if (rt.drop() && rt.top(+scaled))
                         return OK;
@@ -1563,12 +1649,8 @@ COMMAND_BODY(RandomNumber)
 // ----------------------------------------------------------------------------
 {
     if (algebraic_g val = random_number())
-    {
-        if (Settings.NumericalResults())
-            algebraic::to_decimal(val, true);
         if (rt.push(+val))
             return OK;
-    }
     return ERROR;
 }
 
@@ -1580,17 +1662,21 @@ COMMAND_BODY(RandomSeed)
 {
     if (object_p seedobj = rt.top())
     {
-        if (algebraic_p seed = seedobj->as_real())
+        if (algebraic_g seednum = seedobj->as_real())
         {
-            if (seed->is_zero(false))
+            rt.drop();
+            random_init();
+            if (seednum->is_zero(false))
             {
-                seed = integer::make(sys_current_ms());
-                seed = inv::run(seed);
+                random_seed(sys_current_ms());
+                return OK;
             }
-            algebraic_g scale = integer::make(0xFFFFFFFF);
-            seed = seed * scale;
-            uint32_t iseed = seed->as_uint32(sys_current_ms(), false);
-            prng.seed(iseed);
+            ularge seed = 0;
+            size_t sz = seednum->size();
+            byte_p p = byte_p(+seednum);
+            for (size_t i = 0; i < sz; i++)
+                seed = (seed * 0x1081) ^ p[i];
+            random_seed(seed);
             return OK;
         }
         rt.type_error();
