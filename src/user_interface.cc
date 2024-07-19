@@ -3355,7 +3355,7 @@ bool user_interface::handle_help(int &key)
     if (!showing_help())
     {
         // Exit if we are editing or entering digits
-        if (last == KEY_SHIFT)
+        if (last == KEY_SHIFT || Stack.interactive)
             return false;
 
         // Check if we have a long press, if so load corresponding help
@@ -3667,7 +3667,7 @@ bool user_interface::handle_editing(int key)
                     interactive = rt.depth();
                 Stack.interactive = interactive;
                 dirtyStack = true;
-                return true;
+                break;
             case KEY_DOWN:
                 if (interactive <= 4)
                     interactive = 1;
@@ -3675,31 +3675,32 @@ bool user_interface::handle_editing(int key)
                     interactive -= 4;
                 Stack.interactive = interactive;
                 dirtyStack = true;
-                return true;
+                break;
             case KEY_ENTER:
             case KEY_EXIT:
                 Stack.interactive = 0;
                 dirtyStack = true;
                 dirtyMenu = true;
-                return true;
+                last = 0;
+                break;
             case KEY_BSP:
                 rt.roll(interactive);
                 rt.drop();
                 if (interactive > rt.depth())
                     Stack.interactive = rt.depth();
                 dirtyStack = true;
-                return true;
+                break;
             case KEY_F1:        // DupN
                 for (uint i = 0; i < interactive; i++)
                     if (object_p obj = rt.stack(interactive - 1))
                         if (!rt.push(obj))
                             break;
                 dirtyStack = true;
-                return true;
+                break;
             case KEY_F2:        // DropN
                 rt.drop(interactive);
                 dirtyStack = true;
-                return true;
+                break;
             case KEY_F3:        // Keep
                 if (rt.depth() > interactive)
                 {
@@ -3709,17 +3710,17 @@ bool user_interface::handle_editing(int key)
                     rt.drop(depth - interactive);
                     dirtyStack = true;
                 }
-                return true;
+                break;
             case KEY_F4:        // Roll
                 rt.roll(interactive);
                 dirtyStack = true;
-                return true;
+                break;
             case KEY_F5:        // Sort
                 typedef int (*qsort_fn)(const void *, const void*);
                 qsort(rt.stack_base(), interactive,
                       sizeof(object_p), qsort_fn(value_compare));
                 dirtyStack = true;
-                return true;
+                break;
             case KEY_F6:        // Revert
                 for (uint i = 0; i < interactive / 2; i++)
                 {
@@ -3729,7 +3730,7 @@ bool user_interface::handle_editing(int key)
                     rt.stack(interactive + ~i, a);
                 }
                 dirtyStack = true;
-                return true;
+                break;
             default:
                 break;
             }
@@ -3743,26 +3744,27 @@ bool user_interface::handle_editing(int key)
                     interactive = rt.depth();
                 Stack.interactive = interactive;
                 dirtyStack = true;
-                return true;
+                break;
             case KEY_DOWN:
                 if (--interactive == 0)
                     interactive = 1;
                 Stack.interactive = interactive;
                 dirtyStack = true;
-                return true;
+                break;
             case KEY_ENTER:
             case KEY_EXIT:
                 Stack.interactive = 0;
                 dirtyStack = true;
                 dirtyMenu = true;
-                return true;
+                last = 0;
+                break;
             case KEY_BSP:
                 rt.roll(interactive);
                 rt.drop();
                 if (interactive > rt.depth())
                     Stack.interactive = rt.depth();
                 dirtyStack = true;
-                return true;
+                break;
             case KEY_F1:        // Edit
                 if (object_p obj = rt.stack(interactive - 1))
                 {
@@ -3773,35 +3775,37 @@ bool user_interface::handle_editing(int key)
                     edRows = 0;
                     dirtyEditor = true;
                 }
-                return true;
+                break;
             case KEY_F2:        // Show
                 if (object_g obj = rt.stack(interactive - 1))
                     show(obj);
-                return true;
+                break;
             case KEY_F3:        // Level
                 if (integer_p depth = integer::make(interactive))
                 {
                     rt.push(depth);
                     dirtyStack = true;
                 }
-                return true;
+                break;
             case KEY_F4:        // Roll down
                 rt.rolld(interactive);
                 dirtyStack = true;
-                return true;
+                break;
             case KEY_F5:        // Pick
                 if (object_p obj = rt.stack(interactive - 1))
                     rt.push(obj);
                 dirtyStack = true;
-                return true;
+                break;
             case KEY_F6:        // To List
                 to_list(interactive);
                 dirtyStack = true;
-                return true;
+                break;
             default:
                 break;
             }
         }
+        // Ignore all other keys in interactive mode
+        return true;
     }
 
     // Some editing keys that do not depend on data entry mode
