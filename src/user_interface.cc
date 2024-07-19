@@ -2870,7 +2870,7 @@ bool user_interface::draw_help()
 
     // Compute the size for the help display
     coord      ytop   = HeaderFont->height() + 2;
-    coord      ybot   = LCD_H - (MenuFont->height() + 2);
+    coord      ybot   = LCD_H - (MenuFont->height() + 5);
     coord      xleft  = 0;
     coord      xright = LCD_W - 1;
     style_name style  = NORMAL;
