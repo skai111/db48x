@@ -513,7 +513,7 @@ void runtime::move_globals(object_p to, object_p from)
     // We overscan by 1 to deal with gcp that point to end of objects
     object_p last = (object_p) scratchpad() + allocated();
     object_p first = to < from ? to : from;
-    size_t moving = last - first;
+    size_t moving = last - from;
     move(to, from, moving, 1);
 
     // Adjust Globals and Temporaries (for Temporaries, must be <=, not <)
