@@ -1480,7 +1480,7 @@ bool user_interface::draw_menus()
 
                 // Check if we have a marker from VariablesMenu
                 rect trect = mrect;
-                if (!help)
+                if (!help && !Stack.interactive)
                 {
                     if (unicode mark = menu_marker[plane][m])
                     {
