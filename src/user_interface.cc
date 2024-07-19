@@ -1385,7 +1385,7 @@ bool user_interface::draw_menus()
         {
             static cstring stackMenu[] =
             {
-                "Edit", "Show", "Level", "Roll↓", "Pick", "→List",
+                "Echo", "Show", "Level", "Roll↓", "Pick", "→List",
                 "DupN", "DropN", "Keep", "Roll↑", "Sort", "Revert"
             };
             labels = stackMenu + 6 * plane;
@@ -3765,7 +3765,7 @@ bool user_interface::handle_editing(int key)
                     Stack.interactive = rt.depth();
                 dirtyStack = true;
                 break;
-            case KEY_F1:        // Edit
+            case KEY_F1:        // Echo
                 if (object_p obj = rt.stack(interactive - 1))
                 {
                     this->editing = obj;
