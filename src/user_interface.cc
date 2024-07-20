@@ -3815,6 +3815,16 @@ bool user_interface::handle_editing(int key)
             }
             dirtyStack = true;
             break;
+
+        case KEY_SWAP:
+            if (xshift)
+            {
+                // UNDO: Exit stack and restore stack
+                Stack.interactive = 0;
+                return false;
+            }
+            break;
+
         case KEY_0:     digit = 0; break;
         case KEY_1:     digit = 1; break;
         case KEY_2:     digit = 2; break;
