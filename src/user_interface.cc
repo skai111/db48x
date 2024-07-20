@@ -107,6 +107,7 @@ user_interface::user_interface()
       nextRefresh(~0U),
       dirty(),
       editing(),
+      editingLevel(0),
       cmdIndex(0),
       clipboard(),
       shift(false),
@@ -350,11 +351,36 @@ bool user_interface::end_edit()
                 // We successfully parsed the line
                 editor_save(saved, false);
                 clear_editor();
-                this->editing = nullptr;
-                if (Settings.SaveStack())
-                    rt.save();
-                save<bool> no_halt(program::halted, false);
-                cmds->run(Settings.SaveLastArguments());
+                if (editingLevel)
+                {
+                    bool first = true;
+                    for (auto obj : *cmds)
+                    {
+                        if (first)
+                        {
+                            rt.stack(editingLevel - 1, obj);
+                            first = false;
+                        }
+                        else
+                        {
+                            rt.push(obj);
+                            rt.rolld(editingLevel);
+                        }
+                    }
+                    Stack.interactive = editingLevel;
+                    editing = nullptr;
+                    editingLevel = 0;
+                    dirtyStack = true;
+                }
+                else
+                {
+                    editing = nullptr;
+                    editingLevel = 0;
+                    if (Settings.SaveStack())
+                        rt.save();
+                    save<bool> no_halt(program::halted, false);
+                    cmds->run(Settings.SaveLastArguments());
+                }
             }
             else
             {
@@ -1213,7 +1239,7 @@ uint user_interface::menu_planes()
     }
     else if (Stack.interactive)
     {
-        planes = 2;
+        planes = 3;
     }
     else
     {
@@ -1387,8 +1413,9 @@ bool user_interface::draw_menus()
         {
             static cstring stackMenu[] =
             {
-                "Echo", "Show", "Level", "Roll↓", "Pick", "→List",
-                "DupN", "DropN", "Keep", "Roll↑", "Sort", "Revert"
+                "Echo",    "Show",    "Eval",     "Roll↓",  "Pick",  "Edit",
+                "DupN",    "DropN",   "Keep",     "Roll↑",  "→List", "Info",
+                "EchoNSp", "ValSort", "MemSort",  "Revert", "Swap",  "Level"
             };
             labels = stackMenu + 6 * plane;
         }
@@ -3655,7 +3682,7 @@ bool user_interface::handle_editing(int key)
 // ----------------------------------------------------------------------------
 {
     bool   consumed = false;
-    size_t editing  = rt.editing();
+    size_t isEditing  = rt.editing();
 
     if (uint interactive = Stack.interactive)
     {
@@ -3696,10 +3723,7 @@ bool user_interface::handle_editing(int key)
             dirtyStack = true;
             break;
         case KEY_F1:
-            if (xshift)
-            {
-            }
-            else if (shift)
+            if (shift)
             {
                 // DupN
                 for (uint i = 0; i < interactive; i++)
@@ -3714,7 +3738,8 @@ bool user_interface::handle_editing(int key)
                 {
                     size_t sz = obj->edit();
                     cursor += sz;
-                    edit(unicode(' '), PROGRAM, false);
+                    if (!shift && !xshift)
+                        edit(unicode(' '), PROGRAM, false);
                     edRows = 0;
                     dirtyEditor = true;
                 }
@@ -3724,6 +3749,10 @@ bool user_interface::handle_editing(int key)
         case KEY_F2:        // DropN
             if (xshift)
             {
+                // Sort by value
+                typedef int (*qsort_fn)(const void *, const void*);
+                qsort(rt.stack_base(), interactive,
+                      sizeof(object_p), qsort_fn(value_compare));
             }
             else if (shift)
             {
@@ -3741,6 +3770,10 @@ bool user_interface::handle_editing(int key)
         case KEY_F3:
             if (xshift)
             {
+                // Sort by memory representation
+                typedef int (*qsort_fn)(const void *, const void*);
+                qsort(rt.stack_base(), interactive,
+                      sizeof(object_p), qsort_fn(memory_compare));
             }
             else if (shift)
             {
@@ -3755,14 +3788,34 @@ bool user_interface::handle_editing(int key)
             }
             else
             {
-                if (integer_p depth = integer::make(interactive))
-                    rt.push(depth);
+                // Evaluate the given item and insert results in stack
+                rt.roll(interactive);
+                if (object_g obj = rt.pop())
+                {
+                    size_t odepth = rt.depth();
+                    obj->evaluate();
+                    size_t ndepth = rt.depth();
+                    size_t diff = ndepth - odepth - 1;
+                    while (ndepth > odepth)
+                    {
+                        rt.rolld(interactive + diff);
+                        odepth++;
+                    }
+                }
             }
             dirtyStack = true;
             break;
         case KEY_F4:
             if (xshift)
             {
+                // Revert
+                for (uint i = 0; i < interactive / 2; i++)
+                {
+                    object_p a = rt.stack(i);
+                    object_p b = rt.stack(interactive + ~i);
+                    rt.stack(i, b);
+                    rt.stack(interactive + ~i, a);
+                }
             }
             else if (shift)
             {
@@ -3779,13 +3832,14 @@ bool user_interface::handle_editing(int key)
         case KEY_F5:
             if (xshift)
             {
+                // Swap
+                goto swap;
             }
             else if (shift)
             {
-                // Sort
-                typedef int (*qsort_fn)(const void *, const void*);
-                qsort(rt.stack_base(), interactive,
-                      sizeof(object_p), qsort_fn(value_compare));
+                // To List
+                to_list(interactive);
+                Stack.interactive = 1;
             }
             else
             {
@@ -3798,22 +3852,51 @@ bool user_interface::handle_editing(int key)
         case KEY_F6:
             if (xshift)
             {
+                // Put level on the stack
+                if (integer_p depth = integer::make(interactive))
+                    rt.push(depth);
             }
             else if (shift)
             {
-                // Revert
-                for (uint i = 0; i < interactive / 2; i++)
+                // Info
+                if (object_g obj = rt.stack(interactive - 1))
                 {
-                    object_p a = rt.stack(i);
-                    object_p b = rt.stack(interactive + ~i);
-                    rt.stack(i, b);
-                    rt.stack(interactive + ~i, a);
+                    size_t size = obj->size();
+                    size_t maxsize = (Settings.WordSize() + 7) / 8;
+                    size_t hashsize = size > maxsize ? maxsize : size;
+                    gcbytes bytes = byte_p(obj);
+#if CONFIG_FIXED_BASED_OBJECTS
+                    // Force base 16 if we have that option
+                    const object::id type = object::ID_hex_bignum;
+#else // !CONFIG_FIXED_BASED_OBJECTS
+                    const object::id type = object::ID_based_bignum;
+#endif // CONFIG_FIXED_BASED_OBJECTS
+                    if (bignum_g bin = rt.make<bignum>(type, bytes, hashsize))
+                    {
+                        char sizebuf[20];
+                        char valbuf[40];
+                        snprintf(sizebuf, sizeof(sizebuf), "%zu bytes", size);
+                        bin->render(valbuf, sizeof(valbuf));
+                        draw_message("Object info", sizebuf, valbuf);
+                        wait_for_key_press();
+                    }
                 }
             }
             else
             {
-                // To List
-                to_list(interactive);
+                // Edit
+                if (object_p obj = rt.stack(interactive - 1))
+                {
+                    editingLevel = interactive;
+                    editing = obj;
+                    size_t sz = obj->edit();
+                    cursor += sz;
+                    edRows = 0;
+                    dirtyEditor = true;
+                    dirtyStack = true;
+                    Stack.interactive = 0;
+                    last = 0;
+                }
             }
             dirtyStack = true;
             break;
@@ -3824,6 +3907,22 @@ bool user_interface::handle_editing(int key)
                 // UNDO: Exit stack and restore stack
                 Stack.interactive = 0;
                 return false;
+            }
+            else if (shift)
+            {
+            }
+            else
+            {
+            swap:
+                // Swap
+                if (interactive + 1 < rt.depth())
+                {
+                    object_p x = rt.stack(interactive - 1);
+                    object_p y = rt.stack(interactive);
+                    rt.stack(interactive,     x);
+                    rt.stack(interactive - 1, y);
+                    dirtyStack = true;
+                }
             }
             break;
 
@@ -3864,9 +3963,9 @@ bool user_interface::handle_editing(int key)
         {
         case KEY_XEQ:
             // XEQ is used to enter algebraic / equation objects
-            if ((!editing  || mode != BASED) && !shift && !xshift)
+            if ((!isEditing  || mode != BASED) && !shift && !xshift)
             {
-                bool is_eqn = editing && is_algebraic(mode);
+                bool is_eqn = isEditing && is_algebraic(mode);
                 edit(is_eqn ? '(' : '\'', ALGEBRAIC);
                 last = 0;
                 return true;
@@ -3886,7 +3985,7 @@ bool user_interface::handle_editing(int key)
                 last = 0;
                 return true;
             }
-            else if (editing)
+            else if (isEditing)
             {
                 // Stick to space role while editing, do not EVAL, repeat
                 if (mode == PARENTHESES)
@@ -3912,7 +4011,7 @@ bool user_interface::handle_editing(int key)
         }
     }
 
-    if (editing)
+    if (isEditing)
     {
         record(user_interface, "Editing key %d", key);
         switch (key)
@@ -3936,10 +4035,10 @@ bool user_interface::handle_editing(int key)
             else
             {
                 utf8 ed = rt.editor();
-                if (shift && cursor < editing)
+                if (shift && cursor < isEditing)
                 {
                     // Shift + Backspace = Delete to right of cursor
-                    uint after = utf8_next(ed, cursor, editing);
+                    uint after = utf8_next(ed, cursor, isEditing);
                     if (utf8_codepoint(ed + cursor) == '\n')
                         edRows = 0;
                     remove(cursor, after - cursor);
@@ -4005,10 +4104,11 @@ bool user_interface::handle_editing(int key)
             {
                 editor_save(false);
                 clear_editor();
-                if (this->editing)
+                if (editing)
                 {
-                    rt.push(this->editing);
-                    this->editing = nullptr;
+                    if (!editingLevel)
+                        rt.push(editing);
+                    editing = nullptr;
                     dirtyEditor = true;
                     dirtyStack = true;
                 }
@@ -4068,12 +4168,12 @@ bool user_interface::handle_editing(int key)
             {
                 return false;
             }
-            else if (cursor < editing)
+            else if (cursor < isEditing)
             {
                 font_p edFont = Settings.editor_font(edRows > 2);
                 utf8 ed = rt.editor();
                 unicode cp = utf8_codepoint(ed + cursor);
-                uint ncursor = utf8_next(ed, cursor, editing);
+                uint ncursor = utf8_next(ed, cursor, isEditing);
                 if (cp != '\n')
                 {
                     draw_cursor(-1, ncursor);
@@ -4128,7 +4228,8 @@ bool user_interface::handle_editing(int key)
                 {
                     if (object_p obj = rt.pop())
                     {
-                        this->editing = obj;
+                        editing = obj;
+                        editingLevel = 0;
                         obj->edit();
                         dirtyEditor = true;
                         return true;

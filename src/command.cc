@@ -501,7 +501,6 @@ COMMAND_BODY(Bytes)
             if (rt.top(bin))
                 if (rt.push(integer::make(size)))
                     return OK;
-
     }
     return ERROR;
 }

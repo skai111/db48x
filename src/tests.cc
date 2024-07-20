@@ -81,6 +81,7 @@ TESTS(shifts,           "Shift logic");
 TESTS(keyboard,         "Keyboard entry");
 TESTS(types,            "Data types");
 TESTS(editor,           "Editor operations");
+TESTS(istack,           "Interactive stack operations");
 TESTS(stack,            "Stack operations");
 TESTS(arithmetic,       "Arithmetic operations");
 TESTS(globals,          "Global variables");
@@ -163,7 +164,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        editor_operations();
+        interactive_stack_operations();
     }
     else
     {
@@ -173,6 +174,7 @@ void tests::run(bool onlyCurrent)
         data_types();
         editor_operations();
         stack_operations();
+        interactive_stack_operations();
         arithmetic();
         global_variables();
         local_variables();
@@ -819,9 +821,20 @@ void tests::editor_operations()
     step("Insert iferr-then-else from menu")
         .test(CLEAR, LSHIFT, KEY3, LSHIFT, F2, LSHIFT, F4)
         .editor("iferr  then  else  end ");
+}
+
+
+void tests::interactive_stack_operations()
+// ----------------------------------------------------------------------------
+//   Check interactive stack operations
+// ----------------------------------------------------------------------------
+{
+    BEGIN(istack);
 
     step("Interactive stack")
-        .test(CLEAR, "111 222 333 444 555 666 'inv(sqrt(2*X))' 888 999", ENTER,
+        .test(CLEAR, EXIT, EXIT, EXIT,
+              "111 222 333 444 555 666 'inv(sqrt((2+3*6)*X))' 888 999",
+              ENTER,
               "X 2", NOSHIFT, MUL, C, B, ENTER, UP)
         .image_noheader("istack-1");
     step("Interactive stack level 2")
@@ -840,31 +853,161 @@ void tests::editor_operations()
         .test(DOWN, DOWN, DOWN, DOWN, DOWN)
         .image_noheader("istack-3d");
     step("Interactive stack ->List")
-        .test(F6)
-        .image_noheader("istack-4");
+        .test(LSHIFT, F5)
+        .image_noheader("istack-4")
+        .expect("{ 888 999 '(√(2·X))⁻¹' '(√(2·X))⁻¹' }");
     step("Interactive stack Pick")
-        .test(F5)
+        .test(UP, F5)
         .image_noheader("istack-5");
     step("Interactive stack Roll Down")
-        .test(F4)
+        .test(UP, UP, UP, UP, F4)
         .image_noheader("istack-6");
     step("Interactive stack Level")
-        .test(F3)
-        .image_noheader("istack-7");
-    step("Interactive stack going down")
-        .test(DOWN)
-        .image_noheader("istack-8");
+        .test(RSHIFT, F6)
+        .image_noheader("istack-7")
+        .test(ENTER)
+        .expect("6");
+    step("Interactive stack jump to level 2")
+        .test(UP, NOSHIFT, KEY2)
+        .image_noheader("istack-7b");
+    step("Interactive stack going up")
+        .test(UP)
+        .image_noheader("istack-8", 0, 1000);
     step("Interactive stack Show")
         .test(F2)
         .image_noheader("istack-9", 0, 1000);
     step("Interactive stack Show after EXIT")
         .test(EXIT)
         .image_noheader("istack-9b", 0, 1000);
-    step("Interactive stack Edit")
-        .test(UP, F1, UP, F1, DOWN, F1)
+    step("Interactive stack show with dot key")
+        .test(NOSHIFT, UP, UP, NOSHIFT, DOT)
+        .image_noheader("istack-9c", 0, 1000)
+        .test(ENTER)
+        .image_noheader("istack-9d", 0, 1000);
+    step("Interactive stack Echo")
+        .test(DOWN, F1, UP, F1, DOWN, F1)
         .image_noheader("istack-10", 0, 1000)
         .editor("666 555 666 ")
-        .test(CLEAR, EXIT);
+        .test(ENTER)
+        .editor("666 555 666 ")
+        .test(ENTER)
+        .expect("666")
+        .test(BSP)
+        .expect("555");
+    step("Interactive stack Echo without spaces")
+        .test(UP, RSHIFT, F1, UP, RSHIFT, F1, DOWN, RSHIFT, F1)
+        .image_noheader("istack-11", 0, 1000)
+        .editor("555666555")
+        .test(EXIT, EXIT);
+    step("Interactive stack jump to level 5")
+        .test(UP, NOSHIFT, KEY5)
+        .image_noheader("istack-12", 0, 1000);
+    step("Interactive stack jump to level 1")
+        .test(NOSHIFT, KEY1)
+        .image_noheader("istack-13", 0, 1000);
+    step("Interactive stack jump to level 11")
+        .test(NOSHIFT, KEY1)
+        .image_noheader("istack-14", 0, 1000);
+    step("Interactive stack jump to level 5")
+        .test(NOSHIFT, KEY5)
+        .image_noheader("istack-15", 0, 1000);
+    step("Interactive stack evaluate level 5")
+        .test(F3)
+        .image_noheader("istack-16", 0, 1000);
+    step("Interactive stack show level 5")
+        .test(NOSHIFT, DOT)
+        .image_noheader("istack-17", 0, 1000)
+        .test(ENTER);
+    step("Interactive stack info about 5")
+        .test(LSHIFT, F6)
+        .image_noheader("istack-18", 0, 1000)
+        .test(ENTER);
+    step("Interactive stack edit level 5")
+        .test(F6)
+        .image_noheader("istack-19", 0, 1000)
+        .editor("'(√(20·X))⁻¹'");
+    step("Interactive stack edit object that was at level 5")
+        .test(UP, MUL, KEY3, ADD, KEY2)
+        .editor("'(√(20·X))⁻¹·3+2'");
+    step("Interactive stack end editing object level 5")
+        .test(ENTER)
+        .image_noheader("istack-20", 0, 1000)
+        .test(ENTER, ADD)
+        .expect("1 221");
+    step("Interactive stack memory sort")
+        .test(NOSHIFT, UP, NOSHIFT, KEY7, RSHIFT, F3)
+        .image_noheader("istack-21", 0, 1000);
+    step("Interactive stack revert")
+        .test(RSHIFT, F4)
+        .image_noheader("istack-22", 0, 1000);
+    step("Interactive stack value sort")
+        .test(NOSHIFT, KEY3, RSHIFT, F2)
+        .image_noheader("istack-23", 0, 1000);
+    step("Interactive stack revert")
+        .test(RSHIFT, F4)
+        .image_noheader("istack-24", 0, 1000);
+
+    step("Interactive stack DupN and sort")
+        .test(ENTER, CLEAR, "111 222 333 444", ENTER,
+              UP, KEY3, LSHIFT, F1, KEY6, RSHIFT, F2, ENTER)
+        .expect("222")
+        .test(BSP).expect("222")
+        .test(BSP).expect("333")
+        .test(BSP).expect("333")
+        .test(BSP).expect("444")
+        .test(BSP).expect("444")
+        .test(BSP).expect("111")
+        .test(BSP).noerror()
+        .test(BSP).error("Too few arguments");
+
+    step("Interactive stack DupN and non-reverted sort")
+        .test(ENTER, CLEAR, "123 456 789 ABC", ENTER,
+              UP, KEY3, LSHIFT, F1, KEY6, RSHIFT, F3, ENTER)
+        .expect("'ABC'")
+        .test(BSP).expect("'ABC'")
+        .test(BSP).expect("789")
+        .test(BSP).expect("789")
+        .test(BSP).expect("456")
+        .test(BSP).expect("456")
+        .test(BSP).expect("123")
+        .test(BSP).noerror()
+        .test(BSP).error("Too few arguments");
+
+    step("Interactive stack DupN and reverted sort")
+        .test(ENTER, CLEAR, "123 456 789 ABC", ENTER,
+              UP, KEY3, LSHIFT, F1, KEY6, RSHIFT, F3, RSHIFT, F4, ENTER)
+        .expect("456")
+        .test(BSP).expect("456")
+        .test(BSP).expect("789")
+        .test(BSP).expect("789")
+        .test(BSP).expect("'ABC'")
+        .test(BSP).expect("'ABC'")
+        .test(BSP).expect("123")
+        .test(BSP).noerror()
+        .test(BSP).error("Too few arguments");
+
+    step("Interactive stack Keep")
+        .test(ENTER, CLEAR, "123 456 789 ABC DEF GHI", ENTER,
+              UP, UP, UP, LSHIFT, F3, ENTER)
+        .expect("'GHI'")
+        .test(BSP).expect("'DEF'")
+        .test(BSP).expect("'ABC'")
+        .test(BSP).noerror()
+        .test(BSP).error("Too few arguments");
+
+   step("Interactive stack Swap and Level")
+        .test(ENTER, CLEAR, "123 456 789 ABC DEF GHI", ENTER,
+              UP, UP, UP, RSHIFT, F5, RSHIFT, F6, ENTER)
+        .expect("3")
+        .test(BSP).expect("'GHI'")
+        .test(BSP).expect("'DEF'")
+        .test(BSP).expect("789")
+        .test(BSP).expect("'ABC'")
+        .test(BSP).expect("456")
+        .test(BSP).expect("123")
+        .test(BSP).noerror()
+        .test(BSP).error("Too few arguments");
+
 }
 
 

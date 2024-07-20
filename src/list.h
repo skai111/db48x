@@ -363,8 +363,9 @@ object::result to_list(uint depth);
 
 
 int value_compare(object_p *xp, object_p *yp);
+int memory_compare(object_p *xp, object_p *yp);
 // ----------------------------------------------------------------------------
-//   Value comparison for sorting
+//   Value and memory comparison for sorting
 // ----------------------------------------------------------------------------
 
 

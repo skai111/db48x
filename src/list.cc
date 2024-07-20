@@ -1571,7 +1571,7 @@ list_p list::map(algebraic_r x, arithmetic_fn fn) const
 //
 // ============================================================================
 
-static int memory_compare(object_p *xp, object_p *yp)
+int memory_compare(object_p *xp, object_p *yp)
 // ----------------------------------------------------------------------------
 //   Compare using type IDs and memory content
 // ----------------------------------------------------------------------------

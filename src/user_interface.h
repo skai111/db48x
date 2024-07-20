@@ -239,6 +239,7 @@ protected:
     uint     nextRefresh;       // Time for next refresh
     rect     dirty;             // Dirty rectangles
     object_g editing;           // Object being edited if any
+    uint     editingLevel;      // Stack level being edited
     uint     cmdIndex;          // Command index for next command to save
     uint     cmdHistoryIndex;   // Command index for next command history
     text_g   history[HISTORY];  // Command-line history
