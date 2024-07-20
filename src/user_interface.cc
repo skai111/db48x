@@ -3658,6 +3658,7 @@ bool user_interface::handle_editing(int key)
     if (uint interactive = Stack.interactive)
     {
         uint amount;
+        uint digit = ~0U;
         switch (key)
         {
         case KEY_UP:
@@ -3814,9 +3815,32 @@ bool user_interface::handle_editing(int key)
             }
             dirtyStack = true;
             break;
+        case KEY_0:     digit = 0; break;
+        case KEY_1:     digit = 1; break;
+        case KEY_2:     digit = 2; break;
+        case KEY_3:     digit = 3; break;
+        case KEY_4:     digit = 4; break;
+        case KEY_5:     digit = 5; break;
+        case KEY_6:     digit = 6; break;
+        case KEY_7:     digit = 7; break;
+        case KEY_8:     digit = 8; break;
+        case KEY_9:     digit = 9; break;
+
         default:
             break;
         }
+
+        if (digit != ~0U)
+        {
+            interactive = 10 * interactive + digit;
+            if (interactive > rt.depth() && digit)
+                interactive = digit;
+            if (interactive > rt.depth())
+                interactive = rt.depth();
+            Stack.interactive = interactive;
+            dirtyStack = true;
+        }
+
         // Ignore all other keys in interactive mode
         return true;
     }
