@@ -3657,115 +3657,56 @@ bool user_interface::handle_editing(int key)
 
     if (uint interactive = Stack.interactive)
     {
-        if (shift)
+        uint amount;
+        switch (key)
         {
-            switch (key)
+        case KEY_UP:
+            interactive += shift ? 4 : xshift ? 100 : 1;
+            if (interactive > rt.depth())
+                interactive = rt.depth();
+            Stack.interactive = interactive;
+            dirtyStack = true;
+            break;
+        case KEY_DOWN:
+            amount = shift ? 4 : xshift ? 100 : 1;
+            if (interactive <= amount)
+                interactive = 1;
+            else
+                interactive -= amount;
+            Stack.interactive = interactive;
+            dirtyStack = true;
+            break;
+        case KEY_EXIT:
+            if (shift)          // Power off
+                return false;
+        case KEY_ENTER:
+            Stack.interactive = 0;
+            dirtyStack = true;
+            dirtyMenu = true;
+            last = 0;
+            break;
+        case KEY_BSP:
+            rt.roll(interactive);
+            rt.drop();
+            if (interactive > rt.depth())
+                Stack.interactive = rt.depth();
+            dirtyStack = true;
+            break;
+        case KEY_F1:
+            if (xshift)
             {
-            case KEY_UP:
-                interactive += 4;
-                if (interactive > rt.depth())
-                    interactive = rt.depth();
-                Stack.interactive = interactive;
-                dirtyStack = true;
-                break;
-            case KEY_DOWN:
-                if (interactive <= 4)
-                    interactive = 1;
-                else
-                    interactive -= 4;
-                Stack.interactive = interactive;
-                dirtyStack = true;
-                break;
-            case KEY_ENTER:
-            case KEY_EXIT:
-                Stack.interactive = 0;
-                dirtyStack = true;
-                dirtyMenu = true;
-                last = 0;
-                break;
-            case KEY_BSP:
-                rt.roll(interactive);
-                rt.drop();
-                if (interactive > rt.depth())
-                    Stack.interactive = rt.depth();
-                dirtyStack = true;
-                break;
-            case KEY_F1:        // DupN
+            }
+            else if (shift)
+            {
+                // DupN
                 for (uint i = 0; i < interactive; i++)
                     if (object_p obj = rt.stack(interactive - 1))
                         if (!rt.push(obj))
                             break;
-                dirtyStack = true;
-                break;
-            case KEY_F2:        // DropN
-                rt.drop(interactive);
-                dirtyStack = true;
-                break;
-            case KEY_F3:        // Keep
-                if (rt.depth() > interactive)
-                {
-                    size_t depth = rt.depth();
-                    for (uint i = 0; i < interactive; i++)
-                        rt.stack(depth + ~i, rt.stack(interactive + ~i));
-                    rt.drop(depth - interactive);
-                    dirtyStack = true;
-                }
-                break;
-            case KEY_F4:        // Roll
-                rt.roll(interactive);
-                dirtyStack = true;
-                break;
-            case KEY_F5:        // Sort
-                typedef int (*qsort_fn)(const void *, const void*);
-                qsort(rt.stack_base(), interactive,
-                      sizeof(object_p), qsort_fn(value_compare));
-                dirtyStack = true;
-                break;
-            case KEY_F6:        // Revert
-                for (uint i = 0; i < interactive / 2; i++)
-                {
-                    object_p a = rt.stack(i);
-                    object_p b = rt.stack(interactive + ~i);
-                    rt.stack(i, b);
-                    rt.stack(interactive + ~i, a);
-                }
-                dirtyStack = true;
-                break;
-            default:
-                break;
             }
-        }
-        else if (!xshift)
-        {
-            switch (key)
+            else
             {
-            case KEY_UP:
-                if (++interactive > rt.depth())
-                    interactive = rt.depth();
-                Stack.interactive = interactive;
-                dirtyStack = true;
-                break;
-            case KEY_DOWN:
-                if (--interactive == 0)
-                    interactive = 1;
-                Stack.interactive = interactive;
-                dirtyStack = true;
-                break;
-            case KEY_ENTER:
-            case KEY_EXIT:
-                Stack.interactive = 0;
-                dirtyStack = true;
-                dirtyMenu = true;
-                last = 0;
-                break;
-            case KEY_BSP:
-                rt.roll(interactive);
-                rt.drop();
-                if (interactive > rt.depth())
-                    Stack.interactive = rt.depth();
-                dirtyStack = true;
-                break;
-            case KEY_F1:        // Echo
+        case KEY_RUN:
                 if (object_p obj = rt.stack(interactive - 1))
                 {
                     size_t sz = obj->edit();
@@ -3774,34 +3715,107 @@ bool user_interface::handle_editing(int key)
                     edRows = 0;
                     dirtyEditor = true;
                 }
-                break;
-            case KEY_F2:        // Show
+            }
+            dirtyStack = true;
+            break;
+        case KEY_F2:        // DropN
+            if (xshift)
+            {
+            }
+            else if (shift)
+            {
+                rt.drop(interactive);
+            }
+            else
+            {
+        case KEY_DOT:
+                // Show
                 if (object_g obj = rt.stack(interactive - 1))
                     show(obj);
-                break;
-            case KEY_F3:        // Level
-                if (integer_p depth = integer::make(interactive))
+            }
+            dirtyStack = true;
+            break;
+        case KEY_F3:
+            if (xshift)
+            {
+            }
+            else if (shift)
+            {
+                // Keep
+                if (rt.depth() > interactive)
                 {
-                    rt.push(depth);
-                    dirtyStack = true;
+                    size_t depth = rt.depth();
+                    for (uint i = 0; i < interactive; i++)
+                        rt.stack(depth + ~i, rt.stack(interactive + ~i));
+                    rt.drop(depth - interactive);
                 }
-                break;
-            case KEY_F4:        // Roll down
+            }
+            else
+            {
+                if (integer_p depth = integer::make(interactive))
+                    rt.push(depth);
+            }
+            dirtyStack = true;
+            break;
+        case KEY_F4:
+            if (xshift)
+            {
+            }
+            else if (shift)
+            {
+                // Roll
+                rt.roll(interactive);
+            }
+            else
+            {
+                // Rolld
                 rt.rolld(interactive);
-                dirtyStack = true;
-                break;
-            case KEY_F5:        // Pick
+            }
+            dirtyStack = true;
+            break;
+        case KEY_F5:
+            if (xshift)
+            {
+            }
+            else if (shift)
+            {
+                // Sort
+                typedef int (*qsort_fn)(const void *, const void*);
+                qsort(rt.stack_base(), interactive,
+                      sizeof(object_p), qsort_fn(value_compare));
+            }
+            else
+            {
+                // Pick
                 if (object_p obj = rt.stack(interactive - 1))
                     rt.push(obj);
-                dirtyStack = true;
-                break;
-            case KEY_F6:        // To List
-                to_list(interactive);
-                dirtyStack = true;
-                break;
-            default:
-                break;
             }
+            dirtyStack = true;
+            break;
+        case KEY_F6:
+            if (xshift)
+            {
+            }
+            else if (shift)
+            {
+                // Revert
+                for (uint i = 0; i < interactive / 2; i++)
+                {
+                    object_p a = rt.stack(i);
+                    object_p b = rt.stack(interactive + ~i);
+                    rt.stack(i, b);
+                    rt.stack(interactive + ~i, a);
+                }
+            }
+            else
+            {
+                // To List
+                to_list(interactive);
+            }
+            dirtyStack = true;
+            break;
+        default:
+            break;
         }
         // Ignore all other keys in interactive mode
         return true;
