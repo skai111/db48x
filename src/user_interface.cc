@@ -641,6 +641,7 @@ void user_interface::update_mode()
     unicode dmrk  = Settings.DecimalSeparator();
     unicode emrk  = Settings.ExponentSeparator();
     utf8    num   = nullptr;
+    bool    inexp = false;
 
     mode = DIRECT;
     for (utf8 p = ed; p < last; p = utf8_next(p))
@@ -649,9 +650,12 @@ void user_interface::update_mode()
 
         if (!txts && !cmts)
         {
-            if ((inum || fnum) && (code == emrk || code == '-'))
+            if ((inum || fnum) && code == emrk)
             {
-
+                inexp = true;
+            }
+            else if (inexp && (code == '-' || code == '+'))
+            {
             }
             else if (code == nspc || code == hspc)
             {
@@ -674,6 +678,7 @@ void user_interface::update_mode()
                         num = p;
                     hnum++;
                 }
+                inexp = false;
             }
             else if (!syms && code >= '0' && code <= '9')
             {
@@ -683,12 +688,14 @@ void user_interface::update_mode()
                     fnum++;
                 else
                     inum++;
+                inexp = false;
             }
             else if (code == dmrk)
             {
                 if (!num)
                     num = p;
                 fnum = 1;
+                inexp = false;
             }
             else if (code == '@')
             {
@@ -703,6 +710,7 @@ void user_interface::update_mode()
                     syms = true;
                 else if (syms && !is_valid_in_name(code))
                     syms = false;
+                inexp = false;
             }
 
             switch(code)

@@ -164,7 +164,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        interactive_stack_operations();
+        editor_operations();
     }
     else
     {
@@ -821,6 +821,13 @@ void tests::editor_operations()
     step("Insert iferr-then-else from menu")
         .test(CLEAR, LSHIFT, KEY3, LSHIFT, F2, LSHIFT, F4)
         .editor("iferr  then  else  end ");
+
+    step("Check numbering separators after - (bug #1032)")
+        .test(CLEAR, F, KEY1, KEY0, KEY0, KEY0, SUB, KEY1)
+        .editor("'1 000-1'");
+    step("Check numbering separators after - with exponent")
+        .test(CLEAR, F, KEY1, KEY0, KEY0, KEY0, O, N, KEY1)
+        .editor("'1 000⁳-1'");
 }
 
 
