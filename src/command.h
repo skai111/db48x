@@ -171,5 +171,8 @@ COMMAND_DECLARE(EditorSearch,-1);       // Begin search
 COMMAND_DECLARE(EditorReplace,-1);      // Replace search with cursor
 COMMAND_DECLARE(EditorClear,-1);        // Clear editor
 COMMAND_DECLARE(EditorFlip,-1);         // Flip cursor and selection
+COMMAND_DECLARE(EditorHistory,-1);      // Find last entry in editor history
+COMMAND_DECLARE(EditorHistoryBack,-1);  // Find previous entry in editor history
+COMMAND_DECLARE(StackEditor,-1);        // Enter interactive stack
 
 #endif // COMMAND_H

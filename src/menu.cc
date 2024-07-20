@@ -1162,7 +1162,11 @@ MENU(EditMenu,
      "→|",      ID_EditorEnd,
      "Replace", ID_EditorReplace,
      "Copy",    ID_EditorCopy,
-     "Clear",   ID_EditorClear);
+     "Clear",   ID_EditorClear,
+
+     "Stack",   ID_StackEditor,
+     "Hist↑",   ID_EditorHistory,
+     "Hist↓",   ID_EditorHistoryBack);
 
 MENU(IntegrationMenu,
 // ----------------------------------------------------------------------------

@@ -41,6 +41,7 @@
 #include "renderer.h"
 #include "runtime.h"
 #include "settings.h"
+#include "stack.h"
 #include "symbol.h"
 #include "sysmenu.h"
 #include "tag.h"
@@ -1034,4 +1035,35 @@ COMMAND_BODY(EditorFlip)
 // ----------------------------------------------------------------------------
 {
     return ui.editor_selection_flip() ? OK : ERROR;
+}
+
+
+COMMAND_BODY(EditorHistory)
+// ----------------------------------------------------------------------------
+//   Select the last history entry in the editor
+// ----------------------------------------------------------------------------
+{
+    ui.editor_history();
+    return OK;
+}
+
+
+COMMAND_BODY(EditorHistoryBack)
+// ----------------------------------------------------------------------------
+//   Select the previous history entry in the editor
+// ----------------------------------------------------------------------------
+{
+    ui.editor_history(true);
+    return OK;
+}
+
+
+COMMAND_BODY(StackEditor)
+// ----------------------------------------------------------------------------
+//   Enter the interactive stack
+// ----------------------------------------------------------------------------
+{
+    if (!Stack.interactive)
+        Stack.interactive = 1;
+    return OK;
 }

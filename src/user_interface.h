@@ -168,7 +168,7 @@ struct user_interface
     void        clear_editor();
     text_p      editor_save(text_r ed, bool rewinding = false);
     text_p      editor_save(bool rewinding = false);
-    void        editor_history();
+    void        editor_history(bool back = false);
     bool        editor_select();
     bool        editor_word_left();
     bool        editor_word_right();

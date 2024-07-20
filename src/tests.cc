@@ -163,7 +163,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        random_number_generation();
+        editor_operations();
     }
     else
     {
@@ -862,7 +862,7 @@ void tests::editor_operations()
         .image_noheader("istack-9b", 0, 1000);
     step("Interactive stack Edit")
         .test(UP, F1, UP, F1, DOWN, F1)
-        .image_noheader("istack-10")
+        .image_noheader("istack-10", 0, 1000)
         .editor("666 555 666 ")
         .test(CLEAR, EXIT);
 }

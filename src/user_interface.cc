@@ -445,7 +445,7 @@ text_p user_interface::editor_save(text_r &editor, bool rewinding)
 }
 
 
-void user_interface::editor_history()
+void user_interface::editor_history(bool back)
 // ----------------------------------------------------------------------------
 //   Restore editor buffer from history
 // ----------------------------------------------------------------------------
@@ -453,7 +453,8 @@ void user_interface::editor_history()
     editor_save(true);
     for (uint h = 0; h < HISTORY; h++)
     {
-        cmdHistoryIndex = (cmdHistoryIndex + HISTORY - 1) % HISTORY;
+        uint next = cmdHistoryIndex + (back ? 1 : HISTORY - 1);
+        cmdHistoryIndex = next % HISTORY;
         if (history[cmdHistoryIndex])
         {
             size_t sz = 0;
@@ -467,6 +468,7 @@ void user_interface::editor_history()
             break;
         }
     }
+    menu::static_object(menu::ID_EditMenu)->evaluate();
 }
 
 

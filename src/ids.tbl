@@ -1276,6 +1276,10 @@ CMD(EditorSearch)
 CMD(EditorReplace)
 CMD(EditorClear)
 CMD(EditorFlip)
+CMD(EditorHistory)
+CMD(EditorHistoryBack)
+CMD(StackEditor)
+
 
 // ============================================================================
 //
