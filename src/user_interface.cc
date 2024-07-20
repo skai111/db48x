@@ -3768,7 +3768,6 @@ bool user_interface::handle_editing(int key)
             case KEY_F1:        // Echo
                 if (object_p obj = rt.stack(interactive - 1))
                 {
-                    this->editing = obj;
                     size_t sz = obj->edit();
                     cursor += sz;
                     edit(unicode(' '), PROGRAM, false);
