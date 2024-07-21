@@ -159,7 +159,10 @@ void file::open(cstring path)
     last_open = path;
     data = fopen(path, "r");
     if (!data)
+    {
         record(file_error, "Error %s opening %s", strerror(errno), path);
+        open_count--;
+    }
 #else
     FRESULT ok = f_open(&data, path, FA_READ);
     data.err = ok;

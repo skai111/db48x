@@ -899,23 +899,26 @@ grob_p files::recall_grob(text_p name) const
         grob_p g = grob::make(b.info.width, b.info.height);
         ok = g != nullptr;
 
-        bmsize     width   = 0;
-        bmsize     height  = 0;
-        size_t     datalen = 0;
-        byte_p     pixels  = g->pixels(&width, &height, &datalen);
-        size_t     dstride = datalen / height;
-        size_t     sstride = b.info.imageSize / height;
-
-        ok = int(width) == b.info.width && int(height) == b.info.height;
-        char ignore;
-        for (uint r = height; r --> 0 && ok; )
+        if (ok)
         {
-            byte *scan = (byte *) pixels + dstride * r;
-            char *dst = (char *) scan + dstride;
-            for (uint c = 0; c < dstride && ok; c++)
-                ok = f.read(--dst, 1);
-            for (uint c = dstride; c < sstride; c++)
-                ok = f.read(&ignore, 1);
+            bmsize     width   = 0;
+            bmsize     height  = 0;
+            size_t     datalen = 0;
+            byte_p     pixels  = g->pixels(&width, &height, &datalen);
+            size_t     dstride = datalen / height;
+            size_t     sstride = b.info.imageSize / height;
+
+            ok = int(width) == b.info.width && int(height) == b.info.height;
+            char ignore;
+            for (uint r = height; r --> 0 && ok; )
+            {
+                byte *scan = (byte *) pixels + dstride * r;
+                char *dst = (char *) scan + dstride;
+                for (uint c = 0; c < dstride && ok; c++)
+                    ok = f.read(--dst, 1);
+                for (uint c = dstride; c < sstride; c++)
+                    ok = f.read(&ignore, 1);
+            }
         }
 
         if (ok)

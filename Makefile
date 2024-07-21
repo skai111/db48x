@@ -79,8 +79,9 @@ install-pgm: all
 install-qspi: all
 	$(COPY) $(QSPI) $(MOUNTPOINT)
 install-help: help/$(TARGET).md
-	mkdir -p $(MOUNTPOINT)help/
-	$(COPY) help/$(TARGET).md $(MOUNTPOINT)help/
+	mkdir -p $(MOUNTPOINT)help/ $(MOUNTPOINT)help/img
+	$(COPY) help/$(TARGET).md help/*.bmp $(MOUNTPOINT)help/
+	$(COPY) help/$(TARGET).md help/img/*.bmp $(MOUNTPOINT)help/img/
 install-demo:
 	mkdir -p $(MOUNTPOINT)state/
 	$(COPY) state/*.48S $(MOUNTPOINT)state/

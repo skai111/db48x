@@ -34,6 +34,7 @@
 #include "command.h"
 #include "dmcp.h"
 #include "expression.h"
+#include "files.h"
 #include "functions.h"
 #include "graphics.h"
 #include "grob.h"
@@ -86,6 +87,8 @@ user_interface::user_interface()
       topic(0),
       topics_history(0),
       topics(),
+      image(nullptr),
+      impos(0),
       cursor(0),
       select(~0U),
       searching(~0U),
@@ -506,6 +509,8 @@ void user_interface::clear_help()
     command     = nullptr;
     help        = -1u;
     line        = 0;
+    image       = nullptr;
+    impos       = 0;
     topic       = 0;
     follow      = false;
     last        = 0;
@@ -2911,6 +2916,7 @@ bool user_interface::draw_help()
     coord      xleft  = 0;
     coord      xright = LCD_W - 1;
     style_name style  = NORMAL;
+    bool       imdsp  = false;
 
 
     // Clear help area and add some decorative elements
@@ -3027,15 +3033,75 @@ bool user_interface::draw_help()
                 break;
 
             case '!':
+                // Process images
+                // A valid image will look something like:
+                // ![Left Shift](left-shift.bmp)
+                // We can only load one image at a time
+                if (last == '\n')
+                {
+                    unicode c = helpfile.get();
+                    bool isimg = c == '[';
+                    if (isimg)
+                    {
+                        while (c && c != ']' && c != '\n')
+                            c = helpfile.get();
+                        isimg = (c == ']');
+                    }
+                    if (isimg)
+                    {
+                        c = helpfile.get();
+                        isimg = (c == '(');
+                    }
+                    text_g name;
+                    if (isimg)
+                    {
+                        scribble scr;
+                        while (isimg && c && c != ')' && c != '\n')
+                        {
+                            c = helpfile.get();
+                            size_t sz = utf8_size(c);
+                            if (byte *p = rt.allocate(sz))
+                                utf8_encode(c, p);
+                            else
+                                isimg = false;
+                        }
+                        isimg = (c == ')');
+                        if (isimg)
+                        {
+                            name = text::make(scr.scratch(), scr.growth()-1);
+                            isimg = name;
+                        }
+                    }
+                    if (isimg)
+                    {
+                        uint offs = helpfile.position();
+                        if (offs != impos)
+                        {
+                            helpfile.close();
+
+                            if (files_g files = files::make("help"))
+                                image = files->recall_grob(name);
+                            impos = offs;
+
+                            helpfile.open(HELPFILE_NAME);
+                            helpfile.seek(offs);
+                        }
+                        imdsp = true;
+                        emit = true;
+                        skip = true;
+                    }
+                }
+                break;
+
             case '<':
-                // Skip images and HTML tags
+                // Skip HTML tags
                 if (last == '\n')
                 {
                     unicode c = helpfile.get();
                     while (c != '\n' && c != unicode(EOF))
                         c = helpfile.get();
-                    skip = true;
                 }
+                skip = true;
                 break;
 
             case '*':
@@ -3294,6 +3360,24 @@ bool user_interface::draw_help()
             }
             yellow = blue = false;
             x += ann_width + 7 + font->width(' ');
+        }
+
+        // Check if we need to draw the image
+        if (imdsp)
+        {
+            if (image)
+            {
+                grob::surface srcs = image->pixels();
+                rect drect = srcs.area();
+                coord yimg = y + drect.height();
+                if (yimg > ytop)
+                {
+                    coord cx = (LCD_W - drect.width()) / 2;
+                    Screen.copy(srcs, cx, y);
+                }
+                y += drect.height();
+            }
+            imdsp = false;
         }
 
         // Select style for next round

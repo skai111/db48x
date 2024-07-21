@@ -42,6 +42,7 @@
 #include <vector>
 
 GCP(menu);
+GCP(grob);
 
 struct user_interface
 // ----------------------------------------------------------------------------
@@ -216,6 +217,8 @@ protected:
     uint     topic;             // Offset of topic being highlighted
     uint     topics_history;    // History depth
     uint     topics[8];         // Topics history
+    grob_g   image;             // Image loaded in help file
+    uint     impos;             // Position of image file
     uint     cursor;            // Cursor position in buffer
     uint     select;            // Cursor position for selection marker
     uint     searching;         // Searching start point
