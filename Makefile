@@ -128,9 +128,12 @@ Keyboard-Layout.png: DB48X-Keys/DB48X-Keys.001.png
 Keyboard-Cutout.png: DB48X-Keys/DB48X-Keys.002.png
 	cp $< $@
 sim/keyboard-db48x.png: DB48X-Keys/DB48X-Keys.001.png
-	convert $< -crop 698x878+151+138 $@
+	magick $< -crop 698x878+151+138 $@
 %/keyboard.png: sim/keyboard-db48x.png
 	cp $< $@
+
+# Magick conversion of a BMP with dithering:
+# magick  $F -colors 2 +dither -type bilevel BMP3:${F/png/bmp}
 
 QMAKE_debug=debug
 QMAKE_release=release
@@ -178,7 +181,7 @@ help/$(TARGET).md: $(wildcard doc/*.md doc/calc-help/*.md doc/commands/*.md)
             -e 's/DM42/$(PRODUCT_MACHINE)/g' > $@
 	cp doc/*.png help/
 	mkdir -p help/img
-	rsync -av --delete doc/img/*.png help/img/
+	rsync -av --delete doc/img/*.bmp help/img/
 
 check-ids: help/$(TARGET).md
 	@for I in $$(cpp -xc++ -D'ID(n)=n' src/ids.tbl | 		\

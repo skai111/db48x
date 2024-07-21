@@ -111,9 +111,9 @@ calculator compared to the HP48:
 
 In the rest of this document, the shift key is referred to as 🟨, and pressing
 it twice is referred to as 🟦, irrespective of the appearance of the physical
-shift key on your particular hardware.
+shift key on your particular hardware. While running the firmware, this will display in the annunciator area as follows:
 
-![Left Shift](left-shift.png)
+![Shifts](shifts.bmp)
 
 Other aspects of the keyboard interaction are fine-tuned for RPL usage:
 
