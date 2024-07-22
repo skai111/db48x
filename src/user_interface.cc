@@ -3065,7 +3065,15 @@ bool user_interface::draw_help()
                             else
                                 isimg = false;
                         }
-                        isimg = (c == ')');
+                        isimg = c == ')';
+                        if (isimg)
+                        {
+                            byte *ext = scr.scratch() + scr.growth() - 4;
+                            isimg =
+                                ext[0] == 'b' &&
+                                ext[1] == 'm' &&
+                                ext[2] == 'p';
+                        }
                         if (isimg)
                         {
                             name = text::make(scr.scratch(), scr.growth()-1);
@@ -3088,9 +3096,9 @@ bool user_interface::draw_help()
                         }
                         imdsp = true;
                         emit = true;
-                        skip = true;
                     }
                 }
+                skip = true;
                 break;
 
             case '<':
