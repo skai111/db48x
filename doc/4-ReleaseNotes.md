@@ -1,5 +1,40 @@
 # Release notes
 
+## Release 0.7.11 "Rest" - Refine interactive stack, graphics in help
+
+This release is a refinement minor release. The primary focus is the interactive stack, which now lets you edit items, sort either according to memory representation or by value, display information about objects, and jump directly to a given stack level using digits.
+
+The simple random number generator implemented in 0.7.10 was replaced with an additive congruential random number generator (ACORN), which can be configured in number of bits and number of iterations. A side effect is that there is now regression testing for single-variable statistics.
+
+The history feature was also improved by automatically enabling the `EditMenu` when selecting history, and then having the (unshifted) word left and word right commands automatically cycle through history if used at beginning or end of the editing buffer.
+
+### Features
+
+* help: Add ability to display BMP images in help files
+* images: Convert help images to BMP
+* ui: Add `Edit` feature to interactive stack
+* ui: Add history menu entries to `EditMenu`
+* ui: Accept `UNDO` while in interactive stack mode
+* ui: Have word previous/next cycle through history
+* ui: Accept digits to select stack level in interactive stack
+* random: ACORN random number generator
+
+### Bug fixes
+
+* editor: Fix spacing after number followed by `-` sign
+* ui: Do not set the `editing` field from interactive stack
+* ui: Replace interactive stack "Edit" with "Echo"
+* ui: Block user input while using interactive stack
+* ui: Do not draw menu markers when displaying interactive stack
+* runtime: Avoid crash running above allocated memory in `move_globals`
+
+
+### Enhancements
+
+* ui: Reorganize code handling interactive stack keys
+* help: Adjust help area to new height for menus
+
+
 ## Release 0.7.10 "Hospitality" - Interactive stack
 
 This release primarily adds the "interactive stack" feature of HP calculators.
