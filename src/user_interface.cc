@@ -2673,7 +2673,17 @@ void user_interface::load_help(utf8 topic, size_t len)
     }
     dirtyMenu = true;
 
-    // Look for the topic in the file
+    if (!memcmp(topic, "http", 4))
+    {
+        static char buffer[50];
+        snprintf(buffer, sizeof(buffer), "%.*s", int(len), topic);
+        ui.draw_message("Local copy of the Internet not found",
+                        "Please visit the following URL manually", buffer);
+        wait_for_key_press();
+        return;
+    }
+
+     // Look for the topic in the file
     int  matching = 0;
     uint level    = 0;
     bool hadcr    = true;
@@ -2811,8 +2821,8 @@ void user_interface::load_help(utf8 topic, size_t len)
     {
         static char buffer[50];
         snprintf(buffer, sizeof(buffer), "No help for %.*s", int(len), topic);
+        rt.command(object::static_object(object::ID_Help));
         rt.error(buffer);
-        clear_help();
     }
 }
 
