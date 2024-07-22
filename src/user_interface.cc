@@ -2954,12 +2954,12 @@ bool user_interface::draw_help()
     font_p  font      = styles[style].font;
     coord   height    = font->height();
     coord   x         = xleft;
-    coord   y         = ytop + 2 - line * height;
+    coord   y         = ytop + 2 - line;
     unicode last      = '\n';
     uint    lastTopic = 0;
     uint    shown     = 0;
 
-    // Pun not intended
+    // Pun not indented
     helpfile.seek(help);
 
     // Display until end of help
@@ -2973,8 +2973,18 @@ bool user_interface::draw_help()
         bool    blue       = false;
         style_name restyle = style;
 
-        if (last == '\n' && !shown && y >= ytop)
-            shown  = helpfile.position();
+        if (last == '\n' && !shown)
+        {
+            if (y >= ytop)
+            {
+                shown  = helpfile.position();
+            }
+            else if (line > 0 && y < ytop - 2*LCD_H)
+            {
+                help = helpfile.position();
+                line = ytop + 2 - y;
+            }
+        }
 
         while (!emit)
         {
@@ -3550,6 +3560,7 @@ bool user_interface::handle_help(int &key)
 
     // Help is being shown - Special keyboard mappings
     uint count = shift ? 8 : 1;
+    size height = HelpFont->height();
     switch (key)
     {
     case KEY_F1:
@@ -3561,9 +3572,9 @@ bool user_interface::handle_help(int &key)
     case KEY_UP:
     case KEY_8:
     case KEY_SUB:
-        if (line > count)
+        if (line > count * height)
         {
-            line -= count;
+            line -= count * height;
         }
         else
         {
@@ -3589,7 +3600,7 @@ bool user_interface::handle_help(int &key)
     case KEY_DOWN:
     case KEY_2:
     case KEY_ADD:
-        line   += count;
+        line   += count * height;
         repeat  = true;
         dirtyHelp = true;
         break;
