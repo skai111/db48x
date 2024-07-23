@@ -173,7 +173,7 @@ struct grob : object
         if (height)
             *height = h;
         if (datalen)
-            *datalen = bytesize(type(), w, h);
+            *datalen = datasize(type(), w, h);
         return p;
     }
 

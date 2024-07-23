@@ -430,6 +430,7 @@ struct blitter
             drawable &= rect(w, h);
         }
 
+
         void clip(coord x1, coord y1, coord x2, coord y2)
         // --------------------------------------------------------------------
         //   Clip an area given in coordinates
@@ -1672,7 +1673,7 @@ inline void blitter::surface<blitter::MONOCHROME_REVERSE>::horizontal_adjust(
 //   On the DM42, we need horizontal adjustment for coordinates
 // ----------------------------------------------------------------------------
 {
-    size  w   = width() - 1;
+    size  w   = scanline - 1;
     coord ox1 = w - x2;
     x2        = w - x1;
     x1        = ox1;
@@ -1697,7 +1698,7 @@ inline void blitter::surface<blitter::RGB_16BPP>::horizontal_adjust(
 //   On the DM42, we need horizontal adjustment for coordinates
 // ----------------------------------------------------------------------------
 {
-    size  w   = width() - 1;
+    size  w   = scanline - 1;
     coord ox1 = w - x2;
     x2        = w - x1;
     x1        = ox1;

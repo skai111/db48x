@@ -79,15 +79,16 @@ static void bitflip(byte *start, uint width, uint height, bool forward)
 {
 #ifdef REVERSE_GROBS
     uint scan = (width + 7) / 8;
+    uint scanline = scan * 8;
     for (uint y = 0; y < height; y++)
     {
         byte *row = start + scan * y;
         if (forward)
             for (uint r = 0; r < scan; r++)
                 row[r] = ~((row[r] >> 4) | (row[r] << 4));
-        for (uint x = 0; x < width / 2; x++)
+        for (uint x = 0; x < scanline / 2; x++)
         {
-            uint r = width - 1 - x;
+            uint r = scanline - 1 - x;
             uint lo = x / 8;
             uint ro = r / 8;
             uint lb = x % 8;
