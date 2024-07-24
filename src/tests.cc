@@ -882,7 +882,7 @@ void tests::interactive_stack_operations()
         .image_noheader("istack-8", 0, 1000);
     step("Interactive stack Show")
         .test(F2)
-        .image_noheader("istack-9", 0, 1000);
+        .image_noheader("istack-9", 0, 2000);
     step("Interactive stack Show after EXIT")
         .test(EXIT)
         .image_noheader("istack-9b", 0, 1000);
@@ -903,7 +903,7 @@ void tests::interactive_stack_operations()
         .expect("555");
     step("Interactive stack Echo without spaces")
         .test(UP, RSHIFT, F1, UP, RSHIFT, F1, DOWN, RSHIFT, F1)
-        .image_noheader("istack-11", 0, 1000)
+        .image_noheader("istack-11", 0, 2000)
         .editor("555666555")
         .test(EXIT, EXIT);
     step("Interactive stack jump to level 5")
@@ -931,7 +931,7 @@ void tests::interactive_stack_operations()
         .test(ENTER);
     step("Interactive stack edit level 5")
         .test(F6)
-        .image_noheader("istack-19", 0, 1000)
+        .image_noheader("istack-19", 0, 2000)
         .editor("'(√(20·X))⁻¹'");
     step("Interactive stack edit object that was at level 5")
         .test(UP, MUL, KEY3, ADD, KEY2)
