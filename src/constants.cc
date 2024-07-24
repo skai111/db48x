@@ -312,9 +312,9 @@ static const cstring basic_constants[] =
     "g",        "9.80665_m/s²",         // Acceleration of Earth gravity
     "G",        "6.67259E-11_m^3/(s^2•kg)",// Gravitation constant
     "h",        "6.6260755E-34_J*s",    // Planck
-    "hbar",     "1.05457266E-34_J*s",   // Dirac
-    "q",        "1.60217733E-19_C",     // Electronic charge
-    "me",       "9.1093897E-31_kg",     // Electron mass
+    "ℏ",        "1.05457266E-34_J*s",   // Dirac
+    "qe",       "1.602176634E-19_C",    // Electronic charge
+    "me",       "9.1093837139E-31_kg",  // Electron mass
     "qme",      "175881962000_C/kg",    // q/me ratio
     "mp",       "1.6726231E-27_kg",     // proton mass
     "mpme",     "1836.152701",          // mp/me ratio
@@ -324,7 +324,7 @@ static const cstring basic_constants[] =
     "R∞",       "10973731.534_m⁻¹",     // Rydberg
     "a0",       "0.0529177249_nm",      // Bohr radius
     "μB",       "9.2740154E-24_J/T",    // Bohr magneton
-    "μN",       "5.0507866E-27_J/T",    // Nuclear magneton
+    "μN",       "5.0507837393E-27_J/T",    // Nuclear magneton
     "λ0",       "1239.8425_nm",         // Photon wavelength
     "f0",       "2.4179883E14_Hz",      // Photon frequency
     "λc",       "0.00242631058_nm",     // Compton wavelength
