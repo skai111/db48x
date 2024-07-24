@@ -2807,7 +2807,7 @@ void user_interface::load_help(utf8 topic, size_t len)
         if (topics_history >= NUM_TOPICS)
         {
             // Overflow, keep the last topics
-            for (uint i         = 1; i < NUM_TOPICS; i++)
+            for (uint i = 1; i < NUM_TOPICS; i++)
                 topics[i - 1]   = topics[i];
             topics[topics_history - 1] = help;
         }
@@ -2973,13 +2973,13 @@ bool user_interface::draw_help()
         bool    blue       = false;
         style_name restyle = style;
 
-        if (last == '\n' && !shown)
+        if (!shown)
         {
             if (y >= ytop)
             {
                 shown  = helpfile.position();
             }
-            else if (line > 0 && y < ytop - 2*LCD_H)
+            else if (last == '\n' && line > 0 && y < ytop - 2*LCD_H)
             {
                 help = helpfile.position();
                 line = ytop + 2 - y;
