@@ -164,7 +164,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        editor_operations();
+        auto_simplification();
     }
     else
     {
@@ -5083,6 +5083,10 @@ void tests::auto_simplification()
 
     step("Enable auto simplification");
     test(CLEAR, "AutoSimplify", ENTER).noerror();
+
+    step("Limit number of iterations in polynomials (bug #1047)")
+        .test(CLEAR, "X 3", LSHIFT, B, KEY4, DIV, "X", NOSHIFT, SUB, KEY1, ADD)
+        .expect("'X³÷4-X+1'");
 
     step("X + 0 = X");
     test(CLEAR, "X 0 +", ENTER).expect("'X'");

@@ -592,6 +592,7 @@ size_t expression::required_memory(id type, id op,
 //
 //   Names of wildcards have a special role based on the initial letter:
 //   - a, b, c: Constant values (numbers), i.e. is_real returns true
+//   - d, e, f: Expressions (non-constant), i.e. is_real returns false
 //   - i, j   : Positive integer values,i.e. type is ID_integer
 //   - k, l, m: Non-zero positive integer values,i.e. type is ID_integer
 //   - s, t   : Symbols, i.e. is_symbol returns true
@@ -653,6 +654,15 @@ static inline bool must_be_constant(symbol_p symbol)
 // ----------------------------------------------------------------------------
 {
     return must_be(symbol, 'a', 'c');
+}
+
+
+static inline bool must_be_non_constant(symbol_p symbol)
+// ------------------------------------------------------------------------
+//   Convention for naming non-numerical constants in rewrite rules
+// ----------------------------------------------------------------------------
+{
+    return must_be(symbol, 'd', 'f');
 }
 
 
@@ -746,7 +756,8 @@ static size_t check_match(size_t eq, size_t eqsz,
                 // Check if we expect an integer value
                 bool want_cst = must_be_constant(name);
                 bool want_int = must_be_integer(name);
-                if (want_cst || want_int)
+                bool want_var = must_be_non_constant(name);
+                if (want_cst || want_int || want_var)
                 {
                     // At this point, if we have a numerical value, it was
                     // wrapped in an equation by grab_arguments.
@@ -761,14 +772,12 @@ static size_t check_match(size_t eq, size_t eqsz,
                     }
                     ftop = rt.pop();
 
-                    // Check if we expect an integer or a real constant
+                    // Check if what we get matches expectations
                     fty = ftop->type();
-                    if (want_int && fty != object::ID_integer)
-                        return 0;
-                    else if (want_cst && !object::is_real(fty))
-                        return 0;
-
-                    if (must_be_nonzero(name) && ftop->is_zero())
+                    if ((want_int && fty != object::ID_integer)         ||
+                        (want_cst && !object::is_real(fty))             ||
+                        (want_var && object::is_real(fty))              ||
+                        (must_be_nonzero(name) && ftop->is_zero()))
                         return 0;
                 }
 
@@ -2375,6 +2384,9 @@ constexpr byte eq<args...>::object_data[sizeof...(args)+2];
 static eq_symbol<'a'>     a;    // Numerical constants
 static eq_symbol<'b'>     b;
 static eq_symbol<'c'>     c;
+static eq_symbol<'d'>     d;    // Non-constant expressions
+static eq_symbol<'e'>     e;
+static eq_symbol<'f'>     f;
 static eq_symbol<'i'>     i;    // Positive or zero integer values
 static eq_symbol<'j'>     j;
 static eq_symbol<'k'>     k;    // Positive non-zero integers
@@ -2393,6 +2405,9 @@ static eq_symbol<'z'>     z;
 static eq_symbol<'A'>     A;    // Numerical constants
 static eq_symbol<'B'>     B;
 static eq_symbol<'C'>     C;
+static eq_symbol<'D'>     D;    // Non-constant expressions
+static eq_symbol<'E'>     E;
+static eq_symbol<'F'>     F;
 static eq_symbol<'I'>     I;    // Positive or zero integer values
 static eq_symbol<'J'>     J;
 static eq_symbol<'K'>     K;    // Positive non-zero integers
@@ -2648,7 +2663,6 @@ expression_p expression::simplify() const
 // ----------------------------------------------------------------------------
 {
     return rewrites(
-
         // Compute constant sub-expressions
         A+B,            A+B,
         A*B,            A*B,
@@ -2659,12 +2673,12 @@ expression_p expression::simplify() const
         cubed(A),       A*A*A,
 
         // Addition simplifications
-        A+X,            X+A,
+        A+E,            E+A,
         X+zero,         X,
         X+X,            two*X,
         X+(Y+Z),        (X+Y)+Z,
         X+A+B,          X+(A+B),
-        (X+A)+Y,        (X+Y)+A,
+        (X+A)+E,        (X+E)+A,
 
         // Subtraction simplifications
         X-zero,         X,
@@ -2673,11 +2687,11 @@ expression_p expression::simplify() const
         X+Y-Y,          X,
         X-Y+Y,          X,
         X+(Y-Z),        (X+Y)-Z,
-        X-Y+Z,          (X+Z)-Y,
+        X-Y+E,          (X+E)-Y,
         X+A-B,          X+(A-B),
-        (X-A)+Y,        (X+Y)-A,
-        (X+A)-Y,        (X-Y)+A,
-        (X-A)-Y,        (X-Y)-A,
+        (X-A)+E,        (X+E)-A,
+        (X+A)-E,        (X-E)+A,
+        (X-A)-E,        (X-E)-A,
         -(-X),          X,
 
         // Multiplication simplification
@@ -2746,7 +2760,7 @@ expression_p expression::simplify() const
         exp(log(X)),    X,
         log10(exp10(X)),X,
         exp10(log10(X)),X
-);
+        );
 }
 
 
