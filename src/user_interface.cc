@@ -1254,7 +1254,7 @@ uint user_interface::menu_planes()
     {
         planes = 3;
     }
-    else
+    else if (Settings.HideEmptyMenu())
     {
         while (planes > 0)
         {
@@ -4339,7 +4339,8 @@ bool user_interface::handle_editing(int key)
             if (shift || xshift)
                 return false;
             alpha = false;
-            clear_menu();
+            if (Settings.ExitClearsMenu())
+                clear_menu();
             return true;
         case KEY_DOWN:
             // Key down to edit last object on stack

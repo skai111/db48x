@@ -1466,7 +1466,9 @@ MENU(UserInterfaceModesMenu,
      MaximumShowHeight::label,                  ID_MaximumShowHeight,
      ErrorBeepFrequency::label,                 ID_ErrorBeepFrequency,
 
-     "Fixed0",                                  ID_FixedWidthDigits);
+     "Fixed0",                                  ID_FixedWidthDigits,
+     "ExitMenu",                                ID_ExitClearsMenu,
+     "HideMenu",                                ID_HideEmptyMenu);
 
 MENU(MathModesMenu,
 // ----------------------------------------------------------------------------

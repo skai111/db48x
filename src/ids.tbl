@@ -836,6 +836,8 @@ FLAG(ExplicitWildcards,         ImplicitWildcards)
 FLAG(PrefixPolynomialRender,    NormalPolynomialRender)
 FLAG(DistinguishSymbolCase,     IgnoreSymbolCase)
 FLAG(FixedWidthDigits,          VariableWidthDigits)
+FLAG(ExitKeepsMenu,             ExitClearsMenu)
+FLAG(ShowEmptyMenu,             HideEmptyMenu)
 
 
 ALIAS(HardwareFloatingPoint,    "HFP")

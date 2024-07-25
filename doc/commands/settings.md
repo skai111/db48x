@@ -377,37 +377,6 @@ Show built-in units in the `UnitsMenu` even when a units file was loaded.
 Hide built-in units in the `UnitsMenu` when a units file was loaded.
 The built-in units will still show up if the units file fails to load.
 
-## LinearFitSums
-
-When this setting is active, statistics functions that return sums, such as
-`ΣXY` or `ΣX²`, operate without any adjustment to the data, i.e. as if the
-fitting model in `ΣParameters` was `LinearFit`.
-
-## CurrentFitSums
-
-When this setting is active, statistics functions that return sums, such as
-`ΣXY` or `ΣX²`, will adjust their input according to the current fitting model
-in special variable `ΣParameters`, in the same way as required for
-`LinearRegression`.
-
-## DetailedTypes
-
-The `Type` command returns detailed DB48X type values, which can distinguish
-between all DB48X object types, e.g. distinguish between polar and rectangular
-objects, or the three internal representations for decimal numbers. Returned
-values are all negative, which distinguishes them from RPL standard values, and
-makes it possible to write code that accepts both the compatible and detailed
-values.
-
-This is the opposite of [CompatibleTypes](#compatibletypes).
-
-## CompatibleTypes
-
-The `Type` command returns values as close to possible to the values documented
-on page 3-262 of the HP50G advanced reference manual. This is the opposite of
-[NativeTypes](#nativetypes).
-
-
 ## MultiLineResult
 
 Show the result (level 1 of the stack) using multiple lines.
@@ -497,27 +466,41 @@ Wrapping occurs at the end of an object, not in the middle of it.
 
 Width of a tab in the editor, in pixels.
 
-# Compatibility
+## ExitKeepsMenu
 
-Various settings control the compatibility of DB48X with various classes of HP calculators.
+By default, the `EXIT` key clears the current menu if not editing.
+When `ExitKeepsMenu` is set, the `EXIT` key does not clear the menu.
 
-## NumberedVariables
+## ExitClearsMenu
 
-This flag enables numbered variables similar to what existed on earlier RPN calculators. For example, when the setting is active, `2.5 0 STO` stores the value 2.5 in numbered register `0`.
+Restore the default behaviour where `EXIT` clears the current menu when not
+editing.
 
-## NoNumberedVariables
+## ShowEmptyMenu
 
-This flag disables numbered variables, behaving closer to the way RPL calculators work. For example, when the setting is active, `2.5 0 STO` generates an `Invalid name` error.
+Show empty menu entries. For example, when selecting the `VariablesMenu` and
+there is no variable defined, an empty menu shows up.
 
-## IgnoreSymbolCase
+## HideEmptyMenu.
 
-Ignore the case in symbols, i.e. variables `X` and `x` are the same.
-Note that this is different from the way RPL in HP calculators works.
+Restore the default behaviour where empty menus entries are not shown, leaving
+more space for the stack display.
 
-## DistinguishSymbolCase
 
-Distinguish the case in symbols, i.e. variables `X` and `x` are distinct.
-This is the way RPL in HP calculators works.
+# Statistics settings
+
+## LinearFitSums
+
+When this setting is active, statistics functions that return sums, such as
+`ΣXY` or `ΣX²`, operate without any adjustment to the data, i.e. as if the
+fitting model in `ΣParameters` was `LinearFit`.
+
+## CurrentFitSums
+
+When this setting is active, statistics functions that return sums, such as
+`ΣXY` or `ΣX²`, will adjust their input according to the current fitting model
+in special variable `ΣParameters`, in the same way as required for
+`LinearRegression`.
 
 ## RandomGeneratorBits
 
@@ -541,6 +524,47 @@ in the ACORN documentation. This is the number of seed numbers preserved between
 generations. A higher value requires more memory and takes more time to compute
 but generates higher-quality random numbers. On DB48X, the ACORN order can be
 set between 10 and 256. The default value is 32.
+
+
+# Compatibility settings
+
+Various settings control the compatibility of DB48X with various classes of HP calculators.
+
+## DetailedTypes
+
+The `Type` command returns detailed DB48X type values, which can distinguish
+between all DB48X object types, e.g. distinguish between polar and rectangular
+objects, or the three internal representations for decimal numbers. Returned
+values are all negative, which distinguishes them from RPL standard values, and
+makes it possible to write code that accepts both the compatible and detailed
+values.
+
+This is the opposite of [CompatibleTypes](#compatibletypes).
+
+## CompatibleTypes
+
+The `Type` command returns values as close to possible to the values documented
+on page 3-262 of the HP50G advanced reference manual. This is the opposite of
+[NativeTypes](#nativetypes).
+
+
+## NumberedVariables
+
+This flag enables numbered variables similar to what existed on earlier RPN calculators. For example, when the setting is active, `2.5 0 STO` stores the value 2.5 in numbered register `0`.
+
+## NoNumberedVariables
+
+This flag disables numbered variables, behaving closer to the way RPL calculators work. For example, when the setting is active, `2.5 0 STO` generates an `Invalid name` error.
+
+## IgnoreSymbolCase
+
+Ignore the case in symbols, i.e. variables `X` and `x` are the same.
+Note that this is different from the way RPL in HP calculators works.
+
+## DistinguishSymbolCase
+
+Distinguish the case in symbols, i.e. variables `X` and `x` are distinct.
+This is the way RPL in HP calculators works.
 
 
 # States
