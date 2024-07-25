@@ -598,6 +598,17 @@ PARSE_BODY(list)
 }
 
 
+EVAL_BODY(list)
+// ----------------------------------------------------------------------------
+//   Evaluate a list if `ListEvaluation` is set
+// ----------------------------------------------------------------------------
+{
+    if (!program::running && o->type() == ID_list && Settings.ListAsProgram())
+        return program_p(o)->run(false);
+    return object::do_evaluate(o);
+}
+
+
 RENDER_BODY(list)
 // ----------------------------------------------------------------------------
 //   Render the list into the given list buffer

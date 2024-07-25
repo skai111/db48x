@@ -838,6 +838,7 @@ FLAG(DistinguishSymbolCase,     IgnoreSymbolCase)
 FLAG(FixedWidthDigits,          VariableWidthDigits)
 FLAG(ExitKeepsMenu,             ExitClearsMenu)
 FLAG(ShowEmptyMenu,             HideEmptyMenu)
+FLAG(ListAsProgram,             ListAsData)
 
 
 ALIAS(HardwareFloatingPoint,    "HFP")

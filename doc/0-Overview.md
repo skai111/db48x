@@ -425,6 +425,10 @@ unintentional differences, since the implementation is completely new.
   normal operations. In the less frequent case where you do not want evaluation,
   you need to use `RCL` like for global variables.
 
+* Lists do not evaluate as programs by default, like on the HP28, but unlike on
+  the HP48 and later HP models. This can be controlled using the `ListEvaluation` setting. Note that a list can be converted to a program using the `Cycle`
+  command, which makes it easy to build programs from lists.
+
 * The `case` statement can contain `when` clauses as a shortcut for the frequent
   combination of duplicating the value and testing against a reference. For
   example, `case dup "A" = then "Alpha" end` can be replaced with `case "A" when

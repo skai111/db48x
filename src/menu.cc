@@ -1468,7 +1468,8 @@ MENU(UserInterfaceModesMenu,
 
      "Fixed0",                                  ID_FixedWidthDigits,
      "ExitMenu",                                ID_ExitClearsMenu,
-     "HideMenu",                                ID_HideEmptyMenu);
+     "HideMenu",                                ID_HideEmptyMenu,
+     "ListEval",                                ID_ListAsProgram);
 
 MENU(MathModesMenu,
 // ----------------------------------------------------------------------------

@@ -567,6 +567,18 @@ Distinguish the case in symbols, i.e. variables `X` and `x` are distinct.
 This is the way RPL in HP calculators works.
 
 
+## ListAsProgram
+
+When this setting is set, DB48X behaves like the HP48S and later HP devices and
+evaluates lists as if they were programs. For example, `{ 1 2 + } EVAL` returns
+`3`. The default is [ListsAsData](#listsasdata).
+
+## ListsAsData
+
+When this setting is set, DB48X behaves like the HP28 and evaluates lists as
+data. For example, `{ 1 2 + } EVAL` returns `{ 1 2 + }`.
+
+
 # States
 
 The calculator can save and restore state in files with extension `.48S`.

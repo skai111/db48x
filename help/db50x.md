@@ -377,6 +377,10 @@ unintentional differences, since the implementation is completely new.
   normal operations. In the less frequent case where you do not want evaluation,
   you need to use `RCL` like for global variables.
 
+* Lists do not evaluate as programs by default, like on the HP28, but unlike on
+  the HP48 and later HP models. This can be controlled using the `ListEvaluation` setting. Note that a list can be converted to a program using the `Cycle`
+  command, which makes it easy to build programs from lists.
+
 * The `case` statement can contain `when` clauses as a shortcut for the frequent
   combination of duplicating the value and testing against a reference. For
   example, `case dup "A" = then "Alpha" end` can be replaced with `case "A" when
@@ -7934,6 +7938,18 @@ Note that this is different from the way RPL in HP calculators works.
 
 Distinguish the case in symbols, i.e. variables `X` and `x` are distinct.
 This is the way RPL in HP calculators works.
+
+
+## ListAsProgram
+
+When this setting is set, DB50X behaves like the HP48S and later HP devices and
+evaluates lists as if they were programs. For example, `{ 1 2 + } EVAL` returns
+`3`. The default is [ListsAsData](#listsasdata).
+
+## ListsAsData
+
+When this setting is set, DB50X behaves like the HP28 and evaluates lists as
+data. For example, `{ 1 2 + } EVAL` returns `{ 1 2 + }`.
 
 
 # States

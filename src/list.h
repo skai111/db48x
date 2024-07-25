@@ -305,6 +305,7 @@ public:
 public:
     OBJECT_DECL(list);
     PARSE_DECL(list);
+    EVAL_DECL(list);
     RENDER_DECL(list);
     GRAPH_DECL(list);
     HELP_DECL(list);
