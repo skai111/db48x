@@ -4950,6 +4950,41 @@ for performance reason, many modern computers now support multiple page sizes.
 A constant often used in computer programs to denote joy, happiness and the
 emergence into the world of some new computer language.
 # Equations library
+
+The DB48X calculator features a library of equations covering mathematics,
+physics, chemistry and computer science. The built-in equations can be extended
+using the `config/equations.csv` configuration file.
+
+
+## Columns and Beams
+
+## Electricity
+
+## Fluids
+
+## Forces and Energy
+
+## Gases
+
+## Heat transfer
+
+## Magnetism
+
+## Motion
+
+## Optics
+
+## Oscillations
+
+## Plane geometry
+
+## Solid geometry
+
+## Solid state devices
+
+## Stress analysis
+
+## Waves
 # Menus
 
 Menus display at the bottom of the screen, and can be activated using the keys
