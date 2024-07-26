@@ -47,7 +47,7 @@ DECIMIZE = $(TOOLS)/decimize/decimize
 FLASH=$(BUILD)/$(TARGET)_flash.bin
 QSPI =$(BUILD)/$(TARGET)_qspi.bin
 
-VERSION=$(shell git describe --dirty=Z --abbrev=5| sed -e 's/^v//g' -e 's/-g/-/g')
+VERSION=$(shell git describe --dirty=Z --abbrev=4| sed -e 's/^v//g' -e 's/-g/-/g')
 VERSION_H=src/$(PLATFORM)/version.h
 
 
