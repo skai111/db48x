@@ -300,6 +300,7 @@ MENU_BODY(character_menu)
                     utf8 end = val + len;
                     for (utf8 p = val; p < end; p = utf8_next(p))
                         matching++;
+                    menu = id(menu + 1);
                     break;
                 }
                 menu = id(menu + 1);

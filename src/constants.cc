@@ -703,6 +703,7 @@ bool constant_menu::do_submenu(constant::config_r cfg, menu_info &mi) const
                 position = cfile.position();
                 while (cfile.next(false))
                     matching++;
+                menu = id(menu + 1);
                 break;
             }
             menu = id(menu + 1);
@@ -717,6 +718,7 @@ bool constant_menu::do_submenu(constant::config_r cfg, menu_info &mi) const
         bool   found    = false;
         auto   builtins = cfg.builtins;
         size_t maxb     = cfg.nbuiltins;
+
         for (size_t b = 0; b < maxb; b += 2)
         {
             if (!builtins[b + 1] || !*builtins[b + 1])
@@ -736,7 +738,8 @@ bool constant_menu::do_submenu(constant::config_r cfg, menu_info &mi) const
                     break;
             }
         }
-        count = (last - first) / 2;
+        if (found)
+            count = (last - first) / 2;
     }
 
     items_init(mi, count + matching, 2, 1);
