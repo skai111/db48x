@@ -185,8 +185,8 @@ static const cstring basic_characters[] =
                  "╔╦╗═"
                  "╠╬╣║"
                  "╚╩╝■ "
-                 "░▒▓□▫"),
-
+                 "░▒▓□▫"
+                 "   ▫▪"),
 
     "Bullets",  ("·∙►▶→"
                  "■□▪▫▬"
@@ -210,10 +210,6 @@ static const cstring basic_characters[] =
                  "ФХЦЧШфхцчш     "
                  "ЩЪЫЬЭщъыьэ     "
                  "ЮЯ   юя        "),
-
-    "Fill",    ("▪▫░▒▓"
-                "▀▄█▌▐"
-                "■□"),
 
     "Picto",    ("⌂№℡™⚙"
                  "☺☻☼♀♂"

@@ -571,9 +571,9 @@ static const cstring basic_units[] =
     "hp",       "745.699871582_W",      // Horsepower
 
     // ------------------------------------------------------------------------
-    // PRESSURE MENU
+    // ENVIRONMENT MENU
     // ------------------------------------------------------------------------
-    "Press",    nullptr,
+    "Envir",    nullptr,
 
     "Pa",       "1_N/m^2",              // Pascal
     "atm",      "101325_Pa",            // Atmosphere
@@ -585,11 +585,6 @@ static const cstring basic_units[] =
     "mmHg",     "1_torr",               // millimeter of mercury
     "inHg",     "1_in/mm*mmHg",         // inch of mercury
     "inH2O",    "249.0889_Pa",          // Inch of H2O
-
-    // ------------------------------------------------------------------------
-    // TEMPERATURE MENU
-    // ------------------------------------------------------------------------
-    "Temp",     nullptr,
 
     "K",        "1_K",                  // Kelvin
     "°C",       "1_K",                  // Celsius
@@ -634,9 +629,9 @@ static const cstring basic_units[] =
     "pir",      "1/2_turn",             // Pi radians
 
     // ------------------------------------------------------------------------
-    // LIGHT MENU
+    // LIGHT/Radiation MENU
     // ------------------------------------------------------------------------
-    "Light",    nullptr,
+    "Lt/Rad",    nullptr,
 
     "cd",       "1_cd",                 // Candela
     "lm",       "1_cd*sr",              // Lumen
@@ -649,11 +644,6 @@ static const cstring basic_units[] =
     "lam",      "1_cd/cm^2*r/pir",      // Lambert
     "nit",      "1_cd/m^2",             // Nit
     "nt",       "1_cd/m^2",             // Nit
-
-    // ------------------------------------------------------------------------
-    // RADIATION MENU
-    // ------------------------------------------------------------------------
-    "Rad",      nullptr,
 
     "Gy",       "1_m^2/s^2",            // Gray
     "rad",      "1/100_m^2/s^2",        // rad

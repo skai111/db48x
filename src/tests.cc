@@ -3452,7 +3452,7 @@ void tests::fraction_decimal_conversions()
 
     step("Expressions");
     test(CLEAR, "355 113 /",
-         LSHIFT, I, F1, F1, "-", ENTER) .expect("'355/113-π'");
+         LSHIFT, I, F2, F1, "-", ENTER) .expect("'355/113-π'");
     test("→Num", ENTER).expect("0.00000 02667 64");
 
     step("Restoring small fraction mode")
@@ -3904,7 +3904,8 @@ void tests::complex_types()
     step("Angle mode conversions during polar entry")
         .test(CLEAR, "GRAD", ENTER).noerror()
         .test("1∡90°", ENTER).expect("1∡100ℊ")
-        .test("1", LSHIFT, G, F2, LSHIFT, N, F1, "90").expect("1∡100ℊ");
+        .test("1", LSHIFT, G, F2, LSHIFT, N, "90", F1, ENTER)
+        .expect("1∡100ℊ");
 
     step("Convert real to rectangular");
     test(CLEAR, "1 2", LSHIFT, G, F3)
@@ -4099,7 +4100,7 @@ void tests::complex_arithmetic()
         .expect("'(2+3ⅈ)+A'");
 
     step("Complex expression involving constants")
-        .test(CLEAR, LSHIFT, I, F1, F2, F3, F1, MUL, LSHIFT, B)
+        .test(CLEAR, LSHIFT, I, F2, F2, F3, F1, MUL, LSHIFT, B)
         .expect("'e↑(ⅈ·π)'")
         .test(LSHIFT, KEY1)
         .expect("1.∡180.°");
@@ -5140,7 +5141,7 @@ void tests::auto_simplification()
     test(CLEAR, "ⅈ", ENTER, ENTER, MUL).expect("-1");
 
     step("i*i == -1 (symbolic constant)");
-    test(CLEAR, LSHIFT, I, F1, F3, ENTER, MUL).expect("-1");
+    test(CLEAR, LSHIFT, I, F2, F3, ENTER, MUL).expect("-1");
 
     step("Simplification of rectangular real-only results");
     test(CLEAR, "0ⅈ3 0ⅈ5", ENTER, MUL).expect("-15");
@@ -7013,7 +7014,7 @@ void tests::graphic_stack_rendering()
         .image_noheader("reduced");
 
     step("Constants")
-        .test(CLEAR, LSHIFT, I, F1, F1, F2, F3)
+        .test(CLEAR, LSHIFT, I, F2, F1, F2, F3)
         .image_noheader("constants", 2);
 
     step("Vector")
@@ -7093,7 +7094,7 @@ void tests::insertion_of_variables_constants_and_units()
     BEGIN(insert);
 
     step("Select constant menu")
-        .test(CLEAR, LSHIFT, I, F1).image_menus("constants-menu", 1);
+        .test(CLEAR, LSHIFT, I, F2).image_menus("constants-menu", 1);
     step("Insert pi")
         .test(CLEAR, F1).expect("π");
     step("Insert e")
@@ -7354,7 +7355,7 @@ void tests::character_menu()
 
     step("RPL menu")
         .test(CLEAR, RSHIFT, KEY2).noerror()
-        .test(F1, RSHIFT, ENTER)
+        .test(F2, RSHIFT, ENTER)
         .test(NOSHIFT, F1, F2, F3, F4, F5, F6,
               LSHIFT, F1, LSHIFT, F2, LSHIFT, F3,
               LSHIFT, F4, LSHIFT, F5, LSHIFT, F6,
@@ -7364,7 +7365,7 @@ void tests::character_menu()
         .expect("\"→⇄Σ∏∆_⁳°′″ⒸⒺⓁ|?\"");
     step("Arith menu")
         .test(CLEAR, RSHIFT, KEY2).noerror()
-        .test(F2, RSHIFT, ENTER)
+        .test(F3, RSHIFT, ENTER)
         .test(NOSHIFT, F1, F2, F3, F4, F5, F6,
               LSHIFT, F1, LSHIFT, F2, LSHIFT, F3,
               LSHIFT, F4, LSHIFT, F5, LSHIFT, F6,
@@ -7374,7 +7375,7 @@ void tests::character_menu()
         .expect("\"+-*/×÷<=>≤≠≥·%^↑\\±\"");
     step("Math menu")
         .test(CLEAR, RSHIFT, KEY2).noerror()
-        .test(F3, RSHIFT, ENTER)
+        .test(F4, RSHIFT, ENTER)
         .test(NOSHIFT, F1, F2, F3, F4, F5,
               LSHIFT, F1, LSHIFT, F2, LSHIFT, F3,
               LSHIFT, F4, LSHIFT, F5,
@@ -7384,7 +7385,7 @@ void tests::character_menu()
         .expect("\"Σ∏∆∂∫πℼ′″°ⅈⅉℂℚℝ\"");
     step("French menu")
         .test(CLEAR, RSHIFT, KEY2).noerror()
-        .test(F4, RSHIFT, ENTER)
+        .test(F1, RSHIFT, ENTER)
         .test(NOSHIFT, F1, F2, F3, F4, F5,
               LSHIFT, F1, LSHIFT, F2, LSHIFT, F3,
               LSHIFT, F4, LSHIFT, F5,
@@ -7414,7 +7415,7 @@ void tests::character_menu()
 
     step("Arrows menu")
         .test(CLEAR, RSHIFT, KEY2).noerror()
-        .test(LSHIFT, F1, RSHIFT, ENTER)
+        .test(LSHIFT, F2, RSHIFT, ENTER)
         .test(NOSHIFT, F1, F2, F3, F4, F5,
               LSHIFT, F1, LSHIFT, F2, LSHIFT, F3,
               LSHIFT, F4, LSHIFT, F5,
@@ -7424,7 +7425,7 @@ void tests::character_menu()
         .expect("\"←↑→↓↔↕⇄⇆↨⌂▲▼◀▬▶\"");
     step("Blocks menu")
         .test(CLEAR, RSHIFT, KEY2).noerror()
-        .test(LSHIFT, F2, RSHIFT, ENTER)
+        .test(LSHIFT, F3, RSHIFT, ENTER)
         .test(NOSHIFT, F1, F2, F3, F4, F5,
               LSHIFT, F1, LSHIFT, F2, LSHIFT, F3,
               LSHIFT, F4, LSHIFT, F5,
@@ -7434,7 +7435,7 @@ void tests::character_menu()
         .expect("\"┌┬┐─├┼┤│└┴┘▬╒╤╕\"");
     step("Bullets menu")
         .test(CLEAR, RSHIFT, KEY2).noerror()
-        .test(LSHIFT, F3, RSHIFT, ENTER)
+        .test(LSHIFT, F4, RSHIFT, ENTER)
         .test(NOSHIFT, F1, F2, F3, F4, F5,
               LSHIFT, F1, LSHIFT, F2, LSHIFT, F3,
               LSHIFT, F4, LSHIFT, F5, LSHIFT, F6,
@@ -7443,7 +7444,7 @@ void tests::character_menu()
         .expect("\"·∙►▶→□▪▫▬○●◊◘◙\"");
     step("Currency menu")
         .test(CLEAR, RSHIFT, KEY2).noerror()
-        .test(LSHIFT, F4, RSHIFT, ENTER)
+        .test(LSHIFT, F5, RSHIFT, ENTER)
         .test(NOSHIFT, F1, F2, F3, F4, F5,
               LSHIFT, F1, LSHIFT, F2, LSHIFT, F3,
               LSHIFT, F4, LSHIFT, F5, LSHIFT, F6,
@@ -7452,7 +7453,7 @@ void tests::character_menu()
         .expect("\"$€¢£¤₣₤₧₫₭₹₺₽ƒ\"");
     step("Greek menu")
         .test(CLEAR, RSHIFT, KEY2).noerror()
-        .test(LSHIFT, F5, RSHIFT, ENTER)
+        .test(LSHIFT, F1, RSHIFT, ENTER)
         .test(NOSHIFT, F1, F2, F3, F4, F5,
               LSHIFT, F1, LSHIFT, F2, LSHIFT, F3,
               LSHIFT, F4, LSHIFT, F5,
@@ -7926,7 +7927,7 @@ void tests::regression_checks()
     test(CLEAR, "8 gamma", ENTER).expect("5 040.");
 
     step("Bug 168: pi no longer parses correctly");
-    test(CLEAR, SHIFT, I, F1, F1).expect("π");
+    test(CLEAR, LSHIFT, I, F2, F1).expect("π");
     test(DOWN).editor("Ⓒπ");
     test(ENTER).expect("π");
 
@@ -9161,9 +9162,9 @@ tests &tests::itest(cstring txt)
 
             // Special characters that require the characters menu
 #define NEXT        k = RESERVED2; break
-        case L'ℂ': itest(RSHIFT, KEY2, F3, RSHIFT, F3); NEXT;
-        case L'ℚ': itest(RSHIFT, KEY2, F3, RSHIFT, F4); NEXT;
-        case L'ℝ': itest(RSHIFT, KEY2, F3, RSHIFT, F5); NEXT;
+        case L'ℂ': itest(RSHIFT, KEY2, F4, RSHIFT, F3); NEXT;
+        case L'ℚ': itest(RSHIFT, KEY2, F4, RSHIFT, F4); NEXT;
+        case L'ℝ': itest(RSHIFT, KEY2, F4, RSHIFT, F5); NEXT;
         case L'⁻': itest(RSHIFT, KEY2, RSHIFT, F4, F6, F6, RSHIFT, F3); NEXT;
         case L'⁰': itest(RSHIFT, KEY2, RSHIFT, F4, F1); NEXT;
         case L'¹': itest(RSHIFT, KEY2, RSHIFT, F4, F2); NEXT;
@@ -9185,13 +9186,13 @@ tests &tests::itest(cstring txt)
         case L'₇': itest(RSHIFT, KEY2, RSHIFT, F4, F6, LSHIFT, F3); NEXT;
         case L'₈': itest(RSHIFT, KEY2, RSHIFT, F4, F6, LSHIFT, F4); NEXT;
         case L'₉': itest(RSHIFT, KEY2, RSHIFT, F4, F6, LSHIFT, F5); NEXT;
-        case L'∛': itest(RSHIFT, KEY2, F3, F6, F6, F6, F6, LSHIFT, F2); NEXT;
-        case L'∜': itest(RSHIFT, KEY2, F3, F6, F6, F6, F6, LSHIFT, F3); NEXT;
-        case L'⊿': itest(RSHIFT, KEY2, F3, F6, F6, F6, F6, F6, F5); NEXT;
-        case L'∠': itest(RSHIFT, KEY2, F3, F6, F6, F6, F6, F6, F3); NEXT;
-        case L'Ⓓ': itest(RSHIFT, KEY2, F1, F6, F6, F1); NEXT;
-        case L'ⓧ': itest(RSHIFT, KEY2, F1, F6, F6, F2); NEXT;
-        case L'°': itest(RSHIFT, KEY2, F1, F6, SHIFT, F3); NEXT;
+        case L'∛': itest(RSHIFT, KEY2, F4, F6, F6, F6, F6, LSHIFT, F2); NEXT;
+        case L'∜': itest(RSHIFT, KEY2, F4, F6, F6, F6, F6, LSHIFT, F3); NEXT;
+        case L'⊿': itest(RSHIFT, KEY2, F4, F6, F6, F6, F6, F6, F5); NEXT;
+        case L'∠': itest(RSHIFT, KEY2, F4, F6, F6, F6, F6, F6, F3); NEXT;
+        case L'Ⓓ': itest(RSHIFT, KEY2, F2, F6, F6, F1); NEXT;
+        case L'ⓧ': itest(RSHIFT, KEY2, F2, F6, F6, F2); NEXT;
+        case L'°': itest(RSHIFT, KEY2, F2, F6, SHIFT, F3); NEXT;
 #undef NEXT
         }
 
