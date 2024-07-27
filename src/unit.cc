@@ -62,7 +62,7 @@ PARSE_BODY(unit)
     if (!max)
         return SKIP;
 
-    // First character must be compatible with a rectangular complex value
+    // First character must be compatible with a unit
     size_t  offs  = 0;
     unicode cp    = p.separator;
     bool    umark = cp == '_' || cp == settings::SPACE_UNIT;

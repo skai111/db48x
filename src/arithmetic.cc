@@ -1343,7 +1343,7 @@ algebraic_p arithmetic::evaluate(id          op,
         x = expression::make(op, x, y);
         if (x)
             if (expression_p expr = x->as<expression>())
-                if (!unit::factoring && Settings.AutoSimplify())
+                if (!unit::factoring && !unit::mode && Settings.AutoSimplify())
                     x = expr->simplify();
         return x;
     }
