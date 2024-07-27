@@ -256,14 +256,14 @@ HELP_BODY(unit)
 //
 // ============================================================================
 
-// This variable is true while evaluating a uexpr
+// Evaluating a uexpr
 bool unit::mode = false;
 
-// This variable is true while factoring out a uexpr (limit simplifications)
+// Factoring out a uexpr (limit simplifications)
 bool unit::factoring = false;
 
-// This variable is true to ignore units while solving an equation
-bool unit::ignore = false;
+// Skip date conversions in arithmetic
+bool unit::nodates = false;
 
 
 static const cstring basic_units[] =

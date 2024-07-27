@@ -146,6 +146,13 @@ bool comparison::compare(int *cmp, algebraic_r x, algebraic_r y)
         return true;
     }
 
+    if (xt == ID_unit && yt == ID_unit)
+    {
+        algebraic_g diff = xa - ya; // Deal with cases such as ddays
+        *cmp = diff->is_zero() ? 0 : diff->is_negative() ? -1 : 1;
+        return !rt.error();
+    }
+
     if (((xt == ID_text && yt == ID_text) ||
          (xt == ID_symbol && yt == ID_symbol)))
     {

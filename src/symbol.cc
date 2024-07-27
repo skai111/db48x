@@ -58,12 +58,7 @@ EVAL_BODY(symbol)
                 if (rt.push(u))
                     return OK;
         if (object_p found = directory::recall_all(o, false))
-        {
-            if (unit::ignore)
-                if (unit_p uval = found->as<unit>())
-                    found = uval->value();
             return program::run_program(found);
-        }
     }
     if (object_g eq = expression::make(o))
         if (rt.push(eq))

@@ -121,10 +121,13 @@ algebraic_p arithmetic::non_numeric<add>(algebraic_r x, algebraic_r y)
     // Check addition of unit objects
     if (unit_g xu = x->as<unit>())
     {
-        if (algebraic_p daf = days_after(x, y, false))
-            return daf;
-        if (algebraic_p daf = days_after(y, x, false))
-            return daf;
+        if (!unit::nodates)
+        {
+            if (algebraic_p daf = days_after(x, y, false))
+                return daf;
+            if (algebraic_p daf = days_after(y, x, false))
+                return daf;
+        }
 
         if (unit_g yu = y->as<unit>())
         {
@@ -143,8 +146,9 @@ algebraic_p arithmetic::non_numeric<add>(algebraic_r x, algebraic_r y)
     }
     else if (y->type() == ID_unit)
     {
-        if (algebraic_p daf = days_after(y, x, false))
-            return daf;
+        if (!unit::nodates)
+            if (algebraic_p daf = days_after(y, x, false))
+                return daf;
 
         rt.inconsistent_units_error();
         return nullptr;
@@ -289,12 +293,14 @@ algebraic_p arithmetic::non_numeric<sub>(algebraic_r x, algebraic_r y)
     // Check subtraction of unit objects
     if (unit_g xu = x->as<unit>())
     {
-        if (algebraic_p dbef = days_before(x, y, false))
-            return dbef;
+        if (!unit::nodates)
+            if (algebraic_p dbef = days_before(x, y, false))
+                return dbef;
         if (unit_g yu = y->as<unit>())
         {
-            if (algebraic_p ddays = days_between_dates(x, y, false))
-                return ddays;
+            if (!unit::nodates)
+                if (algebraic_p ddays = days_between_dates(x, y, false))
+                    return ddays;
 
             if (yu->convert(xu))
             {

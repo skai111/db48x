@@ -44,8 +44,8 @@
 #include "unit.h"
 #include "variables.h"
 
-RECORDER(solve,         16, "Numerical solver");
-RECORDER(solve_error,   16, "Numerical solver errors");
+RECORDER(solve, 16, "Numerical solver");
+RECORDER(solve_error, 16, "Numerical solver errors");
 
 
 COMMAND_BODY(Root)
@@ -61,12 +61,14 @@ COMMAND_BODY(Root)
 
     record(solve,
            "Solving %t for variable %t with guess %t",
-           +eqobj, +variable, +guess);
+           +eqobj,
+           +variable,
+           +guess);
 
     // Check that we have a variable name on stack level 1 and
     // a proram or equation on level 2
     symbol_g name = variable->as_quoted<symbol>();
-    id eqty = eqobj->type();
+    id       eqty = eqobj->type();
     if (eqty == ID_equation)
     {
         eqobj = equation_p(+eqobj)->value();
@@ -97,9 +99,9 @@ COMMAND_BODY(Root)
     program_g eq = program_p(+eqobj);
     if (algebraic_g x = solve(eq, +name, guess))
     {
-        size_t nlen = 0;
-        gcutf8 ntxt = name->value(&nlen);
-        object_g top = tag::make(ntxt, nlen, +x);
+        size_t   nlen = 0;
+        gcutf8   ntxt = name->value(&nlen);
+        object_g top  = tag::make(ntxt, nlen, +x);
         if (rt.push(top))
             return rt.error() ? ERROR : OK;
     }
@@ -108,57 +110,99 @@ COMMAND_BODY(Root)
 }
 
 
-algebraic_p solve(program_g eq, algebraic_g name_or_unit, object_g guess)
+static inline void solver_command_error()
+// ----------------------------------------------------------------------------
+//   Report `EquationSolver` as the failing command
+// ----------------------------------------------------------------------------
+{
+    rt.command(object::static_object(object::ID_EquationSolver));
+}
+
+
+algebraic_p solve(program_g eq, algebraic_g goal, object_g guess)
 // ----------------------------------------------------------------------------
 //   The core of the solver
 // ----------------------------------------------------------------------------
 {
     // Check if the guess is an algebraic or if we need to extract one
-    algebraic_g x, dx, lx, hx;
+    algebraic_g x, dx, lx, hx, nx, px;
     algebraic_g y, dy, ly, hy;
-    object::id gty = guess->type();
-    if (gty == object::ID_unit)
-    {
-        unit_g uguess = unit_p(+guess);
-        if (unit_g uname = name_or_unit->as<unit>())
-        {
-            if (!uname->convert(uguess))
-                return nullptr;
-            guess = +uguess;
-        }
-        guess = unit_p(+guess)->value();
-        gty = guess->type();
-    }
-    if (object::is_real(gty) || object::is_complex(gty))
-    {
-        lx = algebraic_p(+guess);
-        hx = algebraic_p(+guess);
-        y = integer::make(1000);
-        hx = hx->is_zero() ? inv::run(y) : hx + hx / y;
-    }
-    else if (gty == object::ID_list || gty == object::ID_array)
+    object::id  gty = guess->type();
+    save<bool>  nodates(unit::nodates, true);
+
+    // Check if low and hight values were given explicitly
+    if (gty == object::ID_list || gty == object::ID_array)
     {
         lx = guess->algebraic_child(0);
         hx = guess->algebraic_child(1);
-        if (!lx || !hx)
-            return nullptr;
     }
     else
+    {
+        lx = guess->as_algebraic();
+        hx = lx;
+    }
+    if (!hx || !lx)
     {
         rt.type_error();
         return nullptr;
     }
+
+    // Check if the variable we solve for is a unit
+    unit_g      uname = goal->as<unit>();
+    algebraic_g uexpr;
+    if (uname || lx->type() == object::ID_unit || hx->type() == object::ID_unit)
+    {
+        if (!uname)
+        {
+            unit_g lu = lx->as<unit>();
+            unit_g hu = hx->as<unit>();
+            if (!lu || !hu)
+            {
+                rt.type_error();
+                return nullptr;
+            }
+            if (!lu->convert(hu))
+                return nullptr;
+            hx    = +hu;
+            uexpr = lu->uexpr();
+        }
+        else if (!uname->convert(lx) || !uname->convert(hx))
+        {
+            return nullptr;
+        }
+        else
+        {
+            uexpr = uname->uexpr();
+        }
+    }
+
+    // Check if low and hight are identical, if so pick hx=1.01*lx
+    if (algebraic_p diff = hx - lx)
+    {
+        if (diff->is_zero(true))
+        {
+            algebraic_g delta =
+                +fraction::make(integer::make(1234), integer::make(997));
+            if (!hx->is_zero(true))
+                hx = hx * delta;
+            else if (uexpr)
+                hx = unit::simple(delta, uexpr);
+            else
+                hx = delta;
+        }
+    }
+    if (rt.error())
+        return nullptr;
+
+    // Initialize starting value
     x = lx;
     record(solve, "Initial range %t-%t", +lx, +hx);
 
     // We will run programs, do not save stack, etc.
     settings::PrepareForFunctionEvaluation willEvaluateFunctions;
-    save<bool> ignore_units(unit::ignore, true);
 
     // Set independent variable
-    symbol_g    name  = name_or_unit->as_quoted<symbol>();
-    unit_p      uname = name_or_unit->as<unit>();
-    algebraic_g uexpr;
+    symbol_g                               name = goal->as_quoted<symbol>();
     if (!name)
     {
         if (!uname)
@@ -167,7 +211,6 @@ algebraic_p solve(program_g eq, algebraic_g name_or_unit, object_g guess)
             return nullptr;
         }
         name = uname->value()->as_quoted<symbol>();
-        uexpr = uname->uexpr();
         if (!name)
         {
             rt.some_invalid_name_error();
@@ -176,18 +219,23 @@ algebraic_p solve(program_g eq, algebraic_g name_or_unit, object_g guess)
     }
     save<symbol_g *> iref(expression::independent, &name);
     int              prec = Settings.Precision() - Settings.SolverImprecision();
-    algebraic_g      eps = decimal::make(1, prec <= 0 ? -1 : -prec);
+    algebraic_g      eps  = decimal::make(1, prec <= 0 ? -1 : -prec);
+    bool             is_constant = true;
+    bool             is_valid    = false;
+    uint             max         = Settings.SolverIterations();
 
-    bool is_constant = true;
-    bool is_valid = false;
-    uint max = Settings.SolverIterations();
     for (uint i = 0; i < max && !program::interrupted(); i++)
     {
-        bool           jitter = false;
+        bool bad = false;
+
+        // If we are starting to use really big numbers, switch to decimal
+        if (!algebraic::to_decimal_if_big(x))
+            return x;
 
         // Evaluate equation
         y = algebraic::evaluate_function(eq, x);
-        record(solve, "[%u] x=%t y=%t", i, +x, +y);
+        record(solve, "[%u] x=%t (%t to %t)  y=%t (%t to %t)",
+               i, +x, +lx, +hx, +y, +ly, +hy);
         if (!y)
         {
             // Error on last function evaluation, try again
@@ -195,19 +243,21 @@ algebraic_p solve(program_g eq, algebraic_g name_or_unit, object_g guess)
             if (!ly || !hy)
             {
                 rt.bad_guess_error();
+                solver_command_error();
                 return nullptr;
             }
-            jitter = true;
+            bad = true;
         }
         else
         {
             is_valid = true;
-            if (y->is_zero() || smaller_magnitude(y, eps))
+            if (unit_p yu = y->as<unit>())
+                dy = yu->value();
+            else
+                dy = y;
+            if (dy->is_zero() || smaller_magnitude(dy, eps))
             {
-                record(solve, "[%u] Solution=%t value=%t",
-                       i, +x, +y);
-                if (uexpr)
-                    x = unit::simple(x, uexpr);
+                record(solve, "[%u] Solution=%t value=%t", i, +x, +y);
                 return x;
             }
 
@@ -216,7 +266,7 @@ algebraic_p solve(program_g eq, algebraic_g name_or_unit, object_g guess)
                 record(solve, "Setting low");
                 ly = y;
                 lx = x;
-                x = hx;
+                x  = hx;
                 continue;
             }
             else if (!hy)
@@ -243,102 +293,105 @@ algebraic_p solve(program_g eq, algebraic_g name_or_unit, object_g guess)
             }
             else if (smaller_magnitude(hy, y))
             {
-                // y became bigger, try to get closer to low
-                bool crosses = (ly * hy)->is_negative(false);
+                // y became bigger, and all have the same sign:
+                // try to get closer to low
                 record(solve, "New value is worse");
                 is_constant = false;
-
-                // Try to bisect
-                dx = integer::make(2);
-                x = (lx + x) / dx;
-                if (!x)
-                    return nullptr;
-                if (crosses)    // For positive and negative values, as is
-                    continue;
-
-                // Otherwise, try to jitter around
-                jitter = true;
+                bad         = true;
             }
             else
             {
                 // y is constant - Try a random spot
-                record(solve, "Unmoving");
-                jitter = true;
+                record(solve, "Value seems constant");
+                bad = true;
             }
 
-            if (!jitter)
-            {
-                dx = hx - lx;
-                if (!dx)
-                    return nullptr;
-                if (dx->is_zero() ||
-                    smaller_magnitude(abs::run(dx) /
-                                      (abs::run(hx) + abs::run(lx)), eps))
-                {
-                    x = lx;
-                    if ((ly * hy)->is_negative(false))
-                    {
-                        record(solve, "[%u] Cross solution=%t value=%t",
-                               i, +x, +y);
-                    }
-                    else
-                    {
-                        record(solve, "[%u] Minimum=%t value=%t",
-                               i, +x, +y);
-                        rt.no_solution_error();
-                    }
-                    return x;
-                }
+            // Check if cross zero (change sign)
+            if (dy->is_negative(false))
+                nx = x;
+            else
+                px = x;
 
-                dy = hy - ly;
-                if (!dy)
-                    return nullptr;
-                if (dy->is_zero())
-                {
-                    record(solve,
-                           "[%u] unmoving %t between %t and %t",
-                           +hy, +lx, +hx);
-                    jitter = true;
-                }
+            // Check the x interval
+            dx = hx - lx;
+            if (!dx)
+                return nullptr;
+            dy = hx + lx;
+            if (!dy || dy->is_zero(false))
+                dy = eps;
+            else
+                dy = dy * eps;
+            if (dx->is_zero(false) || smaller_magnitude(dx, dy))
+            {
+                x = lx;
+                record(solve, "[%u] Minimum=%t value=%t", i, +x, +y);
+                if (nx && px)
+                    rt.sign_reversal_error();
                 else
-                {
-                    record(solve, "[%u] Moving to %t - %t / %t",
-                           i, +lx, +dy, +dx);
-                    is_constant = false;
-                    x = lx - y * dx / dy;
-                }
+                    rt.no_solution_error();
+                solver_command_error();
+                return x;
+            }
+
+            // Check the y interval
+            dy = hy - ly;
+            if (!dy)
+                return nullptr;
+            if (dy->is_zero(false))
+            {
+                record(solve,
+                       "[%u] unmoving %t between %t and %t", +hy, +lx, +hx);
+                bad = true;
+            }
+            else
+            {
+                // Interpolate to find new position
+                record(solve, "[%u] Moving to %t - %t * %t / %t",
+                       i, +lx, +y, +dx, +dy);
+                is_constant = false;
+                x = lx - y * dx / dy;
             }
 
             // Check if there are unresolved symbols
-            if (x->is_symbolic())
+            if (!x || x->is_symbolic())
             {
                 rt.invalid_function_error();
+                solver_command_error();
                 return x;
             }
-
-            // If we are starting to use really big numbers, approximate
-            if (!algebraic::to_decimal_if_big(x))
-                return x;
         }
 
         // If we have some issue improving things, shake it a bit
-        if (jitter)
+        if (bad)
         {
-            int s = (i & 2)- 1;
-            if (x->is_complex())
-                dx = polar::make(integer::make(997 * s * i),
-                                 integer::make(421 * s * i * i),
-                                 object::ID_Deg);
+            // Check if we crossed and the new x does not look good
+            if (nx && px)
+            {
+                // Try to bisect
+                dx = integer::make(2);
+                x  = (nx + px) / dx;
+                if (!x)
+                    return nullptr;
+            }
             else
-                dx = integer::make(0x1081 * s * i);
-            dx = dx * eps;
-            if (x->is_zero())
-                x = dx;
-            else
-                x = x + x * dx;
-            if (!x)
-                return nullptr;
-            record(solve, "Jitter x=%t", +x);
+            {
+                // Jitter value
+                int s = (i & 2) - 1;
+                if (x && x->is_complex())
+                    dx = polar::make(integer::make(997 * s * i),
+                                     integer::make(421 * s * i * i),
+                                     object::ID_Deg);
+                else
+                    dx = integer::make(0x1081 * s * i);
+                dx = dx * eps;
+                if (x && x->is_zero())
+                    x = dx;
+                else
+                    x = x + x * dx;
+                if (!x)
+                    return nullptr;
+                record(solve, "Jitter x=%t", +x);
+            }
         }
     }
 
@@ -351,9 +404,10 @@ algebraic_p solve(program_g eq, algebraic_g name_or_unit, object_g guess)
         rt.constant_value_error();
     else
         rt.no_solution_error();
+    if (rt.error())
+        solver_command_error();
     return lx;
 }
-
 
 
 // ============================================================================
@@ -370,8 +424,7 @@ COMMAND_BODY(StEq)
     if (object_p obj = rt.top())
     {
         id objty = obj->type();
-        if (objty != ID_expression &&
-            objty != ID_polynomial &&
+        if (objty != ID_expression && objty != ID_polynomial &&
             objty != ID_equation)
             rt.type_error();
         else if (directory::store_here(static_object(ID_Equation), obj))
@@ -399,9 +452,9 @@ MENU_BODY(SolvingMenu)
 //   Process the MENU command for SolvingMenu
 // ----------------------------------------------------------------------------
 {
-    expression_p expr = expression::current_equation(false);
-    list_g vars = expr ? expr->names() : nullptr;
-    size_t nitems = vars ? vars->items() : 0;
+    expression_p expr   = expression::current_equation(false);
+    list_g       vars   = expr ? expr->names() : nullptr;
+    size_t       nitems = vars ? vars->items() : 0;
     items_init(mi, nitems, 3, 1);
     if (!vars)
         return false;
@@ -495,9 +548,9 @@ static tag_p tagged_value(symbol_p sym, object_p value)
 //  Tag a solver value with a symbol
 // ----------------------------------------------------------------------------
 {
-    size_t nlen = 0;
-    gcutf8 ntxt = sym->value(&nlen);
-    tag_p tagged = tag::make(ntxt, nlen, value);
+    size_t nlen   = 0;
+    gcutf8 ntxt   = sym->value(&nlen);
+    tag_p  tagged = tag::make(ntxt, nlen, value);
     return tagged;
 }
 
@@ -608,7 +661,6 @@ COMMAND_BODY(SolvingMenuStore)
                         }
                     }
                 }
-
             }
         }
     }

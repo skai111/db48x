@@ -1305,6 +1305,7 @@ int object::as_truth(bool error) const
     case ID_neg_decimal:
     case ID_polar:
     case ID_rectangular:
+    case ID_unit:
         return !is_zero(error);
 
     default:
@@ -1363,6 +1364,8 @@ bool object::is_zero(bool error) const
         return polar_p(this)->is_zero();
     case ID_rectangular:
         return rectangular_p(this)->is_zero();
+    case ID_unit:
+        return unit_p(this)->value()->is_zero(error);
 
     default:
         if (error)
@@ -1461,6 +1464,8 @@ bool object::is_negative(bool error) const
     case ID_decimal:
     case ID_neg_decimal:
         return decimal_p(this)->is_negative();
+    case ID_unit:
+        return unit_p(this)->value()->is_negative(error);
 
     default:
         if (error)
@@ -1568,6 +1573,8 @@ bool object::is_big() const
     case ID_rectangular:
     case ID_polar:
         return complex_p(this)->x()->is_big() || complex_p(this)->y()->is_big();
+    case ID_unit:
+        return unit_p(this)->value()->is_big();
 
     default:
         return false;

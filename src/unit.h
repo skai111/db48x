@@ -63,7 +63,7 @@ struct unit : complex
 
     static bool mode;           // Set to true to evaluate units
     static bool factoring;      // Set to true when factoring out units
-    static bool ignore;         // Set to true to drop units from variables
+    static bool nodates;        // Disable conversions about dates
 
 public:
     OBJECT_DECL(unit);
