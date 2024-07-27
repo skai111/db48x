@@ -1215,8 +1215,8 @@ MENU(SolverMenu,
      "Plot",    ID_PlotMenu,
      "L.R.",    ID_StatisticsMenu,
      "Eqns",    ID_EquationsMenu,
-     "Parms",   ID_Unimplemented,
-     "Auto",    ID_Unimplemented);
+     SolverImprecision::label,   ID_SolverImprecision,
+     SolverIterations::label,    ID_SolverIterations);
 
 MENU(NumericalSolverMenu,
 // ----------------------------------------------------------------------------

@@ -707,6 +707,10 @@ cstring setting::label(object::id ty)
         return printf("R# %u bits", s.RandomGeneratorBits());
     case ID_RandomGeneratorOrder:
         return printf("R# %u iter", s.RandomGeneratorOrder());
+    case ID_SolverImprecision:
+        return printf("Slv~%u", s.SolverImprecision());
+    case ID_SolverIterations:
+        return printf("Slv#%u", s.SolverIterations());
     default:
         break;
     }
