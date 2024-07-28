@@ -72,7 +72,7 @@ struct xlib : constant
     {
         return do_name(library, size);
     }
-    algebraic_p value() const
+    object_p value() const
     {
         return do_value(library);
     }

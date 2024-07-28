@@ -2123,41 +2123,35 @@ expression_p expression::current_equation(bool error,
 // ----------------------------------------------------------------------------
 {
     object_p obj = directory::recall_all(static_object(ID_Equation), false);
-    if (!obj)
+    bool more = true;
+    while (more)
     {
-        if (error && !rt.error())
-            rt.no_equation_error();
-        return nullptr;
-    }
-    id eqty = obj->type();
-    if (eqty == ID_list || eqty == ID_array)
-    {
-        obj = list_p(obj)->at(0);
         if (!obj)
         {
-            rt.no_equation_error();
+            if (error && !rt.error())
+                rt.no_equation_error();
             return nullptr;
         }
-        eqty = obj->type();
-    }
-
-    if (eqty == ID_equation)
-    {
-        obj = equation_p(obj)->value();
-        if (!obj)
+        switch (obj->type())
         {
-            rt.no_equation_error();
+        case ID_equation:
+            obj = equation_p(obj)->value();
+            break;
+        case ID_list:
+        case ID_array:
+            obj = list_p(obj)->at(0);
+            break;
+        case ID_expression:
+        case ID_polynomial:
+            more = false;
+            break;
+        default:
+            rt.type_error();
             return nullptr;
         }
-        eqty = obj->type();
-    }
-    if (eqty != ID_expression && eqty != ID_polynomial)
-    {
-        rt.type_error();
-        return nullptr;
     }
     expression_p eq = expression_p(obj);
-    if (solving && eqty == ID_expression)
+    if (solving && eq->type() == ID_expression)
         eq = eq->strip_units(keep_constants);
 
     return eq;

@@ -527,7 +527,7 @@ utf8 constant::do_name(config_r cfg, size_t *len) const
 }
 
 
-algebraic_p constant::do_value(config_r cfg) const
+object_p constant::do_value(config_r cfg) const
 // ----------------------------------------------------------------------------
 //   Lookup a built-in constant
 // ----------------------------------------------------------------------------
@@ -595,12 +595,7 @@ algebraic_p constant::do_value(config_r cfg) const
         utf8 cdef = csym->value(&clen);
         error_save esave;
         if (object_p obj = object::parse(cdef, clen))
-        {
-            if (algebraic_p alg = obj->as_algebraic())
-                return alg;
-            if (text_p txt = obj->as<text>())
-                return txt;
-        }
+            return obj;
     }
     cfg.error();
     return nullptr;
@@ -924,7 +919,7 @@ object::result constant::lookup_command(config_r cfg)
     size_t      len    = 0;
     utf8        txt    = text_p(name)->value(&len);
     if (constant_p cst = constant::do_lookup(cfg, txt, len, false))
-        if (algebraic_p value = cst->do_value(cfg))
+        if (object_p value = cst->do_value(cfg))
             if (rt.top(value))
                 return OK;
 

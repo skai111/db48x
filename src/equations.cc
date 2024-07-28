@@ -51,6 +51,18 @@ static const cstring basic_equations[] =
 // ----------------------------------------------------------------------------
 //   clang-format off
 {
+    // ------------------------------------------------------------------------
+    //   Columns and beams
+    // ------------------------------------------------------------------------
+
+    "Columns and Beams", nullptr,
+
+    "Elastic Buckling",  "{ "
+        "'(Pcr_kN)=(Ⓒπ*(E_kPa)*(A_cm^2))/sq((K*(L_m))/(r_cm))' "
+        "'(Pcr_kN)=(Ⓒπ*(E_kPa)*(I_mm^4))/sq(K*(L_m))' "
+        "'(σcr_kPa)=(Pcr_kN)/(A_cm^2)' "
+        "'r = sqrt((I_mm^4)/(A_cm^2))' "
+    "}",
 
     // ------------------------------------------------------------------------
     //   Physics
@@ -136,7 +148,7 @@ EVAL_BODY(equation)
 //   Equations always evaluate to their value
 // ----------------------------------------------------------------------------
 {
-    algebraic_g value = o->value();
+    object_g value = o->value();
     return rt.push(+value) ? OK : ERROR;
 }
 
@@ -170,7 +182,7 @@ GRAPH_BODY(equation)
     equation_g eq = o;
     if (Settings.ShowEquationBody())
     {
-        if (algebraic_g val = eq->value())
+        if (object_g val = eq->value())
         {
             if (expression_p expr = val->as<expression>())
                 val = expr->strip_units(true);

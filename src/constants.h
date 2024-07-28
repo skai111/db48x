@@ -110,7 +110,10 @@ struct constant : algebraic
     }
     algebraic_p value() const
     {
-        return do_value(constants);
+        if (object_p obj = do_value(constants))
+            if (obj->is_algebraic() || obj->type() == ID_text)
+                return algebraic_p(obj);
+        return nullptr;
     }
     bool is_imaginary_unit() const
     {
@@ -135,7 +138,7 @@ protected:
     static size_t     do_rendering(config_r cfg, constant_p o, renderer &r);
     static constant_p do_lookup(config_r cfg, utf8 name, size_t len, bool error);
     utf8              do_name(config_r cfg, size_t *size = nullptr) const;
-    algebraic_p       do_value(config_r cfg) const;
+    object_p          do_value(config_r cfg) const;
     utf8              do_instance_help(config_r cfg) const;
 
 public:

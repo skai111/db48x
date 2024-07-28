@@ -470,6 +470,13 @@ COMMAND_BODY(NextEq)
     if (obj)
     {
         id ty = obj->type();
+        if (ty == ID_equation)
+        {
+            obj = equation_p(obj)->value();
+            if (obj)
+                ty = obj->type();
+        }
+
         if (ty == ID_list || ty == ID_array)
         {
             size_t sz = 0;

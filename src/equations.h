@@ -72,9 +72,14 @@ struct equation : constant
     {
         return do_name(equations, size);
     }
-    algebraic_p value() const
+    object_p value() const
     {
-        return do_value(equations);
+        if (object_p obj = do_value(equations))
+            if (id ty = obj->type())
+                if (ty == ID_equation || ty == ID_expression ||
+                    ty == ID_list || ty == ID_array)
+                    return obj;
+        return nullptr;
     }
 
     static const config equations;
