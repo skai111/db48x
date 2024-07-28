@@ -38,6 +38,7 @@
 #include <QWindow>
 
 RECORDER(options, 32, "Information about command line options");
+RECORDER_TWEAK_DEFINE(rpl_objects_detail, 0, "Set to 1 to see object addresses")
 
 bool run_tests = false;
 bool noisy_tests = false;
@@ -63,11 +64,15 @@ size_t recorder_render_object(intptr_t tracing,
             if (sz >= sizeof(tmp))
                 sz = sizeof(tmp)-1;
             tmp[sz] = 0;
-            result = snprintf(buffer, size, "%p[%lu] %s[%s]",
-                              (void *) value,
-                              value->size(),
-                              value->fancy(),
-                              tmp);
+            if (RECORDER_TWEAK(rpl_objects_detail))
+                result = snprintf(buffer, size, "%p[%lu] %s[%s]",
+                                  (void *) value,
+                                  value->size(),
+                                  value->fancy(),
+                                  tmp);
+            else
+                result = snprintf(buffer, size, "%s", tmp);
+
         }
         else
         {
