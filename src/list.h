@@ -217,7 +217,7 @@ struct list : text
     }
 
 
-    bool expand_without_size() const;
+    bool expand_without_size(size_t *size = nullptr) const;
     bool expand() const;
     // ------------------------------------------------------------------------
     //   Expand items to the stack, and return number of them
@@ -358,6 +358,7 @@ inline list_g operator*(list_r x, uint y)
 
 
 object::result to_list(uint depth);
+list_p to_list_object(uint depth);
 // ----------------------------------------------------------------------------
 //   Convert `depth` items to a list
 // ----------------------------------------------------------------------------

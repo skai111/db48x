@@ -1024,6 +1024,8 @@ OP(AlgebraVariable,        "ⓧ")        ALIAS(AlgebraVariable,       "VX")
 OP(StoreAlgebraVariable,   "Storeⓧ")   ALIAS(StoreAlgebraVariable,  "StoVX")
 OP(StEq,                   "▶Equation") ALIAS(StEq, "StoreEquation")
 OP(RcEq,                   "Equation▶") ALIAS(RcEq, "RecallEquation")
+OP(NextEq,                 "NextEquation")
+OP(EvalEq,                 "EvaluateEquation")
 
 
 

@@ -40,6 +40,8 @@ COMMAND_DECLARE(Root,3);
 
 COMMAND_DECLARE(StEq, 1);
 COMMAND_DECLARE(RcEq, 0);
+COMMAND_DECLARE(NextEq, 0);
+COMMAND_DECLARE(EvalEq, 0);
 
 
 struct SolvingMenu : menu

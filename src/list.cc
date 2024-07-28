@@ -557,7 +557,7 @@ list_p list::append(object_p o) const
 }
 
 
-bool list::expand_without_size() const
+bool list::expand_without_size(size_t *size) const
 // ----------------------------------------------------------------------------
 //   Expand items on the stack, but do not add the size
 // ----------------------------------------------------------------------------
@@ -571,6 +571,8 @@ bool list::expand_without_size() const
             return false;
         }
     }
+    if (size)
+        *size = rt.depth() - depth;
     return true;
 }
 
@@ -818,9 +820,9 @@ HELP_BODY(list)
 //
 // ============================================================================
 
-object::result to_list(uint depth)
+list_p to_list_object(uint depth)
 // ----------------------------------------------------------------------------
-//
+//  Make a list from the stack as an object
 // ----------------------------------------------------------------------------
 {
     scribble scr;
@@ -831,12 +833,27 @@ object::result to_list(uint depth)
             size_t objsz = obj->size();
             byte_p objp = byte_p(obj);
             if (!rt.append(objsz, objp))
-                return object::ERROR;
+                return nullptr;
         }
     }
-    object_g list = list::make(scr.scratch(), scr.growth());
-    if (rt.drop(depth) && rt.push(list))
-        return object::OK;
+
+    if (list_p result = list::make(scr.scratch(), scr.growth()))
+    {
+        rt.drop(depth);
+        return result;
+    }
+    return nullptr;
+}
+
+
+object::result to_list(uint depth)
+// ----------------------------------------------------------------------------
+//  Make a list on the stack
+// ----------------------------------------------------------------------------
+{
+    if (object_g list = to_list_object(depth))
+        if (rt.push(list))
+            return object::OK;
     return object::ERROR;
 }
 

@@ -2130,6 +2130,17 @@ expression_p expression::current_equation(bool error,
         return nullptr;
     }
     id eqty = obj->type();
+    if (eqty == ID_list || eqty == ID_array)
+    {
+        obj = list_p(obj)->at(0);
+        if (!obj)
+        {
+            rt.no_equation_error();
+            return nullptr;
+        }
+        eqty = obj->type();
+    }
+
     if (eqty == ID_equation)
     {
         obj = equation_p(obj)->value();
@@ -2438,6 +2449,24 @@ expression_p expression::as_difference_for_solve() const
 //   Revisit: how to transform A and B, A or B, e.g. A=B and C=D ?
 {
     return rewrites(X == Y, X - Y);
+}
+
+
+expression_p expression::left_of_equation() const
+// ----------------------------------------------------------------------------
+//   For the solver, transform A=B into A
+// ----------------------------------------------------------------------------
+{
+    return rewrites(X == Y, X);
+}
+
+
+expression_p expression::right_of_equation() const
+// ----------------------------------------------------------------------------
+//   For the solver, transform A=B into A
+// ----------------------------------------------------------------------------
+{
+    return rewrites(X == Y, Y);
 }
 
 

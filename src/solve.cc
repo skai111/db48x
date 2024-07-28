@@ -31,6 +31,7 @@
 
 #include "algebraic.h"
 #include "arithmetic.h"
+#include "array.h"
 #include "compare.h"
 #include "equations.h"
 #include "expression.h"
@@ -83,8 +84,6 @@ COMMAND_BODY(Root)
         rt.type_error();
         return ERROR;
     }
-    if (eqty == ID_expression)
-        eqobj = expression_p(+eqobj)->as_difference_for_solve();
 
     // Drop input parameters
     rt.drop(3);
@@ -129,6 +128,10 @@ algebraic_p solve(program_g eq, algebraic_g goal, object_g guess)
     algebraic_g y, dy, ly, hy;
     object::id  gty = guess->type();
     save<bool>  nodates(unit::nodates, true);
+
+    // Convert A=B+C into A-(B+C)
+    if (eq->type() == object::ID_expression)
+        eq = expression_p(+eq)->as_difference_for_solve();
 
     // Check if low and hight values were given explicitly
     if (gty == object::ID_list || gty == object::ID_array)
@@ -424,9 +427,19 @@ COMMAND_BODY(StEq)
     if (object_p obj = rt.top())
     {
         id objty = obj->type();
+        if (objty == ID_list || objty == ID_array)
+        {
+            for (object_p obj: *list_p(obj))
+            {
+                objty = obj->type();
+                if (objty != ID_expression && objty != ID_polynomial &&
+                    objty != ID_equation)
+                    rt.type_error();
+            }
+        }
         if (objty != ID_expression && objty != ID_polynomial &&
-            objty != ID_equation)
-            rt.type_error();
+                objty != ID_equation)
+                rt.type_error();
         else if (directory::store_here(static_object(ID_Equation), obj))
             if (rt.drop())
                 return OK;
@@ -447,6 +460,80 @@ COMMAND_BODY(RcEq)
 }
 
 
+COMMAND_BODY(NextEq)
+// ----------------------------------------------------------------------------
+//   Cycle equations in the Eq variable if it's a list
+// ----------------------------------------------------------------------------
+{
+    object_p eqname = static_object(ID_Equation);
+    object_p obj = directory::recall_all(eqname, false);
+    if (obj)
+    {
+        id ty = obj->type();
+        if (ty == ID_list || ty == ID_array)
+        {
+            size_t sz = 0;
+            if (list_p(obj)->expand_without_size(&sz))
+            {
+                rt.roll(sz);
+                list_g now = to_list_object(sz);
+                if (directory::store_here(eqname, now))
+                {
+                    ui.menu_refresh(ID_SolvingMenu);
+                    return OK;
+                }
+            }
+        }
+    }
+    return ERROR;
+}
+
+
+COMMAND_BODY(EvalEq)
+// ----------------------------------------------------------------------------
+//   Evaluate the current equation
+// ----------------------------------------------------------------------------
+{
+    if (expression_g expr = expression::current_equation(true))
+    {
+        // We will run programs, do not save stack, etc.
+        settings::PrepareForFunctionEvaluation willEvaluateFunctions;
+
+        expression_g diff = expr->as_difference_for_solve();
+        if (+diff != +expr)
+        {
+            expression_g l = expr->left_of_equation();
+            expression_g r = expr->right_of_equation();
+            algebraic_g lv = l->evaluate();
+            algebraic_g rv = r->evaluate();
+            if (lv && rv)
+            {
+                object_g ltag = tag::make("Left", +lv);
+                object_g rtag = tag::make("Right", +rv);
+                lv = lv - rv;
+                object_g diff = tag::make("Diff", +lv);
+                if (ltag && rtag && diff)
+                {
+                    list_g result = list::make(ID_array, ltag, rtag, diff);
+                    if (result && rt.push(+result))
+                        return OK;
+                }
+            }
+            rt.invalid_equation_error();
+        }
+        else
+        {
+            algebraic_g value = expr->evaluate();
+            if (value)
+                if (tag_p tagged = tag::make("Expr", +value))
+                    if (rt.push(tagged))
+                        return OK;
+        }
+    }
+    return ERROR;
+}
+
+
 MENU_BODY(SolvingMenu)
 // ----------------------------------------------------------------------------
 //   Process the MENU command for SolvingMenu
@@ -455,7 +542,7 @@ MENU_BODY(SolvingMenu)
     expression_p expr   = expression::current_equation(false);
     list_g       vars   = expr ? expr->names() : nullptr;
     size_t       nitems = vars ? vars->items() : 0;
-    items_init(mi, nitems, 3, 1);
+    items_init(mi, nitems+1, 3, 1);
     if (!vars)
         return false;
 
@@ -464,6 +551,7 @@ MENU_BODY(SolvingMenu)
     // First row: Store variables
     mi.plane  = 0;
     mi.planes = 1;
+    menu::items(mi, "EvalEq", ID_EvalEq);
     for (auto name : *vars)
         if (symbol_p sym = name->as<symbol>())
             menu::items(mi, sym, menu::ID_SolvingMenuStore);
@@ -473,6 +561,7 @@ MENU_BODY(SolvingMenu)
     mi.planes = 2;
     mi.skip   = skip;
     mi.index  = mi.plane * ui.NUM_SOFTKEYS;
+    menu::items(mi, "NextEq", ID_NextEq);
     for (auto name : *vars)
         if (symbol_p sym = name->as<symbol>())
             menu::items(mi, sym, menu::ID_SolvingMenuSolve);
@@ -482,6 +571,7 @@ MENU_BODY(SolvingMenu)
     mi.planes = 3;
     mi.skip   = skip;
     mi.index  = mi.plane * ui.NUM_SOFTKEYS;
+    menu::items(mi, "Eq▶", ID_RcEq);
     for (auto name : *vars)
     {
         if (symbol_g sym = name->as<symbol>())
@@ -497,7 +587,7 @@ MENU_BODY(SolvingMenu)
     }
 
     // Add markers
-    for (uint k = 0; k < ui.NUM_SOFTKEYS - (mi.pages > 1); k++)
+    for (uint k = 1; k < ui.NUM_SOFTKEYS - (mi.pages > 1); k++)
     {
         ui.marker(k + 0 * ui.NUM_SOFTKEYS, L'▶', true);
         ui.marker(k + 1 * ui.NUM_SOFTKEYS, L'?', false);
@@ -592,7 +682,7 @@ COMMAND_BODY(SolvingMenuRecall)
     int key = ui.evaluating;
     if (key >= KEY_F1 && key <= KEY_F6)
     {
-        uint index = key - KEY_F1 + 5 * ui.page();
+        uint index = key - KEY_F1 + 5 * ui.page() - 1;
         if (symbol_g sym = expression_variable(index))
             if (object_p value = directory::recall_all(sym, true))
                 if (tag_p tagged = tagged_value(sym, value))
@@ -622,7 +712,7 @@ COMMAND_BODY(SolvingMenuStore)
     int key = ui.evaluating;
     if (key >= KEY_F1 && key <= KEY_F6)
     {
-        uint index = key - KEY_F1 + 5 * ui.page();
+        uint index = key - KEY_F1 + 5 * ui.page() - 1;
         if (algebraic_p entry = expression_variable_or_unit(index))
         {
             if (object_p value = tag::strip(rt.pop()))
@@ -686,7 +776,7 @@ COMMAND_BODY(SolvingMenuSolve)
     int key = ui.evaluating;
     if (key >= KEY_F1 && key <= KEY_F6)
     {
-        uint index = key - KEY_F1 + 5 * ui.page();
+        uint index = key - KEY_F1 + 5 * ui.page() - 1;
         if (symbol_g sym = expression_variable(index))
         {
             object_g value = directory::recall_all(sym, false);
