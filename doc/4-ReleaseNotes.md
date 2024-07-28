@@ -1,12 +1,67 @@
 # Release notes
 
+## Release 0.7.12 "Multiply" - Multiple equations
+
+This release focuses on the equation solver, notably in interaction with the
+equation library. The goal is to get one step closer to the equation library in
+the HP50G, including the ability to have graphical illustration and multiple
+equations.
+
+### Features
+
+* doc: Add documentation for the equation library
+* doc: Add images from HP50G equation library (to be used later)
+* doc: Some help for the elastic buckling equations.
+* equations: Accept lists of equations in library
+* help: Add documentation for the various constants
+* help: Do not exit help when opening URLs or missing topics
+* lists: Add a setting to evaluate list as programs
+* menu: Add menu entries for solver imprecision and iterations
+* solver: Add support for multiple equation solving
+* ui: Add settings to hide/show empty menus and clear menu on EXIT
+* units: Add flow units (per user request) in Fluid section of units
+
+
+### Bug fixes
+
+* blitter: Adjust the right margin
+* blitter: Base horizontal adjust on scanline, not width
+* characters: Display correct content for built-in menus
+* constants: Close current file while parsing values
+* constants: Update some outdated values
+* doc: Show help for equations and constants
+* help: Do not try to load PNG images
+* rewrites: Avoid contradictory rules when reordering constants
+* solver: Work correctly with units (when in variables but not equation)
+
+### Improvements
+
+* build: Shorten the size of the version abbrev
+* config: Use config files only for user configuration
+* doc: Record performance data about unit conversion
+* help: Avoid slowing down when scrolling through pages of help
+* help: Record position for history even without a `\n`
+* simulator: Add tweak to show RPL object details
+* tests: Increase wait time for tests with blinking cursor
+* units: Do not simplify while in unit mode
+
+
 ## Release 0.7.11 "Rest" - Refine interactive stack, graphics in help
 
-This release is a refinement minor release. The primary focus is the interactive stack, which now lets you edit items, sort either according to memory representation or by value, display information about objects, and jump directly to a given stack level using digits.
+This release is a refinement minor release. The primary focus is the interactive
+stack, which now lets you edit items, sort either according to memory
+representation or by value, display information about objects, and jump directly
+to a given stack level using digits.
 
-The simple random number generator implemented in 0.7.10 was replaced with an additive congruential random number generator (ACORN), which can be configured in number of bits and number of iterations. A side effect is that there is now regression testing for single-variable statistics.
+The simple random number generator implemented in 0.7.10 was replaced with an
+additive congruential random number generator (ACORN), which can be configured
+in number of bits and number of iterations. A side effect is that there is now
+regression testing for single-variable statistics.
 
-The history feature was also improved by automatically enabling the `EditMenu` when selecting history, and then having the (unshifted) word left and word right commands automatically cycle through history if used at beginning or end of the editing buffer.
+The history feature was also improved by automatically enabling the `EditMenu`
+when selecting history, and then having the (unshifted) word left and word right
+commands automatically cycle through history if used at beginning or end of the
+editing buffer.
 
 ### Features
 
@@ -29,7 +84,7 @@ The history feature was also improved by automatically enabling the `EditMenu` w
 * runtime: Avoid crash running above allocated memory in `move_globals`
 
 
-### Enhancements
+### Improvements
 
 * ui: Reorganize code handling interactive stack keys
 * help: Adjust help area to new height for menus
