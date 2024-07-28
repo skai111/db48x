@@ -288,7 +288,7 @@ static const cstring basic_units[] =
 //   clang-format off
 {
     // ------------------------------------------------------------------------
-    // LENGTH MENU
+    // Length menu
     // ------------------------------------------------------------------------
     "Length",   nullptr,
 
@@ -358,7 +358,7 @@ static const cstring basic_units[] =
 
 
     // ------------------------------------------------------------------------
-    // AREA MENU
+    // Area menu
     // ------------------------------------------------------------------------
     "Area",     nullptr,
 
@@ -391,7 +391,7 @@ static const cstring basic_units[] =
     "nm²",      "=",                    // Square nanometer
 
     // ------------------------------------------------------------------------
-    // VOLUME MENU
+    // Volume menu
     // ------------------------------------------------------------------------
     "Volume",   nullptr,
 
@@ -438,7 +438,7 @@ static const cstring basic_units[] =
     "crbl",     "5826_in³",             // Cranberry barrel
 
     // ------------------------------------------------------------------------
-    // TIME MENU
+    // Time menu
     // ------------------------------------------------------------------------
     "Time",     nullptr,
 
@@ -457,14 +457,14 @@ static const cstring basic_units[] =
     "rpm",      "1/60_Hz",              // Rotations per minute
 
     // Alias names for common time units
-    "year",     "1_y",                  // Year
+    "year",     "1_yr",                 // Year
     "day",      "1_d",                  // Day
     "hour",     "1_h",                  // Hour
     "minute",   "1_min",                // Minute
     "second",   "1_s",                  // Second
 
     // ------------------------------------------------------------------------
-    // SPEED MENU
+    // Speed menu
     // ------------------------------------------------------------------------
     "Speed",     nullptr,
 
@@ -482,7 +482,7 @@ static const cstring basic_units[] =
     "kph",      "1_km/h",               // US common spelling for km/h
 
     // ------------------------------------------------------------------------
-    // MASS MENU
+    // Mass menu
     // ------------------------------------------------------------------------
     "Mass",     nullptr,
 
@@ -527,7 +527,7 @@ static const cstring basic_units[] =
     "Avogadro", "6.02214076E23",        // Avogadro constant (# units in 1_mol)
 
     // ------------------------------------------------------------------------
-    // FORCE MENU
+    // Force menu
     // ------------------------------------------------------------------------
     "Force",    nullptr,
 
@@ -540,7 +540,7 @@ static const cstring basic_units[] =
     "pdl",      "138254954376/1000000000000_N",       // Poundal
 
     // ------------------------------------------------------------------------
-    // ENERGY MENU
+    // Energy menu
     // ------------------------------------------------------------------------
     "Energy",   nullptr,
 
@@ -560,7 +560,7 @@ static const cstring basic_units[] =
     "eV",       "1.60217733E-19_J",     // electron-Volt
 
     // ------------------------------------------------------------------------
-    // POWER MENU
+    // Power menu
     // ------------------------------------------------------------------------
     "Power",    nullptr,
 
@@ -571,30 +571,47 @@ static const cstring basic_units[] =
     "hp",       "745.699871582_W",      // Horsepower
 
     // ------------------------------------------------------------------------
-    // ENVIRONMENT MENU
+    // Fluids menu
     // ------------------------------------------------------------------------
-    "Envir",    nullptr,
+    "Fluids",    nullptr,
 
     "Pa",       "1_N/m^2",              // Pascal
     "atm",      "101325_Pa",            // Atmosphere
     "bar",      "100000_Pa",            // bar
     "psi",      "6894.75729317_Pa",     // Pound per square inch
-    "torr",     "1/760_atm",            // Torr = 1/760 standard atm
-
     "ksi",      "1000_psi",             // Kilopound per square inch
+
+    "kPa",      "=",                    // Kilopascal
     "mmHg",     "1_torr",               // millimeter of mercury
     "inHg",     "1_in/mm*mmHg",         // inch of mercury
     "inH2O",    "249.0889_Pa",          // Inch of H2O
+    "torr",     "1/760_atm",            // Torr = 1/760 standard atm
 
     "K",        "1_K",                  // Kelvin
     "°C",       "1_K",                  // Celsius
     "°R",       "9/5_K",                // Rankin
     "°F",       "9/5_K",                // Fahrenheit
+    "°D",       "-2/3_K",               // Delisle
+
+    "m³/yr",    "=",                    // Cubic meters per year
+    "m³/d",     "=",                    // Cubic meters per day
+    "m³/h",     "=",                    // Cubic meters per hour
+    "l/min",    "=",                    // liters per minute
+    "l/s",      "=",                    // liters per second
+
+    "cm³/s",    "=",                    // Cubic centimeters per second
+    "gal/yr",   "=",                    // Gallons per year
+    "gal/d",    "=",                    // Gallons per day
+    "gal/min",  "=",                    // Gallons per minute
+    "gal/s",    "=",                    // Gallons per second
+
+    "P",        "1/10_Pa*s",            // Poise
+    "St",       "1_cm^2/s",             // Stokes
 
     // ------------------------------------------------------------------------
-    // ELECTRICITY MENU
+    // Electricity menu
     // ------------------------------------------------------------------------
-    "Elec",     nullptr,
+    "Electricity",     nullptr,
 
     "A",        "1_A",                  // Ampere
     "V",        "1_kg*m^2/(A*s^3)",     // Volt
@@ -612,7 +629,7 @@ static const cstring basic_units[] =
     "ohm",      "1_Ω",                  // Ohm
 
     // ------------------------------------------------------------------------
-    // ANGLES MENU
+    // Angles menu
     // ------------------------------------------------------------------------
     "Angle",    nullptr,
 
@@ -629,9 +646,9 @@ static const cstring basic_units[] =
     "pir",      "1/2_turn",             // Pi radians
 
     // ------------------------------------------------------------------------
-    // LIGHT/Radiation MENU
+    // Light/radiation menu
     // ------------------------------------------------------------------------
-    "Lt/Rad",    nullptr,
+    "Light",    nullptr,
 
     "cd",       "1_cd",                 // Candela
     "lm",       "1_cd*sr",              // Lumen
@@ -655,17 +672,9 @@ static const cstring basic_units[] =
     "R",        "258_µC/kg",            // Roentgen
 
     // ------------------------------------------------------------------------
-    // VISCOSITY MENU
-    // ------------------------------------------------------------------------
-    "Visc",     nullptr,
-
-    "P",        "1/10_Pa*s",            // Poise
-    "St",       "1_cm^2/s",             // Stokes
-
-    // ------------------------------------------------------------------------
     // Computing
     // ------------------------------------------------------------------------
-    "Comp",     nullptr,
+    "Computing", nullptr,
 
     "bit",      "1_bit",                // Bit
     "byte",     "8_bit",                // Byte
