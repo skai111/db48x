@@ -169,4 +169,30 @@ intermediate computations were not made with increased precision.
 | VP48            | 8377-10259 | 5964-6123  |
 
 Crash at precision 3
+
+
+## Unit conversion benchmark
+
+Units involve reading an external file, so this is a bit slow
+
+```
+«
+  «
+    0 25 for i
+      i 1_m/s * 1_km/yr convert drop
+    next
+  »
+  TEVAL
+»
+```
+
+For 5 runs on USB power:
+
+| Configuration          | DM32 ms    | DM42 ms    |   HP48S   |   HP50G   |
+|------------------------|------------|------------|-----------|-----------|
+| Units in file          |  1539-1616 | 9069-9238  |           |           |
+| Units in memory        |   999-1047 | 3325-3503  | 6988-7816 | 2009-2012 |
+| No autosimplify        |   688-723  | 2383-2585  |           |           |
+| Commit no autosimplify |   691-722  | 2362-2568  |           |           |
+
 <!--- !DMNONE --->
