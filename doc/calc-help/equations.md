@@ -42,6 +42,12 @@ relative to the loads.
 * Internal bending moment is positive counterclockwise on the left-hand part.
 * Shear force is positive downward on the left-hand part.
 
+### Elastic Buckling
+
+These equations apply to a slender column (`K·L/r>100`) with length factor `K`.
+
+![Elastic Buckling](img/ElasticBuckling.bmp)
+
 
 
 ## Electricity

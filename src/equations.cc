@@ -72,7 +72,6 @@ static const cstring basic_equations[] =
 
     "RelativityMassEnergy",             "'(E_J)=(m_kg)*Ⓒc^2'",
     "IdealGas",                         "'(P_Pa)*(V_m^3)=(n_mol)*ⒸR*(T_K)'"
-
 };
 //   clang-format on
 
@@ -110,8 +109,8 @@ const equation::config equation::equations =
 //  Define the configuration for the equations
 // ----------------------------------------------------------------------------
 {
-    .menu_help      = "Equations",
-    .help           = "Equation",
+    .menu_help      = "",
+    .help           = "",
     .prefix         = L'Ⓔ',
     .type           = ID_equation,
     .first_menu     = ID_EquationsMenu00,

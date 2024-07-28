@@ -276,7 +276,7 @@ static const cstring basic_constants[] =
     // ------------------------------------------------------------------------
     // MATH CONSTANTS MENU
     // ------------------------------------------------------------------------
-    "Math",   nullptr,
+    "Mathematics",   nullptr,
 
     "π",        "3.14159",              // Evaluated specially (decimal-pi.h)
     "e",        "2.71828",              // Evaluated specially (decimal-e.h)
@@ -289,7 +289,7 @@ static const cstring basic_constants[] =
     //   Chemistry
     // ------------------------------------------------------------------------
 
-    "Chem",     nullptr,
+    "Chemistry",     nullptr,
 
     "NA",       "6.0221367E23_mol⁻¹",   // Avogradro's number
     "k",        "1.380658E-23_J/K",     // Boltzmann
@@ -303,7 +303,7 @@ static const cstring basic_constants[] =
     //   Physics
     // ------------------------------------------------------------------------
 
-    "Phys",     nullptr,
+    "Physics",     nullptr,
 
     "ⅉ",        "0+ⅈ1",                 // Imaginary unit in physics
     "c",        "299792458_m/s",        // Speed of light
@@ -342,7 +342,7 @@ static const cstring basic_constants[] =
     // ------------------------------------------------------------------------
     //  Computing
     // ------------------------------------------------------------------------
-    "Comp",   nullptr,
+    "Computing",   nullptr,
 
     "No",                       "False",                // No value = false
     "Yes",                      "True",                 // Yes value = true
@@ -368,8 +368,8 @@ const constant::config constant::constants =
 //  Define the configuration for the constants
 // ----------------------------------------------------------------------------
 {
-    .menu_help      = "Constants",
-    .help           = "Constant",
+    .menu_help      = " Constants",
+    .help           = " Constant",
     .prefix         = L'Ⓒ',
     .type           = ID_constant,
     .first_menu     = ID_ConstantsMenu00,
@@ -610,7 +610,7 @@ utf8 constant::do_instance_help(constant::config_r cfg) const
     static char buf[64];
     size_t len = 0;
     utf8 base = do_name(cfg, &len);
-    snprintf(buf, sizeof(buf), "%.*s %s", int(len), base, cfg.help);
+    snprintf(buf, sizeof(buf), "%.*s%s", int(len), base, cfg.help);
     return utf8(buf);
 }
 
@@ -799,7 +799,7 @@ utf8 constant_menu::do_menu_help(constant::config_r cfg,
     static char buf[64];
     size_t len = 0;
     utf8 base = do_name(cfg, cst->type(), len);
-    snprintf(buf, sizeof(buf), "%.*s %s", int(len), base, cfg.menu_help);
+    snprintf(buf, sizeof(buf), "%.*s%s", int(len), base, cfg.menu_help);
     return utf8(buf);
 }
 

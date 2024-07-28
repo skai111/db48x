@@ -4564,7 +4564,7 @@ The DB50X calculator features a library of constants covering mathematics,
 physics, chemistry and computer science. The built-in constants can be extended
 using the `config/constants.csv` configuration file.
 
-## Mathematical constants
+## Mathematics constants
 
 ### π constant
 
@@ -4905,26 +4905,26 @@ logarithmic quantity, most often expressed in decibels dB. I0 is the sound
 intensity used as a reference, corresponding to 0dB.
 
 
-## Dates
+## Dates Constants
 
-### BastilleDay
+### BastilleDay constant
 
 French national day
 
-### MartinLutherKingDeath
+### MartinLutherKingDeath constant
 
 Martin Luther King Jr., an African-American clergyman and civil rights movement
 leader, was fatally shot at the Lorraine Motel in Memphis, Tennessee, on April
 4, 1968, at 6:01 p.m.
 
-### IndependenceDay
+### IndependenceDay constant
 
 Independence Day, known colloquially as the Fourth of July, is a federal holiday
 in the United States which commemorates the ratification of the Declaration of
 Independence by the Second Continental Congress on July 4, 1776, establishing
 the United States of America.
 
-## Computing-related constants
+## Computing constants
 
 ### No constant
 
@@ -4996,6 +4996,12 @@ relative to the loads.
 * Slope is positive counterclockwise
 * Internal bending moment is positive counterclockwise on the left-hand part.
 * Shear force is positive downward on the left-hand part.
+
+### Elastic Buckling
+
+These equations apply to a slender column (`K·L/r>100`) with length factor `K`.
+
+![Elastic Buckling](img/ElasticBuckling.bmp)
 
 
 
