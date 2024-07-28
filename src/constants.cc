@@ -584,8 +584,7 @@ algebraic_p constant::do_value(config_r cfg) const
     if (csym)
     {
         // Need to close the configuration file before we parse the constants
-        if (cfile.valid())
-            cfile.close();
+        file_closer fc(cfile, cfg.file);
 
         // Special cases for pi and e where we have built-in constants
         if (cname->matches("π"))
@@ -759,9 +758,12 @@ bool constant_menu::do_submenu(constant::config_r cfg, menu_info &mi) const
                     utf8 mtxt = mentry->value(&mlen);
                     cfile.seek(position);
                     mentry = cfile.lookup(mtxt, mlen, false, false);
-                    cfile.seek(posafter);
                     if (cfg.label)
+                    {
+                        file_closer fc(cfile, cfg.file);
                         mentry = cfg.label(mentry);
+                    }
+                    cfile.seek(posafter);
                     if (mentry)
                         items(mi, mentry, type);
                 }
@@ -778,6 +780,7 @@ bool constant_menu::do_submenu(constant::config_r cfg, menu_info &mi) const
             if (plane == 1 && cfg.label)
             {
                 symbol_g mentry = symbol::make(label);
+                file_closer fc(cfile, cfg.file);
                 mentry = cfg.label(mentry);
                 items(mi, mentry, type);
             }

@@ -81,6 +81,28 @@ protected:
 };
 
 
+struct file_closer
+// ----------------------------------------------------------------------------
+//   Structure to temporary close a file
+// ----------------------------------------------------------------------------
+//   DMCP only allows one file open at a time
+{
+    file_closer(file &f, cstring name)
+        : f(f), name(name), position(f.position())
+    {
+        f.close();
+    }
+    ~file_closer()
+    {
+        f.open(name);
+        f.seek(position);
+    }
+    file   &f;
+    cstring name;
+    uint    position;
+};
+
+
 #define MAGIC_SAVE_STATE         0x05121968
 
 
