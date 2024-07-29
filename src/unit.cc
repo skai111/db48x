@@ -192,21 +192,27 @@ RENDER_BODY(unit)
                 return sz;
         }
     }
+    bool hide = !ed && value->as_quoted<symbol>();
     if (sz)
     {
-        r.put('_');
+        if (!hide)
+            r.put('_');
     }
     else
     {
         value->render(r);
-        r.put(ed ? unicode('_') : unicode(settings::SPACE_UNIT));
+        if (!hide)
+            r.put(ed ? unicode('_') : unicode(settings::SPACE_UNIT));
     }
 
-    save<bool> m(mode, true);
-    if (expression_p ueq = uexpr->as<expression>())
-        ueq->render(r, false);
-    else
-        uexpr->render(r);
+    if (!hide)
+    {
+        save<bool> m(mode, true);
+        if (expression_p ueq = uexpr->as<expression>())
+            ueq->render(r, false);
+        else
+            uexpr->render(r);
+    }
 
     return r.size();
 }
@@ -219,23 +225,27 @@ EVAL_BODY(unit)
 {
     algebraic_g value = o->value();
     algebraic_g uexpr = o->uexpr();
+    bool skip = value->as_quoted<symbol>();
     value = value->evaluate();
     if (!value)
         return ERROR;
-    if (unit::mode)
+    if (!skip)
     {
-        uexpr = uexpr->evaluate();
-        if (!uexpr)
-            return ERROR;
-
-        while (unit_g u = uexpr->as<unit>())
+        if (unit::mode)
         {
-            algebraic_g scale = u->value();
-            uexpr = u->uexpr();
-            value = scale * value;
+            uexpr = uexpr->evaluate();
+            if (!uexpr)
+                return ERROR;
+
+            while (unit_g u = uexpr->as<unit>())
+            {
+                algebraic_g scale = u->value();
+                uexpr = u->uexpr();
+                value = scale * value;
+            }
         }
+        value = unit::simple(value, uexpr);
     }
-    value = unit::simple(value, uexpr);
     return rt.push(+value) ? OK : ERROR;
 }
 

@@ -151,7 +151,8 @@ symbol_p expression::render(uint depth, int &precedence, bool editing)
         case 0:
             // Symbols and other non-algebraics, e.g. numbers
             precedence = obj->precedence();
-            if (precedence == precedence::NONE)
+            if (precedence == precedence::NONE ||
+                (!editing && obj->type() == ID_unit))
                 precedence = precedence::SYMBOL;
             if (obj->type() == ID_symbol)
                 return symbol_p(object_p(obj));
@@ -1839,7 +1840,7 @@ grob_p expression::graph(grapher &g, uint depth, int &precedence)
         case 0:
             // Symbols and other non-algebraics, e.g. numbers
             precedence = obj->precedence();
-            if (precedence == precedence::NONE)
+            if (precedence == precedence::NONE || obj->type() == ID_unit)
                 precedence = precedence::SYMBOL;
             g.voffset = 0;
             return obj->graph(g);

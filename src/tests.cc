@@ -6497,11 +6497,11 @@ void tests::hms_dms_operations()
         .test(DOT).editor("\"1...\"")
         .test(ENTER).expect("\"1...\"");
     step("Invalid DMS value should display correctly")
-        .test(CLEAR, "ABC_dms", ENTER).expect("'ABC' dms");
+        .test(CLEAR, "ABC_dms", ENTER).expect("'ABC'");
     step("Invalid HMS value should display correctly")
-        .test(CLEAR, "ABC_hms", ENTER).expect("'ABC' hms");
+        .test(CLEAR, "ABC_hms", ENTER).expect("'ABC'");
     step("Invalid date value should display correctly")
-        .test(CLEAR, "ABC_date", ENTER).expect("'ABC' date");
+        .test(CLEAR, "ABC_date", ENTER).expect("'ABC'");
     step("Inserting zeros automatically")
         .test(CLEAR, DOT, KEY3, DOT, ENTER)
         .expect("0°03′00″");
@@ -7221,7 +7221,7 @@ void tests::insertion_of_variables_constants_and_units()
         .expect("299 792 458 m/s");
     step("Programmatic equation lookup (symbol)")
         .test(CLEAR, "RelativityMassEnergy LIBEQ", ENTER)
-        .expect("'(E J)=(m kg)·c↑2'");
+        .expect("'E=m·c↑2'");
     step("Programmatic library lookup (symbol)")
         .test(CLEAR, "Dedicace XLIB", ENTER)
         .expect("\"À tous ceux qui se souviennent de Maubert électronique\"");
@@ -7230,7 +7230,7 @@ void tests::insertion_of_variables_constants_and_units()
         .expect("6.02213 67⁳²³ mol⁻¹");
     step("Programmatic equation lookup (text)")
         .test(CLEAR, "\"IdealGas\" LIBEQ", ENTER)
-        .expect("'(P Pa)·(V m↑3)=(n mol)·R·(T K)'");
+        .expect("'P·V=n·R·T'");
     step("Programmatic library lookup (text)")
         .test(CLEAR, "\"LibraryHelp\" XLIB", ENTER)
         .expect("\"To modify the library, edit the config/library.csv file\"");
@@ -7279,7 +7279,7 @@ void tests::insertion_of_variables_constants_and_units()
         .test(CLEAR, LSHIFT, RUNSTOP).editor("«»")
         .test("A", NOSHIFT, F1).editor("«A 1_m * »")
         .test(ENTER).want("« A 1 m × »")
-        .test(RUNSTOP).expect("'A' m");
+        .test(RUNSTOP).expect("'A'");
 
     step("Enter 27_m⁻¹ in program and evaluate it")
         .test(CLEAR, LSHIFT, RUNSTOP).editor("«»")
