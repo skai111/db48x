@@ -420,6 +420,36 @@ algebraic_p solve(program_g eq, algebraic_g goal, object_g guess)
 //
 // ============================================================================
 
+static bool is_well_defined(expression_r expr, symbol_p solving = nullptr)
+// ----------------------------------------------------------------------------
+//   Check if all variables but the one we solve for are defined
+// ----------------------------------------------------------------------------
+{
+    symbol_g sym = solving;
+    list_p vars = expr->names();
+    for (auto var : *vars)
+    {
+        if (symbol_p vsym = var->as<symbol>())
+        {
+            if (!sym || !sym->is_same_as(vsym))
+            {
+                if (!directory::recall_all(var, false))
+                {
+                    rt.some_undefined_name_error();
+                    return false;
+                }
+            }
+        }
+        else
+        {
+            rt.some_invalid_name_error();
+            return false;
+        }
+    }
+    return true;
+}
+
+
 COMMAND_BODY(StEq)
 // ----------------------------------------------------------------------------
 //   Store expression in `Equation` variable
@@ -504,28 +534,31 @@ COMMAND_BODY(EvalEq)
 {
     if (expression_g expr = expression::current_equation(true))
     {
-        // We will run programs, do not save stack, etc.
-        settings::PrepareForFunctionEvaluation willEvaluateFunctions;
-
-        expression_g diff = expr->as_difference_for_solve();
-        if (+diff != +expr)
+        if (is_well_defined(expr))
         {
-            expression_g l = expr->left_of_equation();
-            expression_g r = expr->right_of_equation();
-            algebraic_g lv = l->evaluate();
-            algebraic_g rv = r->evaluate();
-            algebraic_g d = lv - rv;
-            if (d && !d->is_zero(false))
+            // We will run programs, do not save stack, etc.
+            settings::PrepareForFunctionEvaluation willEvaluateFunctions;
+
+            expression_g diff = expr->as_difference_for_solve();
+            if (+diff != +expr)
             {
-                if (d->is_negative(false))
-                    r = expression::make(ID_sub, rv, -d);
-                else
-                    r = expression::make(ID_add, rv, d);
-                rv = +r;
+                expression_g l = expr->left_of_equation();
+                expression_g r = expr->right_of_equation();
+                algebraic_g lv = l->evaluate();
+                algebraic_g rv = r->evaluate();
+                algebraic_g d = lv - rv;
+                if (d && !d->is_zero(false))
+                {
+                    if (d->is_negative(false))
+                        r = expression::make(ID_sub, rv, -d);
+                    else
+                        r = expression::make(ID_add, rv, d);
+                    rv = +r;
+                }
+                r = expression::make(ID_TestEQ, lv, rv);
+                if (r && rt.push(+r))
+                    return OK;
             }
-            r = expression::make(ID_TestEQ, lv, rv);
-            if (r && rt.push(+r))
-                return OK;
         }
     }
     return ERROR;
@@ -644,35 +677,6 @@ static tag_p tagged_value(symbol_p sym, object_p value)
     gcutf8 ntxt   = sym->value(&nlen);
     tag_p  tagged = tag::make(ntxt, nlen, value);
     return tagged;
-}
-
-
-static bool is_well_defined(expression_r expr, symbol_r sym)
-// ----------------------------------------------------------------------------
-//   Check if all variables but the one we solve for are defined
-// ----------------------------------------------------------------------------
-{
-    list_p vars = expr->names();
-    for (auto var : *vars)
-    {
-        if (symbol_p vsym = var->as<symbol>())
-        {
-            if (!sym->is_same_as(vsym))
-            {
-                if (!directory::recall_all(var, false))
-                {
-                    rt.some_undefined_name_error();
-                    return false;
-                }
-            }
-        }
-        else
-        {
-            rt.some_invalid_name_error();
-            return false;
-        }
-    }
-    return true;
 }
 
 
