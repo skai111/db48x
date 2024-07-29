@@ -1616,8 +1616,8 @@ COMMAND_BODY(ToUnit)
 //   Combine a value and a unit object to build a new unit object
 // ----------------------------------------------------------------------------
 {
-    object_p y = rt.stack(1);
-    unit_p x = rt.stack(0)->as<unit>();
+    object_p y = tag::strip(rt.stack(1));
+    unit_p x = tag::strip(rt.stack(0))->as<unit>();
     if (!x || !y || !y->is_algebraic())
     {
         rt.type_error();
@@ -1680,7 +1680,7 @@ COMMAND_BODY(ApplyUnit)
 {
     int key = ui.evaluating;
     if (algebraic_g uname = key_unit(key, true))
-        if (object_p value = rt.top())
+        if (object_p value = tag::strip(rt.top()))
             if (algebraic_g alg = value->as_algebraic())
                 if (algebraic_g uobj = unit::simple(alg, uname))
                     if (rt.top(+uobj))
@@ -1711,7 +1711,7 @@ COMMAND_BODY(ApplyInverseUnit)
 {
     int key = ui.evaluating;
     if (algebraic_g uname = key_unit(key, true))
-        if (object_p value = rt.top())
+        if (object_p value = tag::strip(rt.top()))
             if (algebraic_g alg = value->as_algebraic())
                 if (algebraic_g uobj = unit::simple(alg, inv::run(uname)))
                     if (rt.top(+uobj))
@@ -1742,7 +1742,7 @@ COMMAND_BODY(ConvertToUnit)
 {
     int key = ui.evaluating;
     if (algebraic_g uname = key_unit(key, false))
-        if (object_p value = rt.top())
+        if (object_p value = tag::strip(rt.top()))
             if (algebraic_g alg = value->as_algebraic())
                 if (unit_g uobj = uname->as<unit>())
                     if (uobj->convert(alg))
@@ -1805,7 +1805,7 @@ COMMAND_BODY(ConvertToUnitPrefix)
     }
 
     // Read the stack value
-    object_p value = rt.top();
+    object_p value = tag::strip(rt.top());
     if (!value)
         return ERROR;
 
@@ -1901,7 +1901,7 @@ static object::result toAngleUnit(cstring angleUnit)
 //   Convert the value x to the given angle unit
 // ----------------------------------------------------------------------------
 {
-    object_g x = rt.top();
+    object_g x = tag::strip(rt.top());
     unit_g uobj = x->as<unit>();
     if (uobj)
     {
