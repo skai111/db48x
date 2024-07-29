@@ -4066,7 +4066,7 @@ bool user_interface::handle_editing(int key)
             {
             swap:
                 // Swap
-                if (interactive + 1 < rt.depth())
+                if (interactive < rt.depth())
                 {
                     object_p x = rt.stack(interactive - 1);
                     object_p y = rt.stack(interactive);
