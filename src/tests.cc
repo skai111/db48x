@@ -164,7 +164,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        auto_simplification();
+        solver_testing();
     }
     else
     {
@@ -5046,6 +5046,32 @@ void tests::solver_testing()
     step("Solver without solution")
         .test(CLEAR, "'sq(x)+3=0' 'X' 0 ROOT", ENTER)
         .error("No solution?");
+
+    step("Solving menu")
+        .test(CLEAR, "'A²+B²=C²'", ENTER)
+        .test(LSHIFT, KEY7, LSHIFT, F1, F6)
+        .test("3", NOSHIFT, F2, "4", NOSHIFT, F3, LSHIFT, F4)
+        .expect("C:5.");
+    step("Evaluate equation case Left=Right")
+        .test(F1)
+        .expect("'25=25.'");
+    step("Verify that we display the equation after entering value")
+        .test("4", F4)
+        .image_noheader("solver-eqdisplay");
+    step("Evaluate equation case Left=Right")
+        .test("4", F4, F1)
+        .expect("'25=16+9'");
+    step("Evaluate equation case Left=Right")
+        .test("7", F4, F1)
+        .expect("'25=49-24'");
+
+    step("Solving with units")
+        .test("30_cm", NOSHIFT, F2, ".4_m", NOSHIFT, F3, "100_in", NOSHIFT, F4)
+        .test(LSHIFT, F4)
+        .expect("C:19.68503 93701 in")
+        .test(LSHIFT, KEY5, F4, LSHIFT, F1)
+        .test(LSHIFT, A, LSHIFT, A)
+        .expect("0.5 m");
 }
 
 
