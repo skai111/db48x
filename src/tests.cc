@@ -7019,13 +7019,13 @@ void tests::graphic_stack_rendering()
 
     step("Vector")
         .test(CLEAR, LSHIFT, KEY9, "1 2 3", ENTER, EXIT)
-        .image_noheader("vector-horizontal");
-    step("Vector vertical rendering")
-        .test("VerticalVectors", ENTER)
         .image_noheader("vector-vertical");
     step("Vector horizontal rendering")
         .test("HorizontalVectors", ENTER)
         .image_noheader("vector-horizontal");
+    step("Vector vertical rendering")
+        .test("VerticalVectors", ENTER)
+        .image_noheader("vector-vertical");
 
     step("Matrix")
         .test(CLEAR, LSHIFT, KEY9,
