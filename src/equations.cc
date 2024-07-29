@@ -58,8 +58,8 @@ static const cstring basic_equations[] =
     "Columns and Beams", nullptr,
 
     "Elastic Buckling",  "{ "
-        "'(Pcr_kN)=(Ⓒπ*(E_kPa)*(A_cm^2))/sq((K*(L_m))/(r_cm))' "
-        "'(Pcr_kN)=(Ⓒπ*(E_kPa)*(I_mm^4))/sq(K*(L_m))' "
+        "'(Pcr_kN)=(sq(Ⓒπ)*(E_kPa)*(A_cm^2))/sq((K*(L_m))/(r_cm))' "
+        "'(Pcr_kN)=(sq(Ⓒπ)*(E_kPa)*(I_mm^4))/sq(K*(L_m))' "
         "'(σcr_kPa)=(Pcr_kN)/(A_cm^2)' "
         "'r = sqrt((I_mm^4)/(A_cm^2))' "
     "}",
