@@ -90,12 +90,18 @@ struct file_closer
     file_closer(file &f, cstring name)
         : f(f), name(name), position(f.position())
     {
-        f.close();
+        if (f.valid())
+            f.close();
+        else
+            name = nullptr;
     }
     ~file_closer()
     {
-        f.open(name);
-        f.seek(position);
+        if (name)
+        {
+            f.open(name);
+            f.seek(position);
+        }
     }
     file   &f;
     cstring name;
