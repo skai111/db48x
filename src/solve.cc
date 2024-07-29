@@ -591,6 +591,10 @@ MENU_BODY(SolvingMenu)
         ui.marker(k + 1 * ui.NUM_SOFTKEYS, L'?', false);
         ui.marker(k + 2 * ui.NUM_SOFTKEYS, L'▶', false);
     }
+
+    if (expression_p expr = expression::current_equation(false, true, true))
+        ui.transient_object(expr);
+
     return true;
 }
 

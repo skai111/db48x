@@ -2600,10 +2600,8 @@ bool user_interface::draw_stack()
     draw_busy();
     uint top = HeaderFont->height() + 2;
     uint bottom = Stack.draw_stack();
-    if (menu_p m = menu())
-        if (m->type() == object::ID_SolvingMenu)
-            if (expression_p expr = expression::current_equation(false, true, true))
-                draw_object(expr, top, bottom);
+    if (object_p transient = transient_object())
+        draw_object(transient, top, bottom);
     draw_dirty(0, top, stack, LCD_H-1);
     draw_idle();
     dirtyStack = false;
@@ -2644,6 +2642,38 @@ bool user_interface::draw_object(object_p obj, uint top, uint bottom)
         draw_dirty(x-1, y-1, x+w, y+h);
     }
     return graph;
+}
+
+
+object_p user_interface::transient_object()
+// ----------------------------------------------------------------------------
+//   Return transient object to display if any
+// ----------------------------------------------------------------------------
+{
+    object_p result = editing;
+    if (result)
+    {
+        if (!rt.editing())
+            editing = nullptr;
+        else
+            result = nullptr;
+    }
+    return result;
+}
+
+
+bool user_interface::transient_object(object_p obj)
+// ----------------------------------------------------------------------------
+//   Set transient object to draw on screen
+// ----------------------------------------------------------------------------
+{
+    if (obj && !editing && !rt.editing())
+    {
+        editing = obj;
+        dirtyStack = true;
+        return true;
+    }
+    return false;
 }
 
 

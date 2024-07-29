@@ -143,6 +143,9 @@ struct user_interface
     bool        draw_menus();
     bool        draw_cursor(int show, uint ncursor);
 
+    object_p    transient_object();
+    bool        transient_object(object_p obj);
+
     modes       editing_mode()          { return mode; }
     int         stack_screen_bottom()   { return stack; }
     int         menu_screen_bottom()    { return menuHeight; }
