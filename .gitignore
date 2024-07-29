@@ -34,3 +34,6 @@
 /tools/decimize/decimize
 /tools/ttf2font/ttf2font-db48x
 /tools/ttf2font/ttf2font-db50x
+/help/img/*.bmp
+/wasm/*.js
+/wasm/*.wasm
