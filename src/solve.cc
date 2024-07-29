@@ -205,7 +205,7 @@ algebraic_p solve(program_g eq, algebraic_g goal, object_g guess)
     settings::PrepareForFunctionEvaluation willEvaluateFunctions;
 
     // Set independent variable
-    symbol_g                               name = goal->as_quoted<symbol>();
+    symbol_g name = goal->as_quoted<symbol>();
     if (!name)
     {
         if (!uname)
@@ -513,28 +513,18 @@ COMMAND_BODY(EvalEq)
             expression_g r = expr->right_of_equation();
             algebraic_g lv = l->evaluate();
             algebraic_g rv = r->evaluate();
-            if (lv && rv)
+            algebraic_g d = lv - rv;
+            if (d && !d->is_zero(false))
             {
-                object_g ltag = tag::make("Left", +lv);
-                object_g rtag = tag::make("Right", +rv);
-                lv = lv - rv;
-                object_g diff = tag::make("Diff", +lv);
-                if (ltag && rtag && diff)
-                {
-                    list_g result = list::make(ID_array, ltag, rtag, diff);
-                    if (result && rt.push(+result))
-                        return OK;
-                }
+                if (d->is_negative(false))
+                    r = expression::make(ID_sub, rv, -d);
+                else
+                    r = expression::make(ID_add, rv, d);
+                rv = +r;
             }
-            rt.invalid_equation_error();
-        }
-        else
-        {
-            algebraic_g value = expr->evaluate();
-            if (value)
-                if (tag_p tagged = tag::make("Expr", +value))
-                    if (rt.push(tagged))
-                        return OK;
+            r = expression::make(ID_TestEQ, lv, rv);
+            if (r && rt.push(+r))
+                return OK;
         }
     }
     return ERROR;
