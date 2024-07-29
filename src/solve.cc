@@ -155,28 +155,29 @@ algebraic_p solve(program_g eq, algebraic_g goal, object_g guess)
     algebraic_g uexpr;
     if (uname || lx->type() == object::ID_unit || hx->type() == object::ID_unit)
     {
-        if (!uname)
-        {
-            unit_g lu = lx->as<unit>();
-            unit_g hu = hx->as<unit>();
-            if (!lu || !hu)
-            {
-                rt.type_error();
-                return nullptr;
-            }
-            if (!lu->convert(hu))
-                return nullptr;
-            hx    = +hu;
+        unit_g lu = lx->as<unit>();
+        unit_g hu = hx->as<unit>();
+        if (uname)
+            uexpr = uname->uexpr();
+        else if (lu)
             uexpr = lu->uexpr();
-        }
-        else if (!uname->convert(lx) || !uname->convert(hx))
+        else if (hu)
+            uexpr = hu->uexpr();
+        if (!uexpr)
         {
+            rt.internal_error();
             return nullptr;
         }
-        else
-        {
-            uexpr = uname->uexpr();
-        }
+
+        if (!lu)
+            lu = unit::make(lx, uexpr);
+        if (!hu)
+            hu = unit::make(hx, uexpr);
+
+        if (!lu || !hu || !lu->convert(hu))
+            return nullptr;
+        lx = +lu;
+        hx = +hu;
     }
 
     // Check if low and hight are identical, if so pick hx=1.01*lx
