@@ -372,12 +372,23 @@ PARSE_BODY(rectangular)
         offs += resz;
 
         // Skip ';' if it's there. Also accept pure whitespace (case b)
-        offs += utf8_skip_whitespace(p.source + offs, max - offs);
+        size_t spaces = utf8_skip_whitespace(p.source + offs, max - offs);
+        offs += spaces;
         cp = utf8_codepoint(p.source + offs);
         if (cp == ';')
         {
             offs++;
             offs += utf8_skip_whitespace(p.source + offs, max - offs);
+            cp = utf8_codepoint(p.source + offs);
+            spaces = 1;
+        }
+
+        // If we have a parenthese here, we are done, return that
+        if (cp == ')' || !spaces)
+        {
+            p.out = +re;
+            p.length = offs+1;
+            return OK;
         }
 
         // Parse the imaginary part
