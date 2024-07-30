@@ -1260,6 +1260,7 @@ algebraic_p expression::simplify_products() const
 
     // Save auto-simplify and set it, and evaluate units normally
     settings::SaveAutoSimplify sas(true);
+    settings::SaveNumericalResults snr(false);
     save<bool> smode(unit::mode, false);
     save<bool> sexpr(unit::factoring, true);
 

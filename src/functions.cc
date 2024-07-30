@@ -205,6 +205,7 @@ algebraic_p function::evaluate(algebraic_r xr, id op, ops_t ops)
             uint divisor = 2 + (op == ID_cbrt);
             algebraic_g exponent = +fraction::make(integer::make(1),
                                                    integer::make(divisor));
+            settings::SaveNumericalResults snr(false);
             uexpr = pow(uexpr, exponent);
             return unit::make(value, uexpr);
         }
