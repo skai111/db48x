@@ -1195,7 +1195,9 @@ bool user_interface::menu_refresh(object::id menu)
 //   Request a refresh of a menu
 // ----------------------------------------------------------------------------
 {
-    if (menuStack[0] == menu)
+    if (menuStack[0] == menu ||
+        (menu == object::ID_VariablesMenu &&
+         menuStack[0] == object::ID_SolvingMenu))
         return menu_refresh();
     return false;
 }
