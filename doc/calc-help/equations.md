@@ -15,6 +15,7 @@ The variables in the columns and beams section are:
 * `θ`: Slope at `x`
 * `A`: Cross-sectional area
 * `a`: Distance to point load
+* 'ε': Eccentricity
 * `c`: Distance to edge fiber (Eccentric Columns), or Distance to applied moment (beams)
 * `E`: Modulus of elasticity
 * `I`: Moment of inertia
@@ -47,6 +48,13 @@ relative to the loads.
 These equations apply to a slender column (`K·L/r>100`) with length factor `K`.
 
 ![Elastic Buckling](img/ElasticBuckling.bmp)
+
+
+### Eccentric Columns
+
+These equations apply to a slender column (`K·L/r>100`) with length factor `K`.
+
+![Eccentric Columns](img/EccentricColumns.bmp)
 
 
 

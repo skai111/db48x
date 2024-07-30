@@ -58,10 +58,15 @@ static const cstring basic_equations[] =
     "Columns and Beams", nullptr,
 
     "Elastic Buckling",  "{ "
-        "'(Pcr_kN)=(sq(Ⓒπ)*(E_kPa)*(A_cm^2))/sq((K*(L_m))/(r_cm))' "
-        "'(Pcr_kN)=(sq(Ⓒπ)*(E_kPa)*(I_mm^4))/sq(K*(L_m))' "
-        "'(σcr_kPa)=(Pcr_kN)/(A_cm^2)' "
-        "'r = sqrt((I_mm^4)/(A_cm^2))' "
+    "  '(Pcr_kN)=(sq(Ⓒπ)*(E_kPa)*(A_cm^2))/sq((K*(L_m))/(r_cm))' "
+    "  '(Pcr_kN)=(sq(Ⓒπ)*(E_kPa)*(I_mm^4))/sq(K*(L_m))' "
+    "  '(σcr_kPa)=(Pcr_kN)/(A_cm^2)' "
+    "  'r = sqrt((I_mm^4)/(A_cm^2))' "
+    "}",
+
+    "Eccentric Columns", "{"
+    "  '(σmax_kPa)=((P_kN)/(A_cm^2))*(1+((ε_cm)*(c_cm))/sq(r_cm)*inv(cos(K/2*((L_m)/(r_cm))*sqrt((P_kN)/((E_kPa)*(A_cm^2))))))'"
+    "  'r=sqrt(I/A)'"
     "}",
 
     // ------------------------------------------------------------------------

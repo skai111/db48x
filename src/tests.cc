@@ -5105,6 +5105,22 @@ void tests::solver_testing()
         .test(NOSHIFT, F1)
         .expect("'4.1148 cm=411.48 mm↑2/cm+1.212⁳⁻¹⁸ mm↑2/cm'");
 
+    step("Solving Eccentric Columns")
+        .test(CLEAR, RSHIFT, F, F2, RSHIFT, F2)
+        .test("1.1806", NOSHIFT, F3)
+        .test("187.9351", NOSHIFT, F4)
+        .test("15.24", NOSHIFT, F5, F6)
+        .test("206842718.795", NOSHIFT, F1)
+        .test("1", NOSHIFT, F2)
+        .test("6.6542", NOSHIFT, F3)
+        .test("1908.2571", NOSHIFT, F4)
+        .test("8.4836", NOSHIFT, F5)
+        .test(F6, LSHIFT, F2)
+        .expect("σmax:126 924.79298 4 kPa");
+    step("Solving Eccentric Column second equation")
+        .test(CLEAR, LSHIFT, F1, LSHIFT, F3)
+        .expect("I:135 259 652.161 mm↑4.");
+
     step("Exit: Clear variables")
         .test(CLEAR, "UPDIR 'SLVTST' PURGE", ENTER);
 }
