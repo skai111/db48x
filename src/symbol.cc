@@ -223,8 +223,8 @@ GRAPH_BODY(symbol)
     using pixsize = grob::pixsize;
 
     grob_g sym = object::do_graph(o, g);
-    if (!sym)
-        return nullptr;
+    if (!sym || unit::mode)
+        return sym;
 
     pixsize sw    = sym->width();
     pixsize sh    = sym->height();

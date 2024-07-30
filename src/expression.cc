@@ -1947,7 +1947,7 @@ grob_p expression::graph(grapher &g, uint depth, int &precedence)
                 return prefix(g, ov, op, av, arg);
             }
 
-            if (oid != ID_div && oid != ID_xroot &&
+            if ((oid != ID_div || unit::mode) && oid != ID_xroot &&
                 oid != ID_comb && oid != ID_perm)
             {
                 if (lprec < prec)
@@ -1961,7 +1961,9 @@ grob_p expression::graph(grapher &g, uint depth, int &precedence)
             switch (oid)
             {
             case ID_pow: return suscript(g, lv, lg, rv, rg);
-            case ID_div: return ratio(g, lg, rg);
+            case ID_div: return unit::mode
+                    ? infix(g, lv, lg, 0, "/", rv, rg)
+                    : ratio(g, lg, rg);
             case ID_mul: return infix(g, lv, lg, 0, mulsep(), rv, rg);
             case ID_xroot:
             {

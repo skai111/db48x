@@ -70,6 +70,7 @@ public:
     EVAL_DECL(unit);
     PARSE_DECL(unit);
     RENDER_DECL(unit);
+    GRAPH_DECL(unit);
     HELP_DECL(unit);
 };
 

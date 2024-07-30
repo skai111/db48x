@@ -36,6 +36,7 @@
 #include "expression.h"
 #include "file.h"
 #include "functions.h"
+#include "grob.h"
 #include "integer.h"
 #include "parser.h"
 #include "renderer.h"
@@ -215,6 +216,35 @@ RENDER_BODY(unit)
     }
 
     return r.size();
+}
+
+
+GRAPH_BODY(unit)
+// ----------------------------------------------------------------------------
+//   Render units as expressions
+// ----------------------------------------------------------------------------
+{
+    algebraic_g value = o->value();
+    algebraic_g uexpr = o->uexpr();
+    if (symbol_p sym = uexpr->as_quoted<symbol>())
+        if (value->is_real())
+            if (sym->matches("dms") ||
+                sym->matches("hms") ||
+                sym->matches("date"))
+                return object::do_graph(o, g);
+
+    bool hide = value->as_quoted<symbol>();
+    grob_g result = value->graph(g);
+    if (!hide)
+    {
+        save<bool> sumode(unit::mode, true);
+        coord  vr    = g.voffset;
+        grob_g ugrob = uexpr->graph(g);
+        coord  vu    = g.voffset;
+        result = expression::infix(g, vr, result, 0, " ", vu, ugrob);
+    }
+
+    return result;
 }
 
 
