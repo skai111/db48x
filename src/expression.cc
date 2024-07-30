@@ -2192,11 +2192,6 @@ expression_p expression::strip_units(bool keep_constants) const
                 obj = value;
             changed = true;
         }
-        else if (obj->type() == ID_TestEQ && !keep_constants)
-        {
-            obj = object::static_object(ID_sub);
-            changed = true;
-        }
         size_t sz = obj->size();
         byte *p = rt.allocate(sz);
         memmove(p, byte_p(obj), sz);

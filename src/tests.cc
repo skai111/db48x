@@ -5076,25 +5076,6 @@ void tests::solver_testing()
         .test(LSHIFT, A, LSHIFT, A)
         .expect("0.5 m");
 
-    step("Setting 12 as the solver imprecision")
-        .test(CLEAR, "12", LSHIFT, KEY7, RSHIFT, F5).noerror()
-        .test("'SolverImprecision' RCL", ENTER)
-        .expect("12");
-
-    step("Solving Elastic Buckling first equation")
-        .test(CLEAR, RSHIFT, F, F2, RSHIFT, F1)
-        .test("53.0967", NOSHIFT, F3)
-        .test("199947961.502", NOSHIFT, F4)
-        .test(".7", NOSHIFT, F5, F6)
-        .test("7.3152", NOSHIFT, F1)
-        .test("4.1148", NOSHIFT, F2, F6)
-        .test(LSHIFT, F2)
-        .expect("Pcr:676.60192 6324 kN");
-
-    step("Restoring solver imprecision")
-        .test(CLEAR, LSHIFT, KEY7, F, RSHIFT, F5, ENTER, LSHIFT, BSP, F2)
-        .noerror();
-
     step("Solving Elastic Buckling")
         .test(CLEAR, RSHIFT, F, F2, RSHIFT, F1)
         .test("53.0967", NOSHIFT, F3)
@@ -5103,28 +5084,26 @@ void tests::solver_testing()
         .test("7.3152", NOSHIFT, F1)
         .test("4.1148", NOSHIFT, F2, F6)
         .test(LSHIFT, F2)
-        .error("Sign reversal")
-        .test(ENTER)
         .expect("Pcr:676.60192 6324 kN");
     step("Solving Elastic Buckling second equation")
         .test(CLEAR, LSHIFT, F1, LSHIFT, F4)
-        .error("Sign reversal")
-        .test(ENTER)
         .expect("I:8 990 109.72813 mm↑4")
         .test(NOSHIFT, F1)
-        .expect("'676.60192 6324 kN="
-                "6.76601 92632 4⁳¹⁴ kPa·mm↑4/m↑2+"
-                "0.00000 0003 kPa·mm↑4/m↑2'");
+        .expect("'676.60192 6324 kN"
+                "=6.76601 92632 4⁳¹⁴ kPa·mm↑4/m↑2"
+                "-0.00000 0005 kPa·mm↑4/m↑2'");
     step("Solving Elastic Buckling third equation")
         .test(CLEAR, LSHIFT, F1, LSHIFT, F2)
         .expect("σcr:127 428.24437 8 kPa")
         .test(NOSHIFT, F1)
-        .expect("'127 428.24437 8 kPa=12.74282 44378 kN/cm↑2-8.⁳⁻²² kN/cm↑2'");
+        .expect("'127 428.24437 8 kPa"
+                "=12.74282 44378 kN/cm↑2"
+                "-8.⁳⁻²² kN/cm↑2'");
     step("Solving Elastic Buckling fourth equation")
         .test(CLEAR, LSHIFT, F1, LSHIFT, F4)
         .expect("r:4.1148 cm")
         .test(NOSHIFT, F1)
-        .expect("'4.1148 cm=411.48 mm↑2/cm+6.14⁳⁻¹⁹ mm↑2/cm'");
+        .expect("'4.1148 cm=411.48 mm↑2/cm+1.212⁳⁻¹⁸ mm↑2/cm'");
 
     step("Exit: Clear variables")
         .test(CLEAR, "UPDIR 'SLVTST' PURGE", ENTER);

@@ -130,8 +130,19 @@ algebraic_p solve(program_g eq, algebraic_g goal, object_g guess)
     save<bool>  nodates(unit::nodates, true);
 
     // Convert A=B+C into A-(B+C)
+    program_g left, right;
+    bool iseq = false;
     if (eq->type() == object::ID_expression)
-        eq = expression_p(+eq)->as_difference_for_solve();
+    {
+        expression_g diff = expression_p(+eq)->as_difference_for_solve();
+        if (+diff != +eq)
+        {
+            left = expression_p(+eq)->left_of_equation();
+            right = expression_p(+eq)->right_of_equation();
+            eq = +diff;
+            iseq = left && right;
+        }
+    }
 
     // Check if low and hight values were given explicitly
     if (gty == object::ID_list || gty == object::ID_array)
@@ -237,9 +248,23 @@ algebraic_p solve(program_g eq, algebraic_g goal, object_g guess)
             return x;
 
         // Evaluate equation
-        y = algebraic::evaluate_function(eq, x);
-        record(solve, "[%u] x=%t (%t to %t)  y=%t (%t to %t)",
-               i, +x, +lx, +hx, +y, +ly, +hy);
+        if (iseq)
+        {
+            dx = algebraic::evaluate_function(left, x);
+            dy = algebraic::evaluate_function(right, x);
+            y = dx - dy;
+            dx = dy * eps;
+            if (dx)
+                if (unit_p ru = dx->as<unit>())
+                    dx = ru->value();
+        }
+        else
+        {
+            y = algebraic::evaluate_function(eq, x);
+            dx = eps;
+        }
+        record(solve, "[%u] x=%t (%t to %t)  y=%t (%t to %t) err=%t",
+               i, +x, +lx, +hx, +y, +ly, +hy, +dx);
         if (!y)
         {
             // Error on last function evaluation, try again
@@ -259,7 +284,7 @@ algebraic_p solve(program_g eq, algebraic_g goal, object_g guess)
                 dy = yu->value();
             else
                 dy = y;
-            if (dy->is_zero() || smaller_magnitude(dy, eps))
+            if (dy->is_zero() || smaller_magnitude(dy, dx))
             {
                 record(solve, "[%u] Solution=%t value=%t", i, +x, +y);
                 return x;
