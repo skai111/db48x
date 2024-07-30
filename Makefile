@@ -150,7 +150,7 @@ $(TTF2FONT): $(TTF2FONT).cpp $(TOOLS)/ttf2font/Makefile src/ids.tbl
 dist: all
 	cp $(BUILD)/$(TARGET)_qspi.bin  .
 	tar cvfz $(TARGET)-v$(VERSION).tgz $(TARGET).$(PGM) $(TARGET)_qspi.bin \
-		help/*.md state/*.48S config/*.csv
+		help/*.md help/*.bmp help/*/*.bmp state/*.48S config/*.csv
 	@echo "# Distributing $(VERSION)"
 
 $(VERSION_H): $(BUILD)/version-$(VERSION).h
