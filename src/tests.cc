@@ -5121,6 +5121,22 @@ void tests::solver_testing()
         .test(CLEAR, LSHIFT, F1, LSHIFT, F3)
         .expect("I:135 259 652.161 mm↑4.");
 
+    step("Solving Simple Deflection")
+        .test(CLEAR, RSHIFT, F, F2, RSHIFT, F3)
+        .test("10_ft", NOSHIFT, F2)
+        .test("17_ft", NOSHIFT, F3)
+        .test("29000000_psi", NOSHIFT, F4)
+        .test("40_in^4", NOSHIFT, F5, F6)
+        .test("20_ft", NOSHIFT, F1)
+        .test("3687.81_ft*lbf", NOSHIFT, F2)
+        .test("674.427_lbf", NOSHIFT, F3)
+        .test("102.783_lbf/ft", NOSHIFT, F4)
+        .test("9_ft", NOSHIFT, F5)
+        .test(F6, LSHIFT, F1)
+        .expect("y:-1.52523 29401 2 cm")
+        .test("1_in", F1, LSHIFT, F1)
+        .expect("y:-0.60048 54094 96 in");
+
     step("Exit: Clear variables")
         .test(CLEAR, "UPDIR 'SLVTST' PURGE", ENTER);
 }

@@ -5067,6 +5067,11 @@ These equations apply to a slender column (`K·L/r>100`) with length factor `K`.
 ![Eccentric Columns](img/EccentricColumns.bmp)
 
 
+### Simple Deflection
+
+![Simple Deflection](img/SimpleDeflection.bmp)
+
+
 
 ## Electricity
 

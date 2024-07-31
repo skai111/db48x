@@ -58,8 +58,8 @@ static const cstring basic_equations[] =
     "Columns and Beams", nullptr,
 
     "Elastic Buckling",  "{ "
-    "  '(Pcr_kN)=(sq(Ⓒπ)*(E_kPa)*(A_cm^2))/sq((K*(L_m))/(r_cm))' "
-    "  '(Pcr_kN)=(sq(Ⓒπ)*(E_kPa)*(I_mm^4))/sq(K*(L_m))' "
+    "  '(Pcr_kN)=(Ⓒπ²*(E_kPa)*(A_cm^2))/sq((K*(L_m))/(r_cm))' "
+    "  '(Pcr_kN)=(Ⓒπ²*(E_kPa)*(I_mm^4))/sq(K*(L_m))' "
     "  '(σcr_kPa)=(Pcr_kN)/(A_cm^2)' "
     "  'r = sqrt((I_mm^4)/(A_cm^2))' "
     "}",
@@ -69,6 +69,9 @@ static const cstring basic_equations[] =
     "  'r=sqrt(I/A)'"
     "}",
 
+    "Simple Deflection", "{"
+    "  '(y_cm)=((P_kN)*((L_m)-(a_m))*(x_m))/(6*(L_m)*(E_kPa)*(I_mm^4))*(x²+(L-a)²-L²)-((M_N*m)*x)/(E*I)*((c_m)-x²/(6*L)-L/3-c²/(2*L))-((w_N/m)*x)/(24*E*I)*(L³+x²*(x-2*L))'"
+    "}",
 
     // ------------------------------------------------------------------------
     //   Physics
