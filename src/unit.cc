@@ -1581,18 +1581,42 @@ COMMAND_BODY(UBase)
 //   Convert level 1 to the base SI units
 // ----------------------------------------------------------------------------
 {
-    unit_p x = rt.stack(0)->as<unit>();
-    if (!x)
+    object_p obj = rt.stack(0);
+    if (unit_p x = obj->as<unit>())
     {
-        rt.type_error();
-        return ERROR;
+        algebraic_g r = x;
+        save<bool> ueval(unit::mode, true);
+        r = r->evaluate();
+        if (r && rt.top(r))
+            return OK;
     }
-    algebraic_g r = x;
-    save<bool> ueval(unit::mode, true);
-    r = r->evaluate();
-    if (!r || !rt.top(r))
-        return ERROR;
-    return OK;
+    if (expression_p expr = obj->as<expression>())
+    {
+        scribble scr;
+        for (object_p lobj : *expr)
+        {
+            if (unit_p u = lobj->as<unit>())
+            {
+                algebraic_g r = u;
+                save<bool> ueval(unit::mode, true);
+                r = r->evaluate();
+                if (!r)
+                    return ERROR;
+                lobj = r;
+            }
+            if (!rt.append(lobj->size(), byte_p(lobj)))
+                return ERROR;
+
+        }
+        list_p list = list::make(object::ID_expression,
+                                 scr.scratch(), scr.growth());
+        if (list && rt.top(list))
+            return OK;
+    }
+
+    if (!rt.error())
+        rt.type_error();
+    return ERROR;
 }
 
 
