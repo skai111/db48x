@@ -5072,6 +5072,10 @@ These equations apply to a slender column (`K·L/r>100`) with length factor `K`.
 ![Simple Deflection](img/SimpleDeflection.bmp)
 
 
+### Simple Slope
+
+![Simple Slop](img/SimpleSlope.bmp)
+
 
 ## Electricity
 

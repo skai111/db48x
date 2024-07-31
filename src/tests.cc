@@ -5137,6 +5137,20 @@ void tests::solver_testing()
         .test("1_in", F1, LSHIFT, F1)
         .expect("y:-0.60048 54094 96 in");
 
+    step("Solving Simple Slope")
+        .test(CLEAR, RSHIFT, F, F2, RSHIFT, F4)
+        .test("10_ft", NOSHIFT, F3)
+        .test("17_ft", NOSHIFT, F4)
+        .test("29000000_psi", NOSHIFT, F5, F6)
+        .test("40_in^4", NOSHIFT, F1)
+        .test("20_ft", NOSHIFT, F2)
+        .test("3687.81_ft*lbf", NOSHIFT, F3)
+        .test("674.427_lbf", NOSHIFT, F4)
+        .test("102.783_lbf/ft", NOSHIFT, F5, F6)
+        .test("9_ft", NOSHIFT, F1)
+        .test(F6, LSHIFT, F2)
+        .expect("θ:-0.46665 29979 95 °");
+
     step("Exit: Clear variables")
         .test(CLEAR, "UPDIR 'SLVTST' PURGE", ENTER);
 }
