@@ -565,6 +565,7 @@ COMMAND_BODY(EvalEq)
         {
             // We will run programs, do not save stack, etc.
             settings::PrepareForFunctionEvaluation willEvaluateFunctions;
+            save<bool> nodates(unit::nodates, true);
 
             expression_g diff = expr->as_difference_for_solve();
             if (+diff != +expr)
