@@ -215,6 +215,7 @@ algebraic_p solve(program_g eq, algebraic_g goal, object_g guess)
 
     // We will run programs, do not save stack, etc.
     settings::PrepareForFunctionEvaluation willEvaluateFunctions;
+    settings::SaveNumericalConstants snc(true);
 
     // Set independent variable
     symbol_g name = goal->as_quoted<symbol>();
@@ -271,7 +272,8 @@ algebraic_p solve(program_g eq, algebraic_g goal, object_g guess)
             record(solve_error, "Got error %+s", rt.error());
             if (!ly || !hy)
             {
-                rt.bad_guess_error();
+                if (!rt.error())
+                    rt.bad_guess_error();
                 solver_command_error();
                 return nullptr;
             }
@@ -650,7 +652,7 @@ MENU_BODY(SolvingMenu)
         ui.marker(k + 2 * ui.NUM_SOFTKEYS, L'▶', false);
     }
 
-    if (expression_p expr = expression::current_equation(false, true, true))
+    if (expression_p expr = expression::current_equation(false))
         ui.transient_object(expr);
 
     return true;
@@ -813,7 +815,7 @@ COMMAND_BODY(SolvingMenuSolve)
             object_g value = directory::recall_all(sym, false);
             if (!value)
                 value = integer::make(0);
-            if (expression_g eq = expression::current_equation(true, true))
+            if (expression_g eq = expression::current_equation(true))
                 if (value && is_well_defined(eq, sym))
                     if (algebraic_p var = expression_variable_or_unit(index))
                         if (algebraic_g result = solve(+eq, var, value))

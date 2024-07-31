@@ -111,9 +111,7 @@ struct expression : program
         return nullptr;
     }
 
-    static expression_p current_equation(bool error,
-                                         bool solving = false,
-                                         bool keep_constants = false);
+    static expression_p current_equation(bool error);
 
 
     // ========================================================================
@@ -252,7 +250,6 @@ struct expression : program
     expression_p as_difference_for_solve() const; // Transform A=B into A-B
     expression_p left_of_equation() const;        // Transform A=B into A
     expression_p right_of_equation() const;       // Transform A=B into B
-    expression_p strip_units(bool keep_constants=false) const;
     object_p     outermost_operator() const;
     size_t       render(renderer &r, bool quoted = false) const
     {

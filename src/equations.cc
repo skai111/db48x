@@ -69,6 +69,7 @@ static const cstring basic_equations[] =
     "  'r=sqrt(I/A)'"
     "}",
 
+
     // ------------------------------------------------------------------------
     //   Physics
     // ------------------------------------------------------------------------
@@ -101,9 +102,8 @@ static symbol_p equation_label(symbol_r sym)
         utf8     source = sym->value(&len);
         if (object_p obj = object::parse(source, len))
             if (expression_p expr = obj->as<expression>())
-                if (expression_p simpl = expr->strip_units(true))
-                    if (symbol_p ssym = simpl->as_symbol(false))
-                        return ssym;
+                if (symbol_p ssym = expr->as_symbol(false))
+                    return ssym;
     }
     return sym;
 }
