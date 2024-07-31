@@ -29,12 +29,13 @@
 
 #include "conditionals.h"
 
+#include "expression.h"
 #include "integer.h"
 #include "parser.h"
+#include "program.h"
 #include "renderer.h"
 #include "settings.h"
 #include "user_interface.h"
-#include "program.h"
 
 
 // ============================================================================
@@ -703,14 +704,15 @@ COMMAND_BODY(IFT)
 //   Evaluate the 'IFT' command
 // ----------------------------------------------------------------------------
 {
-    if (object_p toexec = rt.pop())
+    if (object_p ift = rt.pop())
     {
         if (object_g condition = rt.pop())
         {
-            if (rt.run_conditionals(toexec, nullptr, true)  &&
-                defer(ID_conditional)                       &&
-                program::run_program(condition) == OK)
-                return OK;
+            if (expression_p expr = condition->as<expression>())
+                condition = expr->evaluate();
+            int cvalue = condition->as_truth(true);
+            if (cvalue >= 0)
+                return cvalue ? program::run(ift) : OK;
         }
     }
     return ERROR;
@@ -728,10 +730,11 @@ COMMAND_BODY(IFTE)
         {
             if (object_g condition = rt.pop())
             {
-                if (rt.run_conditionals(ift, iff, true) &&
-                    defer(ID_conditional)               &&
-                    program::run_program(condition) == OK)
-                    return OK;
+                if (expression_p expr = condition->as<expression>())
+                    condition = expr->evaluate();
+                int cvalue = condition->as_truth(true);
+                if (cvalue >= 0)
+                    return program::run(cvalue ? ift : iff);
             }
         }
     }

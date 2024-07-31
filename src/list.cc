@@ -83,6 +83,9 @@ object::result list::list_parse(id      type,
     size_t   non_alg_len = 0;
     bool     xroot       = false;
 
+    // The IFTE command is special in that we don't evaluate its arguments
+    bool        ifte        = false;
+
     record(list, "Parse %lc%lc precedence %d length %u [%s]",
            open, close, precedence, max, utf8(s));
 
@@ -243,7 +246,8 @@ object::result list::list_parse(id      type,
                 // We just parsed an algebraic, e.g. 'sin', etc
                 // stash it and require parentheses for arguments
                 id type = obj->type();
-                if (!is_algebraic(type))
+                ifte = type == ID_IFTE;
+                if (!is_algebraic(type) && !ifte)
                 {
                     if (objcount)
                     {
@@ -264,7 +268,7 @@ object::result list::list_parse(id      type,
                         arg = 0;
 
                         // xroot is the one command that parses args backwards
-                        if (prefix->type() == ID_xroot)
+                        if (type == ID_xroot)
                             xroot = true;
                     }
                     obj = nullptr;
@@ -314,7 +318,7 @@ object::result list::list_parse(id      type,
                 size_t objsize = obj->size();
 
                 // For equations, copy only the payload
-                if (precedence)
+                if (precedence && (!ifte || arg == 0))
                     if (expression_p eq = obj->as<expression>())
                         obj = eq->objects(&objsize);
 

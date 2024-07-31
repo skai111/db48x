@@ -164,7 +164,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        solver_testing();
+        conditionals();
     }
     else
     {
@@ -1845,6 +1845,26 @@ void tests::conditionals()
         .expect("'PASS'");
     step("IFTE command (false)");
     test(CLEAR, "0 FAIL PASS IFTE", ENTER)
+        .expect("'PASS'");
+
+    step("IFT command (true evaluation)");
+    test(CLEAR, "FAIL '1+1' 'PASS+0' IFT", ENTER)
+        .expect("'PASS'");
+    step("IFT command (false no evaluation)");
+    test(CLEAR, "PASS '1-1' 'ln(0)' IFT", ENTER)
+        .expect("'PASS'");
+    step("IFTE command (true evaluation)");
+    test(CLEAR, "'1+1' 'PASS+0' 'ln(0)' IFTE", ENTER)
+        .expect("'PASS'");
+    step("IFTE command (false evaluation)");
+    test(CLEAR, "'1-1' 'ln(0)' 'PASS+0' IFTE", ENTER)
+        .expect("'PASS'");
+
+    step("IFTE expression, true case)");
+    test(CLEAR, "'IFTE(1+1;PASS+0;ln(0))'", ENTER, RUNSTOP)
+        .expect("'PASS'");
+    step("IFTE expression (false case)");
+    test(CLEAR, "'IFTE(1-1;ln(0);PASS+0)'", ENTER, RUNSTOP)
         .expect("'PASS'");
 
     step("IfErr-Then (true)");
