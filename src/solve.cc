@@ -766,7 +766,6 @@ COMMAND_BODY(SolvingMenuStore)
                             {
                                 if (!uvar->convert(uval))
                                     return ERROR;
-                                sval = +uval;
                             }
 
                             else
