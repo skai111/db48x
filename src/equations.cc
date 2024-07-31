@@ -77,6 +77,31 @@ static const cstring basic_equations[] =
     "  '(θ_°)=(1_r)*(((P_N)*((L_m)-(a_m)))/(6*L*(E_kPa)*(I_mm^4))*(3*(x_m)²+(L-a)²-L²)-(M_N*m)/(E*I)*(c-(x²-c²)/(2*L)-L/3)-(w_N/m)/(24*E*I)*(L³+x²*(4*x-6*L)))'"
     "}",
 
+    "Simple Moment", "{"
+    "  '(Mx_N*m)=(P_N)*IFTE((x_m)≤(a_m);((L_m)-(a_m))*(x_m);(L-x)*a)/L+(M_N*m)*IFTE(x≤(c_m);x;x-L)/L+((w_N/m)*x*(L-x))/2'"
+    "}",
+
+    "Simple Shear", "{"
+    "  '(V_N)=((P_N)*((L_m)-(a_m)))/L+(M_N*m)/L+((w_N/m)*(L-2*(x_m)))/2'"
+    "}",
+
+    "Cantilever Deflection", "{"
+    "  '(y_m)=((P_N)*IFTE((x_m)≤(a_m);x;a)²)/(6*(E_kPa)*(I_mm^4))*IFTE(x≤a;x-3*a;a-3*x)+(M_N*m)*IFTE(x≤(c_m);x²;c*(2*x-c))/(2*E*I)-((w_N/m)*x²)/(24*E*I)*(6*L²-4*L*x+x²)'"
+    "}",
+
+    "Cantilever Slope", "{"
+    "  '(θ_°)=(1_r)*((P_N)*IFTE((x_m)≤(a_m);x*(x-2*a);-a²)/(2*(E_kPa)*(I_mm^4))+(M_N*m)*IFTE(x≤(c_m);x;c)/(E*I)-((w_N/m)*x)/(6*E*I)*(3*L²-3*L*x+x²))'"
+    "}",
+
+    "Cantilever Moment", "{"
+    "  '(Mx_N*m)=IFTE((x_m)≤(a_m);1;0)*(P_N)*((x_m)-(a_m))+IFTE(x≤(c_m);1;0)*(M_N*m)-(w_N/m)/2*(L²-2*L*x+x²)'"
+    "}",
+
+
+    "Cantilever Shear", "{"
+    "  '(V_n)=IFTE((x_m)≤(a_m);1;0)*(P_N)+(w_N/m)*((L_m)-(x_m))'"
+    "}",
+
     // ------------------------------------------------------------------------
     //   Physics
     // ------------------------------------------------------------------------

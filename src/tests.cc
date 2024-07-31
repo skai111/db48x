@@ -113,6 +113,7 @@ TESTS(text,             "Text operations");
 TESTS(vectors,          "Vectors");
 TESTS(matrices,         "Matrices");
 TESTS(solver,           "Solver");
+TESTS(colnbeams,        "Columns and Beams equations in library");
 TESTS(integrate,        "Numerical integration");
 TESTS(simplify,         "Auto-simplification of expressions");
 TESTS(rewrites,         "Equation rewrite engine");
@@ -164,7 +165,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        conditionals();
+        eqnlib_columns_and_beams();
     }
     else
     {
@@ -204,6 +205,7 @@ void tests::run(bool onlyCurrent)
         vector_functions();
         matrix_functions();
         solver_testing();
+        eqnlib_columns_and_beams();
         numerical_integration_testing();
         text_functions();
         auto_simplification();
@@ -5096,6 +5098,21 @@ void tests::solver_testing()
         .test(LSHIFT, A, LSHIFT, A)
         .expect("0.5 m");
 
+    step("Exit: Clear variables")
+        .test(CLEAR, "UPDIR 'SLVTST' PURGE", ENTER);
+}
+
+
+void tests::eqnlib_columns_and_beams()
+// ----------------------------------------------------------------------------
+//   Test that the solver works as expected
+// ----------------------------------------------------------------------------
+{
+    BEGIN(colnbeams);
+
+    step("Enter directory for solving")
+        .test(CLEAR, "'SLVTST' CRDIR SLVTST", ENTER);
+
     step("Solving Elastic Buckling")
         .test(CLEAR, RSHIFT, F, F2, RSHIFT, F1)
         .test("53.0967", NOSHIFT, F3)
@@ -5139,7 +5156,7 @@ void tests::solver_testing()
         .expect("σmax:126 924.79298 4 kPa");
     step("Solving Eccentric Column second equation")
         .test(CLEAR, LSHIFT, F1, LSHIFT, F3)
-        .expect("I:135 259 652.161 mm↑4.");
+        .expect("I:135 259 652.161 mm↑4");
 
     step("Solving Simple Deflection")
         .test(CLEAR, RSHIFT, F, F2, RSHIFT, F3)
@@ -5170,6 +5187,87 @@ void tests::solver_testing()
         .test("9_ft", NOSHIFT, F1)
         .test(F6, LSHIFT, F2)
         .expect("θ:-0.46665 29979 95 °");
+
+    step("Solving Simple Moment")
+        .test(CLEAR, RSHIFT, F, F2, RSHIFT, F5)
+        .test("20_ft", NOSHIFT, F5)
+        .test("10_ft", NOSHIFT, F3)
+        .test("674.427_lbf", NOSHIFT, F6, F2)
+        .test("17_ft", NOSHIFT, F6, F4)
+        .test("3687.81_ft*lbf", NOSHIFT, F6, F1)
+        .test("102.783_lbf/ft", NOSHIFT, F3)
+        .test("9_ft", NOSHIFT, F4)
+        .test(F6, LSHIFT, F2)
+        .expect("Mx:13 262.87487 72 N·m")
+        .test("1_ft*lbf", NOSHIFT, F2, LSHIFT, F2)
+        .expect("Mx:9 782.1945 lbf·ft");
+
+    step("Solving Simple Shear")
+        .test(CLEAR, EXIT, RSHIFT, F, F2, F6, RSHIFT, F1)
+        .test("20_ft", NOSHIFT, F3)
+        .test("10_ft", NOSHIFT, F2)
+        .test("674.427_lbf", NOSHIFT, F5)
+        .test("3687.81_ft*lbf", NOSHIFT, F4)
+        .test("102.783_lbf/ft", NOSHIFT, F6, F2)
+        .test("9_ft", NOSHIFT, F3)
+        .test(LSHIFT, F1)
+        .expect("V:2 777.41174 969 N")
+        .test("1_lbf", F1, LSHIFT, F1)
+        .expect("V:624.387 lbf");
+
+    step("Solving Cantilever Deflection")
+        .test(CLEAR, EXIT, RSHIFT, F, F2, F6, RSHIFT, F2)
+        .test("10_ft", NOSHIFT, F6, F1)
+        .test("29000000_psi", NOSHIFT, F6, F6, F4)
+        .test("15_in^4", NOSHIFT, F5)
+        .test("500_lbf", NOSHIFT, F6, F3)
+        .test("800_ft*lbf", NOSHIFT, F2)
+        .test("3_ft", NOSHIFT, F6, F6, F2)
+        .test("6_ft", NOSHIFT, F3)
+        .test("100_lbf/ft", NOSHIFT, F6, F4)
+        .test("8_ft", NOSHIFT, F5)
+        .test(F6, LSHIFT, F1)
+        .expect("y:-0.33163 03448 28 in")
+        .test("1_lbf", F1)
+        .error("Inconsistent units")
+        .test(CLEAR, "1_cm", F1, LSHIFT, F1)
+        .expect("y:-0.84234 10758 62 cm");
+
+    step("Solving Cantilever Slope")
+        .test(CLEAR, EXIT, RSHIFT, F, F2, F6, RSHIFT, F3)
+        .test("10_ft", NOSHIFT, F6, F2)
+        .test("29000000_psi", LSHIFT, F6, F5)
+        .test("15_in^4", NOSHIFT, F6, F1)
+        .test("500_lbf", NOSHIFT, F4)
+        .test("800_ft*lbf", NOSHIFT, F3)
+        .test("3_ft", LSHIFT, F6, F3)
+        .test("6_ft", NOSHIFT, F4)
+        .test("100_lbf/ft", NOSHIFT, F6, F5)
+        .test("8_ft", NOSHIFT, F6, F1)
+        .test(F6, LSHIFT, F2)
+        .expect("θ:-0.26522 01876 49 °");
+
+    step("Solving Cantilever Moment")
+        .test(CLEAR, EXIT, RSHIFT, F, F2, F6, RSHIFT, F4)
+        .test("10_ft", NOSHIFT, F5)
+        .test("500_lbf", NOSHIFT, F6, F2)
+        .test("800_ft*lbf", NOSHIFT, F1)
+        .test("3_ft", LSHIFT, F6, F3)
+        .test("6_ft", NOSHIFT, F4)
+        .test("100_lbf/ft", NOSHIFT, F6, F3)
+        .test("8_ft", NOSHIFT, F4)
+        .test(F6, LSHIFT, F2)
+        .expect("Mx:-200. lbf·ft");
+
+    step("Solving Cantilever Shear")
+        .test(CLEAR, EXIT, RSHIFT, F, F2, F6, RSHIFT, F5)
+        .test("10_ft", NOSHIFT, F3)
+        .test("500_lbf", NOSHIFT, F4)
+        .test("3_ft", NOSHIFT, F2)
+        .test("8_ft", NOSHIFT, F6, F2)
+        .test("100_lbf/ft", NOSHIFT, F1)
+        .test(F6, LSHIFT, F5)
+        .expect("V:200. lbf");
 
     step("Exit: Clear variables")
         .test(CLEAR, "UPDIR 'SLVTST' PURGE", ENTER);

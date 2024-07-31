@@ -64,7 +64,34 @@ These equations apply to a slender column (`K·L/r>100`) with length factor `K`.
 
 ### Simple Slope
 
-![Simple Slop](img/SimpleSlope.bmp)
+![Simple Slope](img/SimpleSlope.bmp)
+
+
+### Simple Moment
+
+![Simple Moment](img/SimpleMoment.bmp)
+
+
+### Simple Shear
+
+![Simple Shear](img/SimpleShear.bmp)
+
+
+### Cantilever Deflection
+
+![Cantilever Deflection](img/CantileverDeflection.bmp)
+
+### Cantilever Slope
+
+![Cantilever Slope](img/CantileverSlope.bmp)
+
+### Cantilever Moment
+
+![Cantilever Moment](img/CantileverMoment.bmp)
+
+### Cantilever Shear
+
+![Cantilever Shear](img/CantileverShear.bmp)
 
 
 ## Electricity
