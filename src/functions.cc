@@ -195,9 +195,9 @@ algebraic_p function::evaluate(algebraic_r xr, id op, ops_t ops)
     }
 
     // Check if we need to deal with units specially
-    if (op == ID_sqrt || op == ID_cbrt)
+    if (unit_p u = x->as<unit>())
     {
-        if (unit_p u = xr->as<unit>())
+        if (op == ID_sqrt || op == ID_cbrt)
         {
             algebraic_g value = u->value();
             algebraic_g uexpr = u->uexpr();
@@ -209,7 +209,13 @@ algebraic_p function::evaluate(algebraic_r xr, id op, ops_t ops)
             uexpr = pow(uexpr, exponent);
             return unit::make(value, uexpr);
         }
-
+        save<bool> ueval(unit::mode, true);
+        x = x->evaluate();
+        if (x && x->type() == ID_unit)
+        {
+            rt.inconsistent_units_error();
+            return nullptr;
+        }
     }
 
     // Convert arguments to numeric if necessary
