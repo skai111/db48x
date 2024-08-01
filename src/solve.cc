@@ -386,7 +386,8 @@ algebraic_p solve(program_g eq, algebraic_g goal, object_g guess)
             // Check if there are unresolved symbols
             if (!x || x->is_symbolic())
             {
-                rt.invalid_function_error();
+                if (!rt.error())
+                    rt.invalid_function_error();
                 solver_command_error();
                 return x;
             }
