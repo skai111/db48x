@@ -73,7 +73,6 @@ object::result list::list_parse(id      type,
     object_g postfix     = nullptr;
     object_g obj         = nullptr;
     object_g xroot_arg   = nullptr;
-    bool     negate      = false;
     int      precedence  = p.precedence;
     int      lowest      = precedence;
     uint     arity       = 0;
@@ -188,10 +187,13 @@ object::result list::list_parse(id      type,
                 // Check to see if we have a sign
                 else if (cp == '-' || cp == '+')
                 {
-                    if (cp == '-')
-                        negate = !negate;
-                    s = utf8_next(s);
-                    continue;
+                    if (cp == '+')
+                    {
+                        s = utf8_next(s);
+                        continue;
+                    }
+                    obj = static_object(ID_neg);
+                    length = 1;
                 }
 
             }
@@ -342,11 +344,6 @@ object::result list::list_parse(id      type,
                     }
                     obj = prefix;
                     prefix = nullptr;
-                }
-                else if (negate)
-                {
-                    obj = command::static_object(ID_neg);
-                    negate = false;
                 }
                 else if (postfix)
                 {
