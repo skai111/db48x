@@ -437,7 +437,10 @@ algebraic_p arithmetic::non_numeric<mul>(algebraic_r x, algebraic_r y)
             algebraic_g yv = yu->value();
             algebraic_g ye = yu->uexpr();
             xv = xv * yv;
-            xe = xe * ye;
+            {
+                save<bool> umode(unit::mode, true);
+                xe = xe * ye;
+            }
             return unit::simple(xv, xe);
         }
         else if (!y->is_symbolic() || xv->is_one())
@@ -585,7 +588,10 @@ algebraic_p arithmetic::non_numeric<struct div>(algebraic_r x, algebraic_r y)
             algebraic_g yv = yu->value();
             algebraic_g ye = yu->uexpr();
             xv = xv / yv;
-            xe = xe / ye;
+            {
+                save<bool> umode(unit::mode, true);
+                xe = xe / ye;
+            }
             return unit::simple(xv, xe);
         }
         else if (!y->is_symbolic())
@@ -881,8 +887,12 @@ algebraic_p arithmetic::non_numeric<struct pow>(algebraic_r x, algebraic_r y)
     {
         algebraic_g xv = xu->value();
         algebraic_g xe = xu->uexpr();
-        save<bool> save(unit::mode, false);
-        return unit::simple(pow(xv, y), pow(xe, y));
+        xv = pow(xv, y);
+        {
+            save<bool> save(unit::mode, false);
+            xe = pow(xe, y);
+        }
+        return unit::simple(xv, xe);
     }
 
     // Check 0^0 (but check compatibility flag, since HPs return 1)
