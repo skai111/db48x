@@ -596,6 +596,11 @@ struct runtime
     //   Select the next branch in for-next, for-step, start-next or start-step
     // ------------------------------------------------------------------------
 
+    bool run_select_list(bool for_loop);
+    // ------------------------------------------------------------------------
+    //   Select the next branch in for-next, for-step, start-next or start-step
+    // ------------------------------------------------------------------------
+
     bool run_select_case(bool condition);
     // ------------------------------------------------------------------------
     //   Select true or false case for case statement

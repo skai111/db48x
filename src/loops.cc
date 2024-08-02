@@ -598,12 +598,62 @@ static object::result counted_loop(object::id type, object_p o)
 }
 
 
+static object::result list_loop(object::id type, object_p o)
+// ----------------------------------------------------------------------------
+//   Place the correct loop on the run stack
+// ----------------------------------------------------------------------------
+{
+    byte    *p    = (byte *) object::payload(o);
+
+    list_g range = list_p(rt.pop());
+
+    // Check if we need a local variable
+    if (type >= object::ID_for_next_list)
+    {
+        // For debugging or conversion to text, ensure we track names
+        locals_stack stack(p);
+
+        // Skip name
+        if (p[0] != 1)
+            record(loop_error, "Evaluating for-next loop with %u locals", p[0]);
+        p += 1;
+        size_t namesz = leb128<size_t>(p);
+        p += namesz;
+
+        // Get list as local
+        if (!rt.push(+range))
+            return object::ERROR;
+        rt.locals(1);
+
+        // Pop local after execution
+        if (!rt.run_push_data(nullptr, object_p(1)))
+            return object::ERROR;
+    }
+
+    size_t size = 0;
+    object_p first = range->objects(&size);
+    object_p last = first + size;
+    object_g body = object_p(p);
+    if (body->defer() && rt.run_push_data(first, last) &&
+        object::defer(type))
+        return object::OK;
+
+    return object::ERROR;
+}
+
+
 EVAL_BODY(StartNext)
 // ----------------------------------------------------------------------------
 //   Evaluate a for..next loop
 // ----------------------------------------------------------------------------
 {
     rt.command(o);
+
+    if (object_p arg = rt.top())
+        if (id argty = arg->type())
+            if (argty == ID_list || argty == ID_array)
+                return list_loop(ID_start_next_list, o);
+
     return counted_loop(ID_start_next_conditional, o);
 }
 
@@ -705,6 +755,10 @@ EVAL_BODY(ForNext)
 // ----------------------------------------------------------------------------
 {
     rt.command(o);
+    if (object_p arg = rt.top())
+        if (id argty = arg->type())
+            if (argty == ID_list || argty == ID_array)
+                return list_loop(ID_for_next_list, o);
     return counted_loop(ID_for_next_conditional, o);
 }
 
@@ -911,6 +965,50 @@ EVAL_BODY(for_step_conditional)
 {
     rt.command(o);
     if (rt.run_select_start_step(true, true))
+        return OK;
+    return ERROR;
+}
+
+
+RENDER_BODY(start_next_list)
+// ----------------------------------------------------------------------------
+//   Display for debugging purpose
+// ----------------------------------------------------------------------------
+{
+    r.put("<start-next-list>");
+    return r.size();
+}
+
+
+EVAL_BODY(start_next_list)
+// ----------------------------------------------------------------------------
+//  Picks which branch of a start step to choose at runtime
+// ----------------------------------------------------------------------------
+{
+    rt.command(o);
+    if (rt.run_select_list(false))
+        return OK;
+    return ERROR;
+}
+
+
+RENDER_BODY(for_next_list)
+// ----------------------------------------------------------------------------
+//   Display for debugging purpose
+// ----------------------------------------------------------------------------
+{
+    r.put("<for-next-list>");
+    return r.size();
+}
+
+
+EVAL_BODY(for_next_list)
+// ----------------------------------------------------------------------------
+//  Picks which branch of a start next to choose at runtime
+// ----------------------------------------------------------------------------
+{
+    rt.command(o);
+    if (rt.run_select_list(true))
         return OK;
     return ERROR;
 }

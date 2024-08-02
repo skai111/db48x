@@ -166,7 +166,7 @@ void tests::run(bool onlyCurrent)
     {
         here().begin("Current");
         // eqnlib_columns_and_beams();
-        logical_operations();
+        for_loops();
     }
     else
     {
@@ -1810,6 +1810,24 @@ void tests::for_loops()
     pgmo = "« 'X' 10 1 for i i x² + next »";
     test(CLEAR, pgm, ENTER).noerror().type(object::ID_program).want(pgmo);
     test(RUNSTOP).noerror().type(object::ID_expression).expect("'X+100'");
+
+    step("For loop on a list")
+        .test(CLEAR, "{ 1 3 5 \"ABC\" } for i i 2 * 1 + next", ENTER)
+        .expect("\"ABCABC1\"")
+        .test(BSP).expect("11")
+        .test(BSP).expect("7")
+        .test(BSP).expect("3")
+        .test(BSP).noerror()
+        .test(BSP).error("Too few arguments");
+
+    step("For loop on an array")
+        .test(CLEAR, "[ 1 3 5 \"ABC\" ] for i i 2 * 1 + next", ENTER)
+        .expect("\"ABCABC1\"")
+        .test(BSP).expect("11")
+        .test(BSP).expect("7")
+        .test(BSP).expect("3")
+        .test(BSP).noerror()
+        .test(BSP).error("Too few arguments");
 
     step("Restore auto-simplification")
         .test(CLEAR, "'noautosimplify' purge", ENTER).noerror();

@@ -1448,6 +1448,57 @@ bool runtime::run_select_start_step(bool for_loop, bool has_step)
 }
 
 
+bool runtime::run_select_list(bool for_loop)
+// ----------------------------------------------------------------------------
+//   Select evaluation branches in a for loop evaluating lists
+// ----------------------------------------------------------------------------
+{
+    if (Returns + 4 > HighMem)
+    {
+        record(runtime_error,
+               "select_list (%+s %+s) Returns=%p HighMem=%p",
+               for_loop ? "for" : "start",
+               Returns, HighMem);
+        return false;
+    }
+
+    // Increment and compare with last iteration
+    object_p cur  = Returns[0];
+    object_p last = Returns[1];
+    if (!cur || !last)
+    {
+        object::id ty = for_loop?object::ID_ForStep:object::ID_StartStep;
+        object_p cmd = command::static_object(ty);
+        rt.command(cmd);
+        return false;
+    }
+    // Check the truth value
+    int finished = +cur >= +last;
+    if (finished)
+        return false;
+
+    // Write the current value in the variable if it's a for loop
+    if (for_loop)
+        rt.local(0, cur);
+    Returns[0] = cur->skip();
+
+    if (+cur >= +last)
+    {
+        if ((HighMem - Returns) % CALLS_BLOCK <= 4)
+            call_stack_drop();
+        Returns += 4;
+    }
+    else
+    {
+        object::id type =
+            for_loop ? object::ID_for_next_list : object::ID_start_next_list;
+        return object::defer(type) && run_push_data(Returns[4], Returns[5]);
+    }
+
+    return true;
+}
+
+
 bool runtime::run_select_case(bool condition)
 // ----------------------------------------------------------------------------
 //   Select evaluation branches in a case statement

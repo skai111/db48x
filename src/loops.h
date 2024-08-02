@@ -302,4 +302,28 @@ struct for_step_conditional : conditional
     EVAL_DECL(for_step_conditional);
 };
 
+
+struct for_next_list : conditional
+// ----------------------------------------------------------------------------
+//   A non-parseable object used to select branches in a for-next
+// ----------------------------------------------------------------------------
+{
+    for_next_list(id type): conditional(type) {}
+    OBJECT_DECL(for_next_list);
+    RENDER_DECL(for_next_list);
+    EVAL_DECL(for_next_list);
+};
+
+
+struct start_next_list : conditional
+// ----------------------------------------------------------------------------
+//   A non-parseable object used to select branches in a for-step
+// ----------------------------------------------------------------------------
+{
+    start_next_list(id type): conditional(type) {}
+    OBJECT_DECL(start_next_list);
+    RENDER_DECL(start_next_list);
+    EVAL_DECL(start_next_list);
+};
+
 #endif // LOOPS_H
