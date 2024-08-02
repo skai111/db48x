@@ -417,7 +417,10 @@ bignum_g bignum::add_sub(bignum_r y, bignum_r x, bool issub)
         if (cmp >= 0)
         {
             // abs Y > abs X: result has opposite type of X
-            id ty = cmp == 0 ? ID_bignum: issub ? xt : opposite_type(xt);
+            id ty = based    ? xt
+                  : cmp == 0 ? ID_bignum
+                  : issub    ? xt
+                             : opposite_type(xt);
             return binary<false>(sub_op, yg, xg, ty);
         }
         else

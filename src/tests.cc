@@ -165,7 +165,8 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        eqnlib_columns_and_beams();
+        // eqnlib_columns_and_beams();
+        logical_operations();
     }
     else
     {
@@ -2077,16 +2078,19 @@ void tests::logical_operations()
     test(CLEAR, "30 STWS", ENTER).noerror();
     test(CLEAR, "#142 not", ENTER).expect("#3FFF FEBD₁₆");
     test("not", ENTER).expect("#142₁₆");
+    test("#3 #5 -", ENTER).expect("#3FFF FFFE₁₆");
 
     step("Set word size to 48");
     test(CLEAR, "48 STWS", ENTER).noerror();
     test(CLEAR, "#233 not", ENTER).expect("#FFFF FFFF FDCC₁₆");
     test("not", ENTER).expect("#233₁₆");
+    test("#8 #15 -", ENTER).expect("#FFFF FFFF FFF3₁₆");
 
     step("Set word size to 64");
     test(CLEAR, "64 STWS", ENTER).noerror();
     test(CLEAR, "#64123 not", ENTER).expect("#FFFF FFFF FFF9 BEDC₁₆");
     test("not", ENTER).expect("#6 4123₁₆");
+    test("#8 #21 -", ENTER).expect("#FFFF FFFF FFFF FFE7₁₆");
 
     step("Set word size to 128");
     test(CLEAR, "128 STWS", ENTER).noerror();
@@ -2094,6 +2098,8 @@ void tests::logical_operations()
         .expect("#FFFF FFFF FFFF FFFF FFFF FFFF FFFF FFED₁₆");
     test("dup not", ENTER).expect("#12₁₆");
     test("xor not", ENTER).expect("#0₁₆");
+    test("#7A02 #21445 -", ENTER)
+        .expect("#FFFF FFFF FFFF FFFF FFFF FFFF FFFE 65BD₁₆");
 
     step("Set word size to 623");
     test(CLEAR, "623 STWS", ENTER).noerror();
@@ -2104,6 +2110,11 @@ void tests::logical_operations()
                 "FFFF FFFF FFED₁₆");
     test("dup not", ENTER).expect("#12₁₆");
     test("xor not", ENTER).expect("#0₁₆");
+    test("#7A03 #21447 -", ENTER)
+        .expect("#7FFF FFFF FFFF FFFF FFFF FFFF FFFF FFFF FFFF FFFF FFFF FFFF "
+                "FFFF FFFF FFFF FFFF FFFF FFFF FFFF FFFF FFFF FFFF FFFF FFFF "
+                "FFFF FFFF FFFF FFFF FFFF FFFF FFFF FFFF FFFF FFFF FFFF FFFF "
+                "FFFF FFFE 65BC₁₆");
 
     step("Check that arithmetic truncates to small word size (#624)")
         .test("15 STWS", ENTER).noerror()
