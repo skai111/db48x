@@ -1,5 +1,59 @@
 # Release notes
 
+
+## Release 0.7.13 "Murderers" - Solver improvements
+
+This releases focuses on improvements to the solver, with the completion of the
+Columns and Beams section from the HP50G equation library.
+
+### Features
+
+* equations: Add remaining equations from "Columns and Beams"
+* loops: For loops on lists and arrays
+* menus: Add `R→D`, `D→R`, `→Polar` and `→Rectangular`
+* menus: Automatically select tools menu for library equations
+* units: Allow `ubase` to work on expressions
+* units: Graphic rendering of units
+
+
+### Bug fixes
+
+* 48calc.org: Fix mouse click position
+* `#ABC #DEF -` now correctly produces a based number with >64-bit wordsize
+* conditionals: Parse and evaluate `IFTE` correctly
+* equations: Fix Elastic Buckling
+* files: Avoid crash in `file_closer` if file was not open
+* istack: Enable Swap feature on top two levels
+* menu: Update SolvingMenu when updating VariablesMenu
+* parser: Deal with negation more "normally", parse `-a²` correctly
+* solver: Compute units correctly for inputs
+* solver: Do not change unit when storing in a solver variable
+* solver: Emit correct error message in `EvalEq` if missing variables
+* solver: Preserve errors reported by underlying function
+* units: Do not evaluate/render units with names
+* units: No longer read variables `m` and `s` while processing `1_m/s`
+* units: Simplify units that convert to real numbers
+
+
+### Improvements
+
+* Update .gitignore
+* build: Add BMP files to the distribution
+* complex: Optimize exit conditions for parentheses
+* solver: Add test for equation library
+* solver: Add tests for solving with units
+* solver: Improve behaviour of `EvalEq`
+* solver: Keep units and constants as-is in equation
+* solver: Make precision relative to equation sides magnitude
+* stack: Show vectors vertically by default
+* ui: Do not persistently hide stack with current equation
+* units: Keep power integral, i.e. avoid getting `1_m^2.0/s`
+* units: Strip tags from unit conversion functions
+* units: The `EvalEq` command should not evaluate dates
+* wasm: Add logos to the repository
+
+
+
 ## Release 0.7.12 "Multiply" - Multiple equations
 
 This release focuses on the equation solver, notably in interaction with the
