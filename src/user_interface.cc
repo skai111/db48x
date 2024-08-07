@@ -3410,13 +3410,19 @@ bool user_interface::draw_help()
         {
             if (draw)
             {
-                const byte *source     = blue ? ann_right : ann_left;
-                pixword    *sw         = (pixword *) source;
-                surface     s(sw, ann_width, ann_height, 16);
+                const byte   *source = blue ? ann_right : ann_left;
+                pixword      *sw     = (pixword *) source;
+                grob::surface s(sw, ann_width, ann_height, 16);
+                pattern       fg    = yellow ? Settings.LeftShiftForeground()
+                                             : Settings.RightShiftForeground();
+                pattern       bg    = yellow ? Settings.LeftShiftBackground()
+                                             : Settings.RightShiftBackground();
 
-                rect shkey(x, y, x + ann_width + 7, y + height);
-                Screen.fill(shkey, pattern::black);
-                Screen.copy(s, x + 4, y + (height - ann_height)/2);
+                coord ann_x = x + 4;
+                coord ann_y = y + (height - ann_height)/2;
+                Screen.fill(x, y, x+ann_width+7, y+height, pattern::black);
+                Screen.draw(s, ann_x, ann_y, fg);
+                Screen.draw_background(s, ann_x, ann_y, bg);
             }
             yellow = blue = false;
             x += ann_width + 7 + font->width(' ');
