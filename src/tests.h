@@ -29,6 +29,7 @@
 //   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // ****************************************************************************
 
+#include <cstring>
 #if SIMULATOR
 
 #include "dmcp.h"
@@ -48,7 +49,8 @@ struct tests
 // ----------------------------------------------------------------------------
 {
     tests()
-        : tname(), sname(), tindex(), sindex(), cindex(), count(),
+        : file(), line(), tstart(),
+          tname(), sname(), tindex(), sindex(), cindex(), count(),
           ok(), longpress(), failures(), explanation()
     { }
 
@@ -124,6 +126,10 @@ struct tests
     void expression_operations();
     void random_number_generation();
     void regression_checks();
+    void demo_setup();
+    void demo_ui();
+    void demo_math();
+    void demo_pgm();
 
     enum key
     {
@@ -279,6 +285,12 @@ public:
         uint length;
     };
 
+    struct KEY_DELAY
+    {
+        KEY_DELAY(uint kd): key_delay(kd) {}
+        uint key_delay;
+    };
+
     // Naming / identifying tests
     tests &begin(cstring name, bool disabled = false);
     tests &istep(cstring name);
@@ -305,6 +317,13 @@ public:
     tests &itest(LENGTHY length, Args... args)
     {
         save<uint> save(default_wait_time, default_wait_time + length.length);
+        return itest(args...);
+    }
+
+    template <typename... Args>
+    tests &itest(KEY_DELAY delay, Args... args)
+    {
+        save<uint> save(key_delay_time, delay.key_delay);
         return itest(args...);
     }
 
@@ -397,6 +416,7 @@ public:
   protected:
     cstring              file;
     uint                 line;
+    uint                 tstart;
     cstring              tname;
     cstring              sname;
     uint                 tindex;

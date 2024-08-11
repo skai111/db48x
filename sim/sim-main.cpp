@@ -113,11 +113,13 @@ int main(int argc, char *argv[])
             "%s version %s\n"
             "Last single-byte opcode is %s\n"
             "First two byte opcode is %s\n"
+            "Total of %u opcodes\n"
             "Help file name is %s\n",
             PROGRAM_NAME,
             DB48X_VERSION,
             object::name(object::id(127)),
             object::name(object::id(128)),
+            uint(object::NUM_IDS),
             HELPFILE_NAME);
 
     record(options,
