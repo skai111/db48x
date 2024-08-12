@@ -120,6 +120,9 @@ settings::settings() :
     SelectionBackground         (pattern(255, 255, 128).bits);
     SelectionForeground         (pattern( 24,  24, 128).bits);
 
+    SearchBackground            (pattern(255, 200, 120).bits);
+    SearchForeground            (pattern( 24,  24, 255).bits);
+
     ErrorBackground             (pattern(255, 240, 224).bits);
     ErrorForeground             (pattern( 64,   0,   0).bits);
     ErrorBorder                 (pattern(192,  64,  64).bits);
