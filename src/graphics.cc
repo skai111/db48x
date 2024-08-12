@@ -1342,6 +1342,8 @@ COMMAND_BODY(Gray)
     {
         gray = gray * integer::make(255);
         uint level = gray->as_uint32(0, true);
+        if (rt.error())
+            return ERROR;
         if (level > 255)
             level = 255;
         pattern pat = pattern(level, level, level);
@@ -1378,6 +1380,8 @@ COMMAND_BODY(RGB)
         uint rl = red->as_uint32(0, true);
         uint gl = green->as_uint32(0, true);
         uint bl = blue->as_uint32(0, true);
+        if (rt.error())
+            return ERROR;
         if (rl > 255)
             rl = 255;
         if (gl > 255)
