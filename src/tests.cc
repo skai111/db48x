@@ -586,6 +586,10 @@ void tests::reset_settings()
         .noerror()
         .test("Modes", ENTER)
         .want("« DisplayModesMenu »");
+
+    // Disable debugging on error, since we generate many errors intentionally
+    step("Disable DebugOnError")
+        .test(CLEAR, "KillOnError", ENTER).noerror();
 }
 
 
@@ -6922,6 +6926,9 @@ void tests::flags_by_name()
     step("Purging " #Name " to revert it to default " #Init)    \
         .test(CLEAR, "'" #Name "' PURGE", ENTER).noerror();
 #include "ids.tbl"
+
+    step("Clear DebugOnError for testing")
+        .test(CLEAR, "KillOnError", ENTER);
 }
 
 
@@ -7546,7 +7553,7 @@ void tests::overflow_and_underflow()
         .test("-25 FS?C", ENTER).expect("False");
 
     step("Reset modes")
-        .test(CLEAR, "ResetModes", ENTER)
+        .test(CLEAR, "ResetModes KillOnError", ENTER)
         .test("'MaximumDecimalExponent' RCL", ENTER)
         .expect("1 152 921 504 606 846 976");
 }

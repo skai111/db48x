@@ -839,7 +839,7 @@ FLAG(FixedWidthDigits,          VariableWidthDigits)
 FLAG(ExitKeepsMenu,             ExitClearsMenu)
 FLAG(ShowEmptyMenu,             HideEmptyMenu)
 FLAG(ListAsProgram,             ListAsData)
-
+FLAG(KillOnError,               DebugOnError)
 
 ALIAS(HardwareFloatingPoint,    "HFP")
 ALIAS(HardwareFloatingPoint,    "HardFP")

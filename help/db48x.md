@@ -8148,6 +8148,19 @@ When this setting is set, DB48X behaves like the HP28 and evaluates lists as
 data. For example, `{ 1 2 + } EVAL` returns `{ 1 2 + }`.
 
 
+## KillOnError
+
+An error kills the program without giving you the possibility to debug the
+problem. If you want to debug, you need to start the program with `Debug` and
+then use the `Continue` command.
+
+
+## DebugOnError
+
+An error during a program enters the debugger, letting you correct the problem
+before resuming execution. This is the default setting.
+
+
 # States
 
 The calculator can save and restore state in files with extension `.48S`.

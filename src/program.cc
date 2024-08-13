@@ -146,8 +146,9 @@ object::result program::run_loop(size_t depth)
 {
     result   result    = OK;
     bool     outer     = depth == 0 && !running;
-    bool     last_args =
-        outer ? Settings.SaveLastArguments() : Settings.ProgramLastArguments();
+    bool     last_args = outer
+        ? Settings.SaveLastArguments()
+        : Settings.ProgramLastArguments();
 
     save<bool> save_running(running, true);
     while (object_p obj = rt.run_next(depth))
@@ -162,11 +163,22 @@ object::result program::run_loop(size_t depth)
             }
             break;
         }
-        if (result == OK)
+        if (last_args)
+            rt.need_save();
+        result = obj->evaluate();
+
+        if (result != OK)
         {
-            if (last_args)
-                rt.need_save();
-            result = obj->evaluate();
+            if (Settings.DebugOnError())
+            {
+                obj->defer();
+                static_object(ID_DebugMenu)->evaluate();
+            }
+            else
+            {
+                while(rt.run_next(depth));
+            }
+            break;
         }
 
         if (stepping)
@@ -266,6 +278,7 @@ COMMAND_BODY(Debug)
     {
         if (program_p prog = obj->as_program())
         {
+            settings::SaveDebugOnError doe(true);
             rt.pop();
             program::halted = true;
             prog->run_program();
@@ -285,6 +298,7 @@ COMMAND_BODY(SingleStep)
 //   Single step an instruction
 // ----------------------------------------------------------------------------
 {
+    settings::SaveDebugOnError doe(true);
     program::stepping = 1;
     program::halted = false;
     return program::run_loop(0);
@@ -298,6 +312,7 @@ COMMAND_BODY(StepOver)
 {
     if (object_p next = rt.run_next(0))
     {
+        settings::SaveDebugOnError doe(true);
         size_t depth = rt.call_depth();
         save<bool> no_halt(program::halted, false);
         if (!next->defer())
@@ -313,13 +328,10 @@ COMMAND_BODY(StepOut)
 //   Step over the next instruction
 // ----------------------------------------------------------------------------
 {
+    settings::SaveDebugOnError doe(true);
     size_t depth = rt.call_depth();
-    if (depth > 2)
-    {
-        save<bool> no_halt(program::halted, false);
-        return program::run_loop(depth - 2);
-    }
-    return OK;
+    save<bool> no_halt(program::halted, false);
+    return program::run_loop(depth > 2 ? depth - 2 : 0);
 }
 
 
@@ -332,6 +344,7 @@ COMMAND_BODY(MultipleSteps)
     {
         if (uint steps = obj->as_uint32(0, true))
         {
+            settings::SaveDebugOnError doe(true);
             rt.pop();
             program::stepping = steps;
             program::halted = false;
@@ -347,6 +360,7 @@ COMMAND_BODY(Continue)
 //   Resume execution of the current program
 // ----------------------------------------------------------------------------
 {
+    settings::SaveDebugOnError doe(true);
     program::halted = false;
     return program::run_loop(0);
 }

@@ -234,11 +234,13 @@ public:
         SaveSaveLastArguments    saveLastArgs;
         SaveProgramLastArguments saveProgramLastArg;
         SaveSaveStack            saveLastStack;
+        SaveDebugOnError         saveDebugOnError;
 
         PrepareForProgramEvaluation()
             : saveLastArgs(false),
               saveProgramLastArg(false),
-              saveLastStack(false)
+              saveLastStack(false),
+              saveDebugOnError(false)
         {}
     };
     struct PrepareForFunctionEvaluation : PrepareForProgramEvaluation

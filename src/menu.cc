@@ -912,6 +912,8 @@ MENU(DebugMenu,
      "ErrMsg",          ID_errm,
      "ErrNum",          ID_errn,
      "ClrErr",          ID_err0,
+
+     "ErrDbg",          ID_DebugOnError,
      "Prog",            ID_ProgramMenu);
 
 
