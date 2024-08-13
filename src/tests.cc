@@ -6135,15 +6135,15 @@ void tests::catalog_test()
         .test(CLEAR, RSHIFT, RUNSTOP).editor("{}")
         .test(ALPHA, A).editor("{A}")
         .test(ADD).editor("{A}")
-        .test(F1).editor("{ %Change }");
+        .test(F1).editor("{ abs }");
     step("Finding functions from inside")
-        .test(B).editor("{ %Change B}")
-        .test(F1).editor("{ %Change abs }");
+        .test(B).editor("{ abs B}")
+        .test(F1).editor("{ abs Background }");
     step("Finding functions with middle characters")
-        .test(B, U).editor("{ %Change abs BU}")
-        .test(F1).editor("{ %Change abs Debug }");
+        .test(B, U).editor("{ abs Background BU}")
+        .test(F1).editor("{ abs Background Debug }");
     step("Catalog with nothing entered")
-        .test(F6, F3).editor("{ %Change abs Debug cosh⁻¹ }");
+        .test(F6, F3).editor("{ abs Background Debug cosh⁻¹ }");
 
     step("Test the default menu")
         .test(CLEAR, EXIT, A, RSHIFT, RUNSTOP).editor("{}")

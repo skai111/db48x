@@ -165,18 +165,19 @@ static void initialize_sorted_ids()
 #endif // DEOPTIMIZE_CATALOG
 
 
-static bool matches(utf8 start, size_t size, utf8 name)
+static uint matches(utf8 start, size_t size, utf8 name)
 // ----------------------------------------------------------------------------
 //   Check if what was typed matches the name
 // ----------------------------------------------------------------------------
 {
     size_t len   = strlen(cstring(name));
-    bool   found = false;
+    uint found = 0;
     for (uint o = 0; !found && o + size <= len; o++)
     {
-        found = true;
+        found = o+1;
         for (uint i = 0; found && i < size; i++)
-            found = tolower(start[i]) == tolower(name[i + o]);
+            if (tolower(start[i]) != tolower(name[i + o]))
+                found = 0;
     }
     return found;
 }
@@ -221,14 +222,26 @@ void Catalog::list_commands(info &mi)
 
     if (sorted_ids)
     {
-        for (size_t i = 0; i < sorted_ids_count; i++)
+        for (uint pass = 0; pass < uint(filter) + 1; pass++)
         {
-            uint16_t j = sorted_ids[i];
-            auto &s = object::spellings[j];
-            id ty  = s.type;
-            if (cstring name = s.name)
-                if (!filter || matches(start, size, utf8(name)))
-                    menu::items(mi, name, command::static_object(ty));
+            for (size_t i = 0; i < sorted_ids_count; i++)
+            {
+                uint16_t j = sorted_ids[i];
+                auto &s = object::spellings[j];
+                id ty  = s.type;
+                if (cstring name = s.name)
+                {
+                    uint ok = !filter;
+                    if (!ok)
+                    {
+                        ok = matches(start, size, utf8(name));
+                        if (ok)
+                            ok = pass ? ok != 1 : ok == 1;
+                    }
+                    if (ok)
+                        menu::items(mi, name, command::static_object(ty));
+                }
+            }
         }
     }
     else
