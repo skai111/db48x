@@ -784,7 +784,7 @@ algebraic_p StatsAccess::total(sxy_fn op, algebraic_r arg) const
         bool is_value = object::is_real(rty) || object::is_complex(rty);
         if (!is_value && !is_array)
         {
-            rt.type_error();
+            rt.invalid_stats_data_error();
             return nullptr;
         }
 
@@ -827,6 +827,11 @@ algebraic_p StatsAccess::total(sxy_fn op, algebraic_r arg) const
         }
         else if (result)
         {
+            row = op(result, row, arg);
+        }
+        else
+        {
+            result = integer::make(0);
             row = op(result, row, arg);
         }
         result = row;
