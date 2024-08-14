@@ -4837,6 +4837,7 @@ void tests::units_and_conversions()
         .test("3", RSHIFT, B).expect("12. km/h");
 }
 
+
 void tests::list_functions()
 // ----------------------------------------------------------------------------
 //   Some operations on lists
@@ -7692,7 +7693,6 @@ void tests::insertion_of_variables_constants_and_units()
     step("Insert undefined value")
         .test(CLEAR, LSHIFT, F6).expect("Undefined");
 
-
     step("Begin program")
         .test(CLEAR, LSHIFT, RUNSTOP).editor("«»");
     step("Insert pi")
@@ -8570,6 +8570,10 @@ void tests::regression_checks()
 
     step("Bug 961: Type for decimal values")
         .test(CLEAR, "123.4 TYPE", ENTER).expect("0");
+
+    step("Bug 1110: Test computation of c from epsilon0 and mu0")
+        .test(CLEAR, LSHIFT, I, F4, F3, F4, MUL, C, B, LSHIFT, KEY1)
+        .expect("299 792 458. m/(F↑(¹/₂)·H↑(¹/₂))");
 }
 
 

@@ -47,6 +47,7 @@ struct program : list
     result run(bool synchronous = true) const;
     INLINE result run_program() const               { return run(false); }
     static result run(object_p obj, bool sync = true);
+    static result run(algebraic_p alg, bool sync = true);
     INLINE static result run_program(object_p obj)  { return run(obj, false); }
     static result run_loop(size_t depth);
 

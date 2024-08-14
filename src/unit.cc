@@ -125,17 +125,26 @@ unit_p unit::make(algebraic_g v, algebraic_g u, id ty)
     if (!v || !u)
         return nullptr;
 
-    while (unit_g vu = v->as<unit>())
+    save<bool> save(unit::mode, true);
+    bool more = true;
+    while (more)
     {
-        u = vu->uexpr() * u;
-        v = vu->value();
+        more = false;
+        unit::mode = false;
         while (unit_g uu = u->as<unit>())
         {
             v = uu->value() * v;
             u = uu->uexpr();
+            more = true;
+        }
+        unit::mode = true;
+        while (unit_g vu = v->as<unit>())
+        {
+            u = vu->uexpr() * u;
+            v = vu->value();
+            more = true;
         }
     }
-    save<bool> save(unit::mode, true);
     if (expression_p eq = u->as<expression>())
         u = eq->simplify_products();
     if (!u || !v)

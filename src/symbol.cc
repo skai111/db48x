@@ -54,11 +54,15 @@ EVAL_BODY(symbol)
     if (!unit::factoring)
     {
         if (unit::mode)
+        {
             if (unit_p u = unit::lookup(o))
                 if (rt.push(u))
                     return OK;
-        if (object_p found = directory::recall_all(o, false))
+        }
+        else if (object_p found = directory::recall_all(o, false))
+        {
             return program::run_program(found);
+        }
     }
     if (object_g eq = expression::make(o))
         if (rt.push(eq))

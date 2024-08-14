@@ -197,25 +197,34 @@ algebraic_p function::evaluate(algebraic_r xr, id op, ops_t ops)
     // Check if we need to deal with units specially
     if (unit_p u = x->as<unit>())
     {
+        algebraic_g value = u->value();
+        algebraic_g uexpr = u->uexpr();
+        value = evaluate(value, op, ops);
+
+        settings::SaveNumericalResults snr(false);
+        save<bool> ueval(unit::mode, true);
         if (op == ID_sqrt || op == ID_cbrt)
         {
-            algebraic_g value = u->value();
-            algebraic_g uexpr = u->uexpr();
-            value = evaluate(value, op, ops);
+            save<bool> ufactor(unit::factoring, true);
             uint divisor = 2 + (op == ID_cbrt);
             algebraic_g exponent = +fraction::make(integer::make(1),
                                                    integer::make(divisor));
-            settings::SaveNumericalResults snr(false);
             uexpr = pow(uexpr, exponent);
-            return unit::make(value, uexpr);
-        }
-        save<bool> ueval(unit::mode, true);
-        x = x->evaluate();
-        if (x && x->type() == ID_unit)
-        {
-            rt.inconsistent_units_error();
+            if (value && uexpr)
+                return unit::make(value, uexpr);
+            if (!rt.error())
+                rt.inconsistent_units_error();
             return nullptr;
         }
+        unit::factoring = false;
+        uexpr = uexpr->evaluate();
+        if (uexpr && uexpr->is_real())
+        {
+            value = value * uexpr;
+            return value;
+        }
+        rt.inconsistent_units_error();
+        return nullptr;
     }
 
     // Convert arguments to numeric if necessary
@@ -278,7 +287,6 @@ algebraic_p function::evaluate(algebraic_r xr, id op, ops_t ops)
     }
 
     return result;
-
 }
 
 

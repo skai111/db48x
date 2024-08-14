@@ -607,6 +607,8 @@ algebraic_p arithmetic::non_numeric<struct div>(algebraic_r x, algebraic_r y)
             algebraic_g yv = yu->value();
             algebraic_g ye = yu->uexpr();
             yv = x / yv;
+            save<bool> umode(unit::mode, true);
+            save<bool> ufact(unit::factoring, true);
             ye = inv::run(ye);
             return unit::simple(yv, ye);
         }
@@ -889,7 +891,8 @@ algebraic_p arithmetic::non_numeric<struct pow>(algebraic_r x, algebraic_r y)
         algebraic_g xe = xu->uexpr();
         xv = pow(xv, y);
         {
-            save<bool> save(unit::mode, false);
+            save<bool> umode(unit::mode, false);
+            save<bool> ufact(unit::factoring, true);
             xe = pow(xe, y);
         }
         return unit::simple(xv, xe);

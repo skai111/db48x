@@ -133,6 +133,22 @@ object::result program::run(object_p obj, bool sync)
     return obj->evaluate();
 }
 
+
+object::result program::run(algebraic_p obj, bool sync)
+// ----------------------------------------------------------------------------
+//    Run a program as top-level as an algebraic
+// ----------------------------------------------------------------------------
+{
+    if (program_p prog = obj->as_program())
+    {
+        settings::PrepareForProgramEvaluation nosave;
+        return prog->run(sync);
+    }
+    if (directory_p dir = obj->as<directory>())
+        return dir->enter();
+    return object_p(obj)->evaluate();
+}
+
 #ifdef DM42
 #  pragma GCC pop_options
 #endif // DM42
