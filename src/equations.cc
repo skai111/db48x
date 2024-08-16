@@ -61,12 +61,12 @@ static const cstring basic_equations[] =
     "  '(Pcr_kN)=(Ⓒπ²*(E_kPa)*(A_cm^2))/sq((K*(L_m))/(r_cm))' "
     "  '(Pcr_kN)=(Ⓒπ²*(E_kPa)*(I_mm^4))/sq(K*(L_m))' "
     "  '(σcr_kPa)=(Pcr_kN)/(A_cm^2)' "
-    "  'r = sqrt((I_mm^4)/(A_cm^2))' "
+    "  '(r_cm)= sqrt((I_mm^4)/(A_cm^2))' "
     "}",
 
     "Eccentric Columns", "{"
     "  '(σmax_kPa)=((P_kN)/(A_cm^2))*(1+((ε_cm)*(c_cm))/sq(r_cm)*inv(cos(K/2*((L_m)/(r_cm))*sqrt((P_kN)/((E_kPa)*(A_cm^2)))*1_r)))'"
-    "  'r=sqrt(I/A)'"
+    "  '(r_cm)=sqrt((I_mm^4)/(A_cm^2))'"
     "}",
 
     "Simple Deflection", "{"
