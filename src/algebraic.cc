@@ -549,6 +549,7 @@ algebraic::angle_unit algebraic::adjust_angle(algebraic_g &x)
 //   If we have an angle unit, use it for the computation
 // ----------------------------------------------------------------------------
 {
+retry:
     angle_unit amode = ID_object;
     if (unit_p uobj = x->as<unit>())
     {
@@ -563,6 +564,14 @@ algebraic::angle_unit algebraic::adjust_angle(algebraic_g &x)
                 amode = ID_PiRadians;
             else if (sym->matches("grad"))
                 amode = ID_Grad;
+
+        }
+        if (amode == ID_object)
+        {
+            algebraic_g aunit = integer::make(1);
+            if (add_angle(aunit))
+                if (unit_p(+aunit)->convert(x))
+                    goto retry;
         }
         if (amode)
             x = uobj->value();
@@ -589,8 +598,12 @@ bool algebraic::add_angle(algebraic_g &x)
     }
 
     symbol_p uexpr = symbol::make(uname);
-    x = unit::make(x, uexpr);
-    return true;
+    if (algebraic_p angle = unit::make(x, uexpr))
+    {
+        x = angle;
+        return true;
+    }
+    return false;
 }
 
 

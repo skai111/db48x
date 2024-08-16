@@ -168,10 +168,7 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        // eqnlib_columns_and_beams();
-        demo_ui();
-        demo_math();
-        demo_pgm();
+        exact_trig_cases();
     }
     else
     {
@@ -3760,6 +3757,10 @@ void tests::exact_trig_cases()
             .test(base + 330, ENTER, circle[unit], MUL, 360, DIV, SIN)
             .expect("-1/2");
     }
+
+    step("Conversion from non-standard units")
+        .test(CLEAR, "1/8_turn COS", ENTER)
+        .expect("0.70710 67811 87");
 
     step("Cleaning up")
         .test(CLEAR, "SmallFractions DEG", ENTER).noerror();
