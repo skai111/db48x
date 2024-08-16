@@ -65,7 +65,7 @@ static const cstring basic_equations[] =
     "}",
 
     "Eccentric Columns", "{"
-    "  '(σmax_kPa)=((P_kN)/(A_cm^2))*(1+((ε_cm)*(c_cm))/sq(r_cm)*inv(cos(K/2*((L_m)/(r_cm))*sqrt((P_kN)/((E_kPa)*(A_cm^2))))))'"
+    "  '(σmax_kPa)=((P_kN)/(A_cm^2))*(1+((ε_cm)*(c_cm))/sq(r_cm)*inv(cos(K/2*((L_m)/(r_cm))*sqrt((P_kN)/((E_kPa)*(A_cm^2)))*1_r)))'"
     "  'r=sqrt(I/A)'"
     "}",
 

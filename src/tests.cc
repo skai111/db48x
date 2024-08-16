@@ -5497,7 +5497,7 @@ void tests::eqnlib_columns_and_beams()
         .test("1908.2571", NOSHIFT, F4)
         .test("8.4836", NOSHIFT, F5)
         .test(F6, LSHIFT, F2)
-        .expect("σmax:126 924.79298 4 kPa");
+        .expect("σmax:140 853.09700 6 kPa");
     step("Solving Eccentric Column second equation")
         .test(CLEAR, LSHIFT, F1, LSHIFT, F3)
         .expect("I:135 259 652.161 mm↑4");
