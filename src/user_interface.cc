@@ -2612,7 +2612,7 @@ bool user_interface::draw_stack()
 }
 
 
-bool user_interface::draw_object(object_p obj, uint top, uint bottom)
+bool user_interface::draw_object(object_p objp, uint top, uint bottom)
 // ----------------------------------------------------------------------------
 //   Draw the current equation or other topical object if necessary
 // ----------------------------------------------------------------------------
@@ -2623,6 +2623,7 @@ bool user_interface::draw_object(object_p obj, uint top, uint bottom)
               true);
     g.reduce_font();
     grob_g graph = nullptr;
+    object_g obj = objp;
     do
     {
         graph = obj->graph(g);
