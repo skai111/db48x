@@ -168,7 +168,10 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        exact_trig_cases();
+        // eqnlib_columns_and_beams();
+        demo_ui();
+        demo_math();
+        demo_pgm();
     }
     else
     {

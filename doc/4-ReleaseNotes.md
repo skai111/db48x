@@ -1,5 +1,49 @@
 # Release notes
 
+## Release 0.7.14 "Kids" - Equation-related bug fixes
+
+This release fixes a number of issues that were discovered primarily through the
+Columns and Beams equations.
+
+
+### Features
+
+* trigonometrics: Add conversion from non-standard angles, so that `cos(1_turn)`
+  gives the correct result.
+* debug: Debug on error with `DebugOnError` and `KillOnError` settings. This
+  makes it easier to debug an RPL program, by making it possible to single-step
+  around the instruction that generated the error.
+* tests: Add three 30 second demo of DB48X features. These are to generate
+  marketing videos for the iPhone version on the Apple store (to be done).
+
+
+### Bug fixes:
+
+* ui: Keep a GC pointer in `draw_object` to avoid a memory crash
+* equations: Add missing units in some equations, e.g. `I` and `A` in second
+  equation of Coilumns and Beams
+* equations: Add explicit `radian` unit in Eccentric Columns `cos`, which
+  ensures we get the correct result from the HP50G manual even when in Degrees
+  mode.
+* units: Correctly factor out non-integral powers, so that we can compute
+  `1/sqrt(epsilon_0*mu_0)` and get the correct result.
+* catalog: Display commands that begin with selection first, so that `FORE`
+  shows `Foreground` before `AlphaForeground`.
+* stats: When computing a sum, evaluate the expression on all terms. The result
+  for `Variance` with single variables was wrong because the first term was
+  computed incorrectly due to a misguided optimization.
+* graphics: Error out in `RGBPattern` for negative input. The negative values
+  were generating an error, but it was not reported, so the next command was
+  likely to report it.
+* help: Render shift keys correctly in the color version. The bitmap was
+  interpreted as containing color data. Colorize it instead.
+
+### Improvement
+
+* ui: Select orange as background color during search. The previous setting of
+  showing seardch using white foreground on a white background was probably
+  pushing the notion of "blind search" a bit too far.
+
 
 ## Release 0.7.13 "Murderers" - Solver improvements
 
