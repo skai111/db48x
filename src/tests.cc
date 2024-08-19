@@ -150,7 +150,7 @@ EXTRA(settings,         "Recall and activate every RPL setting");
 EXTRA(commands,         "Parse every single RPL command");
 
 
-void tests::run(bool onlyCurrent)
+void tests::run(uint onlyCurrent)
 // ----------------------------------------------------------------------------
 //   Run all test categories
 // ----------------------------------------------------------------------------
@@ -168,10 +168,14 @@ void tests::run(bool onlyCurrent)
     if (onlyCurrent)
     {
         here().begin("Current");
-        // eqnlib_columns_and_beams();
-        demo_ui();
-        demo_math();
-        demo_pgm();
+        if (onlyCurrent & 1)
+            eqnlib_columns_and_beams();
+        if (onlyCurrent & 2)
+            demo_ui();
+        if (onlyCurrent & 4)
+            demo_math();
+        if (onlyCurrent & 8)
+            demo_pgm();
     }
     else
     {

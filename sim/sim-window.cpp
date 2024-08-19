@@ -383,11 +383,15 @@ void MainWindow::keyPressEvent(QKeyEvent * ev)
     int k = ev->key();
     record(sim_keys, "Key press %d", k);
 
-    if (k == Qt::Key_F11 || k == Qt::Key_F12)
+    if (k == Qt::Key_F7 || k == Qt::Key_F8 || k == Qt::Key_F9 ||
+        k == Qt::Key_F11 || k == Qt::Key_F12)
     {
         if (!tests.isRunning())
         {
             tests.onlyCurrent = k == Qt::Key_F11;
+            tests.demo1 = k == Qt::Key_F7;
+            tests.demo2 = k == Qt::Key_F8;
+            tests.demo3 = k == Qt::Key_F9;
             tests.start();
         }
         else

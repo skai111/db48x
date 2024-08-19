@@ -59,7 +59,9 @@ class TestsThread : public QThread
 // ----------------------------------------------------------------------------
 {
 public:
-    TestsThread(QObject *parent): QThread(parent), onlyCurrent() {}
+    TestsThread(QObject *parent)
+        : QThread(parent), onlyCurrent(), demo1(), demo2(), demo3()
+    {}
     ~TestsThread()
     {
         if (isRunning())
@@ -69,9 +71,10 @@ public:
     void run()
     {
         tests TestSuite;
-        TestSuite.run(onlyCurrent);
+        TestSuite.run(onlyCurrent + 2*demo1 + 4*demo2 + 8*demo3);
     }
     bool onlyCurrent;
+    bool demo1, demo2, demo3;
 };
 
 

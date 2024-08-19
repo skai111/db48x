@@ -55,7 +55,7 @@ struct tests
     { }
 
     // Run all tests
-    void run(bool onlyCurrent);
+    void run(uint onlyCurrent);
 
     // Individual test categories
     void reset_settings();
