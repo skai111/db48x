@@ -405,9 +405,9 @@ void tests::demo_math()
         .test(CLEAR, EXIT,
               RSHIFT, ENTER,
               "      Integer, decimal and fractions", ENTER, "M", ENTER,
-              WLABEL, ENTER, KEY_DELAY(75),
+              WLABEL, ENTER, KEY_DELAY(50),
               2, ENTER, 3, DIV, 4, ENTER, 7, DIV, ADD,
-              "2.", ENTER, 3, DIV, "4.", ENTER, 7, DIV, ADD, WSHOW,
+              "2.", ENTER, 3, DIV, "4.", ENTER, 7, DIV, ADD, W2,
               LSHIFT, DOT, WSHOW, ENTER);
     step("Arbitrary precision")
         .test(CLEAR, EXIT,
@@ -415,10 +415,12 @@ void tests::demo_math()
               "                Arbitrary precision", RSHIFT, BSP,
               "       integer and decimal numbers", ENTER, "M", ENTER,
               WLABEL, ENTER, KEY_DELAY(25),
-              NOSHIFT, F, 80, LSHIFT, MUL, F3, WSHOW, ENTER, RUNSTOP, WSHOW,
+              NOSHIFT, F, 80, LSHIFT, MUL, F3, W2, ENTER, RUNSTOP,
+              LSHIFT, DOT, WSHOW, ENTER,
               LSHIFT, N, F2,
-              LSHIFT, O, 200, F5, 200, F6,
-              1, LSHIFT, L, 4, MUL, WSHOW,
+              LSHIFT, O, 420, F5, 420, F6,
+              1, LSHIFT, L, 4, MUL,
+              LSHIFT, DOT, WSHOW, ENTER,
               KEY_DELAY(0), 12, F5, 24, F6);
     step("Complex numbers")
         .test(CLEAR, EXIT,
@@ -429,7 +431,7 @@ void tests::demo_math()
               LSHIFT, N, F1,
               LSHIFT, G,
               2, F1, 3, ENTER, 4, F1, 5, W2, ADD,
-              WSHOW,
+              W2,
               2, F2, 30, ENTER, 3, F2, 40, MUL,
               WSHOW);
     step("Vectors and matrices")
@@ -444,8 +446,8 @@ void tests::demo_math()
               LSHIFT, KEY9, "4 5 6", NOSHIFT, DOWN,
               LSHIFT, KEY9, "7 8 9", NOSHIFT, ENTER, W2,
               KEY_DELAY(25),
-              B, WSHOW, ENTER,
-              RSHIFT, KEY9, LSHIFT, F1, WSHOW,
+              B, W2, ENTER,
+              RSHIFT, KEY9, LSHIFT, F1, W2,
               KEY_DELAY(0),
               LSHIFT, M,
               LSHIFT, KEY9,
@@ -470,15 +472,27 @@ void tests::demo_math()
               "                 Based numbers", RSHIFT, BSP,
               "        in any base between 2 and 36", RSHIFT, BSP,
               "                 with any word size", ENTER, "M", ENTER,
-              WLABEL, ENTER, KEY_DELAY(25),
+              WLABEL, ENTER, KEY_DELAY(15),
               LSHIFT, KEY4,
               F1, KEY1, KEY2, KEY3, A, B, C, ENTER,
               KEY_DELAY(25),
               F1, C, D, E, ADD,
               W5,
               KEY2, F1, KEY1, KEY0, KEY0, KEY1, ENTER, W2,
-              LSHIFT, F2, W2, LSHIFT, F3, W2, LSHIFT, F4, W2,
+              LSHIFT, F2, W1, LSHIFT, F3, W1, LSHIFT, F4, W1,
               3, LSHIFT, F1, WSHOW, LSHIFT, F5);
+    step("DMS and HMS operations")
+        .test(CLEAR,
+              RSHIFT, ENTER,
+              "        Degrees, minutes and seconds", RSHIFT, BSP,
+              "        Hours, minutes and seconds,", RSHIFT, BSP,
+              "           Dates and time operations", ENTER, "M", ENTER,
+              WLABEL, ENTER, KEY_DELAY(25),
+              NOSHIFT, KEY1, DOT, KEY2, KEY3, DOT, KEY3, KEY6, ENTER, W1,
+              NOSHIFT, KEY2, DOT, KEY4, KEY1, DOT, KEY5, KEY1, W1,
+              ADD, W1,
+              RSHIFT, KEY6, LSHIFT, F3, W1,
+              RSHIFT, F4, "19681205", NOSHIFT, F1, SUB, WSHOW);
 
     step("End of math demo")
         .test(CLEAR, "#0 Foreground", ENTER);
