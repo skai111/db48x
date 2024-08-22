@@ -361,23 +361,25 @@ object_p files::recall_source(text_p name) const
 //   Recall an object from source file
 // ----------------------------------------------------------------------------
 {
-    file prog(filename(name), false);
-    if (!prog.valid())
     {
-        rt.error(prog.error());
-        return nullptr;
-    }
+        file prog(filename(name), false);
+        if (!prog.valid())
+        {
+            rt.error(prog.error());
+            return nullptr;
+        }
 
-    // Loop on the input file and process it as if it was being typed
-    uint bytes = 0;
-    rt.clear();
+        // Loop on the input file and process it as if it was being typed
+        uint bytes = 0;
+        rt.clear();
 
-    for (unicode c = prog.get(); c; c = prog.get())
-    {
-        byte buffer[4];
-        size_t count = utf8_encode(c, buffer);
-        rt.insert(bytes, buffer, count);
-        bytes += count;
+        for (unicode c = prog.get(); c; c = prog.get())
+        {
+            byte buffer[4];
+            size_t count = utf8_encode(c, buffer);
+            rt.insert(bytes, buffer, count);
+            bytes += count;
+        }
     }
 
     // End of file: execute the command we typed

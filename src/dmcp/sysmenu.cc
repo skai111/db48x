@@ -373,25 +373,27 @@ static int state_load_callback(cstring path, cstring name, void *merge)
                     "Loading state...", name);
 
     // Store the state file name
-    file prog;
-    prog.open(path);
-    if (!prog.valid())
     {
-        disp_disk_info("State load failed");
-        wait_for_key_press();
-        return 1;
-    }
+        file prog;
+        prog.open(path);
+        if (!prog.valid())
+        {
+            disp_disk_info("State load failed");
+            wait_for_key_press();
+            return 1;
+        }
 
-    // Loop on the input file and process it as if it was being typed
-    size_t bytes = 0;
-    rt.clear();
+        // Loop on the input file and process it as if it was being typed
+        size_t bytes = 0;
+        rt.clear();
 
-    for (unicode c = prog.get(); c; c = prog.get())
-    {
-        byte buffer[4];
-        size_t count = utf8_encode(c, buffer);
-        rt.insert(bytes, buffer, count);
-        bytes += count;
+        for (unicode c = prog.get(); c; c = prog.get())
+        {
+            byte buffer[4];
+            size_t count = utf8_encode(c, buffer);
+            rt.insert(bytes, buffer, count);
+            bytes += count;
+        }
     }
 
     // End of file: execute the command we typed

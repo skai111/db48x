@@ -851,6 +851,7 @@ unit_p unit::lookup(symbol_p name, int *prefix_info)
             // If we found a definition, use that unless it begins with '='
             if (udef)
             {
+                file_closer ufilec(ufile, "config/units.csv");
                 if (object_p obj = object::parse(utf8(udef), ulen))
                 {
                     if (unit_g u = obj->as<unit>())
