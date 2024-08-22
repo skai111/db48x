@@ -115,6 +115,15 @@ struct constant : algebraic
                 return algebraic_p(obj);
         return nullptr;
     }
+    algebraic_p numerical_value() const
+    {
+        if (algebraic_g a = value())
+        {
+            to_decimal(a, true);
+            return a;
+        }
+        return nullptr;
+    }
     bool is_imaginary_unit() const
     {
         return matches("ⅈ") || matches("ⅉ");
@@ -131,7 +140,7 @@ struct constant : algebraic
         return len == nlen && memcmp(ref, txt, len) == 0;
     }
 
-    static result lookup_command(config_r cfg);
+    static result lookup_command(config_r cfg, bool numerical);
 
 protected:
     static result     do_parsing(config_r cfg, parser &p);

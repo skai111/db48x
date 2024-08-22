@@ -219,7 +219,7 @@ COMMAND_BODY(ConstantValue)
     int key = ui.evaluating;
     if (object_p cstobj = constant::do_key(constant::constants, key))
         if (constant_p cst = cstobj->as<constant>())
-            if (object_p value = cst->value())
+            if (algebraic_p value = cst->numerical_value())
                 if (rt.push(value))
                     return OK;
     if (!rt.error())
@@ -256,7 +256,7 @@ COMMAND_BODY(Const)
 //   Evaluate a library constant
 // ----------------------------------------------------------------------------
 {
-    return constant::lookup_command(constant::constants);
+    return constant::lookup_command(constant::constants, true);
 }
 
 
@@ -281,9 +281,14 @@ static const cstring basic_constants[] =
     "π",        "3.14159",              // Evaluated specially (decimal-pi.h)
     "e",        "2.71828",              // Evaluated specially (decimal-e.h)
     "ⅈ",        "0+ⅈ1",                 // Imaginary unit
-    "ⅉ",        "0+ⅈ1",                 // Imaginary unit
     "∞",        "9.99999E999999",       // A small version of infinity
     "?",        "Undefined",            // Undefined result
+
+    "ⅉ",        "0+ⅈ1",                 // Imaginary unit
+    "rad",      "1_r",                  // One radian
+    "twoπ",     "'2*Ⓒπ'_r",             // Two pi radian
+    "angl",     "180_°",                // Half turn
+
 
     // ------------------------------------------------------------------------
     //   Chemistry
@@ -328,9 +333,6 @@ static const cstring basic_constants[] =
     "λ0",       "1239.8425_nm",         // Photon wavelength
     "f0",       "2.4179883E14_Hz",      // Photon frequency
     "λc",       "0.00242631058_nm",     // Compton wavelength
-    "rad",      "1_r",                  // One radian
-    "twoπ",     "π_2*r",                // Two pi radian
-    "angl",     "180_°",                // Half turn
     "c3",       "0.002897756_m*K",      // Wien's
     "kq",       "0.00008617386_J/(K*C)",// k/q
     "ε0q",      "55263469.6_F/(m*C)",   // ε0/q
@@ -898,7 +900,7 @@ constant_p constant::do_key(config_r cfg, int key)
 }
 
 
-object::result constant::lookup_command(config_r cfg)
+object::result constant::lookup_command(config_r cfg, bool numerical)
 // ----------------------------------------------------------------------------
 //   Process a command looking up in the given config
 // ----------------------------------------------------------------------------
@@ -919,9 +921,31 @@ object::result constant::lookup_command(config_r cfg)
     size_t      len    = 0;
     utf8        txt    = text_p(name)->value(&len);
     if (constant_p cst = constant::do_lookup(cfg, txt, len, false))
+    {
         if (object_p value = cst->do_value(cfg))
+        {
+            if (numerical)
+            {
+                if (expression_p expr = value->as<expression>())
+                {
+                    value = expr->evaluate();
+                }
+                else if (unit_p u = value->as<unit>())
+                {
+                    if (algebraic_g expr = u->value()->as<expression>())
+                    {
+                        object_g gcvalue = value;
+                        algebraic_g uexpr = u->uexpr();
+                        if (algebraic::to_decimal(expr))
+                            gcvalue = unit::simple(expr, uexpr);
+                        value = gcvalue;
+                    }
+                }
+            }
             if (rt.top(value))
                 return OK;
+        }
+    }
 
     cfg.error();
     return ERROR;

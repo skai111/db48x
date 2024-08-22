@@ -415,5 +415,5 @@ COMMAND_BODY(LibEq)
 //   Evaluate a library equation
 // ----------------------------------------------------------------------------
 {
-    return equation::lookup_command(equation::equations);
+    return equation::lookup_command(equation::equations, false);
 }

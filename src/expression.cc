@@ -83,6 +83,7 @@ PARSE_BODY(expression)
     if (p.precedence)
         return SKIP;
 
+    save<bool> nounits(unit::mode, false);
     p.precedence = 1;
     auto result = list_parse(ID_expression, p, '\'', '\'');
     p.precedence = 0;

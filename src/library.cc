@@ -274,5 +274,5 @@ COMMAND_BODY(XLib)
 //   Evaluate a library item
 // ----------------------------------------------------------------------------
 {
-    return xlib::lookup_command(xlib::library);
+    return xlib::lookup_command(xlib::library, false);
 }
