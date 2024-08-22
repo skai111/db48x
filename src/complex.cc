@@ -386,6 +386,8 @@ PARSE_BODY(rectangular)
         // If we have a parenthese here, we are done, return that
         if (cp == ')' || !spaces)
         {
+            if (!p.precedence)
+                return SKIP;
             p.out = +re;
             p.length = offs+1;
             return OK;
