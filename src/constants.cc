@@ -315,7 +315,7 @@ static const cstring basic_constants[] =
     "ε0",       "8.85418781761E-12_F/m",// Vaccuum permittivity
     "μ0",       "1.25663706144E-6_H/m", // Vaccuum permeability
     "g",        "9.80665_m/s²",         // Acceleration of Earth gravity
-    "G",        "6.67259E-11_m^3/(s^2•kg)",// Gravitation constant
+    "G",        "6.67259E-11_m^3/(s^2*kg)",// Gravitation constant
     "h",        "6.6260755E-34_J*s",    // Planck
     "ℏ",        "1.05457266E-34_J*s",   // Dirac
     "qe",       "1.602176634E-19_C",    // Electronic charge

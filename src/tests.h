@@ -118,6 +118,7 @@ struct tests
     void online_help();
     void graphic_stack_rendering();
     void insertion_of_variables_constants_and_units();
+    void constants_menu();
     void character_menu();
     void probabilities();
     void sum_and_product();
