@@ -88,12 +88,17 @@ struct file_closer
 //   DMCP only allows one file open at a time
 {
     file_closer(file &f, cstring name)
-        : f(f), name(name), position(f.position())
+        : f(f), name(name), position(0)
     {
         if (f.valid())
+        {
+            position = f.position();
             f.close();
+        }
         else
-            name = nullptr;
+        {
+            this->name = nullptr;
+        }
     }
     ~file_closer()
     {
