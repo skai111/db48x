@@ -1271,7 +1271,7 @@ algebraic_p expression::simplify_products() const
 
     // Loop factoring out variables, until there is no variable left
     bool done = false;
-    while (!done)
+    while (!done && !program::interrupted())
     {
         done = true;
         for (object_p obj : *eq)
@@ -1289,8 +1289,8 @@ algebraic_p expression::simplify_products() const
                 rest = scale;
                 if (expression_p req = rest->as<expression>())
                 {
+                    done = req->is_same_as(eq);
                     eq = req;
-                    done = false;
                 }
                 else
                 {
