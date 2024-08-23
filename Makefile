@@ -148,9 +148,12 @@ TTF2FONT=$(TOOLS)/ttf2font/ttf2font
 $(TTF2FONT): $(TTF2FONT).cpp $(TOOLS)/ttf2font/Makefile src/ids.tbl
 	cd $(TOOLS)/ttf2font; $(MAKE) TARGET=opt
 
+TAR_OPTS=$(TAR_OPTS_$(shell uname))
+TAR_OPTS_Darwin=--no-mac-metadata --no-fflags --no-xattrs --no-acls
 dist: all
 	cp $(BUILD)/$(TARGET)_qspi.bin  .
 	tar cvfz $(TARGET)-v$(VERSION).tgz 	\
+		$(TAR_OPTS)			\
 		$(TARGET).$(PGM)		\
 		$(TARGET)_qspi.bin		\
 		help/$(TARGET).md		\
