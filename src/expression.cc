@@ -1196,6 +1196,11 @@ algebraic_p expression::factor_out(algebraic_g expr,
         case ID_pow:
             x = algebraic_p(rt.pop());
             y = algebraic_p(rt.pop());
+            if (!x || !x->is_real())
+            {
+                rt.invalid_unit_expression_error();
+                return nullptr;
+            }
             y = factor_out(y, factor, ys, ye);
             ye = ye * x;
             scale = pow(ys, x);
@@ -1235,9 +1240,27 @@ algebraic_p expression::factor_out(algebraic_g expr,
                 return nullptr;
             break;
 
-        default:
+        case ID_symbol:
+        case ID_integer:
+        case ID_neg_integer:
+        case ID_bignum:
+        case ID_neg_bignum:
+        case ID_fraction:
+        case ID_neg_fraction:
+        case ID_big_fraction:
+        case ID_neg_big_fraction:
+        case ID_hwfloat:
+        case ID_hwdouble:
+        case ID_decimal:
+        case ID_neg_decimal:
+        case ID_neg:
             if (program::run(obj) != OK)
                 return nullptr;
+            break;
+
+        default:
+            rt.invalid_unit_expression_error();
+            return nullptr;
         }
     }
 
@@ -1279,10 +1302,16 @@ algebraic_p expression::simplify_products() const
         {
             if (symbol_g sym = obj->as<symbol>())
             {
+                uint depth = rt.depth();
                 algebraic_g scale, exponent;
                 algebraic_g rest = factor_out(+eq, +sym, scale, exponent);
                 if (!rest || !scale || !exponent)
+                {
+                    uint sdepth = rt.depth();
+                    if (sdepth > depth)
+                        rt.drop(sdepth - depth);
                     return nullptr;
+                }
                 if (exponent->is_negative(false))
                     den = den * pow(+sym, -exponent);
                 else

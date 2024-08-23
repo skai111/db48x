@@ -170,7 +170,7 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-            constants_menu();
+            units_and_conversions();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -4859,6 +4859,15 @@ void tests::units_and_conversions()
     step("xroot for units")
         .test(CLEAR, "12_km/h", ENTER, "3", LSHIFT, B).expect("1 728 km↑3/h↑3")
         .test("3", RSHIFT, B).expect("12. km/h");
+
+    step("Invalid unit exponent")
+        .test(CLEAR, "1_km^s", ENTER).error("Invalid unit expression");
+    step("Invalid unit expression")
+        .test(CLEAR, "1_km/",
+              ALPHA, SHIFT, F, UP, BSP, DOWN,
+              LOWERCASE, S, NOSHIFT, ADD, ALPHA, N,
+              ENTER).error("Invalid unit expression")
+        .test(CLEAR);
 }
 
 
