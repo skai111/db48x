@@ -120,6 +120,7 @@ IMAGES=$(COLOR:%=color-)images
 cmp-% compare-%:
 	compare $(IMAGES)/$*.png $(IMAGES)/bad/$*.png -compose src $*.png || true
 	open $*.png $(IMAGES)/bad/$*.png $(IMAGES)/$*.png
+	echo mv -f $(IMAGES)/bad/$*.png $(IMAGES)/$*.png
 update-%:
 	mv $(IMAGES)/bad/$*.png $(IMAGES)/$*.png
 
