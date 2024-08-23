@@ -273,7 +273,7 @@ void tests::demo_setup()
         .test(CLEAR,
               LSHIFT, RUNSTOP,
               "1 3 START 0 0.5 RANDOM NEXT RGB FOREGROUND 3 DISP "
-              "#0 FOREGROUND  ", ENTER, F, ALPHA, M, NOSHIFT, STO);
+              "#0 FOREGROUND  ", ENTER, F, ALPHA, D, NOSHIFT, STO);
 
     setup = true;
 
@@ -299,7 +299,7 @@ void tests::demo_ui()
         .test(CLEAR, EXIT,
               RSHIFT, ENTER,
               "                   An RPL calculator", RSHIFT, BSP,
-              "                   with infinite stack", ENTER, "M", ENTER,
+              "                   with infinite stack", ENTER, "D", ENTER,
               WLABEL, ENTER, KEY_DELAY(25),
               1, ENTER, 2, ENTER, 3, ENTER, 4, ENTER,
               5, ENTER, 6, ENTER, 7, ENTER, 8, ENTER, W3,
@@ -311,7 +311,7 @@ void tests::demo_ui()
               RSHIFT, ENTER,
               "                 6 function keys", RSHIFT, BSP,
               "            provide quick access to ", RSHIFT, BSP,
-              "               up to 18 functions", ENTER, "M", ENTER,
+              "               up to 18 functions", ENTER, "D", ENTER,
               WLABEL, ENTER, KEY_DELAY(25),
               LSHIFT, RUNSTOP,
               LSHIFT, O,
@@ -328,14 +328,14 @@ void tests::demo_ui()
               RSHIFT, ENTER,
               "                      On-line help", RSHIFT, BSP,
               "                   with hyperlinks", RSHIFT, BSP,
-              "           activated with long-press", ENTER, "M", ENTER,
+              "           activated with long-press", ENTER, "D", ENTER,
               WLABEL, ENTER, KEY_DELAY(25),
               LONGPRESS, K, W5, DOWN, DOWN, DOWN, W5, F1, DOWN, DOWN, DOWN, W5);
 
     step("Library of equations and constants")
         .test(CLEAR, EXIT,
               RSHIFT, ENTER,
-              "             Equations and constants", ENTER, "M", ENTER,
+              "             Equations and constants", ENTER, "D", ENTER,
               WLABEL, ENTER, KEY_DELAY(25),
               LSHIFT, I, F2, F1, F2, MUL, WSHOW,
               LSHIFT, F1, LSHIFT, F2, WSHOW,
@@ -348,7 +348,7 @@ void tests::demo_ui()
         .test(CLEAR, EXIT,
               RSHIFT, ENTER,
               "            Graphing and plotting", RSHIFT, BSP,
-              "                   with patterns", ENTER, "M", ENTER,
+              "                   with patterns", ENTER, "D", ENTER,
               WLABEL, ENTER, KEY_DELAY(20),
               LSHIFT, N, F2,
               KEY_DELAY(0),
@@ -369,7 +369,7 @@ void tests::demo_ui()
 
     step("Quick conversion")
         .test(CLEAR, RSHIFT, ENTER,
-              "      Quick conversion (cycle) key", ENTER, "M", ENTER,
+              "      Quick conversion (cycle) key", ENTER, "D", ENTER,
               WLABEL, ENTER,
               KEY_DELAY(0), "2.335", ENTER,
               KEY_DELAY(75), O, O, O,
@@ -378,7 +378,7 @@ void tests::demo_ui()
 
     step("Tool key")
         .test(CLEAR, EXIT, RSHIFT, ENTER,
-              "      Tool key selects best menu", ENTER, "M", ENTER,
+              "      Tool key selects best menu", ENTER, "D", ENTER,
               WLABEL, ENTER,
               123, ENTER,
               123, LSHIFT, G, F1, 456, ENTER,
@@ -404,7 +404,7 @@ void tests::demo_math()
     step("Integers, decimals and fractions")
         .test(CLEAR, EXIT,
               RSHIFT, ENTER,
-              "      Integer, decimal and fractions", ENTER, "M", ENTER,
+              "      Integer, decimal and fractions", ENTER, "D", ENTER,
               WLABEL, ENTER, KEY_DELAY(50),
               2, ENTER, 3, DIV, 4, ENTER, 7, DIV, ADD,
               "2.", ENTER, 3, DIV, "4.", ENTER, 7, DIV, ADD, W2,
@@ -413,7 +413,7 @@ void tests::demo_math()
         .test(CLEAR, EXIT,
               RSHIFT, ENTER,
               "                Arbitrary precision", RSHIFT, BSP,
-              "       integer and decimal numbers", ENTER, "M", ENTER,
+              "       integer and decimal numbers", ENTER, "D", ENTER,
               WLABEL, ENTER, KEY_DELAY(25),
               NOSHIFT, F, 80, LSHIFT, MUL, F3, W2, ENTER, RUNSTOP,
               LSHIFT, DOT, WSHOW, ENTER,
@@ -426,7 +426,7 @@ void tests::demo_math()
         .test(CLEAR, EXIT,
               RSHIFT, ENTER,
               "                Complex numbers", RSHIFT, BSP,
-              "             Polar and rectangular", ENTER, "M", ENTER,
+              "             Polar and rectangular", ENTER, "D", ENTER,
               WLABEL, ENTER, KEY_DELAY(25),
               LSHIFT, N, F1,
               LSHIFT, G,
@@ -438,7 +438,7 @@ void tests::demo_math()
         .test(CLEAR, EXIT,
               RSHIFT, ENTER,
               "                Vectors and matrix", RSHIFT, BSP,
-              "             arithmetic and operations", ENTER, "M", ENTER,
+              "             arithmetic and operations", ENTER, "D", ENTER,
               WLABEL, ENTER, KEY_DELAY(5),
               LSHIFT, KEY9, "1 2 3", ENTER, W2,
               LSHIFT, KEY9,
@@ -460,7 +460,7 @@ void tests::demo_math()
         .test(CLEAR, EXIT,
               RSHIFT, ENTER,
               "                 Symbolic arithmetic", RSHIFT, BSP,
-              "                    and expressions", ENTER, "M", ENTER,
+              "                    and expressions", ENTER, "D", ENTER,
               WLABEL, ENTER, KEY_DELAY(25),
               "x", ENTER, 2, MUL, 3, ENTER, "y", ENTER, D, SUB,
               C, B, 1, SUB, ENTER,
@@ -471,7 +471,7 @@ void tests::demo_math()
               RSHIFT, ENTER,
               "                 Based numbers", RSHIFT, BSP,
               "        in any base between 2 and 36", RSHIFT, BSP,
-              "                 with any word size", ENTER, "M", ENTER,
+              "                 with any word size", ENTER, "D", ENTER,
               WLABEL, ENTER, KEY_DELAY(15),
               LSHIFT, KEY4,
               F1, KEY1, KEY2, KEY3, A, B, C, ENTER,
@@ -486,7 +486,7 @@ void tests::demo_math()
               RSHIFT, ENTER,
               "        Degrees, minutes and seconds", RSHIFT, BSP,
               "        Hours, minutes and seconds,", RSHIFT, BSP,
-              "           Dates and time operations", ENTER, "M", ENTER,
+              "           Dates and time operations", ENTER, "D", ENTER,
               WLABEL, ENTER, KEY_DELAY(25),
               NOSHIFT, KEY1, DOT, KEY2, KEY3, DOT, KEY3, KEY6, ENTER, W1,
               NOSHIFT, KEY2, DOT, KEY4, KEY1, DOT, KEY5, KEY1, W1,
@@ -510,7 +510,7 @@ void tests::demo_pgm()
     step("Engineering units")
         .test(CLEAR,
               RSHIFT, ENTER,
-              "                 Engineering units", ENTER, "M", ENTER,
+              "                 Engineering units", ENTER, "D", ENTER,
               WLABEL, ENTER, KEY_DELAY(25),
               KEY_DELAY(25),
               LSHIFT, KEY5, F3, "3500.25", F2, LSHIFT, F1,
@@ -521,7 +521,7 @@ void tests::demo_pgm()
     step("RPL programming")
         .test(CLEAR, EXIT,
               RSHIFT, ENTER,
-              "                 RPL programming", ENTER, "M", ENTER,
+              "                 RPL programming", ENTER, "D", ENTER,
               WLABEL, ENTER, KEY_DELAY(25),
               LSHIFT, RUNSTOP,
               KEY2, MUL, KEY1, ADD, ENTER,
@@ -531,7 +531,7 @@ void tests::demo_pgm()
     step("Program editing")
         .test(RSHIFT, ENTER,
               "                 Advanced editor", RSHIFT, BSP,
-              "        with cut, copy, paste, search...", ENTER, "M", ENTER,
+              "        with cut, copy, paste, search...", ENTER, "D", ENTER,
               WLABEL, ENTER, KEY_DELAY(25),
               LSHIFT, F1, DOWN, DOWN, DOWN,
               RSHIFT, DOWN, F1, DOWN, DOWN, DOWN, DOWN, WSHOW,
@@ -543,7 +543,7 @@ void tests::demo_pgm()
     step("Command-line history")
         .test(RSHIFT, ENTER,
               "             Command-line history", RSHIFT, BSP,
-              "        Recalls last eight commands", ENTER, "M", ENTER,
+              "        Recalls last eight commands", ENTER, "D", ENTER,
               WLABEL, ENTER, KEY_DELAY(25),
               RSHIFT, UP, WSHOW,
               F2, WSHOW,
@@ -553,7 +553,7 @@ void tests::demo_pgm()
 
     step("Loops and conditions")
         .test(RSHIFT, ENTER,
-              "                 Loops and conditions", ENTER, "M", ENTER,
+              "                 Loops and conditions", ENTER, "D", ENTER,
               WLABEL, ENTER, KEY_DELAY(10),
               LSHIFT, RUNSTOP,
               LSHIFT, F,
