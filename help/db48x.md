@@ -2292,6 +2292,30 @@ You can edit it by recalling its content on the stack using
 back to disk using `"config:equations.csv" STO`.
 # Release notes
 
+## Release 0.7.15 "Teaching" - Bug fixes notably on iOS
+
+This release mostly focuses on issues exposed by the iOS releases.
+It's a bug-fixes only release.
+
+### Bug fixes
+
+* ios: Fix a screen refresh bug delaying the display of computation results
+* ios: Increase user-accesssible memory for DB50X to match the DM32
+* files: Avoid opening two files when a loaded file contains units/constants
+* units: Restrict unit expressions further, e.g. forbid `1_km^s`
+* build: Do not add unwanted macOS-specific files in release tar files
+* build: Remove irrelevant help file from releae tar file
+* constants: Fix numerical value for G constant
+* tests: Rename `M` demo helper to `D`, since we use `M` in symbolic tests
+* makefile: Add `mv` echo to targets doing image comparison
+* units: Use pi constant in definition of radians unit
+* parser: Detect syntax error on `(inv(x))` in non-expression mode
+* units: Avoid infinite loop for bad unit exponents
+* files: Avoid crash in `file_closer` if file does not exist
+* tests: Add DMS/HMS operations to math demo
+* tests: Add keyboard shortcuts to launch the demos
+
+
 ## Release 0.7.14 "Kids" - Equation-related bug fixes
 
 This release fixes a number of issues that were discovered primarily through the
