@@ -363,9 +363,9 @@ PARSE_BODY(rectangular)
 
         // Parse the real part
         size_t   resz  = max - offs;
-        object_p reobj = parse(p.source + offs, resz);
+        object_p reobj = parse(p.source + offs, resz, p.precedence);
         if (!reobj)
-            return ERROR;
+            return SKIP;
         if (!reobj->is_algebraic())
             return SKIP;
         re = algebraic_p(reobj);
