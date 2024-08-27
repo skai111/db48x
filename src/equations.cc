@@ -966,7 +966,7 @@ static const cstring basic_equations[] =
     // For circumnavigation : https://www.mathpages.com/rr/s6-06/6-06.htm
     // for time dilation at height : http://ws680.nist.gov/publication/get_pdf.cfm?pub_id=905055 & Note de cours PhyN03 J. Wilson
     "Lorentz Transformation",  "{ "
-    "'(xp_m)=γ*((x_m)-β*(Ⓒc*(t_s))' "
+    "'(xp_m)=γ*((x_m)-β*Ⓒc*(t_s))' "
     "'Ⓒc*(tp_s)=γ*((Ⓒc*(t_s))-β*(x_m))' "
     "'(yp_m)=(y_m)' "
     "'(zp_m)=(z_m)' "
@@ -987,7 +987,7 @@ static const cstring basic_equations[] =
     "}",
 
     "Velocity Superposition",  "{ "
-    "'(upx_(m/s))=((ux_(m/s))-(v_(m/s)))/(1-(((v_(m/s)*(ux_(m/s))))/Ⓒc^2))' "
+    "'(upx_(m/s))=((ux_(m/s))-(v_(m/s)))/(1-((((v_(m/s))*(ux_(m/s))))/Ⓒc^2))' "
     "'(upy_(m/s))=((uy_(m/s))/γ)/(1-((v_(m/s))*(ux_(m/s))/Ⓒc^2))' "
     "'(upz_(m/s))=((uz_(m/s))/γ)/(1-((v_(m/s))*(ux_(m/s))/Ⓒc^2))' "
     "'β=(v_(m/s))/Ⓒc' "
@@ -995,7 +995,7 @@ static const cstring basic_equations[] =
     "}",
 
     "Acceleration Superposition",  "{ "
-    "'(apx_(m/s^2))=(ax_(m/s^2))/(γ^3*(1-(((v_(m/s)*(ux_(m/s))))/Ⓒc^2)^3))' "
+    "'(apx_(m/s^2))=(ax_(m/s^2))/(γ^3*(1-((((v_(m/s))*(ux_(m/s))))/Ⓒc^2)^3))' "
     "'(apy_(m/s))=(ay_(m/s))/(γ^2*(1-((v_(m/s))*(ux_(m/s))/Ⓒc^2))^2)+((ax_(m/s))*((v_(m/s))*(uy_(m/s)))/Ⓒc^2)/(γ^2*(1-((v_(m/s))*(ux_(m/s))/Ⓒc^2))^3)' "
     "'(apz_(m/s))=(az_(m/s))/(γ^2*(1-((v_(m/s))*(ux_(m/s))/Ⓒc^2))^2)+((ax_(m/s))*((v_(m/s))*(uz_(m/s)))/Ⓒc^2)/(γ^2*(1-((v_(m/s))*(ux_(m/s))/Ⓒc^2))^3)' "
     "'β=(v_(m/s))/Ⓒc' "
@@ -1014,7 +1014,7 @@ static const cstring basic_equations[] =
     "}",
 
     "Longitudinal Doppler Effect",  "{ "
-    "'(frl_Hz)=(fs_Hz))*√((1-β)/(1+β))' "
+    "'(frl_Hz)=(fs_Hz)*√((1-β)/(1+β))' "
     "'β=(v_(m/s))/Ⓒc' "
     "}",
 
@@ -1038,7 +1038,7 @@ static const cstring basic_equations[] =
     "'(ΔtpG_s)=γG*(Δt_s)' "
     "'βe=(ve_(m/s))/Ⓒc' "
     "'γG=1/√(1-βe^2)' "
-    "'(ve_(m/s))=√((2*ⒸG*(M_kg)/r(m))' "
+    "'(ve_(m/s))=√(2*ⒸG*(M_kg)/r(m))' "
     "}",
 
     "Gravitational Redshift",  "{ "
@@ -1059,15 +1059,15 @@ static const cstring basic_equations[] =
     "'(MGu_m)=ⒸG*(M_kg)/Ⓒc^2' "
     "'βp=(vp_(m/s))/Ⓒc' "
     "'βg=(vg_(m/s))/Ⓒc' "
-    "'(vg_m/s))=(2*Ⓒπ*(R_km))/(Tday_s)*COS(φ_°)' "
+    "'(vg_m/s)=(2*Ⓒπ*(R_km))/(Tday_s)*COS(φ_°)' "
     "}",
 
     "Clocks at different heights",  "{ "
     "'γ21=(γv1/γv2)*(γG1/γG2)' "
     "'γv1=1/√(1-((v1_(m/s))/Ⓒc)^2)' "
-    "'(v1_m/s))=(ω_(r/s))*((R_km)+(h1_m)))*COS(φ_°)' "
+    "'(v1_m/s)=(ω_(r/s))*((R_km)+(h1_m))*COS(φ_°)' "
     "'γv2=1/√(1-((v2_(m/s))/Ⓒc)^2)' "
-    "'(v2_m/s)=(ω_(r/s))*((R_km)+(h2_m)))*COS(φ_°)' "
+    "'(v2_m/s)=(ω_(r/s))*((R_km)+(h2_m))*COS(φ_°)' "
     "'γG1=1/√(1-(2*(MGu_m))/(R+h1))' "
     "'γG2=1/√(1-(2*(MGu_m))/(R+h2))' "
     "'(MGu_m)=ⒸG*(M_kg)/Ⓒc^2' "
@@ -1084,14 +1084,14 @@ static const cstring basic_equations[] =
     "}",
 
     "B H Thermodynamics",  "{ "
-    "'(TH_K)=(Ⓒħ*(Ⓒc)^3)/(8*Ⓒπ*ⒸG*Ⓒk*(M_kg))' "
-    "'(PBH_W)=(Ⓒħ*(Ⓒc)^6)/(15360*Ⓒπ*(ⒸG)^2*(M_kg)^2)' "
-    "'(SBH_(J/K))=(Ⓒk*(As_(m^2)*(Ⓒc)^3)/(4*ⒸG*Ⓒħ)' "
-    "'(As_(m^2)=4*Ⓒπ*(rs_m)^1' "
+    "'(TH_K)=(Ⓒℏ*(Ⓒc)^3)/(8*Ⓒπ*ⒸG*Ⓒk*(M_kg))' "
+    "'(PBH_W)=(Ⓒℏ*(Ⓒc)^6)/(15360*Ⓒπ*(ⒸG)^2*(M_kg)^2)' "
+    "'(SBH_(J/K))=(Ⓒk*(As_(m^2))*(Ⓒc)^3)/(4*ⒸG*Ⓒℏ)' "
+    "'(As_(m^2))=4*Ⓒπ*(rs_m)^2' "
     "'(rs_m)=2*ⒸG*(M_kg)/(Ⓒc)^2' "
-    "'(tev_s)=(5120*Ⓒπ*(ⒸG)^2*(M_kg)^3)/(Ⓒħ*(Ⓒc)^4)' "
+    "'(tev_s)=(5120*Ⓒπ*(ⒸG)^2*(M_kg)^3)/(Ⓒℏ*(Ⓒc)^4)' "
     "'Mxsun=(M_kg)/(1.9885*10^30_kg)' "
-    "'MxSagAM=(M_kg)/(8.54*10^36_kg)*' "
+    "'MxSagAM=(M_kg)/(8.54*10^36_kg)' "
     "'Mxearth=(M_kg)/(5.972168*10^24_kg)' "
     "'txyr=(t_s)/(3.15576*10^7_s)' "
     "}"
