@@ -286,11 +286,12 @@ Here are a few of the interesting RPL-specific key mappings:
 * _N_ (_+/-_) executes the equivalent RPL `Negate` function. While editing, it
   changes the sign of the current number on the command-line.
 
-* _O_ (_EEX_, DM-42 and DM-32 _E_) is used to enter the exponent of a number in
-  scientific notation. However, when not entering or editing values, it invokes
-  the [Cycle](#Cycle) command, which cycles between various representations of
-  a number, for example polar and rectangular for a complex number, or fraction
-  and decimal for a decimal number.
+* _O_ (_×10ⁿ_, _EEX_ or _E_ depending on keyboard labeling, referred to as
+  _×10ⁿ_ in the rest of this document) is used to enter the exponent of a number
+  in scientific notation. However, when not entering or editing values, it
+  invokes the [Cycle](#Cycle) command, which cycles between various
+  representations of a number, for example polar and rectangular for a complex
+  number, or fraction and decimal for a decimal number.
 
 * _EXIT_ (DM-32 _ON_) corresponds to what the HP48 manual calls _Attn_, and
   typically cancels the current activity. It can also be used to interrupt a

@@ -202,8 +202,8 @@ submenus so that all unit categories fit on a single screen.
 ### Cycle command customization
 
 The menu name `"=Cycle"` is reserved to define sequences of units that the
-`Cycle` command (bound to the _EEX_ key) will recognize as special. For example,
-you can ensure that `mm` and `in` convert to one another as follows:
+`Cycle` command (bound to the _×10ⁿ_ key) will recognize as special. For
+example, you can ensure that `mm` and `in` convert to one another as follows:
 
 ```
 "=Cycle"

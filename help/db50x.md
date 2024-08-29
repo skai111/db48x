@@ -238,11 +238,12 @@ Here are a few of the interesting RPL-specific key mappings:
 * _N_ (_+/-_) executes the equivalent RPL `Negate` function. While editing, it
   changes the sign of the current number on the command-line.
 
-* _O_ (_EEX_, DM-42 and DM-32 _E_) is used to enter the exponent of a number in
-  scientific notation. However, when not entering or editing values, it invokes
-  the [Cycle](#Cycle) command, which cycles between various representations of
-  a number, for example polar and rectangular for a complex number, or fraction
-  and decimal for a decimal number.
+* _O_ (_×10ⁿ_, _EEX_ or _E_ depending on keyboard labeling, referred to as
+  _×10ⁿ_ in the rest of this document) is used to enter the exponent of a number
+  in scientific notation. However, when not entering or editing values, it
+  invokes the [Cycle](#Cycle) command, which cycles between various
+  representations of a number, for example polar and rectangular for a complex
+  number, or fraction and decimal for a decimal number.
 
 * _EXIT_ (DM-32 _ON_) corresponds to what the HP48 manual calls _Attn_, and
   typically cancels the current activity. It can also be used to interrupt a
@@ -967,14 +968,14 @@ DB50X is a RPL calculator, which means that:
   before putting its result(s). Unlike earlier HP calculators, the RPL stack is
   practically unlimited.
 
-  ![Stack and menus](img/stack-and-menus.png)
+![Stack and menus](img/stack-and-menus.bmp)
 
 * Unlike simpler calculators, it uses a _command line_ for data entry, with
   advanced text editing capabilities, and a rich text-based command
   language. One way to access the hundreds of available commands is by simply
   typing their name.
 
-  ![Command-line and catalog](img/command-line-and-catalog.png)
+![Command-line and catalog](img/command-line-and-catalog.bmp)
 
 
 [![Long demo of 0.7.0](http://img.youtube.com/vi/kzkjE8BZW10/0.jpg)](https://www.youtube.com/watch?v=kzkjE8BZW10&list=PLz1qkflzABy-Cs1R07zGB8A9K5Yjolmlf "Long demo of v0.7.0")
@@ -1024,7 +1025,7 @@ calculators, DB50X by default perform exact computations on fractions instead of
 using approximate decimal numbers.
 
 You can convert that fraction to a decimal value and back using the `Cycle`
-command, which is bound to the _EEX_ key. A first press will show `2.75`, and a
+command, which is bound to the _×10ⁿ_ key. A first press will show `2.75`, and a
 second press will show the value again as fraction `2 ³/₄`.
 
 
@@ -1150,7 +1151,7 @@ specific command.
 
 The _sin⁻¹_ command we used previously returns an *angle* which was shown in
 degrees, the default angle mode for DB50X. When applied to angles, the `Cycle`
-command on the _EEX_ key cycles between various angle units: degrees, radians,
+command on the _×10ⁿ_ key cycles between various angle units: degrees, radians,
 grads and pi-radians, i.e. a number of radians shown as a multiple of π.
 
 <video src="https://github.com/c3d/db48x/assets/1695924/5d23f388-b034-45cd-9d4d-7685b7f211f0"></video>
@@ -1292,13 +1293,13 @@ does not have a `NXT` key unlike HP calculators. Instead, when necessary, the
 
 ### Entering a decimal number
 
-### Entering a number in scientific notation with EEX
+### Entering a number in scientific notation with _×10ⁿ_
 
 ### Arithmetic on decimal values
 
 ### Arithmetic on fractions
 
-### Using EEX to cycle between decimal and fraction
+### Cycling between decimal and fraction with _×10ⁿ_
 
 ### Separators for the fractional part
 
@@ -1516,7 +1517,7 @@ does not have a `NXT` key unlike HP calculators. Instead, when necessary, the
 
 ### Entering numbers in polar form
 
-### Switching between polar and rectangular with EEX
+### Switching between polar and rectangular with Cycle key
 
 ### Arithmetic on complex numbers
 
@@ -2154,8 +2155,8 @@ submenus so that all unit categories fit on a single screen.
 ### Cycle command customization
 
 The menu name `"=Cycle"` is reserved to define sequences of units that the
-`Cycle` command (bound to the _EEX_ key) will recognize as special. For example,
-you can ensure that `mm` and `in` convert to one another as follows:
+`Cycle` command (bound to the _×10ⁿ_ key) will recognize as special. For
+example, you can ensure that `mm` and `in` convert to one another as follows:
 
 ```
 "=Cycle"
@@ -3042,7 +3043,7 @@ operations.
 * Inverse trigonometric functions (`asin`, `acos` and `atan`) now
   produce unit objects with the current angle mode as a unit. This can
   be configured by the `SetAngleUnits` / `NoAngleUnits` flags.
-* `Cycle` (EEX key) now cycles between angle units.
+* `Cycle` (_×10ⁿ_ key) now cycles between angle units.
 * `R→D` and `D→R` commands to convert between degree and radian in a
   purely numerical way (no unit). This is for compatibility with HP.
 * Add `→Deg`, `→Rad`, `→Grad`, `→πr` commands, which convert a number

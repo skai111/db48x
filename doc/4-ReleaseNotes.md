@@ -750,7 +750,7 @@ operations.
 * Inverse trigonometric functions (`asin`, `acos` and `atan`) now
   produce unit objects with the current angle mode as a unit. This can
   be configured by the `SetAngleUnits` / `NoAngleUnits` flags.
-* `Cycle` (EEX key) now cycles between angle units.
+* `Cycle` (_×10ⁿ_ key) now cycles between angle units.
 * `R→D` and `D→R` commands to convert between degree and radian in a
   purely numerical way (no unit). This is for compatibility with HP.
 * Add `→Deg`, `→Rad`, `→Grad`, `→πr` commands, which convert a number
