@@ -31,11 +31,11 @@
 - [x] Global help from [generated markdown file](help/db48x.md)
 - [x] [Per-function help](https://github.com/c3d/db48x/blob/dm42/firmware/hal_keyboard.c#L116)
       from [markdown files](doc/calc-help)
-- [ ] Character menu / table
+- [x] Character menu / table
 - [x] Brezenham lines, circles and ellipses
 - [ ] Polygon fill
 - [ ] RPL-controlled soft-menu system
-- [ ] Domain-specific features / customizaton from files on USB disk
+- [x] Domain-specific features / customizaton from files on USB disk
 - [x] Single-key object format cycling
 - [x] Units and conversion customization from `units.csv` file
 
@@ -66,14 +66,14 @@
 - [x] Decimal floating-point with fixed size (32, 64 and 128 bits)
 - [x] Decimal floating-point with arbitrary size
 - [x] Binary floating-point with arbitrary size
-- [ ] Hardware-accelerated 32-bit binary floating-point
+- [X] Hardware-accelerated 32-bit and 64-bit binary floating-point
 - [x] Text / strings, e.g. `"ABC"`
 - [x] Name / symbols, e.g. `ABC`
 - [x] Complex numbers in rectangular form, e.g. `2 + 3i`
 - [x] Complex numbers in polar form, e.g. `2 ∡ 30°`
 - [ ] Quaternions
 - [ ] Intervals / ranges, e.g. `1..5`
-- [ ] Angles, e.g. `∡30°`
+- [X] Angles, e.g. `∡30°`
 - [x] Lists, e.g. `{ A 1 "Hello" }`
 - [x] Arrays, vectors, matrices and tensors, e.g. `[ [ 1 2 3] [ 4 5 6] ]`
 - [x] Program objects, e.g `« IF 1 = THEN "Equal to one" END »`
@@ -88,7 +88,7 @@
 - [x] Directories
 - [ ] Software libraries
 - [ ] Keymaps
-- [ ] Softkey menus
+- [X] Softkey menus
 - [ ] Full-screen menus
 - [ ] Forms
 - [ ] Object handler (can replace eval, parse, render, graphical editor)
@@ -116,11 +116,11 @@
 - [x] Circular functions, e.g. `sin`, `cos`, `atan`, ...
 - [x] Exponentials and logarithms, e.g. `exp`, `ln`, ...
 - [x] Hyperbolic functions, e.g. `sinh`, `atanh`, ...
-- [ ] Probabilities functions, like `Factorial`, `Combinations`, etc.
-- [X] Statistics functions, like `Σ+`, `Mean` or `Median`
+- [x] Probabilities functions, like `Factorial`, `Combinations`, etc.
+- [x] Statistics functions, like `Σ+`, `Mean` or `Median`
 - [ ] Special functions, like `Bessel`, `FastFourierTransforma`, etc
-- [ ] Constant tables with arbitrary precision from files on USB disk
-- [ ] Equation tables with explanatory graphics from files on USB disk
+- [x] Constant tables with arbitrary precision from files on USB disk
+- [x] Equation tables with explanatory graphics from files on USB disk
 - [x] Unit conversions
 
 
@@ -130,10 +130,10 @@
 - [x] Circular functions, e.g. `sin`, `cos`, `atan`, ...
 - [x] Exponentials and logarithms, e.g. `exp`, `ln`, ...
 - [x] Hyperbolic functions, e.g. `sinh`, `atanh`, ...
-- [ ] Probabilities functions, like `Factorial`, `Combinations`, etc.
-- [ ] Statistics functions, like `Σ+`, `Mean` or `Median`
+- [x] Probabilities functions, like `Factorial`, `Combinations`, etc.
+- [x] Statistics functions, like `Σ+`, `Mean` or `Median`
 - [ ] Special functions, like `Bessel`, `FastFourierTransforma`, etc
-- [ ] Equation tables with explanatory graphics from files on USB disk
+- [x] Equation tables with explanatory graphics from files on USB disk
 
 
 ### Computations on quaternions

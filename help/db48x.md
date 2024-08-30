@@ -3792,12 +3792,16 @@ The following is a list of the HP50 RPL commands which are implemented in DB48X.
 * [CASE](#case)
 * [CEIL](#ceil)
 * [CF](#clearflag)
+* [%CH](#percentchange)
 * [CHR](#codetext-chr-codechar)
 * [CLEAR](#clearstack)
 * [CLLCD](#cllcd)
 * [CLΣ](#cleardata)
 * [COLΣ](#columndata)
 * [CONJ](#conj)
+* [CONLIB](#constantsmenu)
+* [CONST](#constant)
+* [CONSTANTS](#constantsmenu)
 * [CONT](#continue)
 * [CONVERT](#convert)
 * [COSH](#cosh)
@@ -3811,11 +3815,15 @@ The following is a list of the HP50 RPL commands which are implemented in DB48X.
 * [DDAYS](#ddays)
 * [DBUG](#debug)
 * [DEC](#dec)
+* [DECR](#decrement)
+* [DEDICACE](#libraryitem)
 * [DEG](#deg)
 * [DEPTH](#depth)
 * [DET](#determinant)
 * [DIR](#dir)
 * [DISP](#disp)
+* [DISPXY](#dispxy)
+* [DIV2](#div2)
 * [DOERR](#doerr)
 * [DO](#do)
 * [DRAW](#draw)
@@ -4061,7 +4069,6 @@ of the HP48 commands.
 * CASCFG
 * CASCMD
 * CENTR
-* %CH
 * CHINREM
 * CHOLESKY
 * CHOOSE
@@ -4083,9 +4090,6 @@ of the HP48 commands.
 * CON
 * COND
 * CONIC
-* CONLIB
-* CONST
-* CONSTANTS
 * CORR
 * CR
 * CROSS
@@ -4095,8 +4099,6 @@ of the HP48 commands.
 * CYLIN
 * C→PX
 * DARCY
-* DECR
-* DEDICACE
 * DEF
 * DEFINE
 * DEGREE
@@ -4113,10 +4115,8 @@ of the HP48 commands.
 * DIAGMAP
 * DIFF
 * DIFFEQ
-* DISPXY
 * DISTRIB
 * DIV
-* DIV2
 * DIV2MOD
 * DIVIS
 * DIVMOD
@@ -5625,14 +5625,18 @@ Nth Tchebycheff polynomial of the second kind
 Nth Hermite polynomial as used in probabilities
 
 
-## DIV2
-Euclidean division, returning quotient and remainder
+## DIV2 (QuoRem, IDIV2, QuotientRemainder)
+
+Euclidean division, returning quotient and remainder.
+
 On HP calculators, this only applies for polynomials.
-On DB48X, this applies to integers, big integers, decimals, fractions and polynomials. It puts both the quotient and the remainder on the stack. For many data types, this operation is significantly more efficient than computing the quotient and the remainder separately.
+
+On DB48X, this applies to integers, big integers, decimals, fractions and
+polynomials. It puts both the quotient and the remainder on the stack. For many
+data types, this operation is significantly more efficient than computing the
+quotient and the remainder separately.
 
 `Y` `X` ▶ `IP(Y/X)` `Y rem X`
-
-Aliases: `idiv2`, `QuoRem`, `QuotientRemainder`
 
 
 ## PDIV2

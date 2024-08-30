@@ -251,14 +251,18 @@ Nth Tchebycheff polynomial of the second kind
 Nth Hermite polynomial as used in probabilities
 
 
-## DIV2
-Euclidean division, returning quotient and remainder
+## DIV2 (QuoRem, IDIV2, QuotientRemainder)
+
+Euclidean division, returning quotient and remainder.
+
 On HP calculators, this only applies for polynomials.
-On DB48X, this applies to integers, big integers, decimals, fractions and polynomials. It puts both the quotient and the remainder on the stack. For many data types, this operation is significantly more efficient than computing the quotient and the remainder separately.
+
+On DB48X, this applies to integers, big integers, decimals, fractions and
+polynomials. It puts both the quotient and the remainder on the stack. For many
+data types, this operation is significantly more efficient than computing the
+quotient and the remainder separately.
 
 `Y` `X` ▶ `IP(Y/X)` `Y rem X`
-
-Aliases: `idiv2`, `QuoRem`, `QuotientRemainder`
 
 
 ## PDIV2
