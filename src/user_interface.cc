@@ -3917,6 +3917,7 @@ bool user_interface::handle_editing(int key)
             else if (shift)
             {
                 rt.drop(interactive);
+                Stack.interactive = 1;
             }
             else
             {
