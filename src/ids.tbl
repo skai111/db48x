@@ -701,6 +701,7 @@ CMD(Pick3)
 CMD(UnPick)
 CMD(UnRot)
 NAMED(NDupN, "NDuplicateN")
+NAMED(DupDup, "DuplicateTwice")
 CMD(Show)
 
 

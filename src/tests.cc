@@ -170,7 +170,7 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-            units_and_conversions();
+            stack_operations();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -1415,6 +1415,14 @@ void tests::stack_operations()
         .test(BSP).expect("13")
         .test(BSP).noerror()
         .test(BSP).error("Too few arguments");
+    step("DupDup in program")
+        .test(CLEAR, "13 17 42 DUPDUP", ENTER).expect("42")
+        .test(BSP).expect("42")
+        .test(BSP).expect("42")
+        .test(BSP).expect("17")
+        .test(BSP).expect("13")
+        .test(BSP).noerror()
+        .test(BSP).error("Too few arguments");
 
     step("Over in stack menu")
         .test(CLEAR, I, "13 25", F5, DIV, ADD).expect("14 ¹²/₁₃");
@@ -1498,6 +1506,14 @@ void tests::stack_operations()
         .test(BSP).expect("17")
         .test(BSP).expect("42")
         .test(BSP).expect("25")
+        .test(BSP).expect("17")
+        .test(BSP).expect("13")
+        .test(BSP).noerror()
+        .test(BSP).error("Too few arguments");
+    step("DupDup in stack menu")
+        .test(CLEAR, "13 17 42", F6, LSHIFT, F2, F6).expect("42")
+        .test(BSP).expect("42")
+        .test(BSP).expect("42")
         .test(BSP).expect("17")
         .test(BSP).expect("13")
         .test(BSP).noerror()

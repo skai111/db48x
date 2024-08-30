@@ -1147,7 +1147,8 @@ MENU(StackMenu,
      "Undo",    ID_Undo,
      "ClrStk",  ID_ClearStack,
 
-     "NDupN",   ID_NDupN);
+     "NDupN",   ID_NDupN,
+     "DupDup",  ID_DupDup);
 
 MENU(EditMenu,
 // ----------------------------------------------------------------------------

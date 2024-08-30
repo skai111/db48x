@@ -44,6 +44,18 @@ COMMAND(Dup,1)
 }
 
 
+COMMAND(DupDup,1)
+// ----------------------------------------------------------------------------
+//   Implement the RPL "dupdup" command, duplicate top of stack twice
+// ----------------------------------------------------------------------------
+{
+    if (object_g top = rt.top())
+        if (rt.push(top) && rt.push(top))
+            return OK;
+    return ERROR;
+}
+
+
 COMMAND(Dup2,2)
 // ----------------------------------------------------------------------------
 //   Implement the RPL "dup2" command, duplicate two elements at top of stack
