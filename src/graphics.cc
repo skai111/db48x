@@ -492,7 +492,7 @@ COMMAND_BODY(Disp)
             PlotParametersAccess ppar;
             coord          x      = 0;
             coord          y      = 0;
-            font_p         font   = settings::font(settings::STACK);
+            font_p         font   = settings::font(Settings.StackFont());
             bool           erase  = true;
             bool           invert = false;
             id             ty     = pos->type();
@@ -585,10 +585,25 @@ COMMAND_BODY(Disp)
 
 COMMAND_BODY(DispXY)
 // ----------------------------------------------------------------------------
-//   To be implemented
+//   Temporarily change the font setting, otherwise same as Disp
 // ----------------------------------------------------------------------------
 {
-    rt.unimplemented_error();
+    if (object_g fsize = rt.pop())
+    {
+        uint fsz = fsize->as_uint32(0, true);
+        if (!rt.error())
+        {
+            settings::font_id fid = settings::font_id(fsz);
+            settings::SaveStackFont ssf(fid);
+            return Disp::evaluate();
+        }
+        else
+        {
+            // Restore stack
+            rt.push(fsize);
+        }
+
+    }
     return ERROR;
 }
 

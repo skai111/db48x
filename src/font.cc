@@ -103,10 +103,10 @@ void font_defaults()
     extern byte name##_sparse_font_data[];      \
     name = (font_p) name##_sparse_font_data;
 
-    GENERATED_FONT(EditorFont);
     GENERATED_FONT(HelpFont);
     GENERATED_FONT(ReducedFont);
     GENERATED_FONT(StackFont);
+    GENERATED_FONT(EditorFont);
 
     HeaderFont       = LibMonoFont10x17;
     CursorFont       = LibMonoFont17x25;

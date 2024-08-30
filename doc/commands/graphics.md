@@ -38,12 +38,12 @@ Note that unlike on the HP48, a complex value in DB48X can
 contain a based number.
 
 
-## ClearLCD (cllcd)
+## ClearLCD (CLLCD)
 
 Clear the LCD display, and block updates of the header or menu areas.
 
 
-## DrawText (disp)
+## DrawText (DISP)
 
 Draw the text or object in level 2 at the position indicated by level 1. A text
 is drawn without the surrounding quotation marks.
@@ -73,10 +73,30 @@ provide:
 * An *invert* flag (default false) which, if set, will swap the foreground and
   background patterns.
 
-For example, `"Hello" { #0 #0 0 true true } DrawText` will draw `Hello` in the
-top-left corner (`#0 #0`) with the largest (editor) font (font identifier `0`),
+For example, `"Hello" { #0 #0 3 true true } DrawText` will draw `Hello` in the
+top-left corner (`#0 #0`) with the largest (editor) font (font identifier `3`),
 erasing the background (the first `true`), in reverse colors (the second
 `true`).
+
+## DrawStyledText (DISPXY)
+
+Draw the text or object in level 3 at the position indicated by level 2, using
+the font specified in level 1. This behaves like [DrawText](#drawtext), except
+for the additional parameter specifying the font size.
+
+This command is compatible with the HP50G usage, where the position is specified
+by a list containing two decimal integer values. A font size of 1 displays with
+a small font, a font size of 2 displays with a regular font.
+
+In addition to this HP50G-compatible usage, `DispXY` will also accept:
+
+* A smaller font size, 0, for the help size, and other font sizes above 2, which
+  are compatible with the values given to [StackFont](#stackfont).
+
+* The position can accept the same values as [DrawText](#drawtext), including a
+  single integer value indicating a line number, a fractional line position, or
+  coordinates scaled according to [PlotParameters](#plotparameters).
+
 
 ## Show
 

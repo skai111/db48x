@@ -165,12 +165,12 @@ void tests::run(uint onlyCurrent)
     RECORDER_TRACE(errors) = false;
 
     // Reset to known settings state
-    Settings               = settings();
+    reset_settings();
     if (onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-            stack_operations();
+            graphic_commands();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -180,7 +180,6 @@ void tests::run(uint onlyCurrent)
     }
     else
     {
-        reset_settings();
         shift_logic();
         keyboard_entry();
         data_types();
@@ -9086,11 +9085,11 @@ void tests::graphic_commands()
         .noerror().image("text-pixxy").test(ENTER);
 
     step("Displaying text, font ID");
-    test(CLEAR, "\"Hello\" { 0 0 0 } DISP \"World\" { 0 1 2 } DISP ", ENTER)
+    test(CLEAR, "\"Hello\" { 0 1 2 } DISP \"World\" { 0 -1 3 } DISP ", ENTER)
         .noerror().image("text-font").test(ENTER);
 
     step("Displaying text, erase and invert");
-    test(CLEAR, "\"Inverted\" { 0 0 0 true true } DISP", ENTER)
+    test(CLEAR, "\"Inverted\" { 0 0 3 true true } DISP", ENTER)
         .noerror().image("text-invert").test(ENTER);
 
     step("Displaying text, background and foreground");
@@ -9109,6 +9108,16 @@ void tests::graphic_commands()
     step("Displaying text, type check");
     test(CLEAR, "\"Bad\" \"Hello\" DISP", ENTER)
         .error("Bad argument type");
+
+    step("Displaying styled text");
+    test(CLEAR,
+         "0 10 for i"
+         "  \"Hello\" { }"
+         "  i 135 * 321 mod 25 + R→B +"
+         "  i  51 * 200 mod  3 + R→B +"
+         "  i DISPXY "
+         "next", ENTER)
+        .noerror().image("text-dispxy");
 
     step("Lines");
     test(CLEAR, "3 50 for i ⅈ i * exp i 2 + ⅈ * exp 5 * Line next", ENTER)

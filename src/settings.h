@@ -104,11 +104,11 @@ public:
     //  Selection of font size for the stack
     // ------------------------------------------------------------------------
     {
-        EDITOR, STACK, REDUCED, HELP,
+        HELP, REDUCED, STACK, EDITOR,
         LIB28, LIB25, LIB22, LIB20, LIB18, LIB17,
         SKR24, SKR18,
         FREE42,
-        FIRST_FONT = EDITOR,
+        FIRST_FONT = HELP,
         LAST_FONT = FREE42,
         NUM_FONTS
     };
