@@ -69,7 +69,7 @@ color-%:
 
 # installation steps
 COPY=cp
-install: install-pgm install-qspi install-help install-demo install-config
+install: install-pgm install-qspi install-keymap install-help install-demo install-config
 	$(EJECT)
 	@echo "# Installed $(VERSION)"
 install-fast: install-pgm
@@ -78,6 +78,8 @@ install-pgm: all
 	$(COPY) $(TARGET).$(PGM) $(MOUNTPOINT)
 install-qspi: all
 	$(COPY) $(QSPI) $(MOUNTPOINT)
+install-keymap: keymap.bin
+	$(COPY) $< $(MOUNTPOINT)
 install-help: help/$(TARGET).md
 	mkdir -p $(MOUNTPOINT)help/ $(MOUNTPOINT)help/img
 	$(COPY) help/$(TARGET).md help/*.bmp $(MOUNTPOINT)help/
@@ -156,6 +158,7 @@ dist: all
 		$(TAR_OPTS)			\
 		$(TARGET).$(PGM)		\
 		$(TARGET)_qspi.bin		\
+		keymap.bin			\
 		help/$(TARGET).md		\
 		help/*.bmp help/*/*.bmp		\
 		state/*.48[sSbB]		\
