@@ -170,7 +170,7 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-            matrix_functions();
+            for_loops();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -2177,6 +2177,14 @@ void tests::for_loops()
         .test(BSP).expect("3")
         .test(BSP).noerror()
         .test(BSP).error("Too few arguments");
+
+    step("Nested for loop on lists")
+        .test(CLEAR,
+              "{ A B C} for i { D E F G } for j i j * next next "
+              "12 →List", ENTER)
+        .expect("{ 'A·D' 'A·E' 'A·F' 'A·G' "
+                "'B·D' 'B·E' 'B·F' 'B·G' "
+                "'C·D' 'C·E' 'C·F' 'C·G' }");
 
     step("Restore auto-simplification")
         .test(CLEAR, "'noautosimplify' purge", ENTER).noerror();

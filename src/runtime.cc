@@ -1473,16 +1473,8 @@ bool runtime::run_select_list(bool for_loop)
         return false;
     }
     // Check the truth value
-    int finished = +cur >= +last;
+    bool finished = +cur >= +last;
     if (finished)
-        return false;
-
-    // Write the current value in the variable if it's a for loop
-    if (for_loop)
-        rt.local(0, cur);
-    Returns[0] = cur->skip();
-
-    if (+cur >= +last)
     {
         if ((HighMem - Returns) % CALLS_BLOCK <= 4)
             call_stack_drop();
@@ -1490,6 +1482,11 @@ bool runtime::run_select_list(bool for_loop)
     }
     else
     {
+        // Write the current value in the variable if it's a for loop
+        if (for_loop)
+            rt.local(0, cur);
+        Returns[0] = cur->skip();
+
         object::id type =
             for_loop ? object::ID_for_next_list : object::ID_start_next_list;
         return object::defer(type) && run_push_data(Returns[4], Returns[5]);
