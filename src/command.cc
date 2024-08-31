@@ -149,6 +149,8 @@ RENDER_BODY(command)
         if (ty == ID_mul && format == ID_LongForm &&
             r.expression() && Settings.UseDotForMultiplication())
             fname = utf8("·");
+        if ((ty == ID_dot || ty == ID_cross) && !r.expression())
+            fname = object::alias(ty, 1);
         r.put(format, fname);
     }
 

@@ -261,7 +261,10 @@ COMMAND_BODY(ToolsMenu)
             case ID_expression:         menu = ID_SymbolicMenu; break;
             case ID_program:            menu = ID_DebugMenu; break;
             case ID_list:               menu = ID_ListMenu; break;
-            case ID_array:              menu = ID_MatrixMenu; break;
+            case ID_array:
+                menu = ((array_p) top)->is_vector()
+                    ? ID_VectorMenu
+                    : ID_MatrixMenu; break;
             case ID_tag:                menu = ID_ObjectMenu; break;
             case ID_unit:               menu = unit_menu(unit_p(top)); break;
             case ID_polynomial:         menu = ID_PolynomialsMenu; break;
@@ -495,8 +498,8 @@ MENU(VectorMenu,
 //   Operations on vectors
 // ----------------------------------------------------------------------------
      "Norm",    ID_abs,
-     "Dot",     ID_Unimplemented,
-     "Cross",   ID_Unimplemented,
+     "Dot",     ID_dot,
+     "Cross",   ID_cross,
      "→Vec2",   ID_Unimplemented,
      "→Vec3",   ID_Unimplemented,
      "Vec→",    ID_Unimplemented,
@@ -506,7 +509,9 @@ MENU(VectorMenu,
      "→Spher",  ID_Unimplemented,
      "Cart",    ID_Unimplemented,
      "Cylin",   ID_Unimplemented,
-     "Spher",   ID_Unimplemented);
+     "Spher",   ID_Unimplemented,
+
+     "Matrix",  ID_MatrixMenu);
 
 
 MENU(MatrixMenu,
@@ -535,15 +540,15 @@ MENU(MatrixMenu,
      "→Mat",    ID_Unimplemented,
      "Mat→",    ID_Unimplemented,
 
-     "QR",      ID_Unimplemented);
+     "QR",      ID_Unimplemented,
 #endif
 
-     "Conjug",  ID_conj,
      "Size",    ID_Unimplemented,
      "→Diag",   ID_Unimplemented,
      "LU",      ID_Unimplemented,
      "Schur",   ID_Unimplemented,
-     "LQ",      ID_Unimplemented);
+     "LQ",      ID_Unimplemented,
+     "Vector",  ID_VectorMenu);
 
 
 MENU(PolynomialsMenu,

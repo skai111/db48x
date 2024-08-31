@@ -30,6 +30,7 @@
 #include "array.h"
 
 #include "arithmetic.h"
+#include "expression.h"
 #include "functions.h"
 #include "grob.h"
 
@@ -167,7 +168,7 @@ bool array::is_vector(size_t *size, bool push) const
         }
         if (!result)
             rt.drop(count);
-        else
+        else if (size)
             *size = count;
     }
     return result;
@@ -211,8 +212,10 @@ bool array::is_matrix(size_t *rows, size_t *cols, bool push) const
         }
         else
         {
-            *rows = r;
-            *cols = c;
+            if (rows)
+                *rows = r;
+            if (cols)
+                *cols = c;
         }
     }
     return result;
@@ -1063,7 +1066,129 @@ COMMAND_BODY(det)
             rt.type_error();
         }
     }
+    return ERROR;
+}
 
+
+COMMAND_BODY(dot)
+// ----------------------------------------------------------------------------
+//   Implement a dot product
+// ----------------------------------------------------------------------------
+{
+    object_p x = rt.stack(1);
+    object_p y = rt.stack(0);
+    if (x && y)
+    {
+        array_g xa = x->as<array>();
+        array_g ya = y->as<array>();
+        if (xa && ya && rt.drop(2))
+        {
+            size_t      depth = rt.depth();
+            size_t      xs    = 0;
+            size_t      ys    = 0;
+            algebraic_g xi, yi;
+            if (xa->is_vector(&xs) && ya->is_vector(&ys))
+            {
+                if (xs == ys)
+                {
+                    algebraic_g result;
+                    for (size_t i = 0; i < xs; i++)
+                    {
+                        xi = rt.stack(xs + ys + ~i)->as_algebraic();
+                        yi = rt.stack(     ys + ~i)->as_algebraic();
+                        result = result ? result + xi * yi : xi * yi;
+                    }
+                    rt.drop(rt.depth() - depth);
+                    if (result && rt.push(+result))
+                        return OK;
+                }
+                else
+                {
+                    rt.dimension_error();
+                }
+            }
+            rt.drop(rt.depth() - depth);
+            rt.push(+ya);
+            rt.push(+xa);
+        }
+        else if ((xa || x->is_symbolic()) && (ya || y->is_symbolic()))
+        {
+            algebraic_g xe = x->as_algebraic_or_list();
+            algebraic_g ye = y->as_algebraic_or_list();
+            xe = expression::make(ID_dot, xe, ye);
+            if (xe && rt.drop(2) && rt.push(+xe))
+                return OK;
+        }
+        else
+        {
+            rt.type_error();
+        }
+    }
+    return ERROR;
+}
+
+
+COMMAND_BODY(cross)
+// ----------------------------------------------------------------------------
+//   Implement a cross product
+// ----------------------------------------------------------------------------
+{
+    object_p x = rt.stack(1);
+    object_p y = rt.stack(0);
+    if (x && y)
+    {
+        array_g xa = x->as<array>();
+        array_g ya = y->as<array>();
+        if (xa && ya && rt.drop(2))
+        {
+            size_t      depth = rt.depth();
+            size_t      xs    = 0;
+            size_t      ys    = 0;
+            algebraic_g xi, yi;
+            if (xa->is_vector(&xs) && ya->is_vector(&ys))
+            {
+                if ((xs == 2 || xs == 3) && (ys == 2 || ys == 3))
+                {
+                    algebraic_g x1 = rt.stack(xs + ys + ~0)->as_algebraic();
+                    algebraic_g x2 = rt.stack(xs + ys + ~1)->as_algebraic();
+                    algebraic_g x3 = xs == 3
+                        ? rt.stack(xs + ys + ~2)->as_algebraic()
+                        : integer::make(0);
+                    algebraic_g y1 = rt.stack(ys + ~0)->as_algebraic();
+                    algebraic_g y2 = rt.stack(ys + ~1)->as_algebraic();
+                    algebraic_g y3 = ys == 3
+                        ? rt.stack(ys + ~2)->as_algebraic()
+                        : integer::make(0);
+                    algebraic_g r1 = x2 * y3 - x3 * y2;
+                    algebraic_g r2 = x3 * y1 - x1 * y3;
+                    algebraic_g r3 = x1 * y2 - x2 * y1;
+                    algebraic_g r = list::make(ID_array, r1, r2, r3);
+                    rt.drop(rt.depth() - depth);
+                    if (r && rt.push(+r))
+                        return OK;
+                }
+                else
+                {
+                    rt.dimension_error();
+                }
+            }
+            rt.drop(rt.depth() - depth);
+            rt.push(+ya);
+            rt.push(+xa);
+        }
+        else if ((xa || x->is_symbolic()) && (ya || y->is_symbolic()))
+        {
+            algebraic_g xe = x->as_algebraic();
+            algebraic_g ye = y->as_algebraic();
+            xe = expression::make(ID_cross, xe, ye);
+            if (xe && rt.drop(2) && rt.push(+xe))
+                return OK;
+        }
+        else
+        {
+            rt.type_error();
+        }
+    }
     return ERROR;
 }
 

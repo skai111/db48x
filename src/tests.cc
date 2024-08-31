@@ -170,7 +170,7 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-            graphic_commands();
+            matrix_functions();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -5441,6 +5441,39 @@ void tests::matrix_functions()
     step("Component-wise application of functions");
     test(CLEAR, "[[a b] [c d]] SIN", ENTER)
         .want("[[ 'sin a' 'sin b' ] [ 'sin c' 'sin d' ]]");
+
+    step("Dot product (numerical)")
+        .test(CLEAR, "[2 3 4 5 6] [7 8 9 10 11] DOT", ENTER)
+        .expect("190");
+    step("Dot product (symbolic)")
+        .test(CLEAR, "[a b c d] [e f g h] DOT", ENTER)
+        .expect("'a·e+b·f+c·g+d·h'");
+    step("Dot product (type error)")
+        .test(CLEAR, "2 3 DOT", ENTER)
+        .error("Bad argument type");
+    step("Dot product (dimension error)")
+        .test(CLEAR, "[1 2 3] [4 5] DOT", ENTER)
+        .error("Invalid dimension");
+
+    step("Cross product (numerical)")
+        .test(CLEAR, "[2 3 4] [7 8 9] CROSS", ENTER)
+        .expect("[ -5 10 -5 ]");
+    step("Cross product (symbolic)")
+        .test(CLEAR, "[a b c] [e f g] CROSS", ENTER)
+        .expect("[ 'b·g-c·f' 'c·e-a·g' 'a·f-b·e' ]");
+    step("Cross product (zero-extend)")
+        .test(CLEAR, "[a b] [e f g] CROSS", ENTER)
+        .expect("[ 'b·g' '-(a·g)' 'a·f-b·e' ]")
+        .test(CLEAR, "[a b c] [e f] CROSS", ENTER)
+        .expect("[ '-(c·f)' 'c·e' 'a·f-b·e' ]")
+        .test(CLEAR, "[a b] [e f] CROSS", ENTER)
+        .expect("[ 0 0 'a·f-b·e' ]");
+    step("Cross product (type error)")
+        .test(CLEAR, "2 3 CROSS", ENTER)
+        .error("Bad argument type");
+    step("Cross product (dimension error)")
+        .test(CLEAR, "[1 2 3 4] [4 5] CROSS", ENTER)
+        .error("Invalid dimension");
 }
 
 
@@ -10007,6 +10040,8 @@ tests &tests::itest(cstring txt)
         case L'Ⓓ': itest(RSHIFT, KEY2, F2, F6, F6, F1); NEXT;
         case L'ⓧ': itest(RSHIFT, KEY2, F2, F6, F6, F2); NEXT;
         case L'°': itest(RSHIFT, KEY2, F2, F6, SHIFT, F3); NEXT;
+        case L'⨯': itest(RSHIFT, KEY2, F4, LSHIFT, F6, LSHIFT, F1); NEXT;
+        case L'⋅': itest(RSHIFT, KEY2, F4, LSHIFT, F6, LSHIFT, F2); NEXT;
 #undef NEXT
         }
 

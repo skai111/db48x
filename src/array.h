@@ -30,6 +30,7 @@
 //   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // ****************************************************************************
 
+#include "arithmetic.h"
 #include "list.h"
 #include "runtime.h"
 
@@ -71,6 +72,8 @@ struct array : list
     // Check if vector or matrix, and push all elements on stack
     bool is_vector(size_t *size, bool push = true) const;
     bool is_matrix(size_t *rows, size_t *columns, bool push = true) const;
+    bool is_vector() const { return is_vector(nullptr, false); }
+    bool is_matrix() const { return is_matrix(nullptr, nullptr, false); }
     list_p dimensions(bool expand = false) const;
     bool expand() const;
 
@@ -89,7 +92,7 @@ struct array : list
     algebraic_g         norm() const;
     array_g             invert() const;
 
-  public:
+public:
     OBJECT_DECL(array);
     PARSE_DECL(array);
     RENDER_DECL(array);
@@ -104,6 +107,8 @@ array_g operator-(array_r x, array_r y);
 array_g operator*(array_r x, array_r y);
 array_g operator/(array_r x, array_r y);
 
-COMMAND_DECLARE(det,1);
+COMMAND_DECLARE(det, 1);
+COMMAND_DECLARE_SPECIAL(dot,   command, 2, PREC_DECL(MULTIPLICATIVE); );
+COMMAND_DECLARE_SPECIAL(cross, command, 2, PREC_DECL(MULTIPLICATIVE); );
 
 #endif // ARRAY_H

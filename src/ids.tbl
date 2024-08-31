@@ -387,6 +387,8 @@ CMD(re)
 CMD(im)
 CMD(arg)
 CMD(conj)
+OP(dot, "⋅")
+OP(cross, "⨯")
 NAMED(det, "Determinant")
 
 
