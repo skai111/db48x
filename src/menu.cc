@@ -527,8 +527,8 @@ MENU(MatrixMenu,
 
      "Det",     ID_det,
      "Norm",    ID_abs,
-     "Make",    ID_Unimplemented,
-     "Norms",   ID_Unimplemented,
+     "→Array",  ID_ToArray,
+     "Array→",  ID_FromArray,
      "Factor",  ID_Unimplemented,
      "Resize",  ID_Unimplemented,
 

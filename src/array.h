@@ -76,6 +76,7 @@ struct array : list
     bool is_matrix() const { return is_matrix(nullptr, nullptr, false); }
     list_p dimensions(bool expand = false) const;
     bool expand() const;
+    static array_p from_stack(size_t rows, size_t columns);
 
     // Compute the result at row r column c from stack-exploded input
     typedef algebraic_g (*vector_fn)(size_t c, size_t cx, size_t cy);
@@ -110,5 +111,7 @@ array_g operator/(array_r x, array_r y);
 COMMAND_DECLARE(det, 1);
 COMMAND_DECLARE_SPECIAL(dot,   command, 2, PREC_DECL(MULTIPLICATIVE); );
 COMMAND_DECLARE_SPECIAL(cross, command, 2, PREC_DECL(MULTIPLICATIVE); );
+COMMAND_DECLARE(ToArray, ~2);
+COMMAND_DECLARE(FromArray, 1);
 
 #endif // ARRAY_H

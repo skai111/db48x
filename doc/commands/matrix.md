@@ -1,11 +1,25 @@
 # Operations with Matrices and vectors
 
-## TOARRAY
-Assemble an array from its elements
+## ToArray (→Arry)
+
+Stack to Array Command: Returns a vector of n real or complex elements or a
+matrix of n × m real or complex elements.
+
+The elements of the result array should be entered in row order.
+
+`A1` ... `An` `n` ▶ `[ A1 ... An ]`
+
+`A11` ... `Arc` `{ r c }` ▶ `[[ A11 A1c] [ A21 ... Arc ]]`
 
 
-## ARRAYDECOMP
-Split an array into its elements
+## FromArray (Arry→)
+
+Array to Stack Command: Takes an array and returns its elements as separate real or complex numbers. Also returns a list of the dimensions of the array.
+If the argument is an n-element vector, the first element is returned to level n + 1 (not level nm + 1), and the nth element to level 2.
+
+`[ A1 ... An ]`  ▶ `A1` ... `An` `n`
+
+`[[ A11 A1c] [ A21 ... Arc ]]`  ▶ `A11` ... `Arc` `{ r c }`
 
 
 ## TOCOL

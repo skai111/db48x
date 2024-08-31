@@ -26,6 +26,8 @@ The following is a list of the HP50 RPL commands which are implemented in DB48X.
 * [ALOG](#alog)
 * [AND](#and)
 * [ARG](#arg)
+* [ARRY→](#fromarray)
+* [→ARRY](#toarray)
 * [ASINH](#asinh)
 * [ASIN](#asin)
 * [ASR](#asr)
@@ -293,8 +295,6 @@ of the HP48 commands.
 * ARC
 * ARCHIVE
 * ARIT
-* ARRY→
-* →ARRY
 * ASIN2C
 * ASIN2T
 * ASN

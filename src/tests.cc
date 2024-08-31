@@ -170,7 +170,7 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-            complex_functions();
+            matrix_functions();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -5500,6 +5500,15 @@ void tests::matrix_functions()
     step("Cross product (dimension error)")
         .test(CLEAR, "[1 2 3 4] [4 5] CROSS", ENTER)
         .error("Invalid dimension");
+
+    step("Array→ and →Array on vectors")
+        .test(CLEAR, "[1 2 3 4]", ENTER, RSHIFT, KEY9)
+        .test(LSHIFT, F4).expect("{ 4 }")
+        .test(LSHIFT, F3).expect("[ 1 2 3 4 ]")
+        .test(CLEAR, "[[1 2 3][4 5 6]]", ENTER, RSHIFT, KEY9)
+        .test(LSHIFT, F4).expect("{ 2 3 }")
+        .test(LSHIFT, F3).want("[[ 1 2 3 ] [ 4 5 6 ]]");
+
 }
 
 

@@ -268,6 +268,55 @@ array_p array::wrap(object_p o)
 }
 
 
+array_p array::from_stack(size_t rows, size_t columns)
+// ----------------------------------------------------------------------------
+//   Build an array from items on the stack
+// ----------------------------------------------------------------------------
+{
+    scribble scr;
+    if (rows)
+    {
+        size_t items = 0;
+        if (columns)
+        {
+            list_g row = nullptr;
+            items = rows * columns;
+            for (size_t r = 0; r < rows; r++)
+            {
+                {
+                    scribble srow;
+                    for (size_t c = 0; c < columns; c++)
+                    {
+                        size_t idx = r * columns + c;
+                        object_p obj = rt.stack(items + ~idx);
+                        algebraic_g e = obj->as_algebraic();
+                        if (!e || !rt.append(e->size(), byte_p(+e)))
+                            return nullptr;
+                    }
+                    row = list::make(ID_array, srow.scratch(), srow.growth());
+                }
+                if (!row || !rt.append(row->size(), byte_p(+row)))
+                    return nullptr;
+            }
+        }
+        else
+        {
+            items = rows;
+            for (size_t r = 0; r < rows; r++)
+            {
+                object_p obj = rt.stack(items + ~r);
+                algebraic_g e = obj->as_algebraic();
+                if (!e || !rt.append(e->size(), byte_p(+e)))
+                    return nullptr;
+            }
+        }
+        rt.drop(items);
+    }
+    list_p result = list::make(ID_array, scr.scratch(), scr.growth());
+    return array_p(result);
+}
+
+
 
 // ============================================================================
 //
@@ -1189,6 +1238,72 @@ COMMAND_BODY(cross)
             rt.type_error();
         }
     }
+    return ERROR;
+}
+
+
+COMMAND_BODY(FromArray)
+// ----------------------------------------------------------------------------
+//   Array to stack
+// ----------------------------------------------------------------------------
+{
+    object_p obj = rt.top();
+    if (array_p a = obj->as<array>())
+    {
+        rt.pop();
+        if (a->expand())
+            return OK;
+    }
+    else
+    {
+        rt.type_error();
+    }
+    return ERROR;
+}
+
+
+COMMAND_BODY(ToArray)
+// ----------------------------------------------------------------------------
+//   Stack to array
+// ----------------------------------------------------------------------------
+{
+    if (object_g dims = rt.top())
+    {
+        size_t rows = 0, columns = 0;
+        id     ty = dims->type();
+        if (ty == ID_list || ty == ID_array)
+        {
+            object_g robj = list_p(+dims)->at(0);
+            object_g cobj = list_p(+dims)->at(1);
+            if (list_p(+dims)->at(2))
+            {
+                rt.dimension_error();
+            }
+            else
+            {
+                if (cobj)
+                    columns = cobj->as_uint32(0, true);
+                if (robj)
+                    rows = robj->as_uint32(0, true);
+            }
+        }
+        else
+        {
+            rows = dims->as_uint32(0, true);
+        }
+        if (rows)
+        {
+            size_t items = columns ? rows * columns : rows;
+            if (rt.args(items+1))
+            {
+                rt.drop();
+                if (array_p a = array::from_stack(rows, columns))
+                    if (rt.push(a))
+                        return OK;
+            }
+        }
+    }
+
     return ERROR;
 }
 
