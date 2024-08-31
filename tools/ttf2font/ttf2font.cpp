@@ -518,6 +518,8 @@ void processFont(cstring fontName,
                        rowsAboveSave,
                        rowsGlyph,
                        rowsBelowSave);
+                printf("    advance:%ld hBearingX:%ld horiBearingY:%ld\n",
+                       m->horiAdvance, m->horiBearingX, m->horiBearingY);
             } // Verbose output
         } // Loop on codes
     } // Loop on ranges
