@@ -253,14 +253,16 @@ struct grapher
             font_id       f     = settings::EDITOR,
             grob::pattern fg    = grob::pattern::black,
             grob::pattern bg    = grob::pattern::white,
-            bool          stack = false)
+            bool          stack = false,
+            bool          expr  = false)
         : maxw(w),
           maxh(h),
           voffset(0),
           font(f),
           foreground(fg),
           background(bg),
-          stack(stack)
+          stack(stack),
+          expression(expr)
     {}
     grapher(const grapher &other) = default;
 
@@ -287,6 +289,7 @@ struct grapher
     grob::pattern foreground;
     grob::pattern background;
     bool          stack;
+    bool          expression;
 };
 
 #endif // GROB_H

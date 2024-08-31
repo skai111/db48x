@@ -2083,6 +2083,7 @@ GRAPH_BODY(expression)
     size_t       depth = rt.depth();
     bool         ok    = true;
     bool         funcall = o->type() == ID_funcall;
+    save<bool>   sexpr(g.expression, true);
 
     // First push all things so that we have the outermost operators first
     for (object_p obj : *expr)

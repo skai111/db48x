@@ -997,7 +997,7 @@ GRAPH_BODY(object)
 //  The default for rendering is to render the text using default font
 // ----------------------------------------------------------------------------
 {
-    renderer r(nullptr, ~0U, g.stack, true);
+    renderer r(nullptr, ~0U, g.stack, true, g.expression);
     using pixsize  = blitter::size;
     size_t  sz     = o->render(r);
     gcutf8  txt    = r.text();
