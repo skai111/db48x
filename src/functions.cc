@@ -556,11 +556,20 @@ FUNCTION_BODY(arg)
     if (should_be_symbolic(xt))
         return symbolic(ID_arg, x);
     auto angle_mode = Settings.AngleMode();
+    algebraic_g a;
     if (is_complex(xt))
-        return complex_p(algebraic_p(x))->arg(angle_mode);
-    algebraic_g zero = integer::make(0);
-    bool negative = x->is_negative(false);
-    return complex::convert_angle(zero, angle_mode, angle_mode, negative);
+    {
+        a = complex_p(algebraic_p(x))->arg(angle_mode);
+    }
+    else
+    {
+        bool negative = x->is_negative(false);
+        a = integer::make(0);
+        a = complex::convert_angle(a, angle_mode, angle_mode, negative);
+    }
+    if (a && Settings.SetAngleUnits() && a->is_real())
+        add_angle(a);
+    return a;
 }
 
 

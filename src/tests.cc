@@ -170,7 +170,7 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-            for_loops();
+            complex_functions();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -4675,15 +4675,6 @@ void tests::complex_functions()
     test(CLEAR, "3+4ⅈ modulus", ENTER).expect("5.");
     test(CLEAR, "a+bⅈ modulus", ENTER).expect("'a⊿b'");
 
-    step("Complex argument");
-    test(CLEAR, "1+1ⅈ arg", ENTER).expect("0.78539 81633 97448 30962");
-    step("Symbolic complex argument");
-    test(CLEAR, "a+bⅈ arg", ENTER).expect("'b∠a'");
-    step("Complex argument on integers");
-    test(CLEAR, "31 arg", ENTER).expect("0");
-    step("Complex argument on decimals");
-    test(CLEAR, "31.234 arg", ENTER).expect("0");
-
     step("Complex conjugate");
     test(CLEAR, "3+4ⅈ conj", ENTER).expect("3-4ⅈ");
     step("Symbolic complex conjugate");
@@ -4692,6 +4683,33 @@ void tests::complex_functions()
     test(CLEAR, "31 conj", ENTER).expect("31");
     step("Complex conjugate on decimals");
     test(CLEAR, "31.234 conj", ENTER).expect("31.234");
+
+    step("Complex argument");
+    test(CLEAR, "1+1ⅈ arg", ENTER).expect("0.78539 81633 97448 30962 r");
+    step("Symbolic complex argument");
+    test(CLEAR, "a+bⅈ arg", ENTER).expect("'b∠a'");
+    step("Complex argument on integers");
+    test(CLEAR, "31 arg", ENTER).expect("0 r");
+    step("Complex argument on decimals");
+    test(CLEAR, "31.234 arg", ENTER).expect("0 r");
+    step("Complex argument on negative integers");
+    test(CLEAR, "-31 arg", ENTER).expect("3.14159 26535 89793 2385 r");
+    step("Complex argument on negative decimals");
+    test(CLEAR, "-31.234 arg", ENTER).expect("3.14159 26535 89793 2385 r");
+
+    step("Complex argument in degrees");
+    test(CLEAR, "DEG", ENTER);
+    test(CLEAR, "1+1ⅈ arg", ENTER).expect("45 °");
+    step("Symbolic complex argument in degrees");
+    test(CLEAR, "a+bⅈ arg", ENTER).expect("'b∠a'");
+    step("Complex argument on integers in degrees");
+    test(CLEAR, "31 arg", ENTER).expect("0 °");
+    step("Complex argument on decimals in degrees");
+    test(CLEAR, "31.234 arg", ENTER).expect("0 °");
+    test(CLEAR, "-31 arg", ENTER).expect("180 °");
+    step("Complex argument on decimals in degrees");
+    test(CLEAR, "-31.234 arg", ENTER).expect("180 °");
+    test(CLEAR, "RAD", ENTER);
 
     step("Restore default 24-digit precision");
     test(CLEAR, "24 PRECISION 12 SIG", ENTER).noerror();
@@ -8785,13 +8803,13 @@ void tests::regression_checks()
     test(CLEAR, "'x' #2134AF AND", ENTER).error("Bad argument type");
 
     step("Bug 277: 1+i should have positive arg");
-    test(CLEAR, "1+1ⅈ arg", ENTER).expect("45");
-    test(CLEAR, "1-1ⅈ arg", ENTER).expect("-45");
-    test(CLEAR, "1 1 atan2", ENTER).expect("45");
+    test(CLEAR, "1+1ⅈ arg", ENTER).expect("45 °");
+    test(CLEAR, "1-1ⅈ arg", ENTER).expect("-45 °");
+    test(CLEAR, "1 1 atan2", ENTER).expect("45 °");
     test(CLEAR, "1+1ⅈ ToPolar", ENTER).match("1.414.*∡45°");
 
     step("Bug 287: arg of negative number");
-    test(CLEAR, "-35 arg", ENTER).expect("180");
+    test(CLEAR, "-35 arg", ENTER).expect("180 °");
 
     step("Bug 288: Abusive simplification of multiplication by -1");
     test(CLEAR, "-1 3 *", ENTER).expect("-3");
