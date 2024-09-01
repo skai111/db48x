@@ -310,13 +310,16 @@ CMD(CaseWhen)
 
 // Data processing
 NAMED(ToList, "→List")
-NAMED(ToArray, "→Arry")         ALIAS(ToArray, "→Array")
-NAMED(FromArray, "Arry→")       ALIAS(FromArray, "Array→")
 NAMED(Explode, "Object→")       ALIAS(Explode, "FromObj") ALIAS(Explode, "Obj→")
 CMD(Get)
 CMD(Put)
 CMD(Size)
 CMD(Sort)
+
+// Array / Matrix commands
+NAMED(ToArray, "→Arry")         ALIAS(ToArray, "→Array")
+NAMED(FromArray, "Arry→")       ALIAS(FromArray, "Array→")
+NAMED(ConstantArray, "Con")
 
 // Tests
 NAMED(IFT, "IfThen")

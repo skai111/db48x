@@ -50,6 +50,8 @@ The following is a list of the HP50 RPL commands which are implemented in DB48X.
 * [CLLCD](#cllcd)
 * [CLΣ](#cleardata)
 * [COLΣ](#columndata)
+* [COMB](#combinations)
+* [CON](#constantarray)
 * [CONJ](#conj)
 * [CONLIB](#constantsmenu)
 * [CONST](#constant)
@@ -336,8 +338,6 @@ of the HP48 commands.
 * COL+
 * COLCT
 * COLLECT
-* COMB
-* CON
 * COND
 * CONIC
 * CORR

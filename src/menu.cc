@@ -520,7 +520,7 @@ MENU(MatrixMenu,
 // ----------------------------------------------------------------------------
      "[\t]",    ID_SelfInsert,
      "Idnty",   ID_Unimplemented,
-     "Const",   ID_Unimplemented,
+     "Const",   ID_ConstantArray,
      "Transp",  ID_Unimplemented,
      "Redim",   ID_Unimplemented,
      "Random",  ID_Unimplemented,

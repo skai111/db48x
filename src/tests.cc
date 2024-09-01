@@ -5509,6 +5509,38 @@ void tests::matrix_functions()
         .test(LSHIFT, F4).expect("{ 2 3 }")
         .test(LSHIFT, F3).want("[[ 1 2 3 ] [ 4 5 6 ]]");
 
+    step("Constant vector")
+        .test(CLEAR, "3 10 CON", ENTER)
+        .expect("[ 10 10 10 ]");
+    step("Constant complex vector")
+        .test(CLEAR, "2 1ⅈ2", RSHIFT, KEY9, F3)
+        .expect("[ 1+2ⅈ 1+2ⅈ ]");
+    step("Constant text vector")
+        .test(CLEAR, "1 \"ABC\"", RSHIFT, KEY9, F3)
+        .expect("[ \"ABC\" ]");
+    step("Constant vector from list size")
+        .test(CLEAR, "{ 4 } 42", RSHIFT, KEY9, F3)
+        .expect("[ 42 42 42 42 ]");
+
+    step("Constant matrix")
+        .test(CLEAR, "{ 3 2 } 10 CON", ENTER)
+        .want("[[ 10 10 ] [ 10 10 ] [ 10 10 ]]");
+    step("Constant vector from vector")
+        .test(CLEAR, "[ 1 2 3] 2ⅈ3", RSHIFT, KEY9, F3)
+        .expect("[ 2+3ⅈ 2+3ⅈ 2+3ⅈ ]");
+    step("Constant matrix from matrix")
+        .test(CLEAR, "[[1 2]] \"ABC\"", RSHIFT, KEY9, F3)
+        .want("[[ \"ABC\" \"ABC\" ]]");
+    step("Constant vector in name")
+        .test(CLEAR, "{ 4 } 24", RSHIFT, KEY9, F3)
+        .expect("[ 24 24 24 24 ]")
+        .test("'MyVec'", NOSHIFT, G)
+        .noerror()
+        .test("'MyVec' 1.5 CON", ENTER)
+        .noerror()
+        .test("MyVec", ENTER)
+        .expect("[ 1.5 1.5 1.5 1.5 ]")
+        .test("'MyVec'", ENTER, LSHIFT, BSP, F2);
 }
 
 

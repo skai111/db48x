@@ -32,6 +32,7 @@
 #include "arithmetic.h"
 #include "expression.h"
 #include "functions.h"
+#include "variables.h"
 #include "grob.h"
 
 
@@ -268,29 +269,91 @@ array_p array::wrap(object_p o)
 }
 
 
+bool array::size_from_stack(size_t *rows, size_t *columns, uint level)
+// ----------------------------------------------------------------------------
+//   Take the first level of the stack and interpret that as array szie
+// ----------------------------------------------------------------------------
+{
+    if (object_g dims = rt.stack(level))
+    {
+        id     ty = dims->type();
+        if (ty == ID_list || ty == ID_array)
+        {
+            object_g robj = list_p(+dims)->at(0);
+            object_g cobj = list_p(+dims)->at(1);
+            if (list_p(+dims)->at(2))
+            {
+                rt.dimension_error();
+            }
+            else
+            {
+                if (robj && rows)
+                    *rows = robj->as_uint32(0, true);
+                if (cobj && columns)
+                    *columns = cobj->as_uint32(0, true);
+                return !rt.error();
+            }
+        }
+        else
+        {
+            if (rows)
+                *rows = dims->as_uint32(0, true);
+            if (columns)
+                *columns = 0;
+            return !rt.error();
+        }
+    }
+    return false;
+}
+
+
+static object_p item_from_stack(size_t rows, size_t columns,
+                                size_t r, size_t c, void *)
+// ----------------------------------------------------------------------------
+//   Return an item from the stack
+// ----------------------------------------------------------------------------
+{
+    if (!columns)
+        columns = 1;
+    size_t nitems = rows * columns;
+    size_t idx = r * columns + c;
+    if (object_p obj = rt.stack(nitems + ~idx))
+        return obj;
+    return nullptr;
+}
+
+
 array_p array::from_stack(size_t rows, size_t columns)
 // ----------------------------------------------------------------------------
 //   Build an array from items on the stack
 // ----------------------------------------------------------------------------
 {
+    array_p result = build(rows, columns, item_from_stack);
+    if (result)
+        rt.drop(rows * (columns ? columns : 1));
+    return result;
+}
+
+
+array_p array::build(size_t rows, size_t columns, item_fn items, void *data)
+// ----------------------------------------------------------------------------
+//   Build an a matrix or vector (columns == 0) from items in function
+// ----------------------------------------------------------------------------
+{
     scribble scr;
     if (rows)
     {
-        size_t items = 0;
         if (columns)
         {
             list_g row = nullptr;
-            items = rows * columns;
             for (size_t r = 0; r < rows; r++)
             {
                 {
                     scribble srow;
                     for (size_t c = 0; c < columns; c++)
                     {
-                        size_t idx = r * columns + c;
-                        object_p obj = rt.stack(items + ~idx);
-                        algebraic_g e = obj->as_algebraic();
-                        if (!e || !rt.append(e->size(), byte_p(+e)))
+                        object_g it = items(rows, columns, r, c, data);
+                        if (!it || !rt.append(it->size(), byte_p(+it)))
                             return nullptr;
                     }
                     row = list::make(ID_array, srow.scratch(), srow.growth());
@@ -301,16 +364,13 @@ array_p array::from_stack(size_t rows, size_t columns)
         }
         else
         {
-            items = rows;
             for (size_t r = 0; r < rows; r++)
             {
-                object_p obj = rt.stack(items + ~r);
-                algebraic_g e = obj->as_algebraic();
-                if (!e || !rt.append(e->size(), byte_p(+e)))
+                object_g it = items(rows, columns, r, 0, data);
+                if (!it || !rt.append(it->size(), byte_p(+it)))
                     return nullptr;
             }
         }
-        rt.drop(items);
     }
     list_p result = list::make(ID_array, scr.scratch(), scr.growth());
     return array_p(result);
@@ -1267,43 +1327,78 @@ COMMAND_BODY(ToArray)
 //   Stack to array
 // ----------------------------------------------------------------------------
 {
-    if (object_g dims = rt.top())
+    size_t rows = 0, columns = 0;
+    if (array::size_from_stack(&rows, &columns))
     {
-        size_t rows = 0, columns = 0;
-        id     ty = dims->type();
-        if (ty == ID_list || ty == ID_array)
+        size_t items = columns ? rows * columns : rows;
+        if (rt.args(items+1))
         {
-            object_g robj = list_p(+dims)->at(0);
-            object_g cobj = list_p(+dims)->at(1);
-            if (list_p(+dims)->at(2))
-            {
-                rt.dimension_error();
-            }
-            else
-            {
-                if (cobj)
-                    columns = cobj->as_uint32(0, true);
-                if (robj)
-                    rows = robj->as_uint32(0, true);
-            }
-        }
-        else
-        {
-            rows = dims->as_uint32(0, true);
-        }
-        if (rows)
-        {
-            size_t items = columns ? rows * columns : rows;
-            if (rt.args(items+1))
-            {
-                rt.drop();
-                if (array_p a = array::from_stack(rows, columns))
-                    if (rt.push(a))
-                        return OK;
-            }
+            rt.drop();
+            if (array_p a = array::from_stack(rows, columns))
+                if (rt.push(a))
+                    return OK;
         }
     }
 
+    return ERROR;
+}
+
+
+static object_p item_from_constant(size_t, size_t,
+                                   size_t, size_t, void *data)
+// ----------------------------------------------------------------------------
+//   Return an item from a constant
+// ----------------------------------------------------------------------------
+{
+    object_g *ptr = (object_g *) data;
+    return *ptr;
+}
+
+
+COMMAND_BODY(ConstantArray)
+// ----------------------------------------------------------------------------
+//   Build a constant array
+// ----------------------------------------------------------------------------
+{
+    if (object_p value = rt.stack(0))
+    {
+        if (object_g dims = rt.stack(1))
+        {
+            symbol_g name = dims->as_quoted<symbol>();
+            if (name)
+            {
+                dims = directory::recall_all(name, true);
+                if (!dims)
+                    return ERROR;
+            }
+
+            size_t  rows = 0, columns = 0;
+            array_g da = dims->as<array>();
+            bool is_array = da && (da->is_matrix(&rows, &columns, false) ||
+                                   da->is_vector(&rows, false));
+            if (is_array || array::size_from_stack(&rows, &columns, 1))
+            {
+                if (array_g a = array::build(rows, columns,
+                                             item_from_constant, &value))
+                {
+                    if (rt.drop(2))
+                    {
+                        if (name)
+                        {
+                            if (directory::store_here(name, a))
+                                return OK;
+                        }
+                        else if (rt.push(+a))
+                        {
+                            return OK;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (!rt.error())
+        rt.type_error();
     return ERROR;
 }
 
