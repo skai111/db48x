@@ -7183,8 +7183,39 @@ Assemble a Hilbert symbolic array
 Find a basis of the intersection of two vector spaces
 
 
-## IDN
-Assemble an identity matrix
+## IDN (IdentityMatrix)
+
+Identity Matrix Command: Returns an identity matrix, that is, a square matrix
+with its diagonal elements equal to 1 and its off-diagonal elements equal to 0.
+
+The result is either a new square matrix, or an existing square matrix with its
+elements replaced by the elements of the identity matrix, according to the
+argument.
+
+* Creating a new matrix: If the argument is an integer `n`, a new real identity
+  matrix is returned, with its number of rows and number of columns equal to
+  `n`.
+
+* Replacing the elements of an existing matrix: If the argument is a square
+  matrix, an identity matrix of the same dimensions is returned.
+
+* Generating the identity matrix for a vector: If the argument is a vector with
+  `n` elements, an identity matrix with `n` rows and `n` columns is created.
+
+* If the argument is a name, the name must identify a variable containing on of the valid inputs. In this case, it is replaced with the result.
+
+
+`n`  ▶ `IDN(n)`
+
+`{ n }` ▶ `IDN(n)`
+
+`{ n n }`  ▶ `IDN(n)`
+
+`[ n-vec ]` ▶ `IDN(n)`
+
+`[[ nxn-mat ]]` ▶ `IDN(n)`
+
+`'name'` ▶
 
 
 ## IMAGE

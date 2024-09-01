@@ -320,6 +320,7 @@ CMD(Sort)
 NAMED(ToArray, "→Arry")         ALIAS(ToArray, "→Array")
 NAMED(FromArray, "Arry→")       ALIAS(FromArray, "Array→")
 NAMED(ConstantArray, "Con")
+NAMED(IdentityMatrix, "Idn")
 
 // Tests
 NAMED(IFT, "IfThen")

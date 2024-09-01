@@ -271,37 +271,45 @@ array_p array::wrap(object_p o)
 
 bool array::size_from_stack(size_t *rows, size_t *columns, uint level)
 // ----------------------------------------------------------------------------
-//   Take the first level of the stack and interpret that as array szie
+//   Take the given level of the stack and interpret that as array size
 // ----------------------------------------------------------------------------
 {
     if (object_g dims = rt.stack(level))
+        return size_from_object(rows, columns, dims);
+    return false;
+}
+
+
+bool array::size_from_object(size_t *rows, size_t *columns, object_r dims)
+// ----------------------------------------------------------------------------
+//   Take the given object and interpret that as array size
+// ----------------------------------------------------------------------------
+{
+    id     ty = dims->type();
+    if (ty == ID_list || ty == ID_array)
     {
-        id     ty = dims->type();
-        if (ty == ID_list || ty == ID_array)
+        object_g robj = list_p(+dims)->at(0);
+        object_g cobj = list_p(+dims)->at(1);
+        if (list_p(+dims)->at(2))
         {
-            object_g robj = list_p(+dims)->at(0);
-            object_g cobj = list_p(+dims)->at(1);
-            if (list_p(+dims)->at(2))
-            {
-                rt.dimension_error();
-            }
-            else
-            {
-                if (robj && rows)
-                    *rows = robj->as_uint32(0, true);
-                if (cobj && columns)
-                    *columns = cobj->as_uint32(0, true);
-                return !rt.error();
-            }
+            rt.dimension_error();
         }
         else
         {
-            if (rows)
-                *rows = dims->as_uint32(0, true);
-            if (columns)
-                *columns = 0;
+            if (robj && rows)
+                *rows = robj->as_uint32(0, true);
+            if (cobj && columns)
+                *columns = cobj->as_uint32(0, true);
             return !rt.error();
         }
+    }
+    else
+    {
+        if (rows)
+            *rows = dims->as_uint32(0, true);
+        if (columns)
+            *columns = 0;
+        return !rt.error();
     }
     return false;
 }
@@ -1376,7 +1384,7 @@ COMMAND_BODY(ConstantArray)
             array_g da = dims->as<array>();
             bool is_array = da && (da->is_matrix(&rows, &columns, false) ||
                                    da->is_vector(&rows, false));
-            if (is_array || array::size_from_stack(&rows, &columns, 1))
+            if (is_array || array::size_from_object(&rows, &columns, dims))
             {
                 if (array_g a = array::build(rows, columns,
                                              item_from_constant, &value))
@@ -1395,6 +1403,84 @@ COMMAND_BODY(ConstantArray)
                     }
                 }
             }
+        }
+    }
+    if (!rt.error())
+        rt.type_error();
+    return ERROR;
+}
+
+
+static object_p item_from_identity(size_t, size_t,
+                                   size_t r, size_t c, void *)
+// ----------------------------------------------------------------------------
+//   Return an item from a constant
+// ----------------------------------------------------------------------------
+{
+    return integer::make(uint(r == c));
+}
+
+
+COMMAND_BODY(IdentityMatrix)
+// ----------------------------------------------------------------------------
+//   Build an identity matrix
+// ----------------------------------------------------------------------------
+{
+    if (object_g dims = rt.top())
+    {
+        symbol_g name = dims->as_quoted<symbol>();
+        if (name)
+        {
+            dims = directory::recall_all(name, true);
+            if (!dims)
+                return ERROR;
+        }
+
+        size_t  rows = 0, columns = 0;
+        array_g da = dims->as<array>();
+        if (da)
+        {
+            if (da->is_matrix(&rows, &columns, false))
+            {
+            }
+            else if (da->is_vector(&rows, false))
+            {
+                columns = rows;
+            }
+            else
+            {
+                columns = 1;
+            }
+        }
+        else if (array::size_from_object(&rows, &columns, dims))
+        {
+            if (!columns)
+                columns = rows;
+        }
+        else
+        {
+            rt.type_error();
+            return ERROR;
+        }
+        if (rows != columns)
+        {
+            rt.dimension_error();
+            return ERROR;
+        }
+        if (array_g a = array::build(rows, columns, item_from_identity))
+        {
+            if (rt.drop())
+            {
+                if (name)
+                {
+                    if (directory::store_here(name, a))
+                        return OK;
+                }
+                else if (rt.push(+a))
+                {
+                    return OK;
+                }
+                }
         }
     }
     if (!rt.error())

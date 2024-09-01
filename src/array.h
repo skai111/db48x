@@ -77,6 +77,7 @@ struct array : list
     list_p dimensions(bool expand = false) const;
     bool expand() const;
     static bool size_from_stack(size_t *rows, size_t *columns, uint level=0);
+    static bool size_from_object(size_t *rows, size_t *columns, object_r obj);
     static array_p from_stack(size_t rows, size_t columns);
     typedef object_p (*item_fn)(size_t rows, size_t columns,
                                 size_t row, size_t column,
@@ -120,5 +121,6 @@ COMMAND_DECLARE_SPECIAL(cross, command, 2, PREC_DECL(MULTIPLICATIVE); );
 COMMAND_DECLARE(ToArray, ~2);
 COMMAND_DECLARE(FromArray, 1);
 COMMAND_DECLARE(ConstantArray, 2);
+COMMAND_DECLARE(IdentityMatrix, 1);
 
 #endif // ARRAY_H

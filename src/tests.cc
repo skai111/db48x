@@ -5525,6 +5525,9 @@ void tests::matrix_functions()
     step("Constant matrix")
         .test(CLEAR, "{ 3 2 } 10 CON", ENTER)
         .want("[[ 10 10 ] [ 10 10 ] [ 10 10 ]]");
+    step("Constant matrix")
+        .test(CLEAR, "{ 3 2 5 } 10 CON", ENTER)
+        .error("Invalid dimension");
     step("Constant vector from vector")
         .test(CLEAR, "[ 1 2 3] 2ⅈ3", RSHIFT, KEY9, F3)
         .expect("[ 2+3ⅈ 2+3ⅈ 2+3ⅈ ]");
@@ -5541,6 +5544,33 @@ void tests::matrix_functions()
         .test("MyVec", ENTER)
         .expect("[ 1.5 1.5 1.5 1.5 ]")
         .test("'MyVec'", ENTER, LSHIFT, BSP, F2);
+
+    step("Idenitity matrix")
+        .test(CLEAR, "3 IDN", ENTER)
+        .want("[[ 1 0 0 ] [ 0 1 0 ] [ 0 0 1 ]]");
+    step("Identity from list")
+        .test(CLEAR, "{ 2 }", RSHIFT, KEY9, F2)
+        .want("[[ 1 0 ] [ 0 1 ]]");
+    step("Identity from 2-list")
+        .test(CLEAR, "{ 2 2 }", RSHIFT, KEY9, F2)
+        .want("[[ 1 0 ] [ 0 1 ]]");
+    step("Identity from 2-list")
+        .test(CLEAR, "{ 2 3 }", RSHIFT, KEY9, F2)
+        .error("Invalid dimension");
+    step("Identity from vector")
+        .test(CLEAR, "[ 1  2 3 ]", RSHIFT, KEY9, F2)
+        .want("[[ 1 0 0 ] [ 0 1 0 ] [ 0 0 1 ]]");
+    step("Identity matrix in name")
+        .test(CLEAR, "{ 4 }", RSHIFT, KEY9, F2)
+        .test(KEY3, MUL, KEY2, ADD)
+        .want("[[ 5 2 2 2 ] [ 2 5 2 2 ] [ 2 2 5 2 ] [ 2 2 2 5 ]]")
+        .test("'MyIdn'", NOSHIFT, G)
+        .noerror()
+        .test("'MyIdn' IDN", ENTER)
+        .noerror()
+        .test("MyIdn", ENTER)
+        .want("[[ 1 0 0 0 ] [ 0 1 0 0 ] [ 0 0 1 0 ] [ 0 0 0 1 ]]")
+        .test("'MyIdn'", ENTER, LSHIFT, BSP, F2);
 }
 
 
