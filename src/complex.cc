@@ -505,10 +505,9 @@ algebraic_g rectangular::pifrac() const
     if (!r || !i)
         return nullptr;
 
-    angle_unit mode = Settings.AngleMode();
-    Settings.AngleMode(object::ID_PiRadians); // Enable 'exact' optimizations
+    settings::SaveAngleMode sam(ID_PiRadians); // Enable 'exact' optimizations
+    settings::SaveSetAngleUnits ssau(false);   // Do not add angle to result
     algebraic_g a = atan2::evaluate(i, r);
-    Settings.AngleMode(mode);
     return a;
 }
 

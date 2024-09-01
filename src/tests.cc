@@ -3181,16 +3181,16 @@ void tests::decimal_numerical_functions()
 
     step("atan2 pos / pos quadrant")
         .test(CLEAR, "3.21 1.23 atan2", ENTER)
-        .expect("1.20487 56251 52809 23400 86691 05495 30674");
+        .expect("1.20487 56251 52809 23400 86691 05495 30674 r");
     step("atan2 pos / neg quadrant")
         .test(CLEAR, "3.21 -1.23 atan2", ENTER)
-        .expect("1.93671 70284 36984 00445 39742 77784 19614");
+        .expect("1.93671 70284 36984 00445 39742 77784 19614 r");
     step("atan2 neg / pos quadrant")
         .test(CLEAR, "-3.21 1.23 atan2", ENTER)
-        .expect("-1.20487 56251 52809 23400 86691 05495 30674");
+        .expect("-1.20487 56251 52809 23400 86691 05495 30674 r");
     step("atan2 neg / neg quadrant")
         .test(CLEAR, "-3.21 -1.23 atan2", ENTER)
-        .expect("-1.93671 70284 36984 00445 39742 77784 19614");
+        .expect("-1.93671 70284 36984 00445 39742 77784 19614 r");
 
     step("Restore default 24-digit precision");
     test(CLEAR, "24 PRECISION 12 SIG", ENTER).noerror();
@@ -3354,16 +3354,16 @@ void tests::float_numerical_functions()
 
     step("atan2 pos / pos quadrant")
         .test(CLEAR, "3.21 1.23 atan2", ENTER)
-        .expect("1.20488");
+        .expect("1.20488 r");
     step("atan2 pos / neg quadrant")
         .test(CLEAR, "3.21 -1.23 atan2", ENTER)
-        .expect("1.93672");
+        .expect("1.93672 r");
     step("atan2 neg / pos quadrant")
         .test(CLEAR, "-3.21 1.23 atan2", ENTER)
-        .expect("-1.20488");
+        .expect("-1.20488 r");
     step("atan2 neg / neg quadrant")
         .test(CLEAR, "-3.21 -1.23 atan2", ENTER)
-        .expect("-1.93672");
+        .expect("-1.93672 r");
 
     step("Restore default 24-digit precision");
     test(CLEAR, "24 PRECISION 12 SIG SoftFP", ENTER).noerror();
@@ -3521,16 +3521,16 @@ void tests::double_numerical_functions()
 
     step("atan2 pos / pos quadrant")
         .test(CLEAR, "3.21 1.23 atan2", ENTER)
-        .expect("1.20487 56251 5281");
+        .expect("1.20487 56251 5281 r");
     step("atan2 pos / neg quadrant")
         .test(CLEAR, "3.21 -1.23 atan2", ENTER)
-        .expect("1.93671 70284 3698");
+        .expect("1.93671 70284 3698 r");
     step("atan2 neg / pos quadrant")
         .test(CLEAR, "-3.21 1.23 atan2", ENTER)
-        .expect("-1.20487 56251 5281");
+        .expect("-1.20487 56251 5281 r");
     step("atan2 neg / neg quadrant")
         .test(CLEAR, "-3.21 -1.23 atan2", ENTER)
-        .expect("-1.93671 70284 3698");
+        .expect("-1.93671 70284 3698 r");
 
     step("Restore default 24-digit precision");
     test(CLEAR, "24 PRECISION 12 SIG SoftFP", ENTER).noerror();
@@ -3685,16 +3685,16 @@ void tests::high_precision_numerical_functions()
 
     step("atan2 pos / pos quadrant")
         .test(CLEAR, "3.21 1.23 atan2", ENTER)
-        .expect("1.20487 56251 52809 23400 86691 05495 30674 32743 54426 68497 01001 78719 37086 47165 61508 05592 53255 02332 28917 23139 67613 92267 03142 769");
+        .expect("1.20487 56251 52809 23400 86691 05495 30674 32743 54426 68497 01001 78719 37086 47165 61508 05592 53255 02332 28917 23139 67613 92267 03142 769 r");
     step("atan2 pos / neg quadrant")
         .test(CLEAR, "3.21 -1.23 atan2", ENTER)
-        .expect("1.93671 70284 36984 00445 39742 77784 19614 09228 14972 69013 57207 96225 22144 30998 44778 15307 33025 32493 05294 47540 14534 16384 29680 297");
+        .expect("1.93671 70284 36984 00445 39742 77784 19614 09228 14972 69013 57207 96225 22144 30998 44778 15307 33025 32493 05294 47540 14534 16384 29680 297 r");
     step("atan2 neg / pos quadrant")
         .test(CLEAR, "-3.21 1.23 atan2", ENTER)
-        .expect("-1.20487 56251 52809 23400 86691 05495 30674 32743 54426 68497 01001 78719 37086 47165 61508 05592 53255 02332 28917 23139 67613 92267 03142 769");
+        .expect("-1.20487 56251 52809 23400 86691 05495 30674 32743 54426 68497 01001 78719 37086 47165 61508 05592 53255 02332 28917 23139 67613 92267 03142 769 r");
     step("atan2 neg / neg quadrant")
         .test(CLEAR, "-3.21 -1.23 atan2", ENTER)
-        .expect("-1.93671 70284 36984 00445 39742 77784 19614 09228 14972 69013 57207 96225 22144 30998 44778 15307 33025 32493 05294 47540 14534 16384 29680 297");
+        .expect("-1.93671 70284 36984 00445 39742 77784 19614 09228 14972 69013 57207 96225 22144 30998 44778 15307 33025 32493 05294 47540 14534 16384 29680 297 r");
 
     step("Restore default 24-digit precision");
     test(CLEAR, "24 PRECISION 12 SIG", ENTER).noerror();

@@ -1179,6 +1179,15 @@ algebraic_p arithmetic::evaluate(id          op,
     id xt = x->type();
     id yt = y->type();
 
+    if (op == ID_atan2 && Settings.SetAngleUnits() &&
+        is_real(xt) && is_real(yt))
+    {
+        settings::SaveSetAngleUnits save(false);
+        x = evaluate(op, xr, yr, ops);
+        add_angle(x);
+        return x;
+    }
+
     // All non-numeric cases, e.g. string concatenation
     // Must come first, e.g. for optimization of X^3 or list + tagged object
     while(true)
