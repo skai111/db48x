@@ -194,6 +194,9 @@ COMMAND_DECLARE(ExponentialFit,0);
 COMMAND_DECLARE(PowerFit,0);
 COMMAND_DECLARE(LogarithmicFit,0);
 
+algebraic_p random_number();
+algebraic_p random_number(algebraic_r min, algebraic_r max);
+
 COMMAND_DECLARE(RandomNumber, 0);
 COMMAND_DECLARE(RandomSeed, 1);
 COMMAND_DECLARE(Random, 2);

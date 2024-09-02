@@ -523,7 +523,7 @@ MENU(MatrixMenu,
      "Const",   ID_ConstantArray,
      "Transp",  ID_Unimplemented,
      "Redim",   ID_Unimplemented,
-     "Random",  ID_Unimplemented,
+     "Random",  ID_RandomMatrix,
 
      "Det",     ID_det,
      "Norm",    ID_abs,

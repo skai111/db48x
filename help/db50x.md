@@ -7260,8 +7260,9 @@ QR Decomposition of a matrix
 Rank of a matrix
 
 
-## RANM
-Assemble a matrix with random numbers
+## RANM (RandomMatrix)
+
+Returns an array containing random integer values between -9 and 9.
 
 
 ## RCI

@@ -32,8 +32,9 @@
 #include "arithmetic.h"
 #include "expression.h"
 #include "functions.h"
-#include "variables.h"
 #include "grob.h"
+#include "stats.h"
+#include "variables.h"
 
 
 RECORDER(matrix, 16, "Determinant computation");
@@ -1400,6 +1401,78 @@ COMMAND_BODY(ConstantArray)
                         {
                             return OK;
                         }
+                    }
+                }
+            }
+        }
+    }
+    if (!rt.error())
+        rt.type_error();
+    return ERROR;
+}
+
+
+struct random_matrix_range
+// ----------------------------------------------------------------------------
+//    Random number range
+// ----------------------------------------------------------------------------
+{
+    algebraic_g min;
+    algebraic_g max;
+};
+
+
+static object_p item_from_random(size_t, size_t, size_t, size_t, void *rng)
+// ----------------------------------------------------------------------------
+//   Return a random value between -9 and 9
+// ----------------------------------------------------------------------------
+{
+    random_matrix_range *range = (random_matrix_range *) rng;
+    object_g value = random_number(range->min, range->max);
+    return value;
+}
+
+
+COMMAND_BODY(RandomMatrix)
+// ----------------------------------------------------------------------------
+//   Build a random matrix
+// ----------------------------------------------------------------------------
+{
+    if (object_g dims = rt.top())
+    {
+        symbol_g name = dims->as_quoted<symbol>();
+        if (name)
+        {
+            dims = directory::recall_all(name, true);
+            if (!dims)
+                return ERROR;
+        }
+
+        size_t  rows = 0, columns = 0;
+        array_g da = dims->as<array>();
+        bool is_array = da && (da->is_matrix(&rows, &columns, false) ||
+                               da->is_vector(&rows, false));
+        if (is_array || array::size_from_object(&rows, &columns, dims))
+        {
+            random_matrix_range range =
+            {
+                .min = integer::make(-9),
+                .max = integer::make(9)
+            };
+
+            if (array_g a = array::build(rows, columns,
+                                         item_from_random, &range))
+            {
+                if (rt.drop())
+                {
+                    if (name)
+                    {
+                        if (directory::store_here(name, a))
+                            return OK;
+                    }
+                    else if (rt.push(+a))
+                    {
+                        return OK;
                     }
                 }
             }

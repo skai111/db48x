@@ -122,5 +122,6 @@ COMMAND_DECLARE(ToArray, ~2);
 COMMAND_DECLARE(FromArray, 1);
 COMMAND_DECLARE(ConstantArray, 2);
 COMMAND_DECLARE(IdentityMatrix, 1);
+COMMAND_DECLARE(RandomMatrix, 1);
 
 #endif // ARRAY_H

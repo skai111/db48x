@@ -1596,7 +1596,7 @@ static void random_init()
 }
 
 
-static decimal_p random_number()
+algebraic_p random_number()
 // ----------------------------------------------------------------------------
 //   Compute a random number between 0 and 1 using ACORN algorithm
 // ----------------------------------------------------------------------------
@@ -1617,28 +1617,41 @@ static decimal_p random_number()
 }
 
 
+algebraic_p random_number(algebraic_r min, algebraic_r max)
+// ----------------------------------------------------------------------------
+//   Compute a random number between the two given numbers
+// ----------------------------------------------------------------------------
+{
+    if (algebraic_g val = random_number())
+    {
+        if (algebraic_g scaled = val * (max - min) + min)
+        {
+            if (min->is_integer() && max->is_integer())
+            {
+                algebraic_g half = decimal::make(5,-1);
+                scaled = scaled + half;
+                scaled = decimal_p(+scaled)->to_bignum();
+            }
+            return scaled;
+        }
+    }
+    return nullptr;
+}
+
+
 COMMAND_BODY(Random)
 // ----------------------------------------------------------------------------
 //   Generate a random number between the two input values
 // ----------------------------------------------------------------------------
 {
-    if (algebraic_g val = random_number())
+    if (algebraic_g max = rt.stack(0)->as_algebraic())
     {
-        if (algebraic_g max = rt.stack(0)->as_algebraic())
+        if (algebraic_g min = rt.stack(1)->as_algebraic())
         {
-            if (algebraic_g min = rt.stack(1)->as_algebraic())
+            if (algebraic_g val = random_number(min, max))
             {
-                if (algebraic_g scaled = val * (max - min) + min)
-                {
-                    if (min->is_integer() && max->is_integer())
-                    {
-                        algebraic_g half = decimal::make(5,-1);
-                        scaled = scaled + half;
-                        scaled = decimal_p(+scaled)->to_bignum();
-                    }
-                    if (rt.drop() && rt.top(+scaled))
-                        return OK;
-                }
+                if (rt.drop() && rt.top(+val))
+                    return OK;
             }
         }
         if (!rt.error())
