@@ -1,5 +1,41 @@
 # Release notes
 
+## Release 0.7.16 "Clean" - New commands
+
+The focus of this release is on new commands, notably for matrix and vector
+operations. This release also ships with a DM48X-specific keymap, which fixes a
+problem with teh file selector on the DM32. The equation library has been extended with numerous equations, but they are not fully validated yet.
+
+### Features
+
+* `con`, `idn` and `ranm` matrix generation commands
+* `Array→` and `→Array` commands to convert array to/from stack
+* `dot` product and `cross` product commands for vectors
+* `DispXY` styled text rendering command
+* `DupDup` command duplicating top item twice
+* Add a large number of equations to equation library
+
+### Bug fixes
+
+* Fix `decimal::to_bignum` for small magnitudes
+* Return angle unit for `atan2` and `arg` commands
+* The `for` loop on lists no longer ends leaving the debugger active
+* Interactive stack `DropN` command returns to level 1
+* Fix file selector's "New file" on DM32 so that ENTER terminates it
+* A few fixes in equations in the equation library
+
+
+### Improvements
+
+* Improve graphical rendering of expressions such as multiplication operators
+* doc: Update status
+* font: Fix `v` glyph vertical placement, add dot and cross glyphs
+* ttf2font: Add additional verbose info about source data
+* Add `CONSTANTS` as an alias for `ConstantsMenu`
+* Replace documentation references to `EEX` with `×10ⁿ`
+* Optimize parsing of real numbers in parentheses
+
+
 ## Release 0.7.15 "Teaching" - Bug fixes notably on iOS
 
 This release mostly focuses on issues exposed by the iOS releases.
