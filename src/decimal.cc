@@ -1250,7 +1250,9 @@ bignum_p decimal::to_bignum() const
     bignum_g  tmp;
 
     large     p = xe;
-    while (p)
+    if (p < 0)
+        neg = false;
+    while (p > 0 && scale && mul)
     {
         if (p & 1)
             scale = scale * mul;
