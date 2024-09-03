@@ -630,10 +630,8 @@ static const cstring basic_equations[] =
     "'(Δyint_m)=(λ_nm)*(L_m)/(d_μm)' "
     "}",
 
-    // WARNING The following requires the definition of the functiom
-    // SINC(x)=SIN(X)/X in the db48x
     "One Slit Diffraction",  "{ "
-    "'I_(W/m^2)/Imax_(W/m^2)=(SINC(α_r))^2' "
+    "'I_(W/m^2)/Imax_(W/m^2)=(IFTE(α_r;SIN(α)/α;1))^2' "
     "'(α_r)=(Ⓒπ*(a_μm)*SIN(θ_r))/(λ_nm)' "
     "'TAN(θ_r)=(y_m)/(L_m)' "
     "'(Δydiff_m)=2*(λ_nm)*(L_m)/(a_μm)' "
