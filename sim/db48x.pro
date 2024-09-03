@@ -129,3 +129,5 @@ clang:   QMAKE_CFLAGS   += -Wno-unknown-pragmas
 clang:   QMAKE_CXXFLAGS += -Wno-unknown-pragmas
 
 OBJECTS_DIR=db48x-build
+
+ICON = db48x.icns
