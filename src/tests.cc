@@ -716,7 +716,7 @@ void tests::keyboard_entry()
 
     step("Separators with auto-spacing");
     cstring seps2     = "{}()[]";
-    cstring seps2auto = "{ } ( ) []";
+    cstring seps2auto = "{ } () []";
     test(CLEAR, seps2).editor(seps2auto);
 
     step("Key repeat");
@@ -743,13 +743,13 @@ void tests::keyboard_entry()
         .test(KEY3).editor("'1=2+3'");
     step("F key in equation inserts parentheses")
         .test(MUL).editor("'1=2+3·'")
-        .test(F).editor("'1=2+3· ()'");
+        .test(F).editor("'1=2+3·()'");
     step("Automatic insertion of parentheses after functions")
-        .test(D).editor("'1=2+3· (exp())'")
-        .test(KEY0).editor("'1=2+3· (exp(0))'");
+        .test(D).editor("'1=2+3·(exp())'")
+        .test(KEY0).editor("'1=2+3·(exp(0))'");
     step("Space key in parentheses insert semi-colon")
-        .test(SPACE).editor("'1=2+3· (exp(0;))'")
-        .test(KEY7).editor("'1=2+3· (exp(0;7))'");
+        .test(SPACE).editor("'1=2+3·(exp(0;))'")
+        .test(KEY7).editor("'1=2+3·(exp(0;7))'");
 
     step("STO key while entering equation (bug #390)")
         .test(CLEAR, EXIT, KEY1, KEY2, F,
