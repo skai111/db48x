@@ -172,7 +172,7 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-            eqnlib_parsing();
+            list_functions();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -2267,7 +2267,7 @@ void tests::conditionals()
     step("IfErr reading error number");
     test(CLEAR, "iferr 1 0 / drop then errn end", ENTER)
         .type(object::ID_based_integer)
-        .expect("#A₁₆");        // May change if you update errors.tbl
+        .expect("#B₁₆");        // May change if you update errors.tbl
 
     step("DoErr with built-in message");
     test(CLEAR, "3 DoErr", ENTER)
@@ -5083,6 +5083,83 @@ void tests::list_functions()
         .expect("{ 16 -19 16 43 31 }")
         .test(CLEAR, "{ A B C 1 2 3 }",LSHIFT, F5)
         .expect("{ 'B-A' 'C-B' '1-C' 1 1 }");
+
+    step("DoList with explicit size in program")
+        .test(CLEAR, "{ A B 3 } { D 5 6 } { E 8 F } 3 « + * » DOLIST", ENTER)
+        .expect("{ 'A·(D+E)' '13·B' '3·(F+6)' }")
+        .test(BSP).noerror()
+        .test(BSP).error("Too few arguments");
+    step("DoList with explicit size from menu")
+        .test(CLEAR, "{ 1 2 3 } { 4 5 6 } { 7 8 9 } 3 « + * »",
+              LSHIFT, MUL, LSHIFT, SUB, F6, LSHIFT, F1)
+        .expect("{ 11 26 45 }")
+        .test(BSP).noerror()
+        .test(BSP).error("Too few arguments");
+    step("DoList with implicit size in program")
+        .test(CLEAR, "{ 3 A B } { 5 D 6 } { 8 F E } « + » DOLIST", ENTER)
+        .expect("{ 13 'D+F' 'E+6' }")
+        .test(BSP)
+        .expect("{ 3 A B }")
+        .test(BSP).noerror()
+        .test(BSP).error("Too few arguments");
+    step("DoList with implicit size from menu")
+        .test(CLEAR, "{ 1 2 3 } { 4 5 6 } { 7 8 9 } « * »",
+              LSHIFT, MUL, LSHIFT, SUB, F6, LSHIFT, F1)
+        .expect("{ 28 40 54 }")
+        .test(BSP).expect("{ 1 2 3 }")
+        .test(BSP).noerror()
+        .test(BSP).error("Too few arguments");
+    step("DoList with bad arguments")
+        .test(CLEAR, "{ A B 3 } { D 5 6 } { E 8 F }  « + »  DUP DOLIST", ENTER)
+        .error("Bad argument type");
+
+    step("DoSubs with explicit size in program")
+        .test(CLEAR, "{ A B 3 D 5 6 E 8 F } 3 « + * » DOSUBS", ENTER)
+        .expect("{ 'A·(B+3)' 'B·(D+3)' '3·(D+5)' "
+                "'11·D' '5·(E+6)' '6·(E+8)' 'E·(F+8)' }")
+        .test(BSP).noerror()
+        .test(BSP).error("Too few arguments");
+    step("DoSubs with explicit size from menu")
+        .test(CLEAR, "{ 1 2 3 4 5 6 7 8 9 } 3 « + * »",
+              LSHIFT, MUL, LSHIFT, SUB, F6, LSHIFT, F2)
+        .expect("{ 5 14 27 44 65 90 119 }")
+        .test(BSP).noerror()
+        .test(BSP).error("Too few arguments");
+    step("DoSubs with implicit size in program")
+        .test(CLEAR, "{ 3 A B 5 D 6 8 F E } « + » DOSUBS", ENTER)
+        .expect("{ 'A+3' 'A+B' 'B+5' 'D+5' 'D+6' 14 'F+8' 'F+E' }")
+        .test(BSP).noerror()
+        .test(BSP).error("Too few arguments");
+    step("DoSubs with implicit size in program from HP50G ARM")
+        .test(CLEAR, "{ A B C D E } « - » DOSUBS", ENTER)
+        .expect("{ 'A-B' 'B-C' 'C-D' 'D-E' }")
+        .test(BSP).noerror()
+        .test(BSP).error("Too few arguments");
+    step("DoSubs with explicit size in program from HP50G ARM")
+        .test(CLEAR, "{ A B C } 2 « DUP * * » DOSUBS", ENTER)
+        .expect("{ 'A·B²' 'B·C²' }")
+        .test(BSP).noerror()
+        .test(BSP).error("Too few arguments");
+    step("DoSubs with explicit size in program from HP50G ARM")
+        .test(CLEAR,
+              "{ 1 2 3 4 5 } "
+              "« → a b "
+              "« CASE "
+              "  'NSUB=1' THEN a END "
+              "  'NSUB=ENDSUB' THEN b END "
+              "  'a+b' EVAL END » » DOSUBS", ENTER)
+        .expect("{ 1 5 7 5 }")
+        .test(BSP).noerror()
+        .test(BSP).error("Too few arguments");
+    step("DoSubs with implicit size from menu")
+        .test(CLEAR, "{ 1 2 A D 5 6 B 8 9 } « * »",
+              LSHIFT, MUL, LSHIFT, SUB, F6, LSHIFT, F2)
+        .expect("{ 2 '2·A' 'A·D' '5·D' 30 '6·B' '8·B' 72 }")
+        .test(BSP).noerror()
+        .test(BSP).error("Too few arguments");
+    step("DoSubs with bad arguments")
+        .test(CLEAR, "{ A B 3 D 5 6 E 8 F }  « + »  DUP DOSUBS", ENTER)
+        .error("Bad argument type");
 }
 
 

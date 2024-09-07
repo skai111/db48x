@@ -1043,6 +1043,12 @@ MENU(ListMenu,
      "PutI",    ID_PutI,
      "Reverse", ID_ReverseList,
 
+     "DoList",  ID_DoList,
+     "DoSubs",  ID_DoSubs,
+     "NSub",    ID_NSub,
+     "EndSub",  ID_EndSub,
+     "Loops",   ID_LoopsMenu,
+
      "Obj→",    ID_Explode,
      "Find",    ID_Unimplemented,
      "Objects", ID_ObjectMenu,

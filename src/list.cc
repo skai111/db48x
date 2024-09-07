@@ -34,6 +34,7 @@
 #include "compare.h"
 #include "expression.h"
 #include "grob.h"
+#include "locals.h"
 #include "parser.h"
 #include "polynomial.h"
 #include "precedence.h"
@@ -1937,5 +1938,267 @@ COMMAND_BODY(LName)
         if (list_p result = list_variables(obj, ID_array, false))
             if (rt.push(result))
                 return OK;
+    return ERROR;
+}
+
+
+
+// ============================================================================
+//
+//   DoList and DoSubs commands
+//
+// ============================================================================
+
+static size_t program_arity(object_p prg)
+// ----------------------------------------------------------------------------
+//   Compute the program arity for a given program
+// ----------------------------------------------------------------------------
+{
+    if (!prg)
+        return -1;
+    object::id id = prg->type();
+    if (id == object::ID_list || id == object::ID_program)
+    {
+        if (list_p(prg)->items() != 1)
+        {
+            rt.argument_count_error();
+            return 0;
+        }
+        prg = list_p(prg)->at(0);
+    }
+    if (locals_p locs = prg->as<locals>())
+        return locs->variables();
+
+    return prg->arity();
+}
+
+
+COMMAND_BODY(DoList)
+// ----------------------------------------------------------------------------
+//   Apply commands to lists
+// ----------------------------------------------------------------------------
+{
+    if (object_g prg = rt.stack(0))
+    {
+        if (object_p cntobj = rt.stack(1))
+        {
+            size_t count = 0;
+            size_t base  = 0;
+            if (cntobj->is_real())
+            {
+                count = cntobj->as_uint32(0, true);
+                base = 2;
+            }
+            else if (cntobj->type() == ID_list)
+            {
+                base = 1;
+                count = program_arity(prg);
+            }
+            else
+            {
+                rt.type_error();
+            }
+            if (rt.error())
+                return ERROR;
+            if (!rt.args(base + count))
+                return ERROR;
+
+            // Check consistency of list dimensions
+            size_t length = 0;
+            id lty = ID_list;
+            for (size_t d = 0; d < count; d++)
+            {
+                object_p obj = rt.stack(base + d);
+                if (!obj)
+                    return ERROR;
+                id ty = obj->type();
+                if (ty != ID_list && ty != ID_array)
+                    return ERROR;
+                list_p lst = list_p(obj);
+                if (!d)
+                {
+                    length = lst->items();
+                    lty = ty;
+                }
+                else if (length != lst->items())
+                {
+                    rt.dimension_error();
+                    return ERROR;
+                }
+                else if (ty != lty)
+                {
+                    rt.type_error();
+                    return ERROR;
+                }
+            }
+
+            // Run program on all the lists
+            scribble scr;
+            size_t depth = rt.depth();
+            for (size_t i = 0; i < length; i++)
+            {
+                size_t offs = base + count - 1;
+                for (size_t d = count; d --> 0; )
+                {
+                    list_p lst = list_p(rt.stack(offs));
+                    if (!rt.push(lst->at(i)))
+                        return ERROR;
+                }
+
+                program::run(prg, true);
+
+                size_t after = rt.depth();
+                if (after < depth)
+                {
+                    rt.missing_argument_error();
+                    return ERROR;
+                }
+
+                size_t added = after - depth;
+                for (size_t d = added; d --> 0; )
+                {
+                    object_g obj = rt.stack(d);
+                    if (!obj)
+                        return ERROR;
+                    size_t objsize = obj->size();
+                    byte *objcopy = rt.allocate(objsize);
+                    if (!objcopy)
+                        return ERROR;
+                    memmove(objcopy, (byte *) +obj, objsize);
+                }
+                rt.drop(added);
+            }
+
+            list_p result =  list::make(lty, scr.scratch(), scr.growth());
+            if (rt.drop(base + count) && rt.push(result))
+                return OK;
+        }
+    }
+
+    return ERROR;
+}
+
+
+static size_t nsub = 0;
+static size_t endsub = 0;
+
+
+COMMAND_BODY(DoSubs)
+// ----------------------------------------------------------------------------
+//   Apply command to sublist
+// ----------------------------------------------------------------------------
+{
+    if (object_g prg = rt.stack(0))
+    {
+        if (object_p cntobj = rt.stack(1))
+        {
+            size_t count = 0;
+            size_t base  = 0;
+            if (cntobj->is_real())
+            {
+                count = cntobj->as_uint32(0, true);
+                base = 2;
+            }
+            else if (cntobj->type() == ID_list)
+            {
+                base = 1;
+                count = program_arity(prg);
+            }
+            else
+            {
+                rt.type_error();
+            }
+            if (rt.error())
+                return ERROR;
+            if (!rt.args(base))
+                return ERROR;
+
+            // Check consistency of list dimensions
+            object_p obj = rt.stack(base);
+            if (!obj)
+                return ERROR;
+            id lty = obj->type();
+            if (lty != ID_list && lty != ID_array)
+                return ERROR;
+            list_g lst = list_p(obj);
+            size_t length = lst->items();
+            if (count > length)
+            {
+                rt.dimension_error();
+                return ERROR;
+            }
+
+            save<size_t> sns(nsub, 0);
+            save<size_t> ses(endsub, length - count + 1);
+            rt.drop(base + 1);
+
+            // Run program on all subs in the list
+            scribble scr;
+            size_t depth = rt.depth();
+            for (size_t i = 0; i < endsub; i++)
+            {
+                nsub = i + 1;
+                for (size_t d = 0; d < count; d++)
+                    if (!rt.push(lst->at(i + d)))
+                        return ERROR;
+
+                program::run(prg, true);
+
+                size_t after = rt.depth();
+                if (after < depth)
+                {
+                    rt.missing_argument_error();
+                    return ERROR;
+                }
+
+                size_t added = after - depth;
+                for (size_t d = added; d --> 0; )
+                {
+                    object_g obj = rt.stack(d);
+                    if (!obj)
+                        return ERROR;
+                    size_t objsize = obj->size();
+                    byte *objcopy = rt.allocate(objsize);
+                    if (!objcopy)
+                        return ERROR;
+                    memmove(objcopy, (byte *) +obj, objsize);
+                }
+                rt.drop(added);
+            }
+
+            list_p result =  list::make(lty, scr.scratch(), scr.growth());
+            if (rt.push(result))
+                return OK;
+        }
+    }
+
+    return ERROR;
+}
+
+
+COMMAND_BODY(NSub)
+// ----------------------------------------------------------------------------
+//   Return current index in a DoSubs command
+// ----------------------------------------------------------------------------
+{
+    if (!endsub)
+        rt.undefined_local_name_error();
+    else if (integer_p obj = integer::make(nsub))
+        if (rt.push(obj))
+            return OK;
+    return ERROR;
+}
+
+
+COMMAND_BODY(EndSub)
+// ----------------------------------------------------------------------------
+//   Return last index in a DoSubs command
+// ----------------------------------------------------------------------------
+{
+    if (!endsub)
+        rt.undefined_local_name_error();
+    else if (integer_p obj = integer::make(endsub))
+        if (rt.push(obj))
+            return OK;
     return ERROR;
 }

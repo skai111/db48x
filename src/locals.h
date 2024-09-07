@@ -78,6 +78,14 @@ struct locals : program
 {
     locals(id type, gcbytes bytes, size_t len): program(type, bytes, len) {}
 
+    size_t variables() const
+    {
+        byte_p p = payload(this);
+        (void) leb128<size_t>(p);
+        size_t vars = leb128<size_t>(p);
+        return vars;
+    }
+
 public:
     OBJECT_DECL(locals);
     PARSE_DECL(locals);

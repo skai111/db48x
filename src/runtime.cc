@@ -1115,7 +1115,7 @@ object_p runtime::local(uint index)
     size_t count = Directories - Locals;
     if (index >= count)
     {
-        invalid_local_error();
+        undefined_local_name_error();
         return nullptr;
     }
     return Locals[index];
@@ -1130,7 +1130,7 @@ bool runtime::local(uint index, object_p obj)
     size_t count = Directories - Locals;
     if (index >= count)
     {
-        invalid_local_error();
+        undefined_local_name_error();
         return false;
     }
     Locals[index] = obj;
@@ -1182,7 +1182,7 @@ bool runtime::unlocals(size_t count)
         // Sanity check on what we remove
         if (count > size_t(Directories - Locals))
         {
-            invalid_local_error();
+            undefined_local_name_error();
             return false;
         }
 
