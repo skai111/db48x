@@ -427,6 +427,11 @@ PARSE_BODY(CaseStatement)
                 had_end = false;
                 break;
             }
+            else
+            {
+                obj1 = prog;
+                break;
+            }
         } // Loop on conditions and blocks
 
         // Here, either had_end, and obj1 is the tail block, or adding a cond
