@@ -273,8 +273,15 @@ object::result list::list_parse(id      type,
                         if (type == ID_xroot)
                             xroot = true;
                     }
-                    obj = nullptr;
-                    precedence = -SYMBOL;
+                    if (arity)
+                    {
+                        obj = nullptr;
+                        precedence = -SYMBOL;
+                    }
+                    else
+                    {
+                        prefix = nullptr;
+                    }
                 }
             }
             else if (int objprec = obj->precedence())
