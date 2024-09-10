@@ -369,6 +369,8 @@ NAMED(comb, "Combinations")
 NAMED(perm, "Permutations")
 NAMED(Sum, "Σ")
 NAMED(Product, "∏")
+CMD(Root)
+NAMED(Integrate, "∫")
 
 NAMED(cbrt, "∛")        ALIAS(cbrt, "CubeRoot")
 OP(hypot, "⊿")          ALIAS(hypot, "Hypothenuse")
@@ -582,10 +584,6 @@ CMD(Type)
 CMD(TypeName)
 CMD(Version)
 CMD(ScreenCapture)
-
-// High-level applications
-CMD(Root)
-NAMED(Integrate, "∫")
 
 // Special arithmetic
 NAMED(Div2, "QuoRem")                   ALIAS(Div2, "IDiv2")

@@ -30,13 +30,18 @@
 // ****************************************************************************
 
 #include "algebraic.h"
-#include "command.h"
+#include "functions.h"
 #include "menu.h"
 #include "symbol.h"
 
 algebraic_p solve(program_g eq, algebraic_g name, object_g guess);
 
-COMMAND_DECLARE(Root,3);
+NFUNCTION(Root,3,
+          static bool can_be_symbolic(uint a)
+          {
+              return a == 1 || a == 2;
+          }
+);
 
 COMMAND_DECLARE(StEq, 1);
 COMMAND_DECLARE(RcEq, 0);

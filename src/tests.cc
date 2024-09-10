@@ -5687,6 +5687,11 @@ void tests::solver_testing()
     step("Solver with expression")
         .test(CLEAR, "'X+3' 'X' 0 ROOT", ENTER)
         .noerror().expect("X:-3.");
+    step("Solver with arithmetic syntax")
+        .test(CLEAR, "'ROOT(X+3;X;0)'", ENTER)
+        .expect("'Root(X+3;X;0)'")
+        .test(RUNSTOP)
+        .expect("X:-3.");
     step("Solver with equation")
         .test(CLEAR, "'sq(x)=3' 'X' 0 ROOT", ENTER)
         .noerror().expect("X:1.73205 08075 7");
@@ -5949,6 +5954,27 @@ void tests::numerical_integration_testing()
         .test("'sq(Z)+Z'", ENTER).expect("'Z²+Z'")
         .test(F, ALPHA, Z, ENTER).expect("'Z'")
         .test(SHIFT, KEY8, F2).expect("8.83333 33333 3", 350);
+    step("Integrate with symbols")
+        .test(CLEAR, "A B '1/X' 'X' INTEGRATE", ENTER)
+        .expect("'∫(A;B;1÷X;X)'")
+        .test(DOWN)
+        .editor("'∫(A;B;1÷X;X)'")
+        .test(ENTER)
+        .expect("'∫(A;B;1÷X;X)'");
+    step("Integrate with one symbol")
+        .test(CLEAR, "1 B '1/X' 'X' INTEGRATE", ENTER)
+        .expect("'∫(1;B;1÷X;X)'")
+        .test(DOWN)
+        .editor("'∫(1;B;1÷X;X)'")
+        .test(ENTER)
+        .expect("'∫(1;B;1÷X;X)'");
+    step("Integrate with second symbol")
+        .test(CLEAR, "A 1 '1/X' 'X' INTEGRATE", ENTER)
+        .expect("'∫(A;1;1÷X;X)'")
+        .test(DOWN)
+        .editor("'∫(A;1;1÷X;X)'")
+        .test(ENTER)
+        .expect("'∫(A;1;1÷X;X)'");
 }
 
 

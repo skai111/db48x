@@ -30,7 +30,7 @@
 // ****************************************************************************
 
 #include "algebraic.h"
-#include "command.h"
+#include "functions.h"
 #include "symbol.h"
 
 algebraic_p integrate(program_g    eq,
@@ -38,6 +38,11 @@ algebraic_p integrate(program_g    eq,
                       algebraic_g low,
                       algebraic_g high);
 
-COMMAND_DECLARE(Integrate,4);
+NFUNCTION(Integrate, 4,
+          static bool can_be_symbolic(uint a)
+          {
+              return a == 0 || a == 1;
+          }
+    );
 
 #endif // INTEGRATE_H

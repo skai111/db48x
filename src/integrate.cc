@@ -45,24 +45,29 @@ RECORDER(integrate, 16, "Numerical integration");
 RECORDER(integrate_error, 16, "Numerical integrationsol");
 
 
-COMMAND_BODY(Integrate)
+NFUNCTION_BODY(Integrate)
 // ----------------------------------------------------------------------------
 //   Numerical integration
 // ----------------------------------------------------------------------------
 {
-    object_g variable = rt.stack(0);
-    object_g eqobj    = rt.stack(1);
-    object_g high     = rt.stack(2);
-    object_g low      = rt.stack(3);
-    if (!eqobj || !variable || !high || !low)
-        return ERROR;
+    if (arity != 4)
+    {
+        rt.internal_error();
+        return nullptr;
+    }
+    algebraic_g &variable = args[0];
+    algebraic_g &eqobj    = args[1];
+    algebraic_g &high     = args[2];
+    algebraic_g &low      = args[3];
 
-    record(integrate,
-           "Integrating %t for variable %t in range %t-%t",
-           +eqobj,
-           +variable,
-           +low,
-           +high);
+    if (!eqobj->is_program())
+    {
+        rt.invalid_equation_error();
+        return nullptr;
+    }
+
+    record(integrate, "Integrating %t for variable %t in range %t-%t",
+           +eqobj, +variable, +low, +high);
 
     // Check that we have a variable name on stack level 1 and
     // a proram or equation on level 2
@@ -70,30 +75,22 @@ COMMAND_BODY(Integrate)
     id       eqty = eqobj->type();
     if (eqty == ID_equation)
     {
-        eqobj = equation_p(+eqobj)->value();
-        if (!eqobj)
-            return ERROR;
+        eqobj = algebraic_p(equation_p(+eqobj)->value());
+        if (!eqobj || !eqobj->is_algebraic())
+            return nullptr;
         eqty = eqobj->type();
     }
-    if (eqty != ID_program && eqty != ID_expression)
-        name = nullptr;
-    if (!name || !low->is_algebraic() || !high->is_algebraic())
+    if ((eqty != ID_program && eqty != ID_expression) ||
+        !name || !low->is_algebraic() || !high->is_algebraic())
     {
         rt.type_error();
-        return ERROR;
+        return nullptr;
     }
-
-    // Drop input parameters
-    rt.drop(4);
 
     // Actual integration
     program_g  eq = program_p(+eqobj);
-    algebraic_g intg =
-        integrate(eq, name, algebraic_p(+low), algebraic_p(+high));
-    if (intg&& rt.push(+intg))
-        return OK;
-
-    return ERROR;
+    algebraic_g i = integrate(eq, name, algebraic_p(+low), algebraic_p(+high));
+    return i;
 }
 
 

@@ -49,22 +49,24 @@ RECORDER(solve, 16, "Numerical solver");
 RECORDER(solve_error, 16, "Numerical solver errors");
 
 
-COMMAND_BODY(Root)
+NFUNCTION_BODY(Root)
 // ----------------------------------------------------------------------------
 //   Numerical solver
 // ----------------------------------------------------------------------------
 {
-    object_g eqobj    = rt.stack(2);
-    object_g variable = rt.stack(1);
-    object_g guess    = rt.stack(0);
+    if (arity != 3)
+    {
+        rt.internal_error();
+        return nullptr;
+    }
+    algebraic_g &eqobj    = args[2];
+    algebraic_g &variable = args[1];
+    algebraic_g &guess    = args[0];
     if (!eqobj || !variable || !guess)
-        return ERROR;
+        return nullptr;
 
-    record(solve,
-           "Solving %t for variable %t with guess %t",
-           +eqobj,
-           +variable,
-           +guess);
+    record(solve, "Solving %t for variable %t with guess %t",
+           +eqobj, +variable, +guess);
 
     // Check that we have a variable name on stack level 1 and
     // a proram or equation on level 2
@@ -72,40 +74,35 @@ COMMAND_BODY(Root)
     id       eqty = eqobj->type();
     if (eqty == ID_equation)
     {
-        eqobj = equation_p(+eqobj)->value();
-        if (!eqobj)
-            return ERROR;
+        eqobj = algebraic_p(equation_p(+eqobj)->value());
+        if (!eqobj || !eqobj->is_algebraic())
+            return nullptr;
         eqty = eqobj->type();
     }
-    if (eqty != ID_program && eqty != ID_expression)
-        name = nullptr;
-    if (!name)
+    if ((eqty != ID_program && eqty != ID_expression) || !name)
     {
         rt.type_error();
-        return ERROR;
+        return nullptr;
     }
-
-    // Drop input parameters
-    rt.drop(3);
 
     if (!eqobj->is_program())
     {
         rt.invalid_equation_error();
-        return ERROR;
+        return nullptr;
     }
 
     // Actual solving
     program_g eq = program_p(+eqobj);
-    if (algebraic_g x = solve(eq, +name, guess))
+    if (algebraic_g x = solve(eq, +name, +guess))
     {
         size_t   nlen = 0;
         gcutf8   ntxt = name->value(&nlen);
         object_g top  = tag::make(ntxt, nlen, +x);
-        if (rt.push(top))
-            return rt.error() ? ERROR : OK;
+        if (top && !rt.error())
+            return algebraic_p(+top);
     }
 
-    return ERROR;
+    return nullptr;
 }
 
 

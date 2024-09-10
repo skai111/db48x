@@ -1235,7 +1235,7 @@ static algebraic_p sum_product(object::id op,
 
     if (!expr->is_program())
     {
-        rt.type_error();
+        rt.invalid_equation_error();
         return nullptr;
     }
 
