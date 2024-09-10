@@ -214,12 +214,13 @@ COMMAND_BODY(ToolsMenu)
     {
         switch(ui.editing_mode())
         {
-        case ui.DIRECT:                 menu = ID_EditMenu; break;
-        case ui.TEXT:                   menu = ID_TextMenu; break;
-        case ui.PROGRAM:                menu = ID_ProgramMenu; break;
-        case ui.ALGEBRAIC:              menu = ID_RealMenu; break;
-        case ui.MATRIX:                 menu = ID_MatrixMenu; break;
-        case ui.BASED:                  menu = ID_BasesMenu; break;
+        case ui.DIRECT:                 menu = ID_EditMenu;     break;
+        case ui.TEXT:                   menu = ID_TextMenu;     break;
+        case ui.PROGRAM:                menu = ID_ProgramMenu;  break;
+        case ui.ALGEBRAIC:              menu = ID_RealMenu;     break;
+        case ui.MATRIX:                 menu = ID_MatrixMenu;   break;
+        case ui.BASED:                  menu = ID_BasesMenu;    break;
+        case ui.UNIT:                   menu = ID_UnitsMenu;    break;
         default:
         case ui.STACK:                  break;
         }

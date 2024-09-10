@@ -432,8 +432,8 @@ inline bool is_separator_or_digit(unicode code)
 //   Check if the code point at given string is a separator
 // ----------------------------------------------------------------------------
 {
-    static utf8 separators = utf8(" ;,.'\"<=>≤≠≥[](){}«»\n\t0123456789⁳");
-    for (utf8 p = separators; *p; p = utf8_next(p))
+    static utf8 seps = utf8(" ÷×·↑/*^;,.'\"<=>≤≠≥[](){}«»_\n\t0123456789⁳");
+    for (utf8 p = seps; *p; p = utf8_next(p))
         if (code == utf8_codepoint(p))
             return true;
     return false;
@@ -446,7 +446,7 @@ inline bool is_separator_or_digit(utf8 str)
 // ----------------------------------------------------------------------------
 {
     unicode code = utf8_codepoint(str);
-    return is_separator(code);
+    return is_separator_or_digit(code);
 }
 
 

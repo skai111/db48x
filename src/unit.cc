@@ -1787,8 +1787,12 @@ INSERT_BODY(ApplyUnit)
 // ----------------------------------------------------------------------------
 {
     int key = ui.evaluating;
+    if (ui.editing_mode() == ui.UNIT)
+        return ui.insert_softkey(key,
+                                 is_valid_in_name(ui.character_left_of_cursor())
+                                 ? "·" : "", "", false);
     if (ui.at_end_of_number())
-        return ui.insert_softkey(key, "_", " ", false);
+        return ui.insert_softkey(key, "_", "", false);
     return ui.insert_softkey(key, " 1_", " * ", false);
 }
 
@@ -1818,8 +1822,18 @@ INSERT_BODY(ApplyInverseUnit)
 // ----------------------------------------------------------------------------
 {
     int key = ui.evaluating;
+    if (ui.editing_mode() == ui.UNIT)
+    {
+        unicode c = ui.character_left_of_cursor();
+        return ui.insert_softkey(key,
+                                 c == '_'                  ? "1/("
+                                 : (c == '/' || c == L'÷') ? "("
+                                                           : "/(",
+                                 ")",
+                                 false);
+    }
     if (ui.at_end_of_number())
-        return ui.insert_softkey(key, "_(", ")⁻¹ ", false);
+        return ui.insert_softkey(key, "_(", ")⁻¹", false);
     return ui.insert_softkey(key, " 1_", " / ", false);
 }
 

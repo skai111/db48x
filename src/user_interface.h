@@ -67,6 +67,7 @@ struct user_interface
         CONSTANT,               // Entities like ⅈ or π have no parentheses
         MATRIX,                 // Matrix/vector mode
         BASED,                  // Based number: A-F map switch to alpha
+        UNIT,                   // After a unit sign
     };
 
     enum

@@ -188,6 +188,7 @@ void user_interface::edit(unicode c, modes m, bool autoclose)
     case '"':                   closing = '"';  m = TEXT;               break;
     case '\'':                  closing = '\''; m = ALGEBRAIC;          break;
     case L'«':                  closing = L'»'; m = PROGRAM;            break;
+    case '_':                                   m = UNIT;               break;
     case '\n': edRows = 0;                    break; // Recompute rows
     }
     if (closing && autoclose)
@@ -231,7 +232,7 @@ object::result user_interface::edit(utf8 text, size_t len, modes m)
         select = ~0U;
         dirtyStack = true;
     }
-    else if (m == TEXT)
+    else if (m == TEXT || mode == UNIT)
     {
     }
     else if ((!is_algebraic(mode) || !is_algebraic(m)) &&
@@ -249,7 +250,7 @@ object::result user_interface::edit(utf8 text, size_t len, modes m)
     uint   pos    = cursor;
     size_t added  = insert(cursor, text, len);
 
-    if (m == TEXT)
+    if (m == TEXT || mode == UNIT)
     {
     }
     else if ((m == POSTFIX || (m == INFIX && !alpha_infix) || m == CONSTANT) &&
@@ -645,6 +646,7 @@ void user_interface::update_mode()
     uint    fnum  = 0;
     uint    hnum  = 0;
     uint    parn  = 0;
+    uint    unit  = 0;
     unicode nspc  = Settings.NumberSeparator();
     unicode hspc  = Settings.BasedSeparator();
     unicode dmrk  = Settings.DecimalSeparator();
@@ -659,7 +661,17 @@ void user_interface::update_mode()
 
         if (!txts && !cmts)
         {
-            if ((inum || fnum) && code == emrk)
+            if (unit)
+            {
+                unit = code == byte(code) && isalnum(code);
+                if (!unit)
+                {
+                    static utf8 valid = utf8("/÷×·^↑⁻¹²³");
+                    for (utf8 p = valid; *p && !unit; p = utf8_next(p))
+                        unit = code == utf8_codepoint(p);
+                }
+            }
+            else if ((inum || fnum) && code == emrk)
             {
                 inexp = true;
             }
@@ -713,7 +725,7 @@ void user_interface::update_mode()
             else
             {
                 // All other characters: reset numbering
-                based = inum = fnum = hnum = 0;
+                based = inum = fnum = hnum = unit = 0;
                 num = nullptr;
                 if (is_valid_as_name_initial(code))
                     syms = true;
@@ -734,6 +746,7 @@ void user_interface::update_mode()
             case ')':       parn--;                         break;
             case L'«':      progs++;                        break;
             case L'»':      progs--;                        break;
+            case '_':       unit = true;                    break;
             case '#':       based++;
                             hnum = inum = syms = 0;
                             num = nullptr;                  break;
@@ -753,6 +766,8 @@ void user_interface::update_mode()
         mode = TEXT;
     else if (based)
         mode = BASED;
+    else if (unit)
+        mode = UNIT;
     else if (vecs)
         mode = MATRIX;
     else if (parn)
@@ -2376,6 +2391,7 @@ bool user_interface::draw_cursor(int show, uint ncursor)
                        : mode == PARENTHESES ? 'E'
                        : mode == MATRIX      ? 'M'
                        : mode == BASED       ? 'B'
+                       : mode == UNIT        ? 'U'
                                              : 'X';
     size    csrh       = cursorFont->height();
     coord   csrw       = cursorFont->width(cursorChar);
@@ -4641,12 +4657,58 @@ bool user_interface::handle_digits(int key)
         }
         else if (key == KEY_E && !~searching)
         {
-            byte   buf[4];
-            size_t sz = utf8_encode(Settings.ExponentSeparator(), buf);
-            insert(cursor, buf, sz);
+            if (mode == UNIT)
+            {
+                utf8 start = nullptr;
+                size_t len = 0;
+                if (current_word(start, len))
+                {
+                    byte *ed = rt.editor();
+                    byte *st = (byte *) start;
+                    unicode prefix = 0;
+                    bool    ins    = false;
+                    bool    del    = false;
+
+                    switch(*start)
+                    {
+                    case 'k':   prefix = 'M';           break;
+                    case 'M':   prefix = 'G';           break;
+                    case 'G':   prefix = 'T';           break;
+                    case 'T':   prefix = 'm';           break;
+                    case 'm':   prefix = 'c';           break;
+                    case 'c':                           del = true; break;
+                    default:    prefix = 'k';           ins = true; break;
+                    }
+                    if (del && size_t(st - ed + 1) < rt.editing() &&
+                        isalnum(start[1]))
+                    {
+                        remove(st - ed, 1);
+                    }
+                    else
+                    {
+                        if (!ins && (size_t(st - ed + 1) >= rt.editing() ||
+                                     !isalnum(start[1])))
+                        {
+                            ins = true;
+                            prefix = 'k';
+                        }
+                        if (ins)
+                            insert(st - ed, prefix);
+                        else
+                            *st = prefix;
+                    }
+                }
+            }
+            else
+            {
+                byte   buf[4];
+                size_t sz = utf8_encode(Settings.ExponentSeparator(), buf);
+                insert(cursor, buf, sz);
+            }
             last = 0;
             dirtyEditor = true;
             return true;
+
         }
     }
     if (key > KEY_CHS && key < KEY_F1)
@@ -5037,6 +5099,7 @@ bool user_interface::handle_functions(int key)
             {
             case PROGRAM:
             case MATRIX:
+            unit_application:
                 if (object::is_program_cmd(ty))
                 {
                     dirtyEditor = true;
@@ -5059,6 +5122,19 @@ bool user_interface::handle_functions(int key)
                     return obj->insert() != object::ERROR;
                 }
                 break;
+
+            case UNIT:
+                if (ty == object::ID_mul ||
+                    ty == object::ID_div ||
+                    ty == object::ID_pow)
+                    goto unit_application;
+                [[fallthrough]];
+
+            case DIRECT:
+                if (ty == object::ID_ApplyUnit ||
+                    ty == object::ID_ApplyInverseUnit)
+                    goto unit_application;
+                [[fallthrough]];
 
             default:
                 // If we have the editor open, need to close it

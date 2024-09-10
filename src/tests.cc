@@ -172,7 +172,7 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-            list_functions();
+            units_and_conversions();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -4801,6 +4801,8 @@ void tests::units_and_conversions()
         .expect("1 m·s");
     step("Insert unit with soft key")
         .test(CLEAR, SHIFT, KEY5, KEY1, F2, F1)
+        .editor("1_in")
+        .test(ENTER)
         .type(object::ID_unit)
         .expect("1 in");
     step("Convert integer unit with soft key")
@@ -4808,23 +4810,29 @@ void tests::units_and_conversions()
         .type(object::ID_unit)
         .expect("25 ²/₅ mm");
     step("Convert decimal unit with soft key")
-        .test(CLEAR, KEY2, DOT, F1, SHIFT, F2)
+        .test(CLEAR, KEY2, DOT, F1, ENTER, SHIFT, F2)
         .type(object::ID_unit)
         .expect("50.8 mm");
     step("Do not apply simplifications for unit conversions")
-        .test(CLEAR, KEY1, DOT, F1, SHIFT, F2)
+        .test(CLEAR, KEY1, DOT, F1, ENTER, SHIFT, F2)
         .type(object::ID_unit)
         .expect("25.4 mm");
     step("Multiply by unit using softkey")
         .test(CLEAR, SHIFT, KEY5, KEY1, F2, F1, F2)
+        .editor("1_in·mm")
+        .test(ENTER)
         .type(object::ID_unit)
         .expect("1 in·mm");
     step("Divide by unit using softkey")
         .test(CLEAR, SHIFT, KEY5, KEY1, F2, F1, RSHIFT, F2)
+        .editor("1_in/(mm)")
+        .test(ENTER)
         .type(object::ID_unit)
         .expect("1 in/mm");
     step("Conversion across compound units")
         .test(CLEAR, SHIFT, KEY5, KEY1, F2, F3)
+        .editor("1_km/h")
+        .test(ENTER)
         .type(object::ID_unit).expect("1 km/h")
         .test(SHIFT, F4).type(object::ID_unit).expect("¹⁵ ⁶²⁵/₂₅ ₁₄₆ mph")
         .test(SHIFT, F3).type(object::ID_unit).expect("1 km/h");
@@ -4839,35 +4847,41 @@ void tests::units_and_conversions()
         .test(BSP).expect("⁵/₁₈");
     step("Convert operation")
         .test(CLEAR, KEY1, SHIFT, KEY5, F2, F3)
+        .editor("1_km/h")
+        .test(ENTER)
         .type(object::ID_unit).expect("1 km/h")
         .test(KEY1, F1, SHIFT, KEY5, SHIFT, F1, RSHIFT, F2)
+        .editor("1_in/(min)")
+        .test(ENTER)
         .type(object::ID_unit).expect("1 in/min")
         .test(RSHIFT, KEY5, F1) // Convert
         .type(object::ID_unit).expect("656 ⁶⁴/₃₈₁ in/min");
     step("Convert to unit")
         .test(CLEAR, KEY3, KEY7, ENTER).expect("37")
-        .test(SHIFT, KEY5, KEY4, KEY2, F2, F3).expect("42 km/h")
+        .test(LSHIFT, KEY5, KEY4, KEY2, F2, F3).editor("42_km/h")
+        .test(ENTER).expect("42 km/h")
         .test(RSHIFT, KEY5, F5).expect("37 km/h");
     step("Factoring out a unit")
-        .test(CLEAR, KEY3, SHIFT, KEY5, SHIFT, F6, F2).expect("3 kW")
-        .test(KEY1, SHIFT, KEY5, SHIFT, F4, F1).expect("1 N")
+        .test(CLEAR, KEY3, SHIFT, KEY5, SHIFT, F6, F2, ENTER).expect("3 kW")
+        .test(KEY1, SHIFT, KEY5, SHIFT, F4, F1, ENTER).expect("1 N")
         .test(RSHIFT, KEY5, F4).expect("3 000 N·m/s");
     step("Orders of magnitude")
-        .test(CLEAR, KEY3, SHIFT, KEY5, SHIFT, F6, F2).expect("3 kW")
+        .test(CLEAR, KEY3, SHIFT, KEY5, SHIFT, F6, F2, ENTER).expect("3 kW")
         .test(RSHIFT, KEY5, SHIFT, F2).expect("300 000 cW")
-        .test(SHIFT, F3).expect("3 kW")
-        .test(SHIFT, F4).expect("³/₁ ₀₀₀ MW");
+        .test(LSHIFT, F3).expect("3 kW")
+        .test(LSHIFT, F4).expect("³/₁ ₀₀₀ MW");
     step("Unit simplification (same unit)")
-        .test(CLEAR, KEY3, SHIFT, KEY5, SHIFT, F6, F2).expect("3 kW")
+        .test(CLEAR, KEY3, SHIFT, KEY5, SHIFT, F6, F2, ENTER).expect("3 kW")
         .test(SHIFT, KEY5, SHIFT, F4, F1).expect("3 kW·N")
-        .test(SHIFT, KEY5, SHIFT, F6, RSHIFT, F2).expect("3 N");
+        .test(SHIFT, KEY5, SHIFT, F6, RSHIFT, F2, ENTER).expect("3 N");
     step("Arithmetic on units")
-        .test(CLEAR, KEY3, KEY7, SHIFT, KEY5, F2, F4).expect("37 mph")
-        .test(SHIFT, KEY5, KEY4, KEY2, F2, F3).expect("42 km/h")
+        .test(CLEAR, KEY3, KEY7, SHIFT, KEY5, F2, F4, ENTER).expect("37 mph")
+        .test(SHIFT, KEY5, KEY4, KEY2, F2, F3, ENTER).expect("42 km/h")
         .test(ADD).expect("101 ⁸ ⁵²⁷/₁₅ ₆₂₅ km/h");
     step("Arithmetic on units (decimal)")
-        .test(CLEAR, KEY3, KEY7, DOT, SHIFT, KEY5, F2, F4).expect("37. mph")
-        .test(SHIFT, KEY5, KEY4, KEY2, F2, F3).expect("42 km/h")
+        .test(CLEAR, KEY3, KEY7, DOT, SHIFT, KEY5, F2, F4).editor("37._mph")
+        .test(ENTER).expect("37. mph")
+        .test(SHIFT, KEY5, KEY4, KEY2, F2, F3, ENTER).expect("42 km/h")
         .test(ADD).expect("101.54572 8 km/h");
     step("Unit parsing on command line")
         .test(CLEAR, "12_km/s^2", ENTER).expect("12 km/s↑2");
@@ -8108,31 +8122,31 @@ void tests::insertion_of_variables_constants_and_units()
     step("Select units menu")
         .test(CLEAR, LSHIFT, KEY5, F4).image_menus("units-menu", 3);
     step("Select meter")
-        .test(CLEAR, KEY1, F1).expect("1 m");
+        .test(CLEAR, KEY1, F1).editor("1_m").test(ENTER).expect("1 m");
     step("Convert to yards")
         .test(LSHIFT, F2).expect("1 ¹⁰⁷/₁ ₁₄₃ yd");
     step("Select yards")
-        .test(CLEAR, KEY1, F2).expect("1 yd");
+        .test(CLEAR, KEY1, F2).editor("1_yd").test(ENTER).expect("1 yd");
     step("Convert to feet")
         .test(LSHIFT, F3).expect("3 ft");
     step("Select feet")
-        .test(CLEAR, KEY1, F3).expect("1 ft");
+        .test(CLEAR, KEY1, F3).editor("1_ft").test(ENTER).expect("1 ft");
     step("Convert to meters")
         .test(LSHIFT, F1).expect("³⁸¹/₁ ₂₅₀ m");
 
     step("Enter 27_m in program and evaluate it")
         .test(CLEAR, LSHIFT, RUNSTOP).editor("«»")
-        .test("27", NOSHIFT, F1).editor("«27_m »")
+        .test("27", NOSHIFT, F1).editor("«27_m»")
         .test(ENTER).want("« 27 m »")
         .test(RUNSTOP).expect("27 m");
     step("Enter 27_yd in program and evaluate it")
         .test(CLEAR, LSHIFT, RUNSTOP).editor("«»")
-        .test("27", NOSHIFT, F2).editor("«27_yd »")
+        .test("27", NOSHIFT, F2).editor("«27_yd»")
         .test(ENTER).want("« 27 yd »")
         .test(RUNSTOP).expect("27 yd");
     step("Enter 27_ft in program and evaluate it")
         .test(CLEAR, LSHIFT, RUNSTOP).editor("«»")
-        .test("27", NOSHIFT, F3).editor("«27_ft »")
+        .test("27", NOSHIFT, F3).editor("«27_ft»")
         .test(ENTER).want("« 27 ft »")
         .test(RUNSTOP).expect("27 ft");
 
@@ -8144,17 +8158,17 @@ void tests::insertion_of_variables_constants_and_units()
 
     step("Enter 27_m⁻¹ in program and evaluate it")
         .test(CLEAR, LSHIFT, RUNSTOP).editor("«»")
-        .test("27", RSHIFT, F1).editor("«27_(m)⁻¹ »")
+        .test("27", RSHIFT, F1).editor("«27_(m)⁻¹»")
         .test(ENTER).want("« 27 m⁻¹ »")
         .test(RUNSTOP).expect("27 m⁻¹");
     step("Enter 27_yd⁻¹ in program and evaluate it")
         .test(CLEAR, LSHIFT, RUNSTOP).editor("«»")
-        .test("27", RSHIFT, F2).editor("«27_(yd)⁻¹ »")
+        .test("27", RSHIFT, F2).editor("«27_(yd)⁻¹»")
         .test(ENTER).want("« 27 yd⁻¹ »")
         .test(RUNSTOP).expect("27 yd⁻¹");
     step("Enter 27_ft⁻¹ in program and evaluate it")
         .test(CLEAR, LSHIFT, RUNSTOP).editor("«»")
-        .test("27", RSHIFT, F3).editor("«27_(ft)⁻¹ »")
+        .test("27", RSHIFT, F3).editor("«27_(ft)⁻¹»")
         .test(ENTER).want("« 27 ft⁻¹ »")
         .test(RUNSTOP).expect("27 ft⁻¹");
 
