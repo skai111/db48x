@@ -37,3 +37,8 @@
 /help/img/*.bmp
 /wasm/*.js
 /wasm/*.wasm
+/sim/data/
+/sim/db48x-build/
+/sim/db50x-build/
+/sim/db50x.app/
+/sim/db50x.mak
