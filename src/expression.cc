@@ -2213,6 +2213,13 @@ PARSE_BODY(funcall)
         nty != ID_list && nty != ID_array)
         return SKIP;
 
+    // Cannot parse functions while parsing a unit
+    if (unit::mode)
+    {
+        rt.invalid_unit_expression_error().source(p.source);
+        return ERROR;
+    }
+
     // Skip whitespace
     utf8    source = p.source;
     size_t  max    = p.length;

@@ -391,6 +391,8 @@ retry:
                 // Check if we found the second part
                 if (r2 == OK)
                     size += p.length;
+                else if (r2 != SKIP)
+                    r = r2;
             }
         }
     }

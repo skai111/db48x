@@ -4920,7 +4920,13 @@ void tests::units_and_conversions()
 
     step("Invalid unit exponent")
         .test(CLEAR, "1_km^s", ENTER).error("Invalid unit expression");
-    step("Invalid unit expression")
+    step("Invalid unit expression for 1_km/(s+N)")
+        .test(CLEAR, "1_km/",
+              ALPHA, SHIFT, F,
+              LOWERCASE, S, NOSHIFT, ADD, ALPHA, N,
+              ENTER).error("Invalid unit expression")
+        .test(CLEAR);
+    step("Invalid unit expression for 1_km(s+N)")
         .test(CLEAR, "1_km/",
               ALPHA, SHIFT, F, UP, BSP, DOWN,
               LOWERCASE, S, NOSHIFT, ADD, ALPHA, N,
