@@ -1116,6 +1116,22 @@ COMMAND_BODY(CurrentClip)
 }
 
 
+COMMAND_BODY(Freeze)
+// ----------------------------------------------------------------------------
+//   Set the freeze flags
+// ----------------------------------------------------------------------------
+{
+    if (object_p top = rt.pop())
+    {
+        uint flags = top->as_uint32(0, true);
+        if (!rt.error())
+            if (ui.freeze(flags))
+                return OK;
+    }
+    return ERROR;
+}
+
+
 
 // ============================================================================
 //

@@ -113,6 +113,8 @@ struct user_interface
     symbol_p    label(uint index);
     cstring     label_text(uint index);
 
+    bool        freeze(uint flags);
+
     void        draw_start(bool force, uint refresh = ~0U);
     void        draw_refresh(uint delay);
     void        draw_dirty(const rect &r);
@@ -274,6 +276,9 @@ protected:
     bool     autoComplete : 1;  // Menu is auto-complete
     bool     adjustSeps   : 1;  // Need to adjust separators
     bool     graphics     : 1;  // Displaying user-defined graphics screen
+    bool     freezeHeader : 1;  // Freeze the header area
+    bool     freezeStack  : 1;  // Freeze the stack area
+    bool     freezeMenu   : 1;  // Freeze the menu area
     bool     dbl_release  : 1;  // Double release
 
 protected:

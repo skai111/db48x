@@ -592,6 +592,9 @@ bool user_interface::key(int key, bool repeating, bool talpha)
     {
         shift = false;
         xshift = false;
+        freezeHeader = false;
+        freezeStack = false;
+        freezeMenu = false;
         menu_refresh(menu::ID_Catalog);
     }
 
@@ -1273,6 +1276,22 @@ uint user_interface::menu_planes()
 }
 
 
+bool user_interface::freeze(uint flags)
+// ----------------------------------------------------------------------------
+//   Freeze the given areas
+// ----------------------------------------------------------------------------
+{
+    if (flags & 1)
+        freezeHeader = true;
+    if (flags & 2)
+        freezeStack = true;
+    if (flags & 4)
+        freezeMenu = true;
+    graphics = true;
+    return true;
+}
+
+
 void user_interface::draw_start(bool forceRedraw, uint refresh)
 // ----------------------------------------------------------------------------
 //   Start a drawing cycle
@@ -1338,6 +1357,9 @@ bool user_interface::draw_menus()
 //   Draw the softkey menus
 // ----------------------------------------------------------------------------
 {
+    if (freezeMenu)
+        return false;
+
     static int  lastp   = 0;
     static uint lastt   = 0;
     static uint animate = 0;
@@ -1621,6 +1643,9 @@ bool user_interface::draw_header()
 //   Draw the header with the state name
 // ----------------------------------------------------------------------------
 {
+    if (freezeHeader)
+        return false;
+
     static uint day = 0, month = 0, year = 0;
     static uint hour = 0, minute = 0, second = 0;
     static uint dow = 0;
@@ -1736,6 +1761,9 @@ bool user_interface::draw_battery()
 //    Draw the battery information
 // ----------------------------------------------------------------------------
 {
+    if (freezeHeader)
+        return false;
+
     static uint last       = 0;
     uint        time       = sys_current_ms();
 
@@ -1876,6 +1904,9 @@ bool user_interface::draw_annunciators()
 //    Draw the annunciators for Shift, Alpha, etc
 // ----------------------------------------------------------------------------
 {
+    if (freezeHeader)
+        return false;
+
     bool adraw = force || alpha != alpha_drawn || lowercase != lowerc_drawn;
     bool sdraw = force || shift != shift_drawn || xshift != xshift_drawn;
 
@@ -1949,6 +1980,9 @@ rect user_interface::draw_busy_background()
 //   Draw the background behind the busy cursor and annunciators
 // ----------------------------------------------------------------------------
 {
+    if (freezeHeader)
+        return false;
+
     size h  = HeaderFont->height() + 1;
     pattern bg = Settings.HeaderBackground();
     rect busy(busy_left, 0, busy_right, h);
@@ -1971,7 +2005,7 @@ bool user_interface::draw_busy(unicode glyph, pattern color)
 //    Draw the busy flying cursor
 // ----------------------------------------------------------------------------
 {
-    if (graphics)
+    if (graphics || freezeHeader)
         return false;
 
     rect busy = draw_busy_background();
@@ -1996,6 +2030,8 @@ bool user_interface::draw_idle()
 //   Clear busy indicator
 // ----------------------------------------------------------------------------
 {
+    if (freezeHeader)
+        return false;
     if (graphics)
     {
         record(tests_ui, "Waiting for key");
@@ -2019,7 +2055,7 @@ bool user_interface::draw_editor()
 //   Draw the editor
 // ----------------------------------------------------------------------------
 {
-    if (!force && !dirtyEditor)
+    if ((!force && !dirtyEditor) || freezeHeader)
         return false;
 
     record(text_editor, "Redrawing %+s %+s curs=%d, offset=%d cx=%d",
@@ -2307,7 +2343,7 @@ bool user_interface::draw_cursor(int show, uint ncursor)
 //   This function returns the cursor vertical position for screen refresh
 {
     // Do not draw if not editing or if help is being displayed
-    if (!rt.editing() || showing_help())
+    if (!rt.editing() || showing_help() || freezeStack)
         return false;
 
     static uint lastT = 0;
@@ -2414,6 +2450,9 @@ bool user_interface::draw_command()
 //   Draw the current command
 // ----------------------------------------------------------------------------
 {
+    if (freezeStack)
+        return false;
+
     if (force || dirtyCommand)
     {
         dirtyCommand = false;
@@ -2443,6 +2482,9 @@ void user_interface::draw_user_command(utf8 cmd, size_t len)
 //   Draw the current command
 // ----------------------------------------------------------------------------
 {
+    if (freezeStack)
+        return;
+
     font_p font = ReducedFont;
     size   w    = font->width(cmd, len);
     size   h    = font->height();
@@ -2478,6 +2520,9 @@ bool user_interface::draw_stepping_object()
 //   Draw the next command to evaluate while stepping
 // ----------------------------------------------------------------------------
 {
+    if (freezeStack)
+        return false;
+
     if (object_p obj = rt.run_stepping())
     {
         renderer r(nullptr, 40);
@@ -2543,6 +2588,9 @@ bool user_interface::draw_message(utf8 header, uint count, utf8 msgs[])
 //   Draw an immediate message
 // ----------------------------------------------------------------------------
 {
+    if (freezeStack)
+        return false;
+
     font_p font   = LibMonoFont10x17;
     size   h      = font->height();
     size   ch     = h * 5 / 2 + h * count + 10;
@@ -2598,7 +2646,7 @@ bool user_interface::draw_stack()
 //   Redraw the stack if dirty
 // ----------------------------------------------------------------------------
 {
-    if (!force && !dirtyStack)
+    if ((!force && !dirtyStack) || freezeStack)
         return false;
     draw_busy();
     uint top = HeaderFont->height() + 2;
@@ -2929,7 +2977,7 @@ bool user_interface::draw_help()
 //    Draw the help content
 // ----------------------------------------------------------------------------
 {
-    if (!force && !dirtyHelp && !dirtyStack)
+    if ((!force && !dirtyHelp && !dirtyStack) || freezeStack)
         return false;
     dirtyHelp = false;
 

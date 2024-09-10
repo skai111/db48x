@@ -1362,7 +1362,8 @@ MENU(PlotMenu,
      "No Axes", ID_NoPlotAxes,
 
      "Backgnd", ID_Background,
-     "Clear",   ID_ClLCD);
+     "Clear",   ID_ClLCD,
+     "Freeze",  ID_Freeze);
 
 MENU(ClearThingsMenu,
 // ----------------------------------------------------------------------------
@@ -1574,6 +1575,7 @@ MENU(GraphicsMenu,
      "Pix?",    ID_PixTest,
      "PixCol?", ID_PixColor,
 
+     "Freeze",  ID_Freeze,
      "Plot",    ID_PlotMenu);
 
 MENU(MemoryMenu,

@@ -433,6 +433,7 @@ NAMED(Bar,              "BarPlot")
 
 CMD(Clip)
 CMD(CurrentClip)
+CMD(Freeze)
 
 NAMED(Gray,             "GrayPattern")          ALIAS(Gray,     "GreyPattern")
                                                 ALIAS(Gray,     "Grey")
