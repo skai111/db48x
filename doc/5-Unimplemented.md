@@ -62,6 +62,7 @@ The following is a list of the HP50 RPL commands which are implemented in DB48X.
 * [COS](#cos)
 * [COV](#covariance)
 * [CRDIR](#crdir)
+* [CROSS](#cross)
 * [C→R](#complextoreal)
 * [DATE](#date)
 * [→DATE](#setdate)
@@ -78,8 +79,11 @@ The following is a list of the HP50 RPL commands which are implemented in DB48X.
 * [DISP](#disp)
 * [DISPXY](#dispxy)
 * [DIV2](#div2)
-* [DOERR](#doerr)
 * [DO](#do)
+* [DOERR](#doerr)
+* [DOLIST](#dolist)
+* [DOSUBS](#dosub)
+* [DOT](#dot)
 * [DRAW](#draw)
 * [DRAX](#drax)
 * [DROP2](#drop2)
@@ -342,7 +346,6 @@ of the HP48 commands.
 * CONIC
 * CORR
 * CR
-* CROSS
 * CSWP
 * CURL
 * CYCLOTOMIC
@@ -372,10 +375,7 @@ of the HP48 commands.
 * DIVMOD
 * DIVPC
 * dn
-* DOLIST
 * DOMAIN
-* DOSUBS
-* DOT
 * DRAW3DMATRIX
 * DROITE
 * DUPDUP

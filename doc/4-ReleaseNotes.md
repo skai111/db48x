@@ -1,5 +1,40 @@
 # Release notes
 
+## Release 0.7.17 "Open" - DoSubs, DoList, entering units
+
+This release adds `DoSubs`, `DoList`, `NSub` and `EndSub` commands, and fixes
+related issues that were found with the associated examples in teh HP50G
+Advanced Reference Manual.
+
+
+### Features
+
+* lists: Implement `DoList`, `DoSubs`, `NSub` and `EndSub`
+* units: Add usual "big" units to `Computing` units menu (e.g. KB, MB)
+* graphics: Add `Freeze` command
+* ui: Make it easier to enter units
+* expressions: Accept algebraic forms for `integrate` and `root`
+* expressions: Graphical rendering of integrals
+
+### Bug fixes
+
+* case: Preserve the code for the default case (which was lost before)
+* parser: Parse arg-less alegbraic commmands such as `NSub`
+* equations: Fix syntax errors in built-in equations, e.g. missing parentheses
+* equations: Replace variables that match DB48X command names, e.g. `Re`
+* equations: Replace imperial units with SI units, e.g. `in` with `cm`
+* units: Reject user-defined functions in unit expressions
+* constants: Fix definition for the `qε0` constant
+
+### Improvements
+
+* Update help about equations with some additional material
+* tests: Run through all the builtin equations
+* ui: Do not insert an extra space before parentheses in equation
+* simulator: Add macOS icons for DB48X and DB50X
+* font: Record saved font with `v` update
+
+
 ## Release 0.7.16 "Clean" - New commands
 
 The focus of this release is on new commands, notably for matrix and vector
