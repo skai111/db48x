@@ -336,7 +336,7 @@ static const cstring basic_constants[] =
     "c3",       "0.002897756_m*K",      // Wien's
     "kq",       "0.00008617386_J/(K*C)",// k/q
     "ε0q",      "55263469.6_F/(m*C)",   // ε0/q
-    "qε0",      "1.4185978E-30_F*C/ m", // q*ε0
+    "qε0",      "1.4185978E-30_F*C/m",  // q*ε0
     "εsi",      "11.9",                 // Dielectric constant
     "εox",      "3.9",                  // SiO2 dielectric constant
     "I0",       "0.000000000001_W/m^2", // Ref intensity

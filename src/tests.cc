@@ -8411,7 +8411,7 @@ void tests::constants_menu()
         .test(LSHIFT, F1).expect("55 263 469.6 F/(m·C)");
     step("Permittivity - elementary charge product")
         .test(CLEAR, NOSHIFT, F2).expect("qε0")
-        .test(LSHIFT, F2).expect("1.41859 78⁳⁻³⁰");
+        .test(LSHIFT, F2).expect("1.41859 78⁳⁻³⁰ F·C/m");
     step("Dielectric constant of silicon")
         .test(CLEAR, NOSHIFT, F3).expect("εsi")
         .test(LSHIFT, F3).expect("11.9");
