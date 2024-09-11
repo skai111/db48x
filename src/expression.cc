@@ -1725,7 +1725,7 @@ grob_p expression::prefix(grapher &g,
 }
 
 
-grob_p expression::sumprod(grapher &g, bool isprod,
+grob_p expression::sumprod(grapher &g, id oid, sumprod_fn shape,
                            coord vi, grob_g index,
                            coord vf, grob_g first,
                            coord vl, grob_g last,
@@ -1738,20 +1738,39 @@ grob_p expression::sumprod(grapher &g, bool isprod,
     using size = blitter::size;
 
 
-    if (!index || !first || !last || !expr)
+    if (!index || !first || !last || !expr || !shape)
         return nullptr;
+
+    if (oid == ID_Integrate)
+    {
+        // Order of arguments is not identical between sum and integrate
+        // sum(index;first;last;expr)
+        // integrate(first;last;expr;index)
+        std::swap(last, expr);          // integrate(first;last;index;expr)
+        std::swap(first, last);         // integrate(first;index;last;expr)
+        std::swap(index, first);        // integrate(index;first;last;expr)
+    }
 
     auto fid = g.font;
     g.reduce_font();
-    grob_g lower  = infix(g, vi, index, 0, "=", vf, first);
+    grob_g lower  = (oid == ID_Integrate
+                     ? +first
+                     : infix(g, vi, index, 0, "=", vf, first));
     g.font = fid;
     if (!lower)
         return nullptr;
 
+    if (oid == ID_Integrate)
+    {
+        expr = infix(g, ve, expr, 0, "d", vi, index);
+        ve = g.voffset;
+        if (!expr)
+            return nullptr;
+    }
     grob::surface xs   = expr->pixels();
     size          xh   = xs.height();
     size          xw   = xs.width();
-    grob_g        sign = isprod ? product(g, xh) : sum(g, xh);
+    grob_g        sign = shape(g, xh);
     if (!sign)
         return nullptr;
 
@@ -1829,6 +1848,29 @@ grob_p expression::product(grapher &g, blitter::size h)
 }
 
 
+grob_p expression::integral(grapher &g, blitter::size h)
+// ----------------------------------------------------------------------------
+//   Create an 'integral' sign of height h
+// ----------------------------------------------------------------------------
+{
+    using size    = blitter::size;
+    size   w      = 32;
+    grob_g result = g.grob(w, h);
+    if (!result)
+        return nullptr;
+
+    grob::surface rs = result->pixels();
+    rs.fill   (0,       0,        w-1,    h-1,          g.background);
+    rs.fill   (w/2-2,   w/4,      w/2+1,  h-w/4,        g.foreground);
+    rect rc = rs.clip();
+    rs.clip(0, 0, w, w/4);
+    rs.ellipse(w/2-1,   2,        w-5,    w/2-1,  3,    g.foreground);
+    rs.clip(0, h-w/4,   w, h-1);
+    rs.ellipse(4,       h-w/2,    w/2-0,  h-3,    3,    g.foreground);
+    rs.clip(rc);
+
+    return result;
+}
 
 
 static inline cstring mulsep()
@@ -1837,6 +1879,18 @@ static inline cstring mulsep()
 // ----------------------------------------------------------------------------
 {
     return Settings.UseDotForMultiplication() ? "·" : "×";
+}
+
+
+inline expression::sumprod_fn expression::sumprod_shape(id oid)
+// ----------------------------------------------------------------------------
+//   Return the associated shape function
+// ----------------------------------------------------------------------------
+{
+    return oid == ID_Sum       ? sum
+         : oid == ID_Product   ? product
+         : oid == ID_Integrate ? integral
+                               : nullptr;
 }
 
 
@@ -2021,22 +2075,30 @@ grob_p expression::graph(grapher &g, uint depth, int &precedence)
         case 4:
         {
             id oid = obj->type();
-            if (oid == ID_Sum || oid == ID_Product)
+            if (sumprod_fn shape = sumprod_shape(oid))
             {
                 int    eprec = 0;
                 auto   fid   = g.font;
                 grob_g expr  = graph(g, depth, eprec);
                 coord  ve    = g.voffset;
-                g.reduce_font();
+                if (oid != ID_Integrate)
+                    g.reduce_font();
                 grob_g last  = graph(g, depth, eprec);
                 coord  vl    = g.voffset;
+                if (oid == ID_Integrate)
+                {
+                    // 'last' is really the expression
+                    if (eprec < MULTIPLICATIVE)
+                        last = parentheses(g, last);
+                    g.reduce_font();
+                }
                 grob_g first = graph(g, depth, eprec);
                 coord  vf    = g.voffset;
                 grob_g index = graph(g, depth, eprec);
                 coord  vi    = g.voffset;
                 g.font = fid;
 
-                return sumprod(g, oid == ID_Product,
+                return sumprod(g, oid, shape,
                                vi, index,
                                vf, first,
                                vl, last,

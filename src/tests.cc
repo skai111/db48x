@@ -172,7 +172,7 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-            units_and_conversions();
+            editor_operations();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -1130,6 +1130,16 @@ void tests::editor_operations()
 
     step("Implicit multiplication")
         .test(CLEAR, "'2X'", ENTER).expect("'2·X'");
+
+    step("Graphical rendering of integrals - Simple expression")
+        .test(CLEAR, "'integrate(A;B;sin(X);X)'", ENTER, EXIT)
+        .image_noheader("integral");
+    step("Graphical rendering of integrals - Additive expression")
+        .test(CLEAR, "'integrate(A;B;1+sin(X);X)'", ENTER, EXIT)
+        .image_noheader("integral-add");
+    step("Graphical rendering of integrals - Divide expression")
+        .test(CLEAR, "'integrate(A;B;1/sin(X);X)'", ENTER, EXIT)
+        .image_noheader("integral-div");
 
     step("Enter X mod Y and checking it can be edited")
         .test(CLEAR, NOSHIFT, F, "X", RSHIFT, L, F3, "Y")
