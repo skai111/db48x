@@ -457,7 +457,7 @@ void processFont(cstring fontName,
                     int dbo = y * colsGlyph + (rwidth - x);
                     if (bit)
                     {
-                        int bx = denseBitMapX + x + colsBeforeGlyph;
+                        int bx = denseBitMapX + (colsGlyph - x - 1) + colsBeforeGlyph;
                         uint32_t bitOffset = by * denseWidth + bx;
                         uint32_t byteOffset = bitOffset / 8;
                         if (byteOffset > denseBitMapSize)
