@@ -140,7 +140,9 @@ struct constant : algebraic
         return len == nlen && memcmp(ref, txt, len) == 0;
     }
 
-    static result lookup_command(config_r cfg, bool numerical);
+    static result    lookup_command(config_r cfg, bool numerical);
+    static object_p  lookup_menu(config_r cfg, utf8 name, size_t len);
+    static object_p  lookup_menu(config_r cfg, cstring name);
 
 protected:
     static result     do_parsing(config_r cfg, parser &p);
@@ -195,5 +197,6 @@ public:
 COMMAND_DECLARE_INSERT_HELP(ConstantName,-1);
 COMMAND_DECLARE_INSERT_HELP(ConstantValue,-1);
 COMMAND_DECLARE(Const, 1);
+COMMAND_DECLARE(Constants, 0);
 
 #endif // CONSTANT_H

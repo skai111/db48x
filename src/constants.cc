@@ -260,6 +260,19 @@ COMMAND_BODY(Const)
 }
 
 
+COMMAND_BODY(Constants)
+// ----------------------------------------------------------------------------
+//   Select the mathematics constants menu
+// ----------------------------------------------------------------------------
+{
+    if (object_p menu = constant::lookup_menu(constant::constants,
+                                              "Mathematics"))
+        return menu->evaluate();
+    rt.invalid_constant_error();
+    return ERROR;
+}
+
+
 
 // ============================================================================
 //
@@ -949,4 +962,53 @@ object::result constant::lookup_command(config_r cfg, bool numerical)
 
     cfg.error();
     return ERROR;
+}
+
+
+object_p constant::lookup_menu(config_r cfg, utf8 name, size_t len)
+// ----------------------------------------------------------------------------
+//   Find the menu in the current configuratoin
+// ----------------------------------------------------------------------------
+{
+    unit_file cfile(cfg.file);
+    size_t    maxb     = cfg.nbuiltins;
+    auto      builtins = cfg.builtins;
+    uint      idx      = cfg.first_menu;
+
+    // Check in-file constants
+    if (cfile.valid())
+    {
+        cfile.seek(0);
+        while (symbol_g category = cfile.next(true))
+        {
+            size_t clen = 0;
+            utf8 ctxt = category->value(&clen);
+            if (len == clen && memcmp(name, ctxt, len) == 0)
+                return object::static_object(id(idx));
+            idx++;
+        }
+    }
+
+    // Check built-in constants
+    for (size_t b = 0; b < maxb; b += 2)
+    {
+        if (!builtins[b+1] || !*builtins[b+1])
+        {
+            cstring ctxt = builtins[b];
+            if (ctxt[len] == 0 && memcmp(ctxt, name, len) == 0)
+                return object::static_object(id(idx));
+            idx++;
+        }
+    }
+
+    return nullptr;
+}
+
+
+object_p constant::lookup_menu(config_r cfg, cstring name)
+// ----------------------------------------------------------------------------
+//   Find the menu in the current configuratoin
+// ----------------------------------------------------------------------------
+{
+    return lookup_menu(cfg, utf8(name), strlen(name));
 }

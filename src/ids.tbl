@@ -704,6 +704,7 @@ CMD(EquationSolver)
 NAMED(XLib, "LibraryItem")
 CMD(XlibName)
 CMD(XlibValue)
+CMD(Constants)
 
 // Last things and stack
 NAMED(LastArg, "LastArguments")
@@ -1207,9 +1208,6 @@ CONSTANT_MENUS(ConstantsMenu6)
 CONSTANT_MENUS(ConstantsMenu7)
 CONSTANT_MENUS(ConstantsMenu8)
 CONSTANT_MENUS(ConstantsMenu9)
-
-ALIAS(ConstantsMenu01, "Constants")
-
 
 #define EQUATION_MENUS(Base)                    \
     EQUATION_MENU(Base##0)                      \
