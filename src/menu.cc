@@ -229,7 +229,10 @@ COMMAND_BODY(ToolsMenu)
     {
         if (object_p top = rt.top())
         {
-            switch(top->type())
+            id ty = top->type();
+            if (is_algebraic_fn(ty))
+                ty = ID_expression;
+            switch(ty)
             {
             case ID_integer:
             case ID_neg_integer:
@@ -259,6 +262,7 @@ COMMAND_BODY(ToolsMenu)
             case ID_based_bignum:       menu = ID_BasesMenu; break;
             case ID_text:               menu = ID_TextMenu; break;
             case ID_symbol:
+            case ID_funcall:
             case ID_expression:         menu = ID_SymbolicMenu; break;
             case ID_program:            menu = ID_DebugMenu; break;
             case ID_list:               menu = ID_ListMenu; break;
@@ -803,7 +807,7 @@ MENU(AlgebraMenu,
      "↓Match",          ID_MatchDown,
      "↑Match",          ID_MatchUp,
      "Isolate",         ID_Unimplemented,
-     "Apply",           ID_Unimplemented,
+     "Apply",           ID_Apply,
      "→Num",            ID_ToDecimal,
      "→Q",              ID_ToFraction,
 

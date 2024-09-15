@@ -172,7 +172,7 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-            solver_testing();
+            expand_collect_simplify();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -6399,6 +6399,30 @@ void tests::expand_collect_simplify()
     test("collect ", ENTER)
         .expect("'(A+B)↑3'");
     // .expect("'(A+B)³'");
+
+    step("Apply function call for user-defined function")
+        .test(CLEAR, "{ 1 2 3 } 'F' APPLY", ENTER)
+        .expect("'F(1;2;3)'");
+
+    step("Apply function call for user-defined function and array")
+        .test(CLEAR, "[ A B C D ] 'F' APPLY", ENTER)
+        .expect("'F(A;B;C;D)'");
+
+    step("Apply function call for algebraic function")
+        .test(CLEAR, "{ 'x+y' } 'sin' APPLY", ENTER)
+        .expect("'sin x+y'");
+
+    step("Apply function call for algebraic function with incorrect arg count")
+        .test(CLEAR, "{ x y } 'sin' APPLY", ENTER)
+        .error("Wrong argument count");
+
+    step("Apply function call for algebraic function with incorrect type")
+        .test(CLEAR, "{ x y } 'drop' APPLY", ENTER)
+        .error("Bad argument type");
+
+    step("Apply function call for algebraic function with incorrect type")
+        .test(CLEAR, "2 'F' APPLY", ENTER)
+        .error("Bad argument type");
 }
 
 

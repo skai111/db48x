@@ -506,6 +506,10 @@ CMD(ReorderTerms)
 CMD(Simplify)
 NAMED(ToPolynomial, "→Polynomial")    ALIAS(ToPolynomial, "→Poly")
 NAMED(FromPolynomial, "Polynomial→")  ALIAS(FromPolynomial, "Poly→")
+CMD(Apply)
+
+// Differentiation
+
 
 // Complex numbers
 NAMED(RealToRectangular, "ℝ→ℂ")

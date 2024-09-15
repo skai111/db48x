@@ -2360,6 +2360,69 @@ EVAL_BODY(funcall)
 }
 
 
+COMMAND_BODY(Apply)
+// ----------------------------------------------------------------------------
+//   Apply arguments to build a function call
+// ----------------------------------------------------------------------------
+{
+    if (object_g callee = rt.stack(0))
+    {
+        if (object_p args = rt.stack(1))
+        {
+            object::id ty = args->type();
+            if (ty == ID_list || ty == ID_array)
+            {
+                list_g lst = list_p(args);
+                size_t arity = lst->items();
+
+                if (object_p quoted = callee->as_quoted(ID_object))
+                    callee = quoted;
+                if (symbol_p sym = callee->as<symbol>())
+                {
+                    callee = sym;
+                }
+                else if (callee->is_algebraic_fn())
+                {
+                    if (arity != callee->arity())
+                    {
+                        rt.argument_count_error();
+                        return ERROR;
+                    }
+                }
+                else
+                {
+                    rt.type_error();
+                    return ERROR;
+                }
+
+                scribble scr;
+                size_t argsize = 0;
+                object_p argsrc = lst->objects(&argsize);
+                if (byte *argcopy = rt.allocate(argsize))
+                {
+                    memmove(argcopy, byte_p(argsrc), argsize);
+                    size_t calleesize = callee->size();
+                    if (byte *calleecopy = rt.allocate(calleesize))
+                    {
+                        memmove(calleecopy, byte_p(callee), calleesize);
+
+                        gcbytes scratch = scr.scratch();
+                        size_t  alloc   = scr.growth();
+                        callee = rt.make<funcall>(ID_funcall, scratch, alloc);
+                        if (rt.drop() && rt.top(callee))
+                            return OK;
+                    }
+                }
+            }
+            else
+            {
+                rt.type_error();
+            }
+        }
+    }
+    return ERROR;
+}
+
 
 // ============================================================================
 //

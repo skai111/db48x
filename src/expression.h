@@ -619,4 +619,6 @@ FUNCTION(FoldConstants);
 FUNCTION(ReorderTerms);
 FUNCTION(Simplify);
 
+COMMAND_DECLARE(Apply, 2);
+
 #endif // EXPRESSION_H
