@@ -434,18 +434,19 @@ MENU(NumbersMenu,
      "∏",       ID_Product,
      "QuoRem",  ID_Div2,
      "Factors", ID_Unimplemented,
-
      "Ran#",    ID_RandomNumber,
      "Random",  ID_Random,
 
+     "→Num",    ID_ToDecimal,
+     "→Q",      ID_ToFraction,
+     "→Qπ",     ID_Unimplemented,
+     "R#Seed",  ID_RandomSeed,
+     RandomGeneratorBits::label,        ID_RandomGeneratorBits,
+     RandomGeneratorOrder::label,       ID_RandomGeneratorOrder,
+
      "IsPrime", ID_Unimplemented,
      "NextPr",  ID_Unimplemented,
-     "PrevPr",  ID_Unimplemented,
-
-     "R#Seed",  ID_RandomSeed,
-     RandomGeneratorBits::label, ID_RandomGeneratorBits,
-     RandomGeneratorOrder::label, ID_RandomGeneratorOrder
-    );
+     "PrevPr",  ID_Unimplemented);
 
 
 MENU(AnglesMenu,
@@ -783,8 +784,6 @@ MENU(SymbolicMenu,
      ID_Expand,
      ID_Simplify,
      "→Poly",           ID_ToPolynomial,
-     "→Num",            ID_ToDecimal,
-     "→Q",              ID_ToFraction,
 
      "Algbra",          ID_AlgebraMenu,
      "Arith",           ID_ArithmeticMenu,
@@ -808,8 +807,8 @@ MENU(AlgebraMenu,
      "↑Match",          ID_MatchUp,
      "Isolate",         ID_Unimplemented,
      "Apply",           ID_Apply,
-     "→Num",            ID_ToDecimal,
-     "→Q",              ID_ToFraction,
+     "Subst",           ID_Subst,
+     "|",               ID_Where,
 
      "∂",               ID_Unimplemented,
      "∫",               ID_Integrate,

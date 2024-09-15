@@ -395,6 +395,9 @@ CMD(Max)
 CMD(NSub)
 CMD(EndSub)
 
+OP(Where, "|")
+NAMED(Subst, "Substitute")
+
 CMD(re)
 CMD(im)
 CMD(arg)

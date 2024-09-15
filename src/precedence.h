@@ -36,7 +36,8 @@ enum precedence
 {
     NONE                = 0,    // No precedence
     LOWEST              = 1,    // Lowest precedence (when parsing parentheses)
-    COMPLEX             = 3,    // Complex numbers
+    WHERE               = 3,    // | (where) operator
+    COMPLEX             = 5,    // Complex numbers
 
     LOGICAL             = 10,    // and, or, xor
     RELATIONAL          = 12,    // <, >, =, etc

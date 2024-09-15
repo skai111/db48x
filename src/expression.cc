@@ -2424,6 +2424,7 @@ COMMAND_BODY(Apply)
 }
 
 
+
 // ============================================================================
 //
 //   User-accessible match commands
@@ -2964,4 +2965,153 @@ FUNCTION_BODY(Simplify)
 // ----------------------------------------------------------------------------
 {
     return do_rewrite(x, &expression::simplify);
+}
+
+
+static expression_p substitute(expression_r pattern,
+                               symbol_r     name,
+                               expression_r to)
+// ----------------------------------------------------------------------------
+//  Substitute a single name with the corresponding expression
+// ----------------------------------------------------------------------------
+{
+    scribble scr;
+    size_t replsz = 0;
+    object_g replobj = to->objects(&replsz);
+    for (object_g obj : *pattern)
+    {
+        symbol_p oname = obj->as<symbol>();
+        if (oname && name->is_same_as(oname))
+        {
+            byte *objcopy = rt.allocate(replsz);
+            if (!objcopy)
+                return nullptr;
+            memmove(objcopy, +replobj, replsz);
+        }
+        else
+        {
+            size_t sz = obj->size();
+            byte *objcopy = rt.allocate(sz);
+            if (!objcopy)
+                return nullptr;
+            memmove(objcopy, +obj, sz);
+        }
+    }
+    expression_g result = expression_p(list::make(object::ID_expression,
+                                                  scr.scratch(), scr.growth()));
+    return result;
+}
+
+
+static expression_p substitute(expression_r pattern,
+                               expression_r repl)
+// ----------------------------------------------------------------------------
+//   Run a rewrite up or down
+// ----------------------------------------------------------------------------
+{
+    expression_g from = repl->left_of_equation();
+    expression_g to = repl->right_of_equation();
+    if (!from || !to)
+        return nullptr;
+    symbol_g name = from->as_quoted<symbol>();
+    if (+from == +to || !name)
+    {
+        rt.value_error();
+        return nullptr;
+    }
+    return substitute(pattern, name, to);
+}
+
+
+NFUNCTION_BODY(Subst)
+// ----------------------------------------------------------------------------
+//   Perform a substitution without evaluating the resulting expression
+// ----------------------------------------------------------------------------
+{
+    if (expression_g pat = args[1]->as<expression>())
+        if (expression_g repl = args[0]->as<expression>())
+            return substitute(pat, repl);
+
+    if (args[1]->is_real() || args[1]->is_complex())
+        return args[1];
+
+    rt.type_error();
+    return nullptr;
+}
+
+
+COMMAND_BODY(Where)
+// ----------------------------------------------------------------------------
+//   Perform a substitution and evaluate the resulting expression
+// ----------------------------------------------------------------------------
+{
+    if (object_p patobj = rt.stack(1))
+    {
+        id patty = patobj->type();
+        if (patty == ID_expression)
+        {
+            expression_g pat = expression_p(patobj);
+            if (object_p replobj = rt.stack(0))
+            {
+                id rty = replobj->type();
+                if (rty == ID_expression)
+                {
+                    expression_g repl = expression_p(replobj);
+                    if (algebraic_g res = substitute(pat, repl))
+                        if (rt.drop() && rt.top(+res))
+                            return OK;
+                }
+                else if (rty == ID_list || rty == ID_array)
+                {
+                    symbol_g     name;
+                    expression_g repl;
+                    for (object_g item : *list_p(replobj))
+                    {
+                        if (!name)
+                        {
+                            name = item->as_quoted<symbol>();
+                            if (!name)
+                            {
+                                if (expression_g p = item->as<expression>())
+                                {
+                                    pat = substitute(pat, p);
+                                    if (!pat)
+                                        return ERROR;
+                                }
+                                else
+                                {
+                                    rt.value_error();
+                                    return ERROR;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            repl = item->as<expression>();
+                            if (!repl)
+                            {
+                                rt.value_error();
+                                return ERROR;
+                            }
+                            pat = substitute(pat, name, repl);
+                            if (!pat)
+                                return ERROR;
+                            name = nullptr;
+                        }
+                    }
+                    if (rt.drop() && rt.top(+pat))
+                        return OK;
+                }
+            }
+        }
+        else if (is_real(patty) || is_complex(patty))
+        {
+            rt.drop();
+            return OK;
+        }
+
+    }
+    if (!rt.error())
+        rt.type_error();
+    return ERROR;
 }

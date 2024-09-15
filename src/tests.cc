@@ -6423,6 +6423,46 @@ void tests::expand_collect_simplify()
     step("Apply function call for algebraic function with incorrect type")
         .test(CLEAR, "2 'F' APPLY", ENTER)
         .error("Bad argument type");
+
+    step("Substitution with simple polynomial")
+        .test(CLEAR, "'X^2+3*X+7' 'X=Z+1' SUBST", ENTER)
+        .expect("'(Z+1)↑2+3·(Z+1)+7'")
+        .test("'Z=sin(A+B)' SUBST", ENTER)
+        .expect("'(sin(A+B)+1)↑2+3·(sin(A+B)+1)+7'");
+    step("Substitution with numerical value")
+        .test(CLEAR, "42 'X=Z+1' SUBST", ENTER)
+        .expect("42");
+    step("Type error on value to substitute")
+        .test(CLEAR, "\"ABC\" 'X=Z+1' SUBST", ENTER)
+        .error("Bad argument type");
+    step("Bad argument value for substitution")
+        .test(CLEAR, "'X^2+3*X+7' 'Z-1=Z+1' SUBST", ENTER)
+        .error("Bad argument value");
+
+    step("WHERE command with simple polynomial")
+        .test(CLEAR, "'X^2+3*X+7' 'X=Z+1' WHERE", ENTER)
+        .expect("'(Z+1)↑2+3·(Z+1)+7'")
+        .test("{ 'Z=sin(A+B)' 'A=42' } WHERE", ENTER)
+        .expect("'(sin(42+B)+1)↑2+3·(sin(42+B)+1)+7'");
+    step("Substitution with numerical value")
+        .test(CLEAR, "42 'X=Z+1' WHERE", ENTER)
+        .expect("42");
+    step("Type error on value to substitute in WHERE")
+        .test(CLEAR, "\"ABC\" 'X=Z+1' WHERE", ENTER)
+        .error("Bad argument type");
+    step("Bad argument value for substitution in WHERE")
+        .test(CLEAR, "'X^2+3*X+7' 'Z-1=Z+1' WHERE", ENTER)
+        .error("Bad argument value");
+    step("| operator")
+        .test(CLEAR, "'X^2+3*X+7|X=Z+1'", ENTER)
+        .expect("'X↑2+3·X+7|X=Z+1'")
+        .test(RUNSTOP)
+        .expect("'(Z+1)²+3·(Z+1)+7'");
+    step("Chained | operator")
+        .test("'X^2+3*X+7|X=Z+1|Z=sin(A+B)|A=42'", ENTER)
+        .expect("'X↑2+3·X+7|X=Z+1|Z=sin(A+B)|A=42'")
+        .test(RUNSTOP)
+        .expect("'(sin(42+B)+1)²+3·(sin(42+B)+1)+7'");
 }
 
 
@@ -10275,6 +10315,7 @@ tests &tests::itest(cstring txt)
         case '@': k = KEY2;         alpha = true; xshift = true; break;
         case '$': k = KEY3;         alpha = true; xshift = true; break;
         case '#': k = KEY4;         alpha = true; xshift = true; break;
+        case '|': k = KEY6;         alpha = true; xshift = true; break;
         case '\\': k = ADD;         alpha = true; xshift = true; break;
         case '\n': k = BSP;         alpha = true; xshift = true; break;
         case L'«': k = RUNSTOP;     alpha = false; shift = true; del = true; break;
