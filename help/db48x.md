@@ -2293,6 +2293,29 @@ You can edit it by recalling its content on the stack using
 back to disk using `"config:equations.csv" STO`.
 # Release notes
 
+## Release 0.7.18 "Who" - Subst, Where, Apply
+
+This release implements the `Apply`, `Subst` and `|` (`Where`) commands.
+
+### Features
+
+* ui: Allow Shift-SPC to enter `=` in an expression
+* Implement `subst` and `where`
+* Implement the `Apply` command
+* Implement the `EQNLIB` command
+* Add `CONSTANTS` as a way to select mathematical constants menu
+* Add `CONLIB` as an alias for `ConstantsMenu`.
+
+### Bug fixes
+
+* solver: Adjust detection of "epsilon" for large values
+* ttf2font: Flip x coordinates for dense fonts
+
+### Improvements
+
+* doc: List commands that will never be implemented
+
+
 ## Release 0.7.17 "Open" - DoSubs, DoList, entering units
 
 This release adds `DoSubs`, `DoList`, `NSub` and `EndSub` commands, and fixes
