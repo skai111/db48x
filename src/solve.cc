@@ -127,19 +127,10 @@ algebraic_p solve(program_g eq, algebraic_g goal, object_g guess)
     save<bool>  nodates(unit::nodates, true);
 
     // Convert A=B+C into A-(B+C)
-    program_g left, right;
-    bool iseq = false;
     if (eq->type() == object::ID_expression)
-    {
-        expression_g diff = expression_p(+eq)->as_difference_for_solve();
-        if (+diff != +eq)
-        {
-            left = expression_p(+eq)->left_of_equation();
-            right = expression_p(+eq)->right_of_equation();
-            eq = +diff;
-            iseq = left && right;
-        }
-    }
+        if (expression_g diff = expression_p(+eq)->as_difference_for_solve())
+            if (+diff != +eq)
+                eq = +diff;
 
     // Check if low and hight values were given explicitly
     if (gty == object::ID_list || gty == object::ID_array)
@@ -232,7 +223,8 @@ algebraic_p solve(program_g eq, algebraic_g goal, object_g guess)
     }
     save<symbol_g *> iref(expression::independent, &name);
     int              prec = Settings.Precision() - Settings.SolverImprecision();
-    algebraic_g      eps  = decimal::make(1, prec <= 0 ? -1 : -prec);
+    algebraic_g      yeps  = decimal::make(1, prec <= 0 ? -1 : -prec);
+    algebraic_g      xeps  = (lx + hx) * yeps;
     bool             is_constant = true;
     bool             is_valid    = false;
     uint             max         = Settings.SolverIterations();
@@ -246,23 +238,21 @@ algebraic_p solve(program_g eq, algebraic_g goal, object_g guess)
             return x;
 
         // Evaluate equation
-        if (iseq)
+        y = algebraic::evaluate_function(eq, x);
+
+        // If the function evaluates as 10^23 and eps=10^-18, use 10^(23-18)
+        if (!i && y && !y->is_zero())
         {
-            dx = algebraic::evaluate_function(left, x);
-            dy = algebraic::evaluate_function(right, x);
-            y = dx - dy;
-            dx = dy * eps;
-            if (dx)
-                if (unit_p ru = dx->as<unit>())
-                    dx = ru->value();
-        }
-        else
-        {
-            y = algebraic::evaluate_function(eq, x);
-            dx = eps;
+            if (algebraic_g neps = abs::run(y) * yeps)
+            {
+                if (unit_p ru = neps->as<unit>())
+                    neps = ru->value();
+                if (smaller_magnitude(yeps, neps))
+                    yeps = neps;
+            }
         }
         record(solve, "[%u] x=%t (%t to %t)  y=%t (%t to %t) err=%t",
-               i, +x, +lx, +hx, +y, +ly, +hy, +dx);
+               i, +x, +lx, +hx, +y, +ly, +hy, +yeps);
         if (!y)
         {
             // Error on last function evaluation, try again
@@ -283,7 +273,7 @@ algebraic_p solve(program_g eq, algebraic_g goal, object_g guess)
                 dy = yu->value();
             else
                 dy = y;
-            if (dy->is_zero() || smaller_magnitude(dy, dx))
+            if (dy->is_zero() || smaller_magnitude(dy, yeps))
             {
                 record(solve, "[%u] Solution=%t value=%t", i, +x, +y);
                 return x;
@@ -346,10 +336,10 @@ algebraic_p solve(program_g eq, algebraic_g goal, object_g guess)
                 return nullptr;
             dy = hx + lx;
             if (!dy || dy->is_zero(false))
-                dy = eps;
+                dy = yeps;
             else
-                dy = dy * eps;
-            if (dx->is_zero(false) || smaller_magnitude(dx, dy))
+                dy = dy * yeps;
+            if (dx->is_zero(false) || smaller_magnitude(dx, xeps))
             {
                 x = lx;
                 record(solve, "[%u] Minimum=%t value=%t", i, +x, +y);
@@ -412,7 +402,7 @@ algebraic_p solve(program_g eq, algebraic_g goal, object_g guess)
                                      object::ID_Deg);
                 else
                     dx = integer::make(0x1081 * s * i);
-                dx = dx * eps;
+                dx = dx * yeps;
                 if (x && x->is_zero())
                     x = dx;
                 else

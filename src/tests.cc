@@ -172,7 +172,7 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-            editor_operations();
+            solver_testing();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -5735,6 +5735,13 @@ void tests::solver_testing()
         .test(LSHIFT, A, LSHIFT, A)
         .expect("0.5 m");
 
+    step("Solving with large values (#1179")
+        .test(CLEAR, "DEG '1E45*sin(x)-0.5E45' 'x' 2 ROOT", ENTER)
+        .expect("x:30.");
+    step("Solving equation containing a zero side (#1179")
+        .test(CLEAR, "'-3*expm1(-x)-x=0' 'x' 2 ROOT", ENTER)
+        .expect("x:2.82143 93721 2");
+
     step("Exit: Clear variables")
         .test(CLEAR, "UPDIR 'SLVTST' PURGE", ENTER);
 }
@@ -5807,7 +5814,7 @@ void tests::eqnlib_columns_and_beams()
         .test(CLEAR, LSHIFT, F1, LSHIFT, F4)
         .expect("r:4.1148 cm")
         .test(NOSHIFT, F1)
-        .expect("'4.1148 cm=411.48 mm↑2/cm+1.212⁳⁻¹⁸ mm↑2/cm'");
+        .expect("'4.1148 cm=411.48 mm↑2/cm+6.12⁳⁻¹⁹ mm↑2/cm'");
 
     step("Solving Eccentric Columns")
         .test(CLEAR, RSHIFT, F, F2, RSHIFT, F2)
@@ -10865,10 +10872,8 @@ tests &tests::editing(size_t length, uint extrawait)
 {
     nokeys(extrawait);
     return check(rt.editing() == length,
-                 "Expected editing length to be ",
-                 length,
-                 " got ",
-                 rt.editing());
+                 "Expected editing length to be ", length,
+                 " got ", rt.editing());
 }
 
 
@@ -10888,12 +10893,8 @@ tests &tests::editor(cstring text, uint extrawait)
     {
         if (rt.error())
         {
-            explain("Expected editor [",
-                    text,
-                    "], "
-                    "got error [",
-                    rt.error(),
-                    "] instead");
+            explain("Expected editor [", text, "], "
+                    "got error [", rt.error(), "] instead");
             return fail();
         }
 
@@ -10906,30 +10907,16 @@ tests &tests::editor(cstring text, uint extrawait)
     }
 
     if (!ed)
-        explain("Expected editor to contain [",
-                text,
-                "], "
+        explain("Expected editor to contain [", text, "], "
                 "but it's empty");
     if (sz != strlen(text))
-        explain("Expected ",
-                strlen(text),
-                " characters in editor"
-                " [",
-                text,
-                "], "
-                "but got ",
-                sz,
-                " characters "
-                " [",
-                std::string(cstring(ed), sz),
-                "]");
+        explain("Expected ", strlen(text), " characters in editor"
+                " [", text, "], "
+                "but got ", sz, " characters "
+                " [", std::string(cstring(ed), sz), "]");
     if (memcmp(ed, text, sz))
-        explain("Expected editor to contain [",
-                text,
-                "], "
-                "but it contains [",
-                std::string(cstring(ed), sz),
-                "]");
+        explain("Expected editor to contain [", text, "], "
+                "but it contains [", std::string(cstring(ed), sz), "]");
 
     fail();
     return *this;
