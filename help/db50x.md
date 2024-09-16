@@ -531,6 +531,15 @@ operate on these items when it makes sense. Therefore:
   `Min` and `Max` functions, which compares the entire lists, whereas on HP50G,
   it compares element by element (element-wise comparison applies to arrays).
 
+* The `|` operator to apply variables to an expression can be used without
+  parentheses and chained. For example, `'A+B|A=X|B=Y+Z|Z=42'` evaluates as
+  `'X+Y+42'`. This differs from the way the HP50G evaluates it, where the last
+  substitution `Z=42` would not be applied since `Z` was not part of the
+  original expression. In other words, on HP50G, `'A+B|(A=X;B=Y+Z;Z=42)'`
+  evaluates as `'X+Y+Z'`, not as `'X+Y+42'`.The HP-style parenthesized notation
+  is accepted, but is converted to the DB50X sequence of `|` form during
+  parsing.
+
 
 ### Vectors and matrices differences
 

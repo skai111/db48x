@@ -6463,6 +6463,11 @@ void tests::expand_collect_simplify()
         .expect("'X↑2+3·X+7|X=Z+1|Z=sin(A+B)|A=42'")
         .test(RUNSTOP)
         .expect("'(sin(42+B)+1)²+3·(sin(42+B)+1)+7'");
+    step("Chained | operator with HP syntax")
+        .test("'X^2+3*X+7|(X=Z+1;Z=sin(A+B);A=42)'", ENTER)
+        .expect("'X↑2+3·X+7|X=Z+1|Z=sin(A+B)|A=42'")
+        .test(RUNSTOP)
+        .expect("'(sin(42+B)+1)²+3·(sin(42+B)+1)+7'");
 }
 
 

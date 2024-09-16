@@ -84,7 +84,10 @@ object::result list::list_parse(id      type,
     bool     xroot       = false;
 
     // The IFTE command is special in that we don't evaluate its arguments
-    bool        ifte        = false;
+    bool        ifte     = false;
+
+    // The `|` operator (where) is special when parsing parentheses
+    bool        iswhere  = false;
 
     record(list, "Parse %lc%lc precedence %d length %u [%s]",
            open, close, precedence, max, utf8(s));
@@ -131,13 +134,26 @@ object::result list::list_parse(id      type,
                 bool parenthese = (cp == '(' || arity > 1) && !infix;
                 if (parenthese  || infix || prefix)
                 {
-                    int     childp = infix      ? int(infix->precedence() + 1)
-                                   : parenthese ? int(LOWEST)
-                                                : int(SYMBOL);
+                    int     childp  = infix      ? int(infix->precedence() + 1)
+                                    : parenthese ? int(LOWEST)
+                                                 : int(SYMBOL);
+
+                    if (infix && cp == '(' && infix->type() == ID_Where)
+                    {
+                        iswhere = true;
+                        if (utf8_more(p.source, s, max))
+                            s = utf8_next(s);
+                    }
+                    if (iswhere)
+                    {
+                        parenthese = false;
+                        childp = int(LOWEST);
+                    }
+
                     parser  child(p, s, childp);
-                    unicode iopen = parenthese ? '(' : 0;
+                    unicode iopen  = parenthese ? '(' : 0;
                     unicode iclose = parenthese ? ')' : 0;
-                    id ctype = type == ID_unit ? ID_expression : type;
+                    id      ctype  = type == ID_unit ? ID_expression : type;
 
                     if (!infix && arity > 1)
                     {
@@ -180,9 +196,30 @@ object::result list::list_parse(id      type,
                            "Child parsed as %t length %u",
                            object_p(obj), child.length);
                     precedence = -precedence; // Stay in postfix mode
-                    cp = utf8_codepoint(s);
+                    cp = utf8_more(p.source, s, max) ? utf8_codepoint(s) : 0;
                     length = 0;
 
+                    if (iswhere)
+                    {
+                        utf8 start = +s - child.length;
+                        while (utf8_whitespace(cp) &&
+                               utf8_more(p.source, s, max))
+                        {
+                            s = utf8_next(s);
+                            cp = utf8_codepoint(s);
+                        }
+                        if (cp == ')')
+                        {
+                            iswhere = false;
+                        }
+                        else if (cp != ';')
+                        {
+                            rt.unterminated_error().source(start, +s-start);
+                            return ERROR;
+                        }
+                        s = utf8_next(s);
+                        cp = utf8_more(p.source,s,max) ? utf8_codepoint(s) : 0;
+                    }
                 }
 
                 // Check to see if we have a sign
@@ -364,6 +401,12 @@ object::result list::list_parse(id      type,
                     infix = nullptr;
                 }
             } while (obj);
+
+            if (iswhere)
+            {
+                infix = object::static_object(ID_Where);
+                precedence = -WHERE;
+            }
         }
 
         // Jump past what we parsed
