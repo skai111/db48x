@@ -1295,7 +1295,7 @@ GRAPH_BODY(polynomial)
                 coord  vt    = 0;
                 if (exponent > 1)
                 {
-                    char exptxt[16];
+                    char exptxt[24];
                     snprintf(exptxt, sizeof(exptxt), "%llu", exponent);
                     termg = suscript(g, vt, termg, 0, exptxt);
                     if (!termg)
