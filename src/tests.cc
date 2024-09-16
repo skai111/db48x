@@ -172,7 +172,7 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-            expand_collect_simplify();
+            editor_operations();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -1177,6 +1177,16 @@ void tests::editor_operations()
     step("Check numbering separators after - with exponent")
         .test(CLEAR, F, KEY1, KEY0, KEY0, KEY0, O, N, KEY1)
         .editor("'1 000⁳-1'");
+
+    step("Editing unit in program (bug #1192)")
+        .test(CLEAR, LSHIFT, RUNSTOP, "25.4", ENTER)
+        .want("« 25.4 »")
+        .test(DOWN, DOWN, "123", LSHIFT, KEY5, F4, F2, ENTER)
+        .want("« 123 yd 25.4 »")
+        .test(DOWN, DOWN, DOWN, DOWN, DOWN, F3, ENTER)
+        .error("Syntax error")
+        .test(DOWN, DOWN, RUNSTOP, KEY3, ENTER)
+        .want("« 123 ft 3 yd 25.4 »");
 }
 
 

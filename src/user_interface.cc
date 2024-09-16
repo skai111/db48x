@@ -908,6 +908,8 @@ bool user_interface::at_end_of_number(bool want_polar)
             }
             else if (~lastnum)       // 12+3: no longer have a number,
             {
+                if (p >= curs)
+                    break;
                 lastnum = ~0U;
                 numok = true;
                 had_polar = false;
@@ -931,6 +933,8 @@ bool user_interface::at_end_of_number(bool want_polar)
             {
                 if (inexp)
                 {
+                    if (p >= curs)
+                        break;
                     lastnum = ~0U;
                     numok = false;
                     inexp = hadexp = false;
@@ -952,6 +956,8 @@ bool user_interface::at_end_of_number(bool want_polar)
             numok = true;
             inexp = false;
             had_polar = code == complex::ANGLE_MARK;
+            if (p >= curs && !(want_polar && had_polar))
+                break;
             continue;
         }
 
@@ -971,13 +977,13 @@ bool user_interface::at_end_of_number(bool want_polar)
     }
 
     // If lastnum was not found, say we have no number
-    if (~lastnum == 0)
+    if (~lastnum == 0 || lastnum + 1 < cursor || (want_polar && !had_polar))
         return false;
 
     // Move cursor here
     cursor_position(lastnum + 1);
     select = ~0U;
-    return !want_polar || had_polar;
+    return true;
 }
 
 
