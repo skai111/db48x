@@ -4201,7 +4201,7 @@ bool user_interface::handle_editing(int key)
             if (shift)
             {
                 // Shift R/S = PRGM enters a program symbol
-                if (mode == ALGEBRAIC || mode == PARENTHESES)
+                if (isEditing && (mode == ALGEBRAIC || mode == PARENTHESES))
                     edit('=', ALGEBRAIC);
                 else
                     edit(L'«', PROGRAM);
