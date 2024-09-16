@@ -111,8 +111,14 @@ algebraic_p unit::parse_uexpr(gcutf8 source, size_t &len)
     parser p(source, len, MULTIPLICATIVE);
     object::result result = list::list_parse(ID_expression, p, 0, 0);
     if (result == object::OK)
+    {
         if (algebraic_p alg = p.out->as_algebraic())
-            return alg;
+        {
+            if (!alg->as_quoted<unit>())
+                return alg;
+            rt.syntax_error().source(source, p.length);
+        }
+    }
     return nullptr;
 }
 
