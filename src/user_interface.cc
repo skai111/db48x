@@ -2545,7 +2545,7 @@ bool user_interface::draw_stepping_object()
     if (freezeStack)
         return false;
 
-    if (object_p obj = rt.run_stepping())
+    if (object_g obj = rt.run_stepping())
     {
         renderer r(nullptr, 40);
         obj->render(r);

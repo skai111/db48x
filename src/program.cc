@@ -167,7 +167,8 @@ object::result program::run_loop(size_t depth)
         : Settings.ProgramLastArguments();
 
     save<bool> save_running(running, true);
-    while (object_p obj = rt.run_next(depth))
+    object_g obj;
+    while ((obj = rt.run_next(depth)))
     {
         if (interrupted())
         {
