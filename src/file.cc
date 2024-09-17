@@ -150,11 +150,13 @@ void file::open(cstring path)
 #if SIMULATOR
     if (open_count++)
     {
-        errno = EMFILE;
         record(file_error,
                "open is opening %u files at the same time"
                " (%s and %s)", open_count--, last_open, path);
+#ifdef DEBUG
+        errno = EMFILE;
         return;
+#endif
     }
     last_open = path;
     data = fopen(path, "r");
@@ -180,11 +182,13 @@ void file::open_for_writing(cstring path)
 #if SIMULATOR
     if (open_count++)
     {
-        errno = EMFILE;
         record(file_error,
                "open_for_writing is opening %u files at the same time"
                "(%s and %s)", open_count--, last_open, path);
+#ifdef DEBUG
+        errno = EMFILE;
         return;
+#endif
     }
     last_open = path;
     data = fopen(path, "w");

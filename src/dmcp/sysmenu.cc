@@ -45,6 +45,9 @@
 #include "variables.h"
 
 #include <cstdio>
+#include <cstring>
+#include <sys/errno.h>
+
 
 
 // ============================================================================
@@ -242,7 +245,7 @@ static int state_save_callback(cstring fpath, cstring fname, void *)
     file prog(fpath, true);
     if (!prog.valid())
     {
-        disp_disk_info("State save failed");
+        ui.draw_message("State save failed", prog.error(), fpath);
         wait_for_key_press();
         return 1;
     }
@@ -378,7 +381,7 @@ static int state_load_callback(cstring path, cstring name, void *merge)
         prog.open(path);
         if (!prog.valid())
         {
-            disp_disk_info("State load failed");
+            ui.draw_message("State load failed", prog.error(), name);
             wait_for_key_press();
             return 1;
         }

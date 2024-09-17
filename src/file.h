@@ -105,7 +105,8 @@ struct file_closer
         if (name)
         {
             f.open(name);
-            f.seek(position);
+            if (f.valid())
+                f.seek(position);
         }
     }
     file   &f;
