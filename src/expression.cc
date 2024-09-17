@@ -2549,31 +2549,63 @@ static eq_integer<3>      three;
 static eq_integer<4>      four;
 static eq_always          always;
 
+// Sign and integer value for non-princpal solutions
+static eq_symbol<'#'>     intk;
+static eq_symbol<'-'>     signk;
+
+
+bool expression::split_equation(expression_g &left, expression_g &right) const
+// ----------------------------------------------------------------------------
+//   Split an expression between left and right parts
+// ----------------------------------------------------------------------------
+{
+    size_t   depth  = rt.depth();
+    bool     result = false;
+
+    for (object_p obj : *this)
+        if (!rt.push(obj))
+            goto error;
+
+    if (rt.depth() > depth)
+    {
+        if (object_p outer = rt.top())
+        {
+            if (outer->type() == ID_TestEQ)
+            {
+                size_t eq = 1;
+                size_t len = rt.depth() - depth - eq;
+                if (expression_g r = grab_arguments(eq, len))
+                {
+                    if (expression_g l = grab_arguments(eq, len))
+                    {
+                        right = r;
+                        left = l;
+                        result = true;
+                    }
+                }
+            }
+        }
+    }
+
+error:
+    size_t ndepth = rt.depth();
+    if (ndepth > depth)
+        rt.drop(ndepth - depth);
+    return result;
+}
+
+
 expression_p expression::as_difference_for_solve() const
 // ----------------------------------------------------------------------------
 //   For the solver, transform A=B into A-B
 // ----------------------------------------------------------------------------
 //   Revisit: how to transform A and B, A or B, e.g. A=B and C=D ?
 {
-    return rewrites(X == Y, X - Y);
-}
-
-
-expression_p expression::left_of_equation() const
-// ----------------------------------------------------------------------------
-//   For the solver, transform A=B into A
-// ----------------------------------------------------------------------------
-{
-    return rewrites(X == Y, X);
-}
-
-
-expression_p expression::right_of_equation() const
-// ----------------------------------------------------------------------------
-//   For the solver, transform A=B into A
-// ----------------------------------------------------------------------------
-{
-    return rewrites(X == Y, Y);
+    expression_g left = this;
+    expression_g right;
+    if (split_equation(left, right))
+        return expression::make(ID_sub, +left, +right);
+    return left;
 }
 
 
@@ -3009,17 +3041,14 @@ static expression_p substitute(expression_r pattern,
 //   Run a rewrite up or down
 // ----------------------------------------------------------------------------
 {
-    expression_g from = repl->left_of_equation();
-    expression_g to = repl->right_of_equation();
-    if (!from || !to)
-        return nullptr;
-    symbol_g name = from->as_quoted<symbol>();
-    if (+from == +to || !name)
-    {
+    expression_g from, to;
+    if (repl->split_equation(from, to))
+        if (symbol_g name = from->as_quoted<symbol>())
+            return substitute(pattern, name, to);
+
+    if (!rt.error())
         rt.value_error();
-        return nullptr;
-    }
-    return substitute(pattern, name, to);
+    return nullptr;
 }
 
 

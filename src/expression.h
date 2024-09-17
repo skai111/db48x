@@ -248,8 +248,7 @@ struct expression : program
     expression_p reorder_terms() const;
     expression_p simplify() const;
     expression_p as_difference_for_solve() const; // Transform A=B into A-B
-    expression_p left_of_equation() const;        // Transform A=B into A
-    expression_p right_of_equation() const;       // Transform A=B into B
+    bool         split_equation(expression_g &left, expression_g &right) const;
     object_p     outermost_operator() const;
     size_t       render(renderer &r, bool quoted = false) const
     {

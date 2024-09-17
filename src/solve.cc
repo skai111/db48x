@@ -475,17 +475,18 @@ COMMAND_BODY(StEq)
         id objty = obj->type();
         if (objty == ID_list || objty == ID_array)
         {
-            for (object_p obj: *list_p(obj))
+            for (object_p i: *list_p(obj))
             {
-                objty = obj->type();
+                objty = i->type();
                 if (objty != ID_expression && objty != ID_polynomial &&
                     objty != ID_equation)
                     rt.type_error();
             }
         }
-        if (objty != ID_expression && objty != ID_polynomial &&
-                objty != ID_equation)
-                rt.type_error();
+        if (objty != ID_expression &&
+            objty != ID_polynomial &&
+            objty != ID_equation)
+            rt.type_error();
         else if (directory::store_here(static_object(ID_Equation), obj))
             if (rt.drop())
                 return OK;
@@ -555,24 +556,27 @@ COMMAND_BODY(EvalEq)
             settings::PrepareForFunctionEvaluation willEvaluateFunctions;
             save<bool> nodates(unit::nodates, true);
 
-            expression_g diff = expr->as_difference_for_solve();
-            if (+diff != +expr)
+            expression_g left, right;
+            if (expr->split_equation(left, right))
             {
-                expression_g l = expr->left_of_equation();
-                expression_g r = expr->right_of_equation();
-                algebraic_g lv = l->evaluate();
-                algebraic_g rv = r->evaluate();
+                algebraic_g lv = left->evaluate();
+                algebraic_g rv = right->evaluate();
                 algebraic_g d = lv - rv;
                 if (d && !d->is_zero(false))
                 {
                     if (d->is_negative(false))
-                        r = expression::make(ID_sub, rv, -d);
+                        rv = expression::make(ID_sub, rv, -d);
                     else
-                        r = expression::make(ID_add, rv, d);
-                    rv = +r;
+                        rv = expression::make(ID_add, rv, d);
                 }
-                r = expression::make(ID_TestEQ, lv, rv);
-                if (r && rt.push(+r))
+                rv = expression::make(ID_TestEQ, lv, rv);
+                if (rv && rt.push(+rv))
+                    return OK;
+            }
+            else
+            {
+                algebraic_p value = expr->evaluate();
+                if (value && rt.push(value))
                     return OK;
             }
         }
