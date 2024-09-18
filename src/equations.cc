@@ -256,7 +256,7 @@ static const cstring basic_equations[] =
     "Drift Speed & Current Density",  "{ "
     "  '(vd_(m/s))=(I_A)/((n_(m^-3))*Ⓒqe*(A_(cm^2)))' "
     "  '(J_(A/m^2))=(vd_(m/s))*(ρ_(C/m^3))' "
-    "  '(J_(A/m^2))=(σ_(S/m))*(E_(V_m))' "
+    "  '(J_(A/m^2))=(σ_(S/m))*(E_(V/m))' "
     "}",
 
     // Example of the following in
