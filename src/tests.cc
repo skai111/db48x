@@ -6229,17 +6229,17 @@ void tests::rewrite_engine()
         .expect("'A·(C-sin B)'");
 
     step("Variable matching");
-    test(CLEAR, "'A*(B+C)' { 'X+X' 'X-sin X' }", RSHIFT, KEY7, F5, F1)
+    test(CLEAR, "'A*(B+C)' { 'X+X' 'X-sin X' }", RSHIFT, KEY7, F6, F1)
         .expect("0")
         .test(BSP)
         .expect("'A·(B+C)'");
-    test(CLEAR, "'A*(B+(B))' { 'X+X' 'X-sin X' }", RSHIFT, KEY7, F5, F1)
+    test(CLEAR, "'A*(B+(B))' { 'X+X' 'X-sin X' }", RSHIFT, KEY7, F6, F1)
         .expect("1")
         .test(BSP)
         .expect("'A·(B-sin B)'");
 
     step("Constant folding");
-    test(CLEAR, "'A+B+0' { 'X+0' 'X' }", RSHIFT, KEY7, F5, F1)
+    test(CLEAR, "'A+B+0' { 'X+0' 'X' }", RSHIFT, KEY7, F6, F1)
         .expect("1")
         .test(BSP)
         .expect("'A+B'");
@@ -6247,24 +6247,24 @@ void tests::rewrite_engine()
     step("Clearing final flag")
         .test(CLEAR, "-100 CF", ENTER).noerror();
     step("Single substitutions (down)");
-    test(CLEAR, "'A+B+C' { 'X+Y' 'Y-X' }", RSHIFT, KEY7, F5, F1)
+    test(CLEAR, "'A+B+C' { 'X+Y' 'Y-X' }", RSHIFT, KEY7, F6, F1)
         .expect("1")
         .test(BSP)
         .expect("'C-(A+B)'");
     step("Multiple substitutions (up)");
-    test(CLEAR, "'A+B+C' { 'X+Y' 'Y-X' }", RSHIFT, KEY7, F5, F2)
+    test(CLEAR, "'A+B+C' { 'X+Y' 'Y-X' }", RSHIFT, KEY7, F6, F2)
         .expect("1")
         .test(BSP)
         .expect("'B-A+C'");
     step("Setting final flag")
         .test(CLEAR, "-100 SF", ENTER).noerror();
     step("Multiple substitutions (down repeat)");
-    test(CLEAR, "'A+B+C' { 'X+Y' 'Y-X' }", RSHIFT, KEY7, F5, F1)
+    test(CLEAR, "'A+B+C' { 'X+Y' 'Y-X' }", RSHIFT, KEY7, F6, F1)
         .expect("2")
         .test(BSP)
         .expect("'C-(B-A)'");
     step("Multiple substitutions (up repeat)");
-    test(CLEAR, "'A+B+C' { 'X+Y' 'Y-X' }", RSHIFT, KEY7, F5, F1)
+    test(CLEAR, "'A+B+C' { 'X+Y' 'Y-X' }", RSHIFT, KEY7, F6, F1)
         .expect("2")
         .test(BSP)
         .expect("'C-(B-A)'");
@@ -6272,62 +6272,62 @@ void tests::rewrite_engine()
         .test(CLEAR, "StepByStepAlgebraResults", ENTER).noerror();
 
     step("Deep substitution");
-    test(CLEAR, "'tan(A-B)+3' { 'X-Y' '-Y+X' }", RSHIFT, KEY7, F5, F1)
+    test(CLEAR, "'tan(A-B)+3' { 'X-Y' '-Y+X' }", RSHIFT, KEY7, F6, F1)
         .expect("1")
         .test(BSP)
         .expect("'tan(-B+A)+3'");
     step("Deep substitution with multiple changes (down single)");
     test(CLEAR, "StepByStepAlgebraResults", ENTER,
          "'5+tan(A-B)+(3-sin(C+D-A))' { 'X-Y' '-Y+X' }",
-         RSHIFT, KEY7, F5, F1)
+         RSHIFT, KEY7, F6, F1)
         .expect("1")
         .test(BSP)
         .expect("'5+tan(A-B)+(-sin(C+D-A)+3)'");
     step("Deep substitution with multiple changes (up single)");
     test(CLEAR, "StepByStepAlgebraResults", ENTER,
          "'5+tan(A-B)+(3-sin(C+D-A))' { 'X-Y' '-Y+X' }",
-         RSHIFT, KEY7, F5, F2)
+         RSHIFT, KEY7, F6, F2)
         .expect("1")
         .test(BSP)
         .expect("'5+tan(-B+A)+(3-sin(C+D-A))'");
     step("Deep substitution with multiple changes (down multiple)");
     test(CLEAR, "FinalAlgebraResults", ENTER,
          "'5+tan(A-B)+(3-sin(C+D-A))' { 'X-Y' '-Y+X' }",
-         RSHIFT, KEY7, F5, F1)
+         RSHIFT, KEY7, F6, F1)
         .expect("3")
         .test(BSP)
         .expect("'5+tan(-B+A)+(-sin(-A+(C+D))+3)'");
     step("Deep substitution with multiple changes (up multiple)");
     test(CLEAR, "FinalAlgebraResults", ENTER,
          "'5+tan(A-B)+(3-sin(C+D-A))' { 'X-Y' '-Y+X' }",
-         RSHIFT, KEY7, F5, F2)
+         RSHIFT, KEY7, F6, F2)
         .expect("3")
         .test(BSP)
         .expect("'5+tan(-B+A)+(-sin(-A+(C+D))+3)'");
 
     step("Matching integers");
-    test(CLEAR, "'(A+B)^3' { 'X^K' 'X*X^(K-1)' }", RSHIFT, KEY7, F5, F1)
+    test(CLEAR, "'(A+B)^3' { 'X^K' 'X*X^(K-1)' }", RSHIFT, KEY7, F6, F1)
         .expect("3")
         .test(BSP)
         .expect("'(A+B)·((A+B)·((A+B)·(A+B)↑0))'");
 
     step("Matching sorted integers (success)");
-    test(CLEAR, "'3+5' { 'i+j' '21*(j-i)' }", RSHIFT, KEY7, F5, F1)
+    test(CLEAR, "'3+5' { 'i+j' '21*(j-i)' }", RSHIFT, KEY7, F6, F1)
         .expect("1")
         .test(BSP)
         .expect("'42'");
     step("Matching sorted integers (failing)");
-    test(CLEAR, "'5+3' { 'i+j' '21*(j-i)' }", RSHIFT, KEY7, F5, F1)
+    test(CLEAR, "'5+3' { 'i+j' '21*(j-i)' }", RSHIFT, KEY7, F6, F1)
         .expect("0")
         .test(BSP)
         .expect("'5+3'");
 
     step("Matching unique terms");
-    test(CLEAR, "'(A+B+A)' { 'X+U+X' '2*X+U' }", RSHIFT, KEY7, F5, F1)
+    test(CLEAR, "'(A+B+A)' { 'X+U+X' '2*X+U' }", RSHIFT, KEY7, F6, F1)
         .expect("1")
         .test(BSP)
         .expect("'2·A+B'");
-    test(CLEAR, "'(A+A+A)' { 'X+U+X' '2*X+U' }", RSHIFT, KEY7, F5, F1)
+    test(CLEAR, "'(A+A+A)' { 'X+U+X' '2*X+U' }", RSHIFT, KEY7, F6, F1)
         .expect("0")
         .test(BSP)
         .expect("'A+A+A'");
@@ -6335,11 +6335,11 @@ void tests::rewrite_engine()
     step("Clearing flag -100")
         .test(CLEAR, "-100 CF", ENTER);
     step("Matching down")
-        .test(CLEAR, "'A+B+C' { 'X+Y' 'Y-(-X)' }", RSHIFT, KEY7, F5, F1)
+        .test(CLEAR, "'A+B+C' { 'X+Y' 'Y-(-X)' }", RSHIFT, KEY7, F6, F1)
         .expect("1")
         .test(BSP).expect("'C-(-(A+B))'");
     step("Matching up")
-        .test(CLEAR, "'A+B+C' { 'X+Y' 'Y-(-X)' }", RSHIFT, KEY7, F5, F2)
+        .test(CLEAR, "'A+B+C' { 'X+Y' 'Y-(-X)' }", RSHIFT, KEY7, F6, F2)
         .expect("1")
         .test(BSP)
         .expect("'B-(-A)+C'");

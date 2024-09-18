@@ -138,6 +138,7 @@ COMMAND_DECLARE(Eval,1);                // Evaluate an object
 COMMAND_DECLARE(Compile,1);             // Compile and evalaute a text
 COMMAND_DECLARE(Explode,1);             // Explode an object (aka Obj→)
 COMMAND_DECLARE(ToText,1);              // Convert an object to text
+COMMAND_DECLARE(ToProgram,1);           // Convert expression to program
 COMMAND_DECLARE(SelfInsert,-1);         // Enter menu label in the editor
 COMMAND_DECLARE(ReplaceChar,-1);        // Replace editor character with label
 COMMAND_DECLARE(Ticks,0);               // Return number of ticks

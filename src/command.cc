@@ -33,6 +33,7 @@
 #include "bignum.h"
 #include "decimal.h"
 #include "dmcp.h"
+#include "equations.h"
 #include "fraction.h"
 #include "integer.h"
 #include "parser.h"
@@ -788,6 +789,47 @@ COMMAND_BODY(Cycle)
             return command::static_object(cmd)->evaluate();
 
         return OK;
+    }
+    return ERROR;
+}
+
+
+COMMAND_BODY(ToProgram)
+// ----------------------------------------------------------------------------
+//  Convert top level object to program
+// ----------------------------------------------------------------------------
+{
+    if (object_p top = rt.top())
+    {
+        if (polynomial_p poly = top->as<polynomial>())
+        {
+            top = poly->as_expression();
+            if (!top)
+                return ERROR;
+        }
+        if (equation_p eq = top->as<equation>())
+        {
+            top = eq->value();
+            if (!top)
+                return ERROR;
+        }
+
+        if (expression_p expr = top->as<expression>())
+        {
+            if (object_p clone = rt.clone(expr))
+            {
+                byte *p = (byte *) clone;
+                leb128(p, ID_program);
+                top = clone;
+            }
+        }
+        else
+        {
+            object_g arg = top;
+            top = list::make(ID_program, arg);
+        }
+        if (top && rt.top(top))
+            return OK;
     }
     return ERROR;
 }

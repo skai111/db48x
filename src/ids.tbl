@@ -481,6 +481,7 @@ CMD(Clone)                      ALIAS(Clone, "NewObject")
 
 // Object commands
 NAMED(Compile, "Text→")         ALIAS(Compile, "Str→")
+NAMED(ToProgram, "→Program")
 
 // Flags
 CMD(FlipFlag)                   ALIAS(FlipFlag,               "FF")
