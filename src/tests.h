@@ -100,7 +100,7 @@ struct tests
     void text_functions();
     void auto_simplification();
     void rewrite_engine();
-    void expand_collect_simplify();
+    void symbolic_operations();
     void tagged_objects();
     void catalog_test();
     void cycle_test();

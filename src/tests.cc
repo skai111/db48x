@@ -122,7 +122,7 @@ TESTS(colnbeams,        "Columns and Beams equations in library");
 TESTS(integrate,        "Numerical integration");
 TESTS(simplify,         "Auto-simplification of expressions");
 TESTS(rewrites,         "Equation rewrite engine");
-TESTS(expand,           "Expand");
+TESTS(symbolic,         "Symbolic operations");
 TESTS(tagged,           "Tagged objects");
 TESTS(catalog,          "Catalog of commands");
 TESTS(cycle,            "Cycle command for quick conversions");
@@ -172,7 +172,7 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-            editor_operations();
+            symbolic_operations();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -223,7 +223,7 @@ void tests::run(uint onlyCurrent)
         text_functions();
         auto_simplification();
         rewrite_engine();
-        expand_collect_simplify();
+        symbolic_operations();
         tagged_objects();
         catalog_test();
         cycle_test();
@@ -6374,12 +6374,56 @@ void tests::rewrite_engine()
 }
 
 
-void tests::expand_collect_simplify()
+void tests::symbolic_operations()
 // ----------------------------------------------------------------------------
 //   Equation rewrite engine
 // ----------------------------------------------------------------------------
 {
-    BEGIN(expand);
+    BEGIN(symbolic);
+
+    step("Simple arithmetic - Symbol and constant")
+        .test(CLEAR, "'A' 3 +", ENTER).expect("'A+3'")
+        .test(CLEAR, "'A' 3 -", ENTER).expect("'A-3'")
+        .test(CLEAR, "'A' 3 *", ENTER).expect("'3·A'")
+        .test(CLEAR, "'A' 3 /", ENTER).expect("'A÷3'")
+        .test(CLEAR, "'A' 3 ↑", ENTER).expect("'A³'");
+    step("Simple arithmetic - Constant and symbol")
+        .test(CLEAR, "3 'A' +", ENTER).expect("'A+3'")
+        .test(CLEAR, "3 'A' -", ENTER).expect("'3-A'")
+        .test(CLEAR, "3 'A' *", ENTER).expect("'3·A'")
+        .test(CLEAR, "3 'A' /", ENTER).expect("'3÷A'")
+        .test(CLEAR, "3 'A' ↑", ENTER).expect("'3↑A'");
+    step("Simple arithmetic - Symbol and symbol")
+        .test(CLEAR, "'A' 'B' +", ENTER).expect("'A+B'")
+        .test(CLEAR, "'A' 'B' -", ENTER).expect("'A-B'")
+        .test(CLEAR, "'A' 'B' *", ENTER).expect("'A·B'")
+        .test(CLEAR, "'A' 'B' /", ENTER).expect("'A÷B'")
+        .test(CLEAR, "'A' 'B' ↑", ENTER).expect("'A↑B'");
+   step("Simple functions")
+       .test(CLEAR, "'A'", ENTER, J).expect("'sin A'")
+       .test(K, L).expect("'tan (cos (sin A))'");
+
+    step("Simple arithmetic on equations")
+        .test(CLEAR, "'A=B' 3 +", ENTER).expect("'A+3=B+3'")
+        .test(CLEAR, "'A=B' 3 -", ENTER).expect("'A-3=B-3'")
+        .test(CLEAR, "'A=B' 3 *", ENTER).expect("'3·A=3·B'")
+        .test(CLEAR, "'A=B' 3 /", ENTER).expect("'A÷3=B÷3'")
+        .test(CLEAR, "'A=B' 3 ↑", ENTER).expect("'A³=B³'");
+    step("Simple arithmetic - Constant and symbol")
+        .test(CLEAR, "3 'A=B' +", ENTER).expect("'A+3=B+3'")
+        .test(CLEAR, "3 'A=B' -", ENTER).expect("'3-A=3-B'")
+        .test(CLEAR, "3 'A=B' *", ENTER).expect("'3·A=3·B'")
+        .test(CLEAR, "3 'A=B' /", ENTER).expect("'3÷A=3÷B'")
+        .test(CLEAR, "3 'A=B' ↑", ENTER).expect("'3↑A=3↑B'");
+    step("Simple arithmetic - Symbol and symbol")
+        .test(CLEAR, "'A=B' 'C=D' +", ENTER).expect("'A+C=B+D'")
+        .test(CLEAR, "'A=B' 'C=D' -", ENTER).expect("'A-C=B-D'")
+        .test(CLEAR, "'A=B' 'C=D' *", ENTER).expect("'A·C=B·D'")
+        .test(CLEAR, "'A=B' 'C=D' /", ENTER).expect("'A÷C=B÷D'")
+        .test(CLEAR, "'A=B' 'C=D' ↑", ENTER).expect("'A↑C=B↑D'");
+   step("Simple functions")
+       .test(CLEAR, "'A=B'", ENTER, J).expect("'sin A=sin B'")
+       .test(K, L).expect("'tan (cos (sin A))=tan (cos (sin B))'");
 
     step("Single add, right");
     test(CLEAR, "'(A+B)*C' expand ", ENTER)
@@ -6422,15 +6466,15 @@ void tests::expand_collect_simplify()
         .test(CLEAR, "{ 'x+y' } 'sin' APPLY", ENTER)
         .expect("'sin x+y'");
 
-    step("Apply function call for algebraic function with incorrect arg count")
+    step("Apply function call: incorrect arg count")
         .test(CLEAR, "{ x y } 'sin' APPLY", ENTER)
         .error("Wrong argument count");
 
-    step("Apply function call for algebraic function with incorrect type")
+    step("Apply function call: incorrect type")
         .test(CLEAR, "{ x y } 'drop' APPLY", ENTER)
         .error("Bad argument type");
 
-    step("Apply function call for algebraic function with incorrect type")
+    step("Apply function call: incorrect type")
         .test(CLEAR, "2 'F' APPLY", ENTER)
         .error("Bad argument type");
 

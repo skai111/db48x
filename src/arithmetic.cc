@@ -1368,7 +1368,50 @@ algebraic_p arithmetic::evaluate(id          op,
                     x = xp->as_expression();
             }
         }
+
+        // Deal with the special cases of (A=B) + (C=D)
+        if (expression_p xe = x->as<expression>())
+        {
+            expression_g xl, xr;
+            if (xe->split_equation(xl, xr))
+            {
+                algebraic_g xla = +xl;
+                algebraic_g xra = +xr;
+                if (expression_p ye = y->as<expression>())
+                {
+                    expression_g yl, yr;
+                    if (ye->split_equation(yl, yr))
+                    {
+                        algebraic_g yla = +yl;
+                        algebraic_g yra = +yr;
+                        xla = expression::make(op, xla, yla);
+                        xra = expression::make(op, xra, yra);
+                        goto join;
+                    }
+                }
+                xla = expression::make(op, xla, y);
+                xra = expression::make(op, xra, y);
+            join:
+                x = expression::make(ID_TestEQ, xla, xra);
+                goto done;
+            }
+        }
+        if (expression_p ye = y->as<expression>())
+        {
+            expression_g yl, yr;
+            if (ye->split_equation(yl, yr))
+            {
+                algebraic_g yla = +yl;
+                algebraic_g yra = +yr;
+                yla = expression::make(op, x, yla);
+                yra = expression::make(op, x, yra);
+                x = expression::make(ID_TestEQ, yla, yra);
+                goto done;
+            }
+        }
+
         x = expression::make(op, x, y);
+    done:
         if (x)
             if (expression_p expr = x->as<expression>())
                 if (!unit::factoring && !unit::mode && Settings.AutoSimplify())
