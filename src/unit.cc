@@ -578,7 +578,8 @@ static const cstring basic_units[] =
     // Alternate spellings
     "mole",     "1_mol",                // Mole (quantity of matter)
     "carat",    "1_ct",                 // Carat
-    "u",        "1.6605402E-27_kg",     // Unified atomic mass
+    "u",        "1.66053906892E-27_kg", // Unified atomic mass
+    "Da",       "1.66053906892E-27_kg", // Dalton (Alternative spelling for u)
     "Avogadro", "6.02214076E23",        // Avogadro constant (# units in 1_mol)
 
     // ------------------------------------------------------------------------
@@ -721,7 +722,7 @@ static const cstring basic_units[] =
     "rad",      "1/100_m^2/s^2",        // rad
     "rem",      "1_rad",                // rem
     "Sv",       "1_Gy",                 // Sievert
-    "Bq",       "1_Hz",                 // Becquerel
+    "Bq",       "1_Hz",                 // Becquerel (disintegrations/s)
 
     "Ci",       "37_GBq",               // Curie
     "R",        "258_µC/kg",            // Roentgen
