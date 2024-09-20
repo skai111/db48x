@@ -8453,70 +8453,83 @@ void tests::constants_menu()
     step("Electron mass")
         .test(CLEAR, NOSHIFT, F5).expect("me")
         .test(LSHIFT, F5).expect("9.10938 37139⁳⁻³¹ kg");
+    step("Neutron mass")
+        .test(NOSHIFT, F6)
+        .test(CLEAR, NOSHIFT, F1).expect("mn")
+        .test(LSHIFT, F1).expect("1.67492 7471⁳⁻²⁷ kg");
+    step("Proton mass")
+        .test(CLEAR, NOSHIFT, F2).expect("mp")
+        .test(LSHIFT, F2).expect("1.67262 19259 5⁳⁻²⁷ kg");
+    step("Hydrogen mass")
+        .test(CLEAR, NOSHIFT, F3).expect("mH")
+        .test(LSHIFT, F3).expect("1.00782 5 u");
+    step("Unified mass unit")
+        .test(CLEAR, NOSHIFT, F4).expect("u")
+        .test(LSHIFT, F4).expect("1.66053 90689 2⁳⁻²⁷ kg");
+    step("Dalton (1/12th C12 mass)")
+        .test(CLEAR, NOSHIFT, F5).expect("Da")
+        .test(LSHIFT, F5).expect("1.66053 90689 2⁳⁻²⁷ kg");
     step("Electron mass/charge ratio")
         .test(NOSHIFT, F6)
         .test(CLEAR, NOSHIFT, F1).expect("qme")
         .test(LSHIFT, F1).expect("175 881 962 000 C/kg");
-    step("Proton mass")
-        .test(CLEAR, NOSHIFT, F2).expect("mp")
-        .test(LSHIFT, F2).expect("1.67262 31⁳⁻²⁷ kg");
     step("Proton/electron mass ratio")
-        .test(CLEAR, NOSHIFT, F3).expect("mpme")
-        .test(LSHIFT, F3).expect("1 836.15270 1");
+        .test(CLEAR, NOSHIFT, F2).expect("mpme")
+        .test(LSHIFT, F2).expect("1 836.15270 1");
     step("Fine structure constant")
-        .test(CLEAR, NOSHIFT, F4).expect("α")
-        .test(LSHIFT, F4).expect("0.00729 73530 8");
+        .test(CLEAR, NOSHIFT, F3).expect("α")
+        .test(LSHIFT, F3).expect("0.00729 73530 8");
     step("Magnetic flux quantum")
-        .test(CLEAR, NOSHIFT, F5).expect("ø")
-        .test(LSHIFT, F5).expect("2.06783 461⁳⁻¹⁵ Wb");
+        .test(CLEAR, NOSHIFT, F4).expect("ø")
+        .test(LSHIFT, F4).expect("2.06783 461⁳⁻¹⁵ Wb");
     step("Faraday constant")
-        .test(NOSHIFT, F6)
-        .test(CLEAR, NOSHIFT, F1).expect("F")
-        .test(LSHIFT, F1).expect("96 485.309 C/mol");
+        .test(CLEAR, NOSHIFT, F5).expect("F")
+        .test(LSHIFT, F5).expect("96 485.309 C/mol");
     step("Rydberg constant")
-        .test(CLEAR, NOSHIFT, F2).expect("R∞")
-        .test(LSHIFT, F2).expect("10 973 731.534 m⁻¹");
+        .test(NOSHIFT, F6)
+        .test(CLEAR, NOSHIFT, F1).expect("R∞")
+        .test(LSHIFT, F1).expect("10 973 731.534 m⁻¹");
     step("Bohr radius")
-        .test(CLEAR, NOSHIFT, F3).expect("a0")
-        .test(LSHIFT, F3).expect("0.05291 77249 nm");
+        .test(CLEAR, NOSHIFT, F2).expect("a0")
+        .test(LSHIFT, F2).expect("0.05291 77249 nm");
     step("Bohr magneton")
-        .test(CLEAR, NOSHIFT, F4).expect("μB")
-        .test(LSHIFT, F4).expect("9.27401 54⁳⁻²⁴ J/T");
+        .test(CLEAR, NOSHIFT, F3).expect("μB")
+        .test(LSHIFT, F3).expect("9.27401 54⁳⁻²⁴ J/T");
     step("Nuclear magneton")
-        .test(CLEAR, NOSHIFT, F5).expect("μN")
-        .test(LSHIFT, F5).expect("5.05078 37393⁳⁻²⁷ J/T");
+        .test(CLEAR, NOSHIFT, F4).expect("μN")
+        .test(LSHIFT, F4).expect("5.05078 37393⁳⁻²⁷ J/T");
     step("Photon wavelength")
-        .test(NOSHIFT, F6)
-        .test(CLEAR, NOSHIFT, F1).expect("λ0")
-        .test(LSHIFT, F1).expect("1 239.8425 nm");
+        .test(CLEAR, NOSHIFT, F5).expect("λ0")
+        .test(LSHIFT, F5).expect("1 239.8425 nm");
     step("Photon frequency")
-        .test(CLEAR, NOSHIFT, F2).expect("f0")
-        .test(LSHIFT, F2).expect("2.41798 83⁳¹⁴ Hz");
-    step("Compton wavelength")
-        .test(CLEAR, NOSHIFT, F3).expect("λc")
-        .test(LSHIFT, F3).expect("0.00242 63105 8 nm");
-    step("Wien's constant")
-        .test(CLEAR, NOSHIFT, F4).expect("c3")
-        .test(LSHIFT, F4).expect("0.00289 7756 m·K");
-    step("Boltzman / elementary charge ratio")
-        .test(CLEAR, NOSHIFT, F5).expect("kq")
-        .test(LSHIFT, F5).expect("0.00008 61738 6 J/(K·C)");
-    step("Permitivity / elementary charge ratio")
         .test(NOSHIFT, F6)
-        .test(CLEAR, NOSHIFT, F1).expect("ε0q")
-        .test(LSHIFT, F1).expect("55 263 469.6 F/(m·C)");
+        .test(CLEAR, NOSHIFT, F1).expect("f0")
+        .test(LSHIFT, F1).expect("2.41798 83⁳¹⁴ Hz");
+    step("Compton wavelength")
+        .test(CLEAR, NOSHIFT, F2).expect("λc")
+        .test(LSHIFT, F2).expect("0.00242 63105 8 nm");
+    step("Wien's constant")
+        .test(CLEAR, NOSHIFT, F3).expect("c3")
+        .test(LSHIFT, F3).expect("0.00289 7756 m·K");
+    step("Boltzman / elementary charge ratio")
+        .test(CLEAR, NOSHIFT, F4).expect("kq")
+        .test(LSHIFT, F4).expect("0.00008 61738 6 J/(K·C)");
+    step("Permitivity / elementary charge ratio")
+        .test(CLEAR, NOSHIFT, F5).expect("ε0q")
+        .test(LSHIFT, F5).expect("55 263 469.6 F/(m·C)");
     step("Permittivity - elementary charge product")
-        .test(CLEAR, NOSHIFT, F2).expect("qε0")
-        .test(LSHIFT, F2).expect("1.41859 78⁳⁻³⁰ F·C/m");
+        .test(NOSHIFT, F6)
+        .test(CLEAR, NOSHIFT, F1).expect("qε0")
+        .test(LSHIFT, F1).expect("1.41859 78⁳⁻³⁰ F·C/m");
     step("Dielectric constant of silicon")
-        .test(CLEAR, NOSHIFT, F3).expect("εsi")
-        .test(LSHIFT, F3).expect("11.9");
+        .test(CLEAR, NOSHIFT, F2).expect("εsi")
+        .test(LSHIFT, F2).expect("11.9");
     step("SiO2 dielectric constant")
-        .test(CLEAR, NOSHIFT, F4).expect("εox")
-        .test(LSHIFT, F4).expect("3.9");
+        .test(CLEAR, NOSHIFT, F3).expect("εox")
+        .test(LSHIFT, F3).expect("3.9");
     step("Reference sound intensity")
-        .test(CLEAR, NOSHIFT, F5).expect("I0")
-        .test(LSHIFT, F5).expect("1.⁳⁻¹² W/m↑2");
+        .test(CLEAR, NOSHIFT, F4).expect("I0")
+        .test(LSHIFT, F4).expect("1.⁳⁻¹² W/m↑2");
 }
 
 

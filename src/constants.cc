@@ -333,8 +333,12 @@ static const cstring basic_constants[] =
     "ℏ",        "1.05457266E-34_J*s",   // Dirac
     "qe",       "1.602176634E-19_C",    // Electronic charge
     "me",       "9.1093837139E-31_kg",  // Electron mass
+    "mn",       "1.674927471E-27_kg",   // Neutron mass
+    "mp",       "1.67262192595E-27_kg", // Proton mass
+    "mH",       "1.007825_u",           // Hydrogen mass
+    "u",        "1.66053906892E-27_kg", // Mass unit
+    "Da",       "1.66053906892E-27_kg", // Mass unit (Dalton)
     "qme",      "175881962000_C/kg",    // q/me ratio
-    "mp",       "1.6726231E-27_kg",     // proton mass
     "mpme",     "1836.152701",          // mp/me ratio
     "α",        "0.00729735308",        // fine structure
     "ø",        "2.06783461E-15_Wb",    // Magnetic flux quantum
