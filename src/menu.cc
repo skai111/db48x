@@ -811,7 +811,7 @@ MENU(AlgebraMenu,
      "Subst",           ID_Subst,
      "|",               ID_Where,
 
-     "∂",               ID_Unimplemented,
+     "∂",               ID_Derivative,
      "∫",               ID_Integrate,
      "∑",               ID_Sum,
      "∏",               ID_Product,

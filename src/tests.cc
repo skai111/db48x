@@ -123,6 +123,7 @@ TESTS(integrate,        "Numerical integration");
 TESTS(simplify,         "Auto-simplification of expressions");
 TESTS(rewrites,         "Equation rewrite engine");
 TESTS(symbolic,         "Symbolic operations");
+TESTS(derivative,       "Symbolic differentiation");
 TESTS(tagged,           "Tagged objects");
 TESTS(catalog,          "Catalog of commands");
 TESTS(cycle,            "Cycle command for quick conversions");
@@ -173,7 +174,7 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-            object_structure();
+            symbolic_differentiation();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -225,6 +226,7 @@ void tests::run(uint onlyCurrent)
         auto_simplification();
         rewrite_engine();
         symbolic_operations();
+        symbolic_differentiation();
         tagged_objects();
         catalog_test();
         cycle_test();
@@ -6610,6 +6612,100 @@ void tests::symbolic_operations()
     step("Isolate cbrt")
         .test(CLEAR, "'A=cbrt X' X", NOSHIFT, F3)
         .expect("'X=A³'");
+}
+
+
+void tests::symbolic_differentiation()
+// ----------------------------------------------------------------------------
+//   Symbolic differentiation
+// ----------------------------------------------------------------------------
+{
+    BEGIN(derivative);
+
+    step("Derivative of constant")
+        .test(CLEAR, RSHIFT, KEY8, "42 'X'", F1).expect("'0'");
+    step("Derivative of a variable")
+        .test(CLEAR, "'X' 'X'", F1).expect("'1'");
+    step("Derivative of a different variable")
+        .test(CLEAR, "'A' 'X'", F1).expect("'0'");
+    step("Derivative of a product by a constant")
+        .test(CLEAR, "'A*X' 'X'", F1).expect("'A'");
+    step("Derivative of a polynomial")
+        .test(CLEAR, "'A*X+B*X^2-C*sq(X)+D*X^5+42' 'X'", F1)
+        .expect("'A+2·B·X+5·D·X↑4-2·C·X'");
+    step("Derivative of ratio")
+        .test(CLEAR, "'A*X/(B*X+1)' 'X'", F1)
+        .expect("'(A·(B·X+1)-A·X·B)÷(B·X+1)²'");
+    step("Derivative of power by a numerical constant")
+        .test(CLEAR, "'X^(2.5+3.2)' 'X'", F1)
+        .expect("'5.7·X↑4.7'");
+    step("Derivative of power by a non-numerical constant")
+        .test(CLEAR, "'X^(A+2)' 'X'", F1)
+        .expect("'X↑(A+2)·(A+2)÷X'");
+    step("Derivative of power of a numerical constant")
+        .test(CLEAR, "'2^X' 'X'", F1)
+        .expect("'0.69314 71805 6·2↑X'");
+    step("Derivative of power of a non-numerical constant")
+        .test(CLEAR, "'A^X' 'X'", F1)
+        .expect("'A↑X·(ln A+0÷A)'")
+        .test(RUNSTOP)
+        .expect("'A↑X·ln A'");
+    step("Derivative of power")
+        .test(CLEAR, "'(A*X+B)^(C*X+D)' 'X'", F1)
+        .expect("'(A·X+B)↑(C·X+D)·(C·ln(A·X+B)+A·(C·X+D)÷(A·X+B))'");
+    step("Derivative of negation, inverse, abs and sign")
+        .test(CLEAR, "'-(inv(X) + abs(X) - sign(X^2))' 'X'", F1)
+        .expect("'-((-1)÷X²+sign X)'");
+    step("Derivative of sine, cosine, tangent")
+        .test(CLEAR, "'sin(A*X^2)+cos(X*B)+tan(C*X^6)' 'X'", F1)
+        .expect("'2·A·X·cos(A·X²)+(-B)·sin(X·B)+6·C·X↑5÷(cos(C·X↑6))²'");
+    step("Derivative of hyperbolic sine, cosine, tangent")
+        .test(CLEAR, "'sinh(A*X^3)+cosh(B*X^5)+tanh(C*X^3)' 'X'", F1)
+        .expect("'3·A·X²·cosh(A·X³)+5·B·X↑4·sinh(B·X↑5)+3·C·X²÷(cosh(C·X³))²'");
+    step("Derivative of arcsine, arccosine, arctangent")
+        .test(CLEAR, "'asin(A*X^2)+acos(X*B)+atan(C*X^6)' 'X'", F1)
+        .expect("'2·A·X÷√(1-(A·X²)²)+(-B)÷√(1-(X·B)²)+6·C·X↑5÷((C·X↑6)²+1)'");
+    step("Derivative of inverse hyperbolic sine, cosine, tangent")
+        .test(CLEAR, "'asinh(A*X)+acosh(X*B)+atanh(C+X)' 'X'", F1)
+        .expect("'A÷√((A·X)²+1)+B÷√((X·B)²-1)+(1-(C+X)²)⁻¹'");
+
+    step("Derivative of log and exp")
+        .test(CLEAR, "'log(A*X+B)+exp(X*C-D)' 'X'", F1)
+        .expect("'A÷(A·X+B)+C·exp(X·C-D)'");
+    step("Derivative of log2 and exp2")
+        .test(CLEAR, "'log2(A*X+B)+exp2(X*C-D)' 'X'", F1)
+        .expect("'A÷(ln 2·(A·X+B))+ln 2·C·exp2(X·C-D)'");
+    step("Derivative of log10 and exp10")
+        .test(CLEAR, "'log10(A*X+B)+exp10(X*C-D)' 'X'", F1)
+        .expect("'A÷(ln 10·(A·X+B))+ln 10·C·exp10(X·C-D)'");
+
+    step("Derivative of lnp1 and expm1")
+        .test(CLEAR, "'log1p(A*X+B)+expm1(X*C-D)' 'X'", F1)
+        .expect("'A÷(A·X+B+1)+C·exp(X·C-D)'");
+
+    step("Derivative of square and cube")
+        .test(CLEAR, "'sq(A*X+B)+cubed(X*C-D)' 'X'", F1)
+        .expect("'2·(A·X+B)·A+3·(X·C-D)²·C'");
+    step("Derivative of square root and cube root")
+        .test(CLEAR, "'sqrt(A*X+B)+cbrt(X*C-D)' 'X'", F1)
+        .expect("'A÷(2·√(A·X+B))+C÷(3·(∛(X·C-D))²)'");
+
+    step("Derivative of single-variable user-defined function")
+        .test(CLEAR, "'F(A*X+B)' 'X'", F1)
+        .expect("'A·F′(A·X+B)'");
+    step("Derivative of nested single-variable user-defined function")
+        .test(CLEAR, "'F(G(A*X+B))' 'X'", F1)
+        .expect("'A·G′(A·X+B)·F′(G(A·X+B))'");
+
+    step("Derivative of multi-variable user-defined function")
+        .test(CLEAR, "'F(A*X+B;C*X+D;E*X-G)' 'X'", F1)
+        .expect("'A·F′₁(A·X+B;C·X+D;E·X-G)"
+                "+C·F′₂(A·X+B;C·X+D;E·X-G)"
+                "+E·F′₃(A·X+B;C·X+D;E·X-G)'");
+
+    step("Derivative of unknown form")
+        .test(CLEAR, "'IP(X)' 'X'", F1)
+        .error("Unknown derivative");
 }
 
 
