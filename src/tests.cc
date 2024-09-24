@@ -8317,13 +8317,14 @@ void tests::insertion_of_variables_constants_and_units()
     step("Select secrets menu")
         .test(F1).noerror();
     step("Insert Dedicace")
-        .test(CLEAR, F1).expect("Dedicace");
+        .test(CLEAR, LSHIFT, RUNSTOP, F1, ENTER).want("« Dedicace »");
+    cstring ded = "\"À tous ceux qui se souviennent de Maubert électronique\"";
     step("Evaluate stack Dedicace")
-        .test(RUNSTOP).expect("\"À tous ceux qui se souviennent de "
-                              "Maubert électronique\"");
+        .test(RUNSTOP).expect(ded);
+    step("Evaluate Dedicace")
+        .test(CLEAR, F1).expect(ded);
     step("Evaluate Dedicace directly")
-        .test(LSHIFT, F1).expect("\"À tous ceux qui se souviennent de "
-                                 "Maubert électronique\"");
+        .test(LSHIFT, F1).expect(ded);
 
     step("Begin program")
         .test(CLEAR, LSHIFT, RUNSTOP).editor("«»");
