@@ -3749,7 +3749,7 @@ expression_p expression::derivative(symbol_r sym) const
         (X - Y)|indep,          (X|indep)-(Y|indep),
         (X * Y)|indep,          X*(Y|indep) + (X|indep)*Y,
         (X / Y)|indep,          ((X|indep)*Y-X*(Y|indep))/sq(Y),
-        (X ^ Y)|indep,          Y*(X^(Y-one)) * (X|indep),
+        (X ^ A)|indep,          A*(X^(A-one)) * (X|indep),
 
         A-B,                    A-B,
         A*B,                    A*B,
@@ -3761,6 +3761,8 @@ expression_p expression::derivative(symbol_r sym) const
         one*X,                  X,
         X^zero,                 one,
         X^one,                  X,
+
+        (X ^ E)|indep,          (X^E)*((E|indep)*log(X) + ((X|indep)*E)/X),
 
         (-X)|indep,             -(X|indep),
         inv(X)|indep,           -(X|indep) / sq(X),
