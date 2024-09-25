@@ -36,6 +36,7 @@
 #include "symbol.h"
 
 GCP(expression);
+GCP(funcall);
 GCP(grob);
 struct grapher;
 
@@ -99,12 +100,12 @@ struct expression : program
         return rt.make<expression>(type, op, args, arity);
     }
 
-
     static expression_p as_expression(object_p obj);
     static expression_p current_equation(bool error);
 
     typedef expression_p (expression::*command_fn)(symbol_r name) const;
     static result variable_command(command_fn callback);
+
 
 
     // ========================================================================
@@ -331,9 +332,13 @@ public:
     static symbol_g    *dependent;
     static object_g    *dependent_value;
     static bool         in_algebraic;
-    static bool         differentiating;
     static bool         contains_independent_variable;
     static uint         constant_index;
+
+    typedef size_t (*funcall_match_fn)(funcall_p pat, funcall_p repl);
+    typedef algebraic_p (*funcall_build_fn)(funcall_p src, funcall_p repl);
+    static funcall_match_fn funcall_match;
+    static funcall_build_fn funcall_build;
 };
 
 
@@ -358,7 +363,6 @@ public:
     PARSE_DECL(funcall);
     EVAL_DECL(funcall);
 };
-GCP(funcall);
 
 
 

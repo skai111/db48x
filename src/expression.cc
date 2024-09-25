@@ -54,9 +54,13 @@ object_g *expression::independent_value             = nullptr;
 symbol_g *expression::dependent                     = nullptr;
 object_g *expression::dependent_value               = nullptr;
 bool      expression::in_algebraic                  = false;
-bool      expression::differentiating               = false;
 bool      expression::contains_independent_variable = false;
 uint      expression::constant_index                = 0;
+
+
+// Used to match and build user-defined function calls for deriv/integ
+expression::funcall_match_fn expression::funcall_match = nullptr;
+expression::funcall_build_fn expression::funcall_build = nullptr;
 
 
 
@@ -961,20 +965,11 @@ static size_t check_match(size_t eq, size_t eqsz,
             {
                 if (top->type() != object::ID_funcall)
                     return 0;
+                if (!expression::funcall_match)
+                    return 0;
                 funcall_p fcftop = funcall_p(+ftop);
                 funcall_p fctop = funcall_p(+top);
-                size_t depth = rt.depth();
-                if (!fcftop->expand_without_size())
-                    return 0;
-                size_t fcfromsz = rt.depth() - depth;
-                if (!fctop->expand_without_size())
-                {
-                    rt.drop(fcfromsz);
-                    return 0;
-                }
-                size_t fcsz = rt.depth() - depth - fcfromsz;
-                size_t fcmatch = check_match(0, fcsz, fcsz, fcfromsz);
-                rt.drop(rt.depth() - depth);
+                size_t fcmatch = expression::funcall_match(fcftop, fctop);
                 if (!fcmatch)
                     return 0;
             }
@@ -1014,7 +1009,6 @@ static algebraic_p build_expr(expression_p eqin,
     scribble     scr;
     expression_g eq       = eqin;
     size_t       where    = 0;
-    bool         compute  = +eq == +to;
     object::id   eqty     = to->type();
 
     // Copy from the original
@@ -1031,6 +1025,9 @@ static algebraic_p build_expr(expression_p eqin,
         else if (!replaced)
         {
             // Insert a version of 'to' where symbols are replaced
+            uint     nvars      = 0;
+            uint     nconstants = 0;
+            size_t   begin      = scr.growth();
             for (object_p tobj : *to)
             {
                 if (tobj->type() == object::ID_symbol)
@@ -1045,10 +1042,14 @@ static algebraic_p build_expr(expression_p eqin,
                         if (c == '@')
                         {
                             found = constant::lookup("π");
+                            nvars++;
+                            nconstants++;
                         }
                         else if (c == '!')
                         {
                             found = constant::lookup("ⅈ");
+                            nvars++;
+                            nconstants++;
                         }
                         else if (c == '=')
                         {
@@ -1075,16 +1076,13 @@ static algebraic_p build_expr(expression_p eqin,
                             if (existing->is_same_as(name))
                                 found = rt.local(l+1);
                         }
+                        nvars++;
                     }
 
                     if (found)
                     {
-                        if (expression::differentiating)
-                            if (must_be_symbol(cat))
-                                if (symbol_g sym = found->as_quoted<symbol>())
-                                    found = +(sym + symbol::make("′"));
                         if (must_be_integer(cat)|| must_be_constant(cat))
-                            compute = true;
+                            nconstants++;
                         tobj = found;
 
                     }
@@ -1093,28 +1091,47 @@ static algebraic_p build_expr(expression_p eqin,
                 // Only copy the payload of equations
                 size_t tobjsize = tobj->size();
                 object::id tty = tobj->type();
-                if (tty == object::ID_expression || tty == object::ID_funcall)
+                if (tty == object::ID_funcall)
                 {
                     object_p srcobj = *it;
-                    if (srcobj->type() == tty)
-                    {
-                        expression_p src = expression_p(srcobj);
-                        expression_g sub = expression_p(tobj);
-                        uint subrw = 0;
-                        bool subrepl = false;
-                        algebraic_g sval = build_expr(src, 0, sub, ~0U,
-                                                      locals, subrw, subrepl);
-                        if (!sval || sval->type() != tty)
-                            return nullptr;
-                        tobj = +sval;
-                        tobjsize = tobj->size();
-                    }
-                    else
-                    {
-                        tobj = expression_p(tobj)->objects(&tobjsize);
-                    }
+                    if (srcobj->type() != tty || !expression::funcall_build)
+                        return nullptr;
+
+                    funcall_p src = funcall_p(srcobj);
+                    funcall_p repl = funcall_p(tobj);
+                    algebraic_p a = expression::funcall_build(src, repl);
+                    if (!a)
+                        return nullptr;
+                    tobj = +a;
+                    tobjsize = tobj->size();
+                    tty = tobj->type();
+                }
+                if (tty == object::ID_expression)
+                {
+                    tobj = expression_p(tobj)->objects(&tobjsize);
+                }
+                if (object::is_real(tty))
+                {
+                    nvars++;
+                    nconstants++;
                 }
                 if (!rt.append(tobjsize, byte_p(tobj)))
+                    return nullptr;
+            }
+
+            // Check if we need to compute a sub-expression, e.g 3-1 = 2
+            if (nvars >= 2 && nvars == nconstants)
+            {
+                byte_p start = scr.scratch() + begin;
+                size_t len = scr.growth() - begin;
+                expression_g sub = expression_p(list::make(eqty, start, len));
+                if (!sub)
+                    return nullptr;
+                algebraic_g value = sub->evaluate();
+                if (!value)
+                    return nullptr;
+                rt.free(len);
+                if (!rt.append(value))
                     return nullptr;
             }
 
@@ -1126,23 +1143,6 @@ static algebraic_p build_expr(expression_p eqin,
 
     // Restart anew with replaced equation
     eq = expression_p(list::make(eqty, scr.scratch(), scr.growth()));
-
-    if (eq)
-    {
-        // If we had an integer matched and replaced, execute equation
-        if (compute)
-        {
-            // Need to evaluate e.g. 3-1 to get 2
-            size_t depth = rt.depth();
-            if (eq->run() == object::OK)
-                if (rt.depth() == depth+1)
-                    if (object_p computed = rt.pop())
-                        if (algebraic_g eqa = computed->as_algebraic())
-                            return eqa;
-            eq = nullptr;
-        }
-    }
-
     return +eq;
 }
 
@@ -1162,6 +1162,9 @@ static size_t check_match(size_t eq, size_t eqsz,
     bool condrepl = false;
     algebraic_g cval = build_expr(cond, 0, cond, ~0U,
                                   locals, condrw, condrepl);
+    if (!cval)
+        return 0;
+    cval = cval->evaluate();
     if (!cval)
         return 0;
     int rc = cval->as_truth(false);
@@ -2664,14 +2667,10 @@ COMMAND_BODY(Apply)
                 scribble scr;
                 size_t argsize = 0;
                 object_p argsrc = lst->objects(&argsize);
-                if (byte *argcopy = rt.allocate(argsize))
+                if (rt.append(argsrc, argsize))
                 {
-                    memmove(argcopy, byte_p(argsrc), argsize);
-                    size_t calleesize = callee->size();
-                    if (byte *calleecopy = rt.allocate(calleesize))
+                    if (rt.append(callee))
                     {
-                        memmove(calleecopy, byte_p(callee), calleesize);
-
                         gcbytes scratch = scr.scratch();
                         size_t  alloc   = scr.growth();
                         callee = rt.make<funcall>(ID_funcall, scratch, alloc);
@@ -3297,18 +3296,13 @@ static expression_p substitute(expression_r pattern,
         symbol_p oname = obj->as<symbol>();
         if (oname && name->is_same_as(oname))
         {
-            byte *objcopy = rt.allocate(replsz);
-            if (!objcopy)
+            if (!rt.append(replobj, replsz))
                 return nullptr;
-            memmove(objcopy, +replobj, replsz);
         }
         else
         {
-            size_t sz = obj->size();
-            byte *objcopy = rt.allocate(sz);
-            if (!objcopy)
+            if (!rt.append(obj))
                 return nullptr;
-            memmove(objcopy, +obj, sz);
         }
     }
     expression_g result = expression_p(list::make(object::ID_expression,
@@ -3603,28 +3597,170 @@ COMMAND_BODY(Isolate)
 }
 
 
+static size_t derivative_funcall_match(funcall_p pat, funcall_p repl)
+// ----------------------------------------------------------------------------
+//   Check if we match a function call
+// ----------------------------------------------------------------------------
+{
+    size_t depth = rt.depth();
+    if (!pat->expand_without_size())
+        return 0;
+    size_t patsz = rt.depth() - depth;
+    if (!repl->expand_without_size())
+    {
+        rt.drop(patsz);
+        return 0;
+    }
+    size_t replsz = rt.depth() - depth - patsz;
+    size_t replst = 0;
+    size_t patst = replsz;
+    size_t match = check_match(replst, replsz, patst, patsz);
+    rt.drop(rt.depth() - depth);
+    return match;
+}
+
+
+static algebraic_p derivative_funcall_build(funcall_p src, funcall_p repl)
+// ----------------------------------------------------------------------------
+//   Build function calls for derivative command
+// ----------------------------------------------------------------------------
+//   The pattern for the funcall derivative only gives a single term.
+//   Isolate the terms and run them one after the other.
+//   When we enter this function while differentiating 'F(A*X;B*X^2)', we have
+//   src set to that function call, and repl set to the replacement pattern,
+//   which for differentiation is 'S(X)'.
+{
+    funcall_g   sg  = src;
+    array_g     sa  = src->args();
+    array_g     ra = repl->args();
+    if (!sa || !ra)
+        return nullptr;
+
+    // Extract function and argument from replacement pattern
+    object_p ro = ra->objects();
+    if (!ro)
+        return nullptr;
+
+    symbol_g    rf = ro->as<symbol>();
+    symbol_g    rx = ro->skip()->as<symbol>();
+    if (!rf || !rx)
+        return nullptr;
+
+    // Extract function from source pattern
+    size_t      sz = 0;
+    object_g    so = sa->objects(&sz);
+    symbol_g    sf = so->as<symbol>();
+    if (!sf)
+        return nullptr;
+    size_t      sp = so->size();
+    size_t      sn = sa->items();
+    size_t      nobj = src->items();
+    uint        aidx = 0;
+
+    // If we have F(), then it does not depend on variable, return 0
+    // (Should not happen because we already check for R before)
+    ASSERT("User functions without args should not be seen here" && sn >= 2);
+
+    // Transform F into F′
+    symbol_g    sd = sf + symbol::make("′");
+
+    // Variable we differentiate against
+    ASSERT("Derivative should set independent variable" &&
+           expression::independent);
+    algebraic_g  dvar = +*expression::independent;
+
+    // The sum we build
+    algebraic_g result;
+
+    // Loop on all arguments
+    while (sp < sz)
+    {
+        object_p    si  = so + sp;
+        algebraic_g arg = si->as_algebraic();
+        if (!arg)
+            return nullptr;
+
+        // Function name for the partial term
+        symbol_g st = sd;
+        if (sn != 2)
+        {
+            // Build a function name like F′₁₅ for 15'th argument derivative
+            static cstring lower_digits[10] =
+            {
+                "₀", "₁", "₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉"
+            };
+            char buf[16];
+            snprintf(buf, sizeof(buf), "%u", ++aidx);
+            for (cstring p = buf; *p; p++)
+                st = st + symbol::make(lower_digits[*p - '0']);
+        }
+        if (!st)
+            return nullptr;
+
+        // Differentiate that term
+        algebraic_g dterm = expression::make(object::ID_Derivative, arg, dvar);
+
+        // Build a copy of the source function call
+        scribble scr;
+        size_t a = 0;
+        for (object_p obj : *sg)
+        {
+            if (++a == nobj)
+                obj = +st;
+            if (!rt.append(obj))
+                return nullptr;
+        }
+        gcbytes bytes = scr.scratch();
+        size_t size = scr.growth();
+        algebraic_g dfunc = rt.make<funcall>(bytes, size);
+        dterm = dterm * dfunc;
+        if (!dterm)
+            return nullptr;
+        result = result ? result + dterm : dterm;
+        if (!result)
+            return nullptr;
+
+        sp += si->size();
+    }
+
+    return result;
+}
+
+
 expression_p expression::derivative(symbol_r sym) const
 // ----------------------------------------------------------------------------
 //   Compute the derivative of the
 // ----------------------------------------------------------------------------
 {
-    save<symbol_g *> sindep(independent, (symbol_g *) &sym);
-    save<object_g *> sindval(independent_value, nullptr);
-    save<uint>       sconstant(constant_index, 0);
-    save<bool>       sdiff(differentiating, true);
-    expression_g     eq     = this;
+    save<symbol_g *>       sindep(independent, (symbol_g *) &sym);
+    save<object_g *>       sindval(independent_value, nullptr);
+    save<uint>             sconstant(constant_index, 0);
+    save<funcall_match_fn> smatch(funcall_match, derivative_funcall_match);
+    save<funcall_build_fn> sbuild(funcall_build, derivative_funcall_build);
+    expression_g           eq = this;
     eq = expression::make(ID_Derivative, algebraic_g(eq), algebraic_g(sym));
     expression_g result = eq->rewrites(
-        R|indep,                zero,           // Non-zero expr without var
+        P|indep,                zero, // Expression not containing the variable
 
-        (S(X))|indep,           (X|indep)*S(X),
+        (S(X))|indep,           S(X), // Special handling for this form
 
         indep|indep,            one,
         (X + Y)|indep,          (X|indep)+(Y|indep),
         (X - Y)|indep,          (X|indep)-(Y|indep),
         (X * Y)|indep,          X*(Y|indep) + (X|indep)*Y,
         (X / Y)|indep,          ((X|indep)*Y-X*(Y|indep))/sq(Y),
-        (X ^ K)|indep,          K*(X^(K-one)) * (X|indep),
+        (X ^ Y)|indep,          Y*(X^(Y-one)) * (X|indep),
+
+        A-B,                    A-B,
+        A*B,                    A*B,
+        zero*X,                 zero,
+        X*zero,                 zero,
+        zero+X,                 X,
+        X+zero,                 X,
+        X*one,                  X,
+        one*X,                  X,
+        X^zero,                 one,
+        X^one,                  X,
 
         (-X)|indep,             -(X|indep),
         inv(X)|indep,           -(X|indep) / sq(X),

@@ -6291,7 +6291,7 @@ void tests::rewrite_engine()
     test(CLEAR, "'(A+B)^3' { 'X^K' 'X*X^(K-1)' }", RSHIFT, KEY7, F6, F1)
         .expect("3")
         .test(BSP)
-        .expect("'(A+B)·((A+B)·((A+B)·(A+B)↑0))'");
+        .expect("'(A+B)·((A+B)·((A+B)·(A+B)↑(1-1)))'");
 
     step("Matching sorted integers (success)");
     test(CLEAR, "'3+5' { 'i+j' '21*(j-i)' }", RSHIFT, KEY7, F6, F1)
@@ -6334,7 +6334,7 @@ void tests::rewrite_engine()
               "{ 'K*Y' '(K-1)*Y+Y' 'K>2' } "
               "↓match", ENTER)
         .expect("3")
-        .test(BSP).expect("'cos(2·A)+cos(2·B+B)+sin(2·C+C+C)'");
+        .test(BSP).expect("'cos(2·A)+cos((3-1)·B+B)+sin((3-1)·C+C+C)'");
 
     step("Setting ExplicitWildcards to match with &Wildcard")
         .test(CLEAR,
@@ -6350,7 +6350,7 @@ void tests::rewrite_engine()
               "{ '&K*&Y' '(&K-1)*&Y+&Y' } "
               "↓match", ENTER)
         .expect("9")
-        .test(BSP).expect("'cos(0·A+A+A)+cos(0·B+B+B+B)+sin(0·C+C+C+C+C)'");
+        .test(BSP).expect("'cos((1-1)·A+A+A)+cos((1-1)·B+B+B+B)+sin((1-1)·C+C+C+C+C)'");
     step("Restoring default for wildcards")
         .test(CLEAR, "'ExplicitWildcards' Purge", ENTER).noerror();
 }
