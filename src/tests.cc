@@ -9263,7 +9263,7 @@ void tests::object_structure()
     step("Obj→ on user-defined function call")
         .test(CLEAR, LSHIFT, "'F(A+B;C*D;E-F)'", ENTER, RSHIFT, N, F4)
         .expect("1").test(BSP).expect("'F(A+B;C·D;E-F)'")
-        .test(F4).got("[ F 'E-F' 'C·D' 'A+B' ]");
+        .test(F4).got("[ F 'A+B' 'C·D' 'E-F' ]");
     step("Obj→ on vector")
         .test(CLEAR, LSHIFT, "[a b c d]", ENTER, RSHIFT, N, F4)
         .got("{ 4 }", "d", "c", "b", "a");

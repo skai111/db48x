@@ -2579,14 +2579,35 @@ array_p funcall::args() const
 //   Return an array with the arguments to the funcall
 // ----------------------------------------------------------------------------
 {
-    size_t depth = rt.depth();
+    stack_depth_restore sdr;
+
+    // Build list of arguments
     if (!expand_without_size())
         return nullptr;
     scribble scr;
-    while (object_p obj = arg(depth))
-        if (!rt.append(obj->size(), byte_p(obj)))
+    while (object_p obj = arg(sdr.depth))
+        if (!rt.append(obj))
             return nullptr;
-    return array_p(list::make(ID_array, scr.scratch(), scr.growth()));
+    if (rt.depth() > sdr.depth)
+        return nullptr;
+
+    array_g a = array_p(list::make(ID_array, scr.scratch(), scr.growth()));
+
+    // Put arguments back in correct order
+    if (!a->expand_without_size())
+        return nullptr;
+    size_t nitems = rt.depth() - sdr.depth - 1;
+    size_t nhalf = nitems / 2;
+    for (size_t i = 0; i < nhalf; i++)
+    {
+        object_p lo = rt.stack(i);
+        object_p hi = rt.stack(nitems + ~i);
+        rt.stack(i, hi);
+        rt.stack(nitems + ~i, lo);
+    }
+
+    a = array::from_stack(nitems + 1, 0);
+    return a;
 }
 
 
