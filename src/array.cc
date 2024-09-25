@@ -362,12 +362,12 @@ array_p array::build(size_t rows, size_t columns, item_fn items, void *data)
                     for (size_t c = 0; c < columns; c++)
                     {
                         object_g it = items(rows, columns, r, c, data);
-                        if (!it || !rt.append(it->size(), byte_p(+it)))
+                        if (!rt.append(it))
                             return nullptr;
                     }
                     row = list::make(ID_array, srow.scratch(), srow.growth());
                 }
-                if (!row || !rt.append(row->size(), byte_p(+row)))
+                if (!rt.append(row))
                     return nullptr;
             }
         }
@@ -376,7 +376,7 @@ array_p array::build(size_t rows, size_t columns, item_fn items, void *data)
             for (size_t r = 0; r < rows; r++)
             {
                 object_g it = items(rows, columns, r, 0, data);
-                if (!it || !rt.append(it->size(), byte_p(+it)))
+                if (!rt.append(it))
                     return nullptr;
             }
         }
@@ -1094,13 +1094,12 @@ array_g array::invert() const
                 {
                     size_t orc = r * n + c;
                     object_p mrc = rt.stack(pt + ~orc);
-                    if (!mrc)
+                    if (!rt.append(mrc))
                         goto err;
-                    rt.append(mrc->size(), byte_p(mrc));
                 }
                 vec = list::make(atype, sv.scratch(), sv.growth());
             }
-            if (!vec || !rt.append(vec->size(), byte_p(vec)))
+            if (!rt.append(vec))
                 goto err;
         }
 
@@ -1628,7 +1627,7 @@ array_g array::do_matrix(array_r x, array_r y,
         for (size_t c = 0; c < cx; c++)
         {
             algebraic_g e = vec(c, cx, cy);
-            if (!e || !rt.append(e->size(), byte_p(+e)))
+            if (!rt.append(e))
                 goto err;
         }
 
@@ -1681,12 +1680,12 @@ array_g array::do_matrix(array_r x, array_r y,
                 for (size_t c = 0; c < cr; c++)
                 {
                     algebraic_g e = mat(r, c, rx, cx, ry, cy);
-                    if (!e || !rt.append(e->size(), byte_p(+e)))
+                    if (!rt.append(e))
                         goto err;
                 }
                 row = object_p(list::make(ty, sr.scratch(), sr.growth()));
             }
-            if (!row || !rt.append(row->size(), byte_p(+row)))
+            if (!rt.append(row))
                 goto err;
         }
 

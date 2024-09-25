@@ -166,12 +166,8 @@ PARSE_BODY(locals)
         return result;
 
     // Copy the program to the scratchpad
-    object_g pgm = p.out;
-    if (!pgm)
+    if (!rt.append(p.out))
         return ERROR;
-    sz = pgm->size();
-    end = rt.allocate(sz);
-    memmove(end, byte_p(pgm), sz);
 
     // Compute total number of bytes in payload and build object
     gcbytes scratch = scr.scratch();

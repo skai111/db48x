@@ -32,6 +32,7 @@
 #include "arithmetic.h"
 #include "compare.h"
 #include "constants.h"
+#include "expression.h"
 #include "integer.h"
 #include "object.h"
 #include "program.h"
@@ -692,10 +693,44 @@ byte *runtime::append(size_t sz, gcbytes bytes)
 //   Append some bytes at end of scratch pad
 // ----------------------------------------------------------------------------
 {
+    if (!+bytes)
+        return nullptr;
     byte *ptr = allocate(sz);
     if (ptr)
-        memcpy(ptr, +bytes, sz);
+        memmove(ptr, +bytes, sz);
     return ptr;
+}
+
+
+byte *runtime::append(object_p obj)
+// ----------------------------------------------------------------------------
+//   Append an object at end of scratch pad
+// ----------------------------------------------------------------------------
+{
+    return append(obj, obj->size());
+}
+
+
+byte *runtime::append(object_p obj, size_t sz)
+// ----------------------------------------------------------------------------
+//   Append an object at end of scratch pad with a specific size
+// ----------------------------------------------------------------------------
+{
+    return append(sz, byte_p(obj));
+}
+
+
+byte *runtime::append_expression(object_p obj)
+// ----------------------------------------------------------------------------
+//   Append an object at end of scratch pad, strip expressions
+// ----------------------------------------------------------------------------
+{
+    if (!obj)
+        return nullptr;
+    size_t sz = obj->size();
+    if (expression_p eq = obj->as<expression>())
+        obj = eq->objects(&sz);
+    return append(obj, sz);
 }
 
 

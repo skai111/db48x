@@ -233,11 +233,9 @@ object::result loop::object_parser(parser  &p,
                 return ERROR;
 
             // Copy the parsed object to the scratch pad (may GC)
-            size_t objsize = obj->size();
-            byte *objcopy = rt.allocate(objsize);
+            byte *objcopy = rt.append(obj);
             if (!objcopy)
                 return ERROR;
-            memmove(objcopy, (byte *) obj, objsize);
 
             // Check if we have a loop variable name
             if (loopvar && sep != open)

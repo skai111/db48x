@@ -434,6 +434,9 @@ struct runtime
 
 
     byte *append(size_t sz, gcp<const byte> bytes);
+    byte *append(object_p obj);
+    byte *append(object_p obj, size_t sz);
+    byte *append_expression(object_p obj);
     // ------------------------------------------------------------------------
     //   Append some bytes at end of scratch pad
     // ------------------------------------------------------------------------

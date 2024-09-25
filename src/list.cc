@@ -369,10 +369,8 @@ object::result list::list_parse(id      type,
                     if (expression_p eq = obj->as<expression>())
                         obj = eq->objects(&objsize);
 
-                byte *objcopy = rt.allocate(objsize);
-                if (!objcopy)
+                if (!rt.append(obj, objsize))
                     return ERROR;
-                memmove(objcopy, (byte *) obj, objsize);
 
                 if (xroot_arg)
                 {
@@ -427,11 +425,8 @@ object::result list::list_parse(id      type,
         rt.command(obj);
         if (objcount == 0 && scr.growth() == 0)
         {
-            size_t objsize = obj->size();
-            byte *objcopy = rt.allocate(objsize);
-            if (!objcopy)
+            if (!rt.append(obj))
                 return ERROR;
-            memmove(objcopy, (byte *) obj, objsize);
             objcount = 1;
         }
         else
@@ -901,15 +896,9 @@ list_p to_list_object(uint depth)
 {
     scribble scr;
     for (uint i = 0; i < depth; i++)
-    {
         if (object_g obj = rt.stack(depth - 1 - i))
-        {
-            size_t objsz = obj->size();
-            byte_p objp = byte_p(obj);
-            if (!rt.append(objsz, objp))
+            if (!rt.append(obj))
                 return nullptr;
-        }
-    }
 
     if (list_p result = list::make(scr.scratch(), scr.growth()))
     {
@@ -1389,9 +1378,7 @@ list_p list::map(object_p prgobj) const
         if (!obj)
             goto error;
 
-        size_t objsz = obj->size();
-        byte_p objp = byte_p(obj);
-        if (!rt.append(objsz, objp))
+        if (!rt.append(obj))
             goto error;
     }
 
@@ -1479,15 +1466,8 @@ list_p list::filter(object_p prgobj) const
                 goto error;
         }
 
-        if (!obj)
+        if (keep && !rt.append(obj))
             goto error;
-        if (keep)
-        {
-            size_t objsz = obj->size();
-            byte_p objp = byte_p(obj);
-            if (!rt.append(objsz, objp))
-                goto error;
-        }
     }
 
     return list::make(ty, scr.scratch(), scr.growth());
@@ -1522,10 +1502,8 @@ list_p list::pair_map(object_p prgobj) const
                 rt.misbehaving_program_error();
                 goto error;
             }
-            object_g item   = rt.pop();
-            size_t   itemsz = item->size();
-            byte_p   itemp  = byte_p(item);
-            if (!rt.append(itemsz, itemp))
+            object_p item   = rt.pop();
+            if (!rt.append(item))
                 goto error;
         }
         prev = obj;
@@ -1570,11 +1548,7 @@ list_p list::map(algebraic_fn fn) const
             obj = +a;
         }
 
-        if (!obj)
-            return nullptr;
-        size_t objsz = obj->size();
-        byte_p objp = byte_p(obj);
-        if (!rt.append(objsz, objp))
+        if (!rt.append(obj))
             return nullptr;
     }
 
@@ -1612,11 +1586,7 @@ list_p list::map(arithmetic_fn fn, algebraic_r y) const
             obj = +a;
         }
 
-        if (!obj)
-            return nullptr;
-        size_t objsz = obj->size();
-        byte_p objp = byte_p(obj);
-        if (!rt.append(objsz, objp))
+        if (!rt.append(obj))
             return nullptr;
     }
 
@@ -1656,9 +1626,7 @@ list_p list::map(algebraic_r x, arithmetic_fn fn) const
             obj = +a;
         }
 
-        size_t objsz = obj->size();
-        byte_p objp = byte_p(obj);
-        if (!rt.append(objsz, objp))
+        if (!rt.append(obj))
             return nullptr;
     }
 
@@ -1751,15 +1719,9 @@ static object::result do_sort(int (*compare)(object_p *x, object_p *y))
                 qsort(rt.stack_base(), count, sizeof(object_p), cmp);
 
             for (uint i = 0; i < count; i++)
-            {
                 if (object_g obj = rt.stack(i))
-                {
-                    size_t objsz = obj->size();
-                    byte_p objp = byte_p(obj);
-                    if (!rt.append(objsz, objp))
+                    if (!rt.append(obj))
                         goto err;
-                }
-            }
             rt.drop(count);
             items = list::make(oty, scr.scratch(), scr.growth());
             if (items && rt.top(+items))
@@ -1943,11 +1905,8 @@ list_p list::names(bool units, id type) const
     while (rt.depth() > depth)
     {
         object_g obj = rt.pop();
-        size_t objsz = obj->size();
-        byte *objcopy = rt.allocate(objsz);
-        if (!objcopy)
+        if (!rt.append(obj))
             goto error;
-        memmove(objcopy, +obj, objsz);
     }
 
     return list::make(type, scr.scratch(), scr.growth());
@@ -2123,13 +2082,8 @@ COMMAND_BODY(DoList)
                 for (size_t d = added; d --> 0; )
                 {
                     object_g obj = rt.stack(d);
-                    if (!obj)
+                    if (!rt.append(obj))
                         return ERROR;
-                    size_t objsize = obj->size();
-                    byte *objcopy = rt.allocate(objsize);
-                    if (!objcopy)
-                        return ERROR;
-                    memmove(objcopy, (byte *) +obj, objsize);
                 }
                 rt.drop(added);
             }
@@ -2220,13 +2174,8 @@ COMMAND_BODY(DoSubs)
                 for (size_t d = added; d --> 0; )
                 {
                     object_g obj = rt.stack(d);
-                    if (!obj)
+                    if (!rt.append(obj))
                         return ERROR;
-                    size_t objsize = obj->size();
-                    byte *objcopy = rt.allocate(objsize);
-                    if (!objcopy)
-                        return ERROR;
-                    memmove(objcopy, (byte *) +obj, objsize);
                 }
                 rt.drop(added);
             }

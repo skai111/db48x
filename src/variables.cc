@@ -1002,10 +1002,8 @@ static bool path_callback(object_p name, object_p obj, void *arg)
 // ----------------------------------------------------------------------------
 {
     if (obj == object_p(arg))
-    {
-        rt.append(name->size(), byte_p(name));
-        return true;
-    }
+        if (rt.append(name))
+            return true;
     return false;
 }
 

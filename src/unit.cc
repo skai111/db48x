@@ -1647,11 +1647,9 @@ COMMAND_BODY(UBase)
                 algebraic_g r = u;
                 save<bool> ueval(unit::mode, true);
                 r = r->evaluate();
-                if (!r)
-                    return ERROR;
                 lobj = r;
             }
-            if (!rt.append(lobj->size(), byte_p(lobj)))
+            if (!rt.append(lobj))
                 return ERROR;
 
         }

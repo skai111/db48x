@@ -400,11 +400,8 @@ PARSE_BODY(CaseStatement)
                     return ERROR;
 
                 // Copy the parsed object to the scratch pad (may GC)
-                size_t objsize = obj->size();
-                byte *objcopy = rt.allocate(objsize);
-                if (!objcopy)
+                if (!rt.append(obj))
                     return ERROR;
-                memmove(objcopy, (byte *) obj, objsize);
 
                 // Jump past what we parsed
                 src = utf8(src) + length;
@@ -438,11 +435,8 @@ PARSE_BODY(CaseStatement)
         if (!had_end)
         {
             // Copy the parsed object to the scratch pad (may GC)
-            size_t objsize = obj1->size();
-            byte *objcopy = rt.allocate(objsize);
-            if (!objcopy)
+            if (!rt.append(obj1))
                 return ERROR;
-            memmove(objcopy, (byte *) +obj1, objsize);
             obj1 = nullptr;
         }
     }

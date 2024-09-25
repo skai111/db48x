@@ -998,9 +998,7 @@ static algebraic_p rnd_or_trnc(algebraic_r value, int digits,
             if (!a)
                 return nullptr;
             obj = +a;
-            size_t objsz = obj->size();
-            byte_p objp = byte_p(obj);
-            if (!rt.append(objsz, objp))
+            if (!rt.append(obj))
                 return nullptr;
         }
         return list::make(ty, scr.scratch(), scr.growth());

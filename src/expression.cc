@@ -648,7 +648,7 @@ static object_p grab_arguments(size_t &eq, size_t &eqsz)
             object_p obj = rt.stack(eq + len);
             if (sym->found_in(obj))
                 expression::contains_independent_variable = true;
-            if (!rt.append(obj->size(), byte_p(obj)))
+            if (!rt.append(obj))
                 return nullptr;
         }
     }
@@ -657,7 +657,7 @@ static object_p grab_arguments(size_t &eq, size_t &eqsz)
         while (len--)
         {
             object_p obj = rt.stack(eq + len);
-            if (!rt.append(obj->size(), byte_p(obj)))
+            if (!rt.append(obj))
                 return nullptr;
         }
     }
@@ -1025,7 +1025,7 @@ static algebraic_p build_expr(expression_p eqin,
         {
             // Copy from source equation directly
             object_p obj = *it;
-            if (!rt.append(obj->size(), byte_p(obj)))
+            if (!rt.append(obj))
                 return nullptr;
         }
         else if (!replaced)
@@ -2533,14 +2533,8 @@ PARSE_BODY(funcall)
             return ERROR;
         parsed += child.length;
 
-        size_t objsize = obj->size();
-        if (expression_p eq = obj->as<expression>())
-            obj = eq->objects(&objsize);
-
-        byte *objcopy = rt.allocate(objsize);
-        if (!objcopy)
+        if (!rt.append_expression(obj))
             return ERROR;
-        memmove(objcopy, (byte *) obj, objsize);
 
         source = p.source;      // In case of GC
         cp = utf8_codepoint(source + parsed);
@@ -2559,11 +2553,8 @@ PARSE_BODY(funcall)
     }
 
     // Copy the name last
-    size_t calleesize = callee->size();
-    byte *calleecopy = rt.allocate(calleesize);
-    if (!calleecopy)
+    if (!rt.append(callee))
         return ERROR;
-    memmove(calleecopy, (byte *) callee, calleesize);
 
     // Create the function call object
     gcbytes scratch = scr.scratch();
