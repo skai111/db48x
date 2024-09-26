@@ -1049,7 +1049,7 @@ polynomial::iterator polynomial::ranking(size_t *var) const
 
 polynomial::iterator polynomial::ranking(size_t var) const
 // ----------------------------------------------------------------------------
-//   Locate the highest-ranking term for given vairable in the polynomial
+//   Locate the highest-ranking term for given variable in the polynomial
 // ----------------------------------------------------------------------------
 {
     size_t vars    = variables();

@@ -812,7 +812,7 @@ MENU(AlgebraMenu,
      "|",               ID_Where,
 
      "∂",               ID_Derivative,
-     "∫",               ID_Integrate,
+     "∫",               ID_Primitive,
      "∑",               ID_Sum,
      "∏",               ID_Product,
      "∆",               ID_Unimplemented,
@@ -829,8 +829,8 @@ MENU(ArithmeticMenu,
 // ----------------------------------------------------------------------------
 //   Arithmetic menu
 // ----------------------------------------------------------------------------
-     "∂",               ID_Unimplemented,
-     "∫",               ID_Integrate,
+     "∂",               ID_Derivative,
+     "∫",               ID_Primitive,
      "∑",               ID_Sum,
      "∏",               ID_Product,
      "∆",               ID_Unimplemented,
@@ -838,7 +838,7 @@ MENU(ArithmeticMenu,
 
      "Show",            ID_Unimplemented,
      "Quote",           ID_Unimplemented,
-     "|",               ID_Unimplemented,
+     "|",               ID_Where,
      "Rules",           ID_Unimplemented,
      "Symb",            ID_SymbolicMenu);
 
@@ -1192,10 +1192,10 @@ MENU(IntegrationMenu,
 // ----------------------------------------------------------------------------
 //   Symbolic and numerical integration
 // ----------------------------------------------------------------------------
-     "∫",       ID_Integrate,
+     "∫",       ID_Primitive,
      "Num ∫",   ID_Integrate,
-     "Symb ∫",  ID_Unimplemented,
-     "Prim",    ID_Unimplemented,
+     "Symb ∫",  ID_Primitive,
+     "Prim",    ID_Primitive,
      "Eq",      ID_Equation,
      "Indep",   ID_Unimplemented,
 

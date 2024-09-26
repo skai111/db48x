@@ -243,7 +243,10 @@ struct expression : program
     expression_p simplify() const;
     expression_p as_difference_for_solve() const; // Transform A=B into A-B
     bool         split_equation(expression_g &left, expression_g &right) const;
+    bool         split(id ty, expression_g &left, expression_g &right) const;
     object_p     outermost_operator() const;
+    bool         is_linear(symbol_r sym, algebraic_g &a, algebraic_g &b) const;
+    bool         depends_on(symbol_r sym) const;
     size_t       render(renderer &r, bool quoted = false) const
     {
         return render(this, r, quoted);
@@ -255,6 +258,7 @@ struct expression : program
                                   algebraic_g &exponent);
     expression_p isolate(symbol_r sym) const;
     expression_p derivative(symbol_r sym) const;
+    expression_p primitive(symbol_r sym) const;
 
 
     // ========================================================================
@@ -511,9 +515,19 @@ struct eq
                                 hb(object::ID_Derivative)>(); }
     template<byte ...y>
     eq<args..., y..., lb(object::ID_Derivative), hb(object::ID_Derivative)>
-    operator|(eq<y...>) { return eq<args..., y...,
-                                    lb(object::ID_Derivative),
-                                    hb(object::ID_Derivative)>(); }
+    operator>>(eq<y...>) { return eq<args..., y...,
+                                     lb(object::ID_Derivative),
+                                     hb(object::ID_Derivative)>(); }
+    template<byte ...y>
+    eq<args..., y..., lb(object::ID_Primitive), hb(object::ID_Primitive)>
+    prim(eq<y...>) { return eq<args..., y...,
+                               lb(object::ID_Primitive),
+                               hb(object::ID_Primitive)>(); }
+    template<byte ...y>
+    eq<args..., y..., lb(object::ID_Primitive), hb(object::ID_Primitive)>
+    operator<<(eq<y...>) { return eq<args..., y...,
+                                     lb(object::ID_Primitive),
+                                     hb(object::ID_Primitive)>(); }
 
     template<byte ...y>
     eq<leb(object::ID_funcall),
@@ -654,6 +668,10 @@ COMMAND_DECLARE_SPECIAL(Derivative, algebraic, 2,
                         PREC_DECL(SYMBOL);
                         INSERT_DECL(Derivative);
                         PARSE_DECL(Derivative););
+COMMAND_DECLARE_SPECIAL(Primitive, algebraic, 2,
+                        PREC_DECL(MULTIPLICATIVE);
+                        INSERT_DECL(Primitive);
+                        PARSE_DECL(Primitive););
 COMMAND_DECLARE_SPECIAL(Where, arithmetic, 2, PREC_DECL(WHERE); );
 NFUNCTION(Subst, 2, static bool can_be_symbolic(uint) { return true; } );
 

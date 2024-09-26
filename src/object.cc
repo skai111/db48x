@@ -303,6 +303,9 @@ retry:
     case L'∂':
         r = Derivative::do_parse(p);
         break;
+    case L'∫':
+        r = Primitive::do_parse(p);
+        break;
 
     default:
         // Symbols and commands
