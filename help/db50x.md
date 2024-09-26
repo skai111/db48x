@@ -5517,7 +5517,7 @@ In accordance with microscopic Ohm's law, the current density is proportional to
 
 The variables in the Fluids section are:
 
-* `ϵ`: Roughness (dim.: length)
+* `ε`: Roughness (dim.: length)
 * `μ`: Dynamic viscosity (dim.: force·time/volume, in SI: N·s/m^3)
 * `ρ`: Density (dim.: mass/volume, in SI: kg/m^3)
 * `ΔP`: Pressure change (dim.: force/area, in SI: pascal, Pa)
