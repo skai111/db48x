@@ -1673,9 +1673,9 @@ grob_p expression::abs_norm(grapher &g, grob_g what, uint padding)
     pixsize inw    = what->width();
     pixsize inh    = what->height();
     pixsize asz    = 2;
-    pixsize rw     = inw + 2 * (asz + padding);
+    pixsize rw     = inw + 2 * (asz + 2*padding);
     pixsize rh     = inh;
-    pixsize rx     = rw - asz;
+    pixsize rx     = rw - asz - padding;
 
     grob_g result = g.grob(rw, rh);
     if (!result)
@@ -1685,8 +1685,8 @@ grob_p expression::abs_norm(grapher &g, grob_g what, uint padding)
     grob::surface ws = what->pixels();
     grob::surface rs = result->pixels();
     rs.fill(0, 0, rw, rh, g.background);
-    rs.copy(ws, asz + padding, 0);
-    rs.fill(0, 0, asz-1, rh-3, g.foreground);
+    rs.copy(ws, asz + 2*padding, 0);
+    rs.fill(padding, 0, padding + asz-1, rh-3, g.foreground);
     rs.fill(rx, 0, rx+asz-1, rh-3, g.foreground);
 
     return result;
@@ -2283,17 +2283,11 @@ grob_p expression::graph(grapher &g, uint depth, int &precedence)
                 oid != ID_comb && oid != ID_perm)
             {
                 if (lprec < prec)
-                {
                     lg = parentheses(g, lg);
-                    lv = g.voffset;
-                }
                 if (oid != ID_pow &&
                     (rprec < prec ||
                      (rprec == prec && (oid == ID_sub || oid == ID_div))))
-                {
                     rg = parentheses(g, rg);
-                    rv = g.voffset;
-                }
             }
             precedence = prec;
             switch (oid)
@@ -2454,7 +2448,6 @@ GRAPH_BODY(expression)
             args = parentheses(g, args);
             if (!args)
                 return nullptr;
-            voffs = g.voffset;
             result = prefix(g, vr, result, voffs, args);
         }
         else

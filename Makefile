@@ -102,6 +102,10 @@ cmp-% compare-%:
 update-%:
 	mv $(IMAGES)/bad/$*.png $(IMAGES)/$*.png
 
+BAD_IMAGES=$(wildcard $(IMAGES)/bad/*.png)
+compare: $(BAD_IMAGES:$(IMAGES)/bad/%.png=cmp-%)
+update: $(BAD_IMAGES:$(IMAGES)/bad/%.png=update-%)
+
 keyboard: Keyboard-Layout.png Keyboard-Cutout.png sim/keyboard-db48x.png help/keyboard.png doc/keyboard.png
 Keyboard-Layout.png: DB48X-Keys/DB48X-Keys.001.png
 	cp $< $@
