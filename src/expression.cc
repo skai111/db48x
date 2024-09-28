@@ -1630,7 +1630,7 @@ grob_p expression::parentheses(grapher &g, grob_g what, uint padding)
     pixsize hh     = rh / 2;
     pixsize hh2    = hh * hh;
 
-    grob_g result = g.grob(rw, rh);
+    grob_g  result = g.grob(rw, rh);
     if (!result)
         return nullptr;
 
@@ -1820,9 +1820,9 @@ grob_p expression::infix(grapher &g,
     coord   xt = -vx - xh / 2;
     coord   yt = -vy - yh / 2;
     coord   st = -vs - sh / 2;
-    coord   xb = -vx + xh / 2 - 1;
-    coord   yb = -vy + yh / 2 - 1;
-    coord   sb = -vs + sh / 2 - 1;
+    coord   xb = xt + xh - 1;
+    coord   yb = yt + yh - 1;
+    coord   sb = st + sh - 1;
 
     coord t = xt;
     if (t > yt)
@@ -1880,9 +1880,9 @@ grob_p expression::suscript(grapher &g,
     pixsize yh     = y->height();
     pixsize gw     = xw + yw;
 
-    coord   voff   = (1 - dir) * xh / 2;
-    coord   xt     = vy - xh / 2;
-    coord   yt     = vx - yh / 2 + xt + voff;
+    coord   voff   = (1 - dir) * xh / 2 + vx;
+    coord   xt     = -vx - xh / 2;
+    coord   yt     = -vy - yh / 2 + xt + voff;
     coord   xb     = xt + xh - 1;
     coord   yb     = yt + yh - 1;
     coord   t      = xt < yt ? xt : yt;
@@ -1901,9 +1901,9 @@ grob_p expression::suscript(grapher &g,
     rs.copy(xs, 0,  xt - t);
     rs.copy(ys, xw, yt - t);
     if (alignleft)
-        g.voffset = xt - t + coord(xh)/2 - coord(gh)/2 + vx;
+        g.voffset = xt - t + coord(xh)/2 - coord(gh)/2;
     else
-        g.voffset = yt - t + coord(yh)/2 - coord(gh)/2 + vy;
+        g.voffset = yt - t + coord(yh)/2 - coord(gh)/2;
 
     return result;
 }
@@ -2242,6 +2242,7 @@ grob_p expression::graph(grapher &g, uint depth, int &precedence)
             default:
                 break;
             }
+
             g.voffset = 0;
             grob_g fn = obj->graph(g);
             coord  vf = g.voffset;
