@@ -102,6 +102,7 @@ struct tests
     void rewrite_engine();
     void symbolic_operations();
     void symbolic_differentiation();
+    void symbolic_integration();
     void tagged_objects();
     void catalog_test();
     void cycle_test();

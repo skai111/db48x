@@ -124,6 +124,7 @@ TESTS(simplify,         "Auto-simplification of expressions");
 TESTS(rewrites,         "Equation rewrite engine");
 TESTS(symbolic,         "Symbolic operations");
 TESTS(derivative,       "Symbolic differentiation");
+TESTS(primitive,        "Symbolic integration (primitive)");
 TESTS(tagged,           "Tagged objects");
 TESTS(catalog,          "Catalog of commands");
 TESTS(cycle,            "Cycle command for quick conversions");
@@ -174,7 +175,7 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-            symbolic_differentiation();
+            symbolic_integration();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -227,6 +228,7 @@ void tests::run(uint onlyCurrent)
         rewrite_engine();
         symbolic_operations();
         symbolic_differentiation();
+        symbolic_integration();
         tagged_objects();
         catalog_test();
         cycle_test();
@@ -6706,6 +6708,100 @@ void tests::symbolic_differentiation()
     step("Derivative of unknown form")
         .test(CLEAR, "'IP(X)' 'X'", F1)
         .error("Unknown derivative");
+}
+
+
+void tests::symbolic_integration()
+// ----------------------------------------------------------------------------
+//   Symbolic integration
+// ----------------------------------------------------------------------------
+{
+    BEGIN(primitive);
+
+    step("Primitive of constant")
+        .test(CLEAR, LSHIFT, KEY8, "42 'X'", F1).expect("'42·X'");
+    step("Primitive of a variable")
+        .test(CLEAR, "1 'X'", F1).expect("'X'");
+    step("Primitive of a different variable")
+        .test(CLEAR, "'A' 'X'", F1).expect("'A·X'");
+    step("Primitive of a product by a constant")
+        .test(CLEAR, "'A*X' 'X'", F1).expect("'A÷2·X²'");
+    step("Primitive of a polynomial")
+        .test(CLEAR, "'A*X+B*X^2-C*sq(X)+D*X^5+42' 'X'", F1)
+        .expect("'A÷2·X²+B÷3·X³+D÷6·X↑6+42·X-C÷3·X³'");
+    step("Primitive of ratio")
+        .test(CLEAR, "'A*X/(B*X+1)' 'X'", F1)
+        .expect("'A÷B²·(B·X-ln (abs(B·X+1))+1)'");
+    step("Primitive of ratio of linear functions")
+        .test(CLEAR, "'(A*X+B)/(C*X+D)' 'X'", F1)
+        .expect("'B÷C·ln (abs(C·X+D))+A÷C²·(C·X+D-D·ln (abs(C·X+D)))'");
+    step("Primitive of power by a numerical constant")
+        .test(CLEAR, "'X^(2.5+3.2)' 'X'", F1)
+        .expect("'X↑6.7÷6.7'");
+    step("Primitive of power by a non-numerical constant")
+        .test(CLEAR, "'X^(A+2)' 'X'", F1)
+        .expect("'X↑(A+3)÷(A+3)'");
+    step("Primitive of power of a numerical constant")
+        .test(CLEAR, "'2^X' 'X'", F1)
+        .expect("'2↑X÷0.69314 71805 6'");
+    step("Primitive of power of a non-numerical constant")
+        .test(CLEAR, "'A^X' 'X'", F1)
+        .expect("'A↑X÷ln A'")
+        .test(RUNSTOP)
+        .expect("'A↑X÷ln A'");
+    step("Primitive of power")
+        .test(CLEAR, "'(A*X+B)^(C*X+D)' 'X'", F1)
+        .error("Unknown primitive");
+    step("Primitive of negation, inverse and sign")
+        .test(CLEAR, "'-(inv(A*X+B) - sign(3-2*X))' 'X'", F1)
+        .expect("'-(ln (abs(A·X+B))÷A-abs(3-2·X)÷2)'");
+    step("Primitive of sine, cosine, tangent")
+        .test(CLEAR, "'sin(A*X+3)+cos(X*B-5)+tan(Z-C*X)' 'X'", F1)
+        .expect("'(-cos(A·X+3))÷A+sin(X·B-5)÷B+(-ln (cos(Z-C·X)))÷C'");
+    step("Primitive of hyperbolic sine, cosine, tangent")
+        .test(CLEAR, "'sinh(A*X-3)+cosh(B*X+5*A)+tanh(C*(X-A))' 'X'", F1)
+        .expect("'cosh(A·X-3)÷A+sinh(B·X+5·A)÷B+ln (cosh(C·(X-A)))÷C'", 2000);
+    step("Primitive of arcsine, arccosine, arctangent")
+        .test(CLEAR, "'asin(A*X+B)+acos(X*B+A*(X+1))+atan(C*(X-6))' 'X'", F1)
+        .expect("'((A·X+B)·sin⁻¹(A·X+B)+√(1-(A·X+B)²))÷A+((X·B+A·(X+1))·cos⁻¹(X·B+A·(X+1))-√(1-(X·B+A·(X+1))²))÷(B+A)+(C·(X-6)·tan⁻¹(C·(X-6))-ln((C·(X-6))²+1)÷2)÷C'", 2000);
+    step("Primitive of inverse hyperbolic sine, cosine, tangent")
+        .test(CLEAR, "'asinh(1-2*X)+acosh(1+3*X)+atanh(4*X-1)' 'X'", F1)
+        .expect("'((1-2·X)·sinh⁻¹(1-2·X)-√((1-2·X)²+1))÷2+((3·X+1)·cosh⁻¹(3·X+1)-√((3·X+1)²-1))÷3+((4·X-1)·tan⁻¹(4·X-1)-ln(1-(4·X-1)²)÷2)÷4'", 2000);
+
+    step("Primitive of log and exp")
+        .test(CLEAR, "'log(A*X+B)+exp(X*C-D)' 'X'", F1)
+        .expect("'((A·X+B)·ln(A·X+B)-(A·X+B))÷A+exp(X·C-D)÷C'");
+    step("Primitive of log2 and exp2")
+        .test(CLEAR, "'log2(A*X+B)+exp2(X*C-D)' 'X'", F1)
+        .expect("'((A·X+B)·log2(A·X+B)-(A·X+B)÷ln 2)÷A+exp2(X·C-D)÷(0.69314 71805 6·C)'");
+    step("Primitive of log10 and exp10")
+        .test(CLEAR, "'log10(A*X+B)+exp10(X*C-D)' 'X'", F1)
+        .expect("'((A·X+B)·log10(A·X+B)-(A·X+B)÷ln 10)÷A+exp10(X·C-D)÷(2.30258 50929 9·C)'");
+
+    step("Primitive of lnp1 and expm1")
+        .test(CLEAR, "'log1p(A*X+B)+expm1(X*C-D)' 'X'", F1)
+        .expect("'((A·X+B-1)·log1p(A·X+B)-(A·X+B-1))÷A+(expm1(X·C-D)-(X·C-D)+1)÷C'");
+
+    step("Primitive of square and cube")
+        .test(CLEAR, "'sq(A*X+B)+cubed(X*C-D)' 'X'", F1)
+        .expect("'(A·X+B)³÷(3·A)+(X·C-D)↑4÷(4·C)'");
+    step("Primitive of square root and cube root")
+        .test(CLEAR, "'sqrt(A*X+B)+cbrt(X*C-D)' 'X'", F1)
+        .expect("'²/₃·A⁻¹·(√(A·X+B))³+³/₄·C⁻¹·∛(X·C-D)↑4'");
+
+    step("Primitive of 1/(cos(x)*sin(x))")
+        .test(CLEAR, "'inv(cos(3*X+2)*sin(3*X+2))' 'X'", F1)
+        .expect("'ln (tan(3·X+2))÷3'");
+    step("Primitive of 1/(cosh(x)*sinh(x))")
+        .test(CLEAR, "'inv(cosh(3*X+2)*sinh(3*X+2))' 'X'", F1)
+        .expect("'ln (tan(3·X+2))÷3'");
+    step("Primitive of 1/(cosh(x)*sinh(x))")
+        .test(CLEAR, "'inv(cosh(3*X+2)*sinh(3*X+2))' 'X'", F1)
+        .expect("'ln (tan(3·X+2))÷3'");
+
+    step("Primitive of unknown form")
+        .test(CLEAR, "'IP(X)' 'X'", F1)
+        .error("Unknown primitive");
 }
 
 
