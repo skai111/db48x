@@ -130,6 +130,7 @@ struct tests
     void expression_operations();
     void random_number_generation();
     void object_structure();
+    void library();
     void regression_checks();
     void demo_setup();
     void demo_ui();

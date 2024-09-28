@@ -149,6 +149,7 @@ TESTS(poly,             "Polynomials");
 TESTS(quorem,           "Quotient and remainder");
 TESTS(expr,             "Operations on expressions");
 TESTS(random,           "Random number generation");
+TESTS(library,          "Library entries");
 
 EXTRA(plotfns,          "Plot all functions");
 EXTRA(sysflags,         "Enable/disable every RPL flag");
@@ -175,7 +176,7 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-            symbolic_integration();
+            library();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -256,6 +257,7 @@ void tests::run(uint onlyCurrent)
         expression_operations();
         random_number_generation();
         object_structure();
+        library();
         regression_checks();
         demo_ui();
         demo_math();
@@ -9475,6 +9477,41 @@ void tests::object_structure()
         .test(CLEAR, ":abc:1.5", ENTER, RSHIFT, N, F4)
         .got("\"abc \"", "1.5");
 
+}
+
+
+void tests::library()
+// ----------------------------------------------------------------------------
+//   Check the content of the content library.
+// ----------------------------------------------------------------------------
+{
+    BEGIN(library);
+
+    step("Secrets: Dedicace")
+        .test(CLEAR, RSHIFT, H, F1, F1)
+        .expect("\"À tous ceux qui se souviennent de Maubert électronique\"");
+    step("Secrets: Library help")
+        .test(CLEAR, F2)
+        .expect("\"To modify the library, edit the config/library.csv file\"");
+
+    step("Physics: Relativistic and classical kinetic energy")
+        .test(CLEAR, RSHIFT, H, F2, F1)
+        .image("lib-kinetic", 2000);
+
+    step("Math: Collatz conjecture benchmark")
+        .test(CLEAR, RSHIFT, H, F3, LENGTHY(5000), F1, ENTER, SWAP)
+        .expect("1")
+        .test(BSP)
+        .match("duration:[1-9].*ms");
+    step("Math: Collatz conjecture")
+        .test(CLEAR, "15", LENGTHY(500), F2, ENTER, ENTER)
+        .expect("1");
+    step("Math: Count primes")
+        .test(CLEAR, "227", F3)
+        .expect("49");
+    step("Math: Triangle equations")
+        .test(CLEAR, F4)
+        .image_noheader("lib-triangle");
 }
 
 
