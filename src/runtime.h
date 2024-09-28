@@ -37,6 +37,8 @@
 //      Returns
 //        [... Returns reserve]
 //      CallStack
+//        [Pointers to xlibs or 0 if not loaded]
+//      XLibs
 //        [Pointer to outermost directory in path]
 //        [ ... intermediate directory pointers ...]
 //        [Pointer to innermost directory in path]
@@ -788,12 +790,12 @@ struct runtime
     //
     // ========================================================================
 
-    directory *variables(uint depth) const
+    directory *variables(size_t depth) const
     // ------------------------------------------------------------------------
     //   Current directory for global variables
     // ------------------------------------------------------------------------
     {
-        if (depth >= (uint) ((object_p *) CallStack - Directories))
+        if (depth >= size_t(XLibs - Directories))
             return nullptr;
         return (directory *) Directories[depth];
     }
@@ -803,7 +805,7 @@ struct runtime
     //   Return the home directory
     // ------------------------------------------------------------------------
     {
-        directory **home = (directory **) (CallStack - 1);
+        directory **home = (directory **) (XLibs - 1);
         return *home;
     }
 
@@ -812,13 +814,56 @@ struct runtime
     //   Return number of directories
     // ------------------------------------------------------------------------
     {
-        size_t depth = (object_p *) CallStack - Directories;
+        size_t depth = XLibs - Directories;
         return depth;
     }
 
     bool is_active_directory(object_p obj) const;
     bool enter(directory_p dir);
     bool updir(size_t count = 1);
+
+
+
+    // ========================================================================
+    //
+    //   Library items
+    //
+    // ========================================================================
+
+    object_p xlib(size_t id) const
+    // ------------------------------------------------------------------------
+    //   Return the given xlib
+    // ------------------------------------------------------------------------
+    {
+        if (id >= size_t(CallStack - XLibs))
+            return nullptr;
+        return XLibs[id];
+    }
+
+    bool xlib(size_t id, object_p value) const
+    // ------------------------------------------------------------------------
+    //   Set the given xlib
+    // ------------------------------------------------------------------------
+    {
+        if (id >= size_t(CallStack - XLibs))
+            return false;
+        XLibs[id] = value;
+        return true;
+    }
+
+    size_t xlibs() const
+    // ------------------------------------------------------------------------
+    //   Return number of xlibs
+    // ------------------------------------------------------------------------
+    {
+        size_t depth = size_t(CallStack - XLibs);
+        return depth;
+    }
+
+    bool attach(size_t nentries);
+    // ------------------------------------------------------------------------
+    //   Reserve and clear the given number of entries
+    // ------------------------------------------------------------------------
 
 
 
@@ -968,6 +1013,7 @@ protected:
     object_p *Undo;         // Start of undo stack
     object_p *Locals;       // Start of locals
     object_p *Directories;  // Start of directories
+    object_p *XLibs;        // Start of xlibs (which can be null)
     object_p *CallStack;    // Start of call stack (rounded 16 entries)
     object_p *Returns;      // Start of return stack, end of locals
     object_p *HighMem;      // End of available memory

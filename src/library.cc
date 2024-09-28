@@ -126,11 +126,23 @@ EVAL_BODY(xlib)
 //   Library entries evaluate like a program entry
 // ----------------------------------------------------------------------------
 {
-    object_p value = o->value();
+    uint index = o->index();
+
+    object_p value = rt.xlib(index);
     if (!value)
     {
-        rt.invalid_xlib_error();
-        return ERROR;
+        // Resize the cache if needed
+        if (index >= rt.xlibs())
+            if (!rt.attach(index+1))
+                return ERROR;
+
+        value = o->value();
+        if (!value)
+        {
+            rt.invalid_xlib_error();
+            return ERROR;
+        }
+        rt.xlib(index, value);
     }
     return program::run_program(value);
 }
