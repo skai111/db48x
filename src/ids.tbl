@@ -238,8 +238,8 @@ OP(pow, "↑")                    ALIAS(pow, "Power")     ALIAS(pow, "^")
 NAMED(neg, "Negate")
 CMD(abs)                        ALIAS(abs, "norm") ALIAS(abs, "modulus") ALIAS(abs, "abs")
 NAMED(inv, "x⁻¹")
-NAMED(sqrt, "√")                ALIAS(sqrt, "SquareRoot")
-NAMED(sq,  "x²")                ALIAS(sq,   "Square")
+NAMED(sqrt, "√")                ALIAS(sqrt, "SquareRoot") ALIAS(sqrt, "√")
+NAMED(sq,  "x²")                ALIAS(sq,   "Square")     ALIAS(sq, "sq")
 NAMED(cubed, "x³")
 
 // Logical
@@ -252,13 +252,13 @@ OP(Not,         "not")
 
 // Tests
 CMD(same)                       // HP48 distinguishes == and same
-OP(TestSame, "==")           // Must be before =
-OP(TestLT,   "<")
-OP(TestEQ,   "=")
-OP(TestGT,   ">")
-OP(TestLE,   "≤")
-OP(TestNE,   "≠")
-OP(TestGE,   "≥")
+OP(TestSame, "==")              ALIAS(TestSame, "==") // Must be before =
+OP(TestLT,   "<")               ALIAS(TestLT, "<")
+OP(TestEQ,   "=")               ALIAS(TestEQ, "=")
+OP(TestGT,   ">")               ALIAS(TestGT, ">")
+OP(TestLE,   "≤")               ALIAS(TestLE, "≤")
+OP(TestNE,   "≠")               ALIAS(TestNE, "≠")
+OP(TestGE,   "≥")               ALIAS(TestGE, "≥")
 
 // Trigonometric functions
 NAMED(asin, "sin⁻¹")            // WARNING: order used in functions.cc
@@ -269,11 +269,10 @@ CMD(cos)
 CMD(tan)                        // WARNING: order used in function.cc
 
 // Exp and log
-NAMED(log, "ln")
+NAMED(log, "ln")                ALIAS(log, "ln")
 CMD(exp)
 CMD(log10)
-CMD(exp10)
-ALIAS(exp10, "alog")
+CMD(exp10)                      ALIAS(exp10, "alog")
 
 // Conversions
 NAMED(ToDecimal, "→Num")
@@ -370,9 +369,9 @@ NAMED(perm, "Permutations")
 NAMED(Sum, "Σ")
 NAMED(Product, "∏")
 CMD(Root)
-NAMED(Integrate, "∫")
+NAMED(Integrate, "∫")   ALIAS(Integrate, "∫")
 
-NAMED(cbrt, "∛")        ALIAS(cbrt, "CubeRoot")
+NAMED(cbrt, "∛")        ALIAS(cbrt, "CubeRoot")         ALIAS(cbrt, "∛")
 OP(hypot, "⊿")          ALIAS(hypot, "Hypothenuse")
 OP(atan2, "∠")
 CMD(xroot)
@@ -382,8 +381,8 @@ NAMED(IntPart,          "IntegerPart")          ALIAS(IntPart,  "IP")
 NAMED(FracPart,         "FractionalPart")       ALIAS(FracPart, "FP")
 CMD(ceil)
 CMD(floor)
-CMD(Round)                                      ALIAS(Round, "RND")
-CMD(Truncate)                                   ALIAS(Truncate, "TRNC")
+CMD(Round)                                      ALIAS(Round, "Rnd")
+CMD(Truncate)                                   ALIAS(Truncate, "Trnc")
 NAMED(mant,             "Mantissa")
 NAMED(xpon,             "Exponent")
 OP(Percent,             "%")

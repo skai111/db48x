@@ -2525,7 +2525,7 @@ void tests::command_display_formats()
     cstring prgm =
         "«"
         "  1 1.0 "
-        "+ - * / ^ "
+        "+ - * / ^ sqrt sq inv neg "
         "sin cos tan asin acos atan "
         "LowerCase PurgeAll Precision "
         "start step next start step for i next for i step "
@@ -2534,28 +2534,28 @@ void tests::command_display_formats()
     test(CLEAR, prgm, ENTER).noerror();
     step("Lower case");
     test("lowercase", ENTER)
-        .want("« 1 1. + - * / ^ sin cos tan asin acos atan "
+        .want("« 1 1. + - * / ^ √ sq inv neg sin cos tan asin acos atan "
               "lowercase purgeall precision "
               "start  step next start  step for i  next for i  step "
               "while  repeat  end do  until  end »");
 
     step("Upper case");
     test("UPPERCASE", ENTER)
-        .want("« 1 1. + - * / ^ SIN COS TAN ASIN ACOS ATAN "
+        .want("« 1 1. + - * / ^ √ SQ INV NEG SIN COS TAN ASIN ACOS ATAN "
               "LOWERCASE PURGEALL PRECISION "
               "START  STEP next START  STEP FOR i  NEXT FOR i  STEP "
               "WHILE  REPEAT  END DO  UNTIL  END »");
 
     step("Capitalized");
     test("Capitalized", ENTER)
-        .want("« 1 1. + - * / ^ Sin Cos Tan Asin Acos Atan "
+        .want("« 1 1. + - * / ^ √ Sq Inv Neg Sin Cos Tan Asin Acos Atan "
               "LowerCase PurgeAll Precision "
               "Start  Step next Start  Step For i  Next For i  Step "
               "While  Repeat  End Do  Until  End »");
 
     step("Long form");
     test("LongForm", ENTER)
-        .want("« 1 1. + - × ÷ ↑ sin cos tan sin⁻¹ cos⁻¹ tan⁻¹ "
+        .want("« 1 1. + - × ÷ ↑ √ x² x⁻¹ Negate sin cos tan sin⁻¹ cos⁻¹ tan⁻¹ "
               "LowerCaseCommands PurgeAll Precision "
               "start  step next start  step for i  next for i  step "
               "while  repeat  end do  until  end »");
@@ -6802,7 +6802,7 @@ void tests::catalog_test()
         .test(B, U).editor("{ abs Background BU}")
         .test(F1).editor("{ abs Background Debug }");
     step("Catalog with nothing entered")
-        .test(F6, F3).editor("{ abs Background Debug cosh⁻¹ }");
+        .test(F6, F3).editor("{ abs Background Debug ↑ }");
 
     step("Test the default menu")
         .test(CLEAR, EXIT, A, RSHIFT, RUNSTOP).editor("{}")
