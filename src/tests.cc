@@ -6900,7 +6900,7 @@ void tests::catalog_test()
         .test(B, U).editor("{ abs Background BU}")
         .test(F1).editor("{ abs Background Debug }");
     step("Catalog with nothing entered")
-        .test(F6, F3).editor("{ abs Background Debug ↑ }");
+        .test(F6, F3).editor("{ abs Background Debug cosh⁻¹ }");
 
     step("Test the default menu")
         .test(CLEAR, EXIT, A, RSHIFT, RUNSTOP).editor("{}")
