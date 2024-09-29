@@ -238,9 +238,6 @@ static int state_save_callback(cstring fpath, cstring fname, void *)
     // Display the name of the file being saved
     ui.draw_message("Saving state...", fname);
 
-    // Store the state file name so that we automatically reload it
-    set_reset_state_file(fpath);
-
     // Open save file name
     file prog(fpath, true);
     if (!prog.valid())
@@ -289,6 +286,9 @@ static int state_save_callback(cstring fpath, cstring fname, void *)
 
     // Restore the settings we had
     Settings = saved;
+
+    // Store the state file name so that we automatically reload it
+    set_reset_state_file(fpath);
 
     return MRET_EXIT;
 }
@@ -366,9 +366,6 @@ static int state_load_callback(cstring path, cstring name, void *merge)
         // Clear the state
         rt.reset();
         Settings = settings();
-
-        set_reset_state_file(path);
-
     }
 
     // Display the name of the file being saved
@@ -454,6 +451,9 @@ static int state_load_callback(cstring path, cstring name, void *merge)
             return 1;
         }
     }
+
+    if (!merge)
+        set_reset_state_file(path);
 
     // Exit with success
     return MRET_EXIT;
