@@ -1,5 +1,83 @@
 # Release notes
 
+## Release 0.8.0 "Gabriel" - Symbolic operations, equations and library
+
+This release adds symbolic integration, differentiation and equation
+solving, delivers an extensive equation library, and improves the
+library feature to enable large library objects to be defined in
+separate files and optimize execution speed for library items.
+It also improves the rendering of complex equations and fixes a number
+of crashes or user-interface problems.
+
+### Features
+
+* Symbolic integration, `Primitive` command, `'∫X(sin(X))'` syntax
+  `'∫X(sin(2*X+3)-X)'` evaluates as `'-cos(2*X+3)/2-x²/2'`
+* Symbolic differentiation, `Derivative` command, `∂X(sin(X))` syntax
+  `'∂X(sin(2*X+3)-X)'` evaluates as `'2·cos(2*X+3)-1'`
+* Symbolic equation resolution, `ISOL` (`Isolate`) command
+  '`sin(2*X+3)=A' 'X' ISOL` gives `'X=(sin⁻¹ A+2*i1*π-3)/2'`
+* Apply arithmetic and functions on both sides of equations like `A=B`
+  `'A=B' sin 1 +` results in `'sin A+1=sin B+1'`
+* Add possibility to define library objects in separate files
+  The various demos from previous releases are now also in the library
+* commands: Add `→Prog` command to convert expressions to RPL programs
+  `'sin(2*X-Y)' →Prog` gives `« 2 X × Y - sin »`
+* Accelerate evaluation of library entries
+  Invoking a library object is as fast as if it was on the stack.
+  Notice that this is faster than global objects that require lookup.
+* Add ``Obj→` support for user-defined function calls
+  `'F(A;B;C)' Obj→ DROP Obj→ ` gives `[F A B C]`.
+  The first call to `Obj→` expands the expression, leaving an isolated
+  function call on the stack, which the second `Obj→` expands.
+* Automatically convert polynomial objects to expressions when needed
+* Many improvements to the equation library contributed by Jean Wilson
+* Document the equation library variables in the help file
+* Add classical/relativistic Kinetic Energy comparison demo
+  This was suggested by Jean Wilson as an illustration
+* parser: Parse and convert HP syntax for `|`
+  Typing `'A(X;Y)|(X=1;Y=2)'` converts to `'A(X;Y)|X=1|Y=2'`
+
+### Bug fixes
+
+* Improve graphical rendering of some complex expressions
+* Render `sqrt` as `√` and not `squareroot` in HP compatibility mode
+* Do not draw parentheses around `|x|` when rendering `abs`
+* Redefine `rpm` as `turn/min` (unit consistency of rotational speed)
+* Avoid crash in `for` loop if termination condition fails to evaluate
+* Fix rendering and saving of directories
+* Do not leave incorrect stack content when running `Obj→` on text
+* Make size consistent in vectors containing tagged objects
+* Accept tagged objects as input in algebraic functions
+* Avoid parsing error for `1,234` when `.` is the decimal separator
+* Debug output related to expressions is no longer labelled "equations"
+* Fix unit error in Drift Speed & Current Density
+* Cut the size of the build version ID to avoid DMCP buffer overflows
+* Avoid possible corruption when an error occurs in a program
+* Improve error messages for file errors, e.g. when loading a state
+* Move cursor at correct position after numbers when entering units
+* Reject multiple consecutive units, e.g. `1_m_s`
+* Fix issue where we insert `=` incorrectly on the command line
+* Address simulator warning about potential buffer overflow
+
+### Improvements
+
+* tests: Add tests for the newly added library entries
+* primitive: Add test suite for symbolic integration
+* tests: Add test suite for symbolic differentiation
+* Factor out code to expand objects on the stack
+* `make install` now Installs from distribution files
+* demo: Reorganize demo files as directories
+* tests: Add test for `Obj→` on various object types
+* tests: Factor out code checking state of the complete stack
+* tests: Avoid emitting something that looks like compilation errors
+* Update demo file
+* Improve definition of atomic mass unit, add `Da` (Dalton) alias
+* expressions: Optimize the way to split an equation
+* tests: Adjust tests after changes in `SymbolicMenu`
+
+
+
 ## Release 0.7.18 "Who" - Subst, Where, Apply
 
 This release implements the `Apply`, `Subst` and `|` (`Where`) commands.
