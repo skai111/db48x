@@ -808,7 +808,10 @@ COMMAND_BODY(ToProgram)
 {
     if (object_p top = rt.top())
     {
-        if (expression_p expr = expression::as_expression(top))
+        list_p expr = expression::as_expression(top);
+        if (!expr)
+            expr = top->as<list>();
+        if (expr)
         {
             if (object_p clone = rt.clone(expr))
             {
