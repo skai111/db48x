@@ -915,14 +915,21 @@ int ui_file_selector(const char *title,
     });
 
     while (!done)
-        sys_sleep();
+        sys_delay(50);
 
     int ret = MRET_EXIT;
     if (!path.isNull())
     {
-        std::cout << "Got path: " << path.toStdString() << "\n";
         QFileInfo fi(path);
+        QString suffix = fi.suffix(); // On Linux we don't get the extension
         QString name = fi.fileName();
+        if ("." + suffix != ext)
+        {
+            path += ext;
+            name += ext;
+        }
+        std::cout << "Got path: " << path.toStdString()
+                  << ", name is " << name.toStdString() << "\n";
         ret = callback(path.toStdString().c_str(),
                        name.toStdString().c_str(),
                        data);
