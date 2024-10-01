@@ -682,7 +682,8 @@ static const cstring basic_units[] =
     "Wb",       "1_V*s",                // Weber
 
     "mho",      "1_S",                  // Ohm spelled backwards
-    "ohm",      "1_Ω",                  // Ohm
+    "ohm",      "1_Ω",                  // Ohm
+    "Ω",        "1_Ω",                  // Robustness: Unicode u8486 vs u937
 
     // ------------------------------------------------------------------------
     // Angles menu
