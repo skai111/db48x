@@ -4274,8 +4274,12 @@ bool user_interface::handle_editing(int key)
                 {
                     // Shift + Backspace = Delete to right of cursor
                     uint after = utf8_next(ed, cursor, isEditing);
-                    if (utf8_codepoint(ed + cursor) == '\n')
+                    unicode cp = utf8_codepoint(ed + cursor);
+                    if (cp == '\n')
                         edRows = 0;
+                    else if (cp == Settings.BasedSeparator() ||
+                             cp == Settings.NumberSeparator())
+                        after = utf8_next(ed, after, isEditing);
                     remove(cursor, after - cursor);
                 }
                 else if (!shift && cursor > 0)
@@ -4284,8 +4288,12 @@ bool user_interface::handle_editing(int key)
                     utf8 ed      = rt.editor();
                     uint before  = cursor;
                     cursor       = utf8_previous(ed, cursor);
-                    if (utf8_codepoint(ed + cursor) == '\n')
+                    unicode cp = utf8_codepoint(ed + cursor);
+                    if (cp == '\n')
                         edRows = 0;
+                    else if (cp == Settings.BasedSeparator() ||
+                             cp == Settings.NumberSeparator())
+                        cursor = utf8_previous(ed, cursor);
                     remove(cursor, before - cursor);
                 }
                 else
