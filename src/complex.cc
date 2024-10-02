@@ -1111,7 +1111,8 @@ COMPLEX_BODY(sinh)
 // ----------------------------------------------------------------------------
 {
     // sinh(z) = (exp(z) - exp(-z)) / 2
-    return (complex::exp(z) - complex::exp(-z)) / complex_g(complex::make(2,0));
+    complex_g two = complex::make(2,0);
+    return (complex::exp(z) - complex::exp(-z)) / two;
 }
 
 COMPLEX_BODY(cosh)
@@ -1121,7 +1122,7 @@ COMPLEX_BODY(cosh)
 {
     // cosh(z) = (exp(z) + exp(-z)) / 2
     complex_g two = complex::make(2,0);
-    return (complex::exp(z) - complex::exp(-z)) / two;
+    return (complex::exp(z) + complex::exp(-z)) / two;
 }
 
 

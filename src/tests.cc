@@ -4625,7 +4625,7 @@ void tests::complex_functions()
 
     step("Hyperbolic cosine");
     test(CLEAR, "3+11ⅈ", ENTER, "COSH", ENTER)
-        .expect("0.04433 60889 10782 41416-10.06756 33986 40475 46ⅈ");
+        .expect("0.04455 64314 39089 01653-10.01777 68178 59741 201ⅈ");
 
     step("Hyperbolic tangent");
     test(CLEAR, "2+8ⅈ", ENTER, "TANH", ENTER)
