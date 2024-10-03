@@ -8,13 +8,13 @@ Create a user-defined unit
 Delete a user-defined unit
 
 
-## UnitValue (UVAL)
+## UnitValue
 
 Return the numeric part of a unit object.
 
 `3_km`  ▶ `3`
 
-## BaseUnits (UBASE)
+## BaseUnits
 
 Expand all unit factors to their base units.
 
@@ -29,14 +29,14 @@ Convert value from one unit to another. This convert the values in the second le
 
 
 
-## FactorUnit (UFACT)
+## FactorUnit
 
 Factor the unit in level 1 from the unit expression of the level 2 unit object.
 
 `1_W` `1_N` ▶ `1_N*m/s`
 
 
-## →Unit (ToUnit)
+## →Unit
 
 Creates a unit object from a real number and the unit part of a unit object.
 `→Unit` adds units to a number, combining the number and the unit part of a

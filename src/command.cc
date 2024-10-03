@@ -62,23 +62,20 @@ RECORDER(command,       16, "RPL Commands");
 RECORDER(command_error, 16, "Errors processing a command");
 
 
-PARSE_BODY(command)
+object::id command::lookup(utf8 name, size_t &maxlen, bool eq)
 // ----------------------------------------------------------------------------
-//    Try to parse this as a command, using either short or long name
+//   Lookup a command and return its ID
 // ----------------------------------------------------------------------------
 {
-    bool    eq     = p.precedence;
-    id      type   = id(0);
-    id      found  = id(0);
-    cstring ref    = cstring(utf8(p.source));
-    size_t  maxlen = p.length;
-    size_t  len    = maxlen;
+    id     type  = id(0);
+    id     found = id(0);
+    size_t len   = maxlen;
 
     for (size_t i = 0; i < spelling_count; i++)
     {
         if (!is_command(spellings[i].type))
             continue;
-        if (cstring cmd = spellings[i].name)
+        if (utf8 cmd = utf8(spellings[i].name))
         {
             if (type != spellings[i].type)
             {
@@ -91,28 +88,42 @@ PARSE_BODY(command)
             }
 
             // No function names like `min` while parsing units
-            if (unit::mode && is_valid_as_name_initial(utf8(cmd)))
+            if (unit::mode && is_valid_as_name_initial(cmd))
                 continue;
 
-            len = strlen(cmd);
+            len = strlen(cstring(cmd));
             if (len <= maxlen
-                && strncasecmp(ref, cmd, len) == 0
+                && strncasecmp(cstring(name), cstring(cmd), len) == 0
                 && (len >= maxlen
-                    || (eq && (!is_valid_as_name_initial(utf8(cmd)) ||
-                               ((ref[len] < '0' || ref[len] > '9') &&
-                                !is_valid_as_name_initial(utf8(ref + len)))))
-                    || is_separator(utf8(ref + len))))
+                    || (eq && (!is_valid_as_name_initial(cmd) ||
+                               ((name[len] < '0' || name[len] > '9') &&
+                                !is_valid_as_name_initial(name + len))))
+                    || is_separator(name + len)))
             {
                 found = type;
                 break;
             }
         }
     }
+    if (found)
+        maxlen  = len;
+    return found;
+}
 
+
+
+PARSE_BODY(command)
+// ----------------------------------------------------------------------------
+//    Try to parse this as a command, using either short or long name
+// ----------------------------------------------------------------------------
+{
+    bool    eq     = p.precedence;
+    utf8    name   = p.source;
+    size_t  len    = p.length;
+    id      found  = lookup(name, len, eq);
     record(command,
            "Parsing [%s] found %u %+s %+s len %u",
-           ref, found, name(found), fancy(found), len);
-
+           name, found, command::name(found), command::fancy(found), len);
     if (!found)
         return SKIP;
 

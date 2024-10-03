@@ -6574,10 +6574,10 @@ calculator. It includes the following submenus:
 * [Solve](#SolverMenu): Numerical solver
 
 
-## VariablesMenu (VARS)
+## VariablesMenu
 
-The variables menu displays the variables in the current directory.
-It is a three row menu, where for each variable:
+The variables menu, accessed using the _VAR_ key, displays the variables in the
+current directory. It shows three rows for each variable:
 
 * The primary function [evaluates the variable](#VariablesMenuExecute)
 * The first shifted function [recalls the variable](#VariablesMenuRecall)
@@ -6610,21 +6610,21 @@ It invokes a context-dependent menu adapted to the top level of the stack.
 The `LastMenu` function (🟨 _A_), returns back in the history of past visited menus. The history contains up to 8 entries.
 # Operations with Angles
 
-## ToDegrees (→Deg)
+## ToDegrees
 Convert a number or angle to an angle in degrees.
 If given a number, that number is interpreted using the current angle mode.
 
 
-## ToRadians (→Rad)
+## ToRadians
 Convert a number or angle to an angle in radians.
 If given a number, that number is interpreted using the current angle mode.
 
 
-## ToGrads (→Grad)
+## ToGrads
 Convert a number or angle to an angle in grads.
 If given a number, that number is interpreted using the current angle mode.
 
-## ToPiRadians (→πr)
+## ToPiRadians
 Convert a number or angle to an angle in multiple of π radians.
 If given a number, that number is interpreted using the current angle mode.
 
@@ -6657,7 +6657,7 @@ Convert vector or complex to polar coordinates
 Convert vector or complex to spherical coordinates
 # Arithmetic
 
-## + (add)
+## Add
 
 Add two values.
 
@@ -6673,7 +6673,7 @@ Add two values.
   object to an existing text. For example `"X" "Y" + ` gives `"XY"`, and
   `"X=" 1 +` gives `"X=1"`.
 
-## - (sub)
+## Sub
 
 Subtract two values
 
@@ -6685,7 +6685,7 @@ Subtract two values
   [autosimplify](#autosimplify) is active.
 
 
-## × (*, mul)
+## Mul
 
 Multiply two values.
 
@@ -6705,7 +6705,7 @@ Multiply two values.
   gives `"XXX"`.
 
 
-## ÷ (/, div)
+## Div
 
 Divide two values two values
 
@@ -6763,12 +6763,12 @@ Largest integer less than the input
 Smallest integer larger than the input
 
 
-## IntegerPart (IP, IntPart)
+## IntegerPart
 
 Integer part of a number
 
 
-## FractionalPart (FP, FracPart)
+## FractionalPart
 
 Fractional part of a number
 
@@ -6821,21 +6821,21 @@ For complex numbers, returns a unit number on the unit circle with the same
 argument as the original number.
 
 
-## Percent (%)
+## Percent
 
 Percentage of a number
 
 `Y` `X` ▶ `Y×(X÷100)`
 
 
-## PercentChange (%CH)
+## PercentChange
 
 Percentage of change on a number
 
 `Y` `X` ▶ `(X÷Y-1)×100`
 
 
-## PercentTotal (%T)
+## PercentTotal
 
 Get percentage of a total
 
@@ -6908,7 +6908,7 @@ Nth Tchebycheff polynomial of the second kind
 Nth Hermite polynomial as used in probabilities
 
 
-## DIV2 (QuoRem, IDIV2, QuotientRemainder)
+## QuotientRemainder
 
 Euclidean division, returning quotient and remainder.
 
@@ -6978,7 +6978,7 @@ Largest prime smaller than the input
 Factorize a polynomial or number
 # Base functions
 
-## Evaluate (EVAL)
+## Evaluate
 
 Evaluate the object at stack level 1.
 
@@ -6986,7 +6986,7 @@ Mapped to the _ R/S _ key
 
 `X` ▶ Result of `X` evaluation
 
-## Negate (NEG)
+## Negate
 
 Negate the value in level 1.
 
@@ -6994,7 +6994,7 @@ Mapped to the _ +/- _ key
 
 `X` ▶ `0-X`
 
-## Invert (INV)
+## Invert
 
 Invert the value in level 1
 
@@ -7010,93 +7010,93 @@ numbers, the operation happens on the number of bits defined by the
 [WordSize](#wordsize) setting. For integer values, the maximum number of bits is
 defined by the [MaxNumberBits](#maxnumberbits) setting.
 
-## ShiftLeft (SL)
+## ShiftLeft
 
 Shift the value left by one bit.
 
 `Value` ▶ `Value*2`
 
-## ShiftLeftByte (SLB)
+## ShiftLeftByte
 
 Shift the value left by one byte (8 bits).
 
 `Value` ▶ `Value*256`
 
-## ShiftLeftCount (SLC)
+## ShiftLeftCount
 
 Shift the value left by a given number of bits.
 
 `Value` `Shift` ▶ `Value*2^Shift`
 
-## ShiftRight (SR)
+## ShiftRight
 
 Shift the value right by one bit.
 
 `Value` ▶ `Value/2`
 
-## ShiftRightByte (SRB)
+## ShiftRightByte
 
 Shift the value right by one byte (8 bits).
 
 `Value` ▶ `Value/256`
 
-## ShiftRightCount (SRC)
+## ShiftRightCount
 
 Shift the value right by a given number of bits.
 
 `Value` `Shift` ▶ `Value/2^Shift`
 
-## ArithmeticShiftRight (ASR)
+## ArithmeticShiftRight
 
 Shift the value right by one bit, preserving the sign bit.
 
 `Value` ▶ `Signed(Value)/2`
 
-## ArithmeticShiftRightByte (ASRB)
+## ArithmeticShiftRightByte
 
 Shift the value right by one byte (8 bits), preserving the sign bit.
 
 `Value` ▶ `Signed(Value)/256`
 
-## ArithmeticShiftRightCount (ASRC)
+## ArithmeticShiftRightCount
 
 Shift the value right by a given number of bits, preserving the sign bit.
 
 `Value` `Shift` ▶ `Signed(Value)/2^Shift`
 
-## RotateLeft (RL)
+## RotateLeft
 
 Rotate the value left by one bit.
 
 `Value`  ▶ `RLC(Value, 1)`
 
 
-## RotateLeftByte (RLB)
+## RotateLeftByte
 
 Rotate the value left by one byte (8 bits).
 
 `Value`  ▶ `RL(Value, 8)`
 
-## RotateLeftCount (RLC)
+## RotateLeftCount
 
 Rotate the value left by a given number of bits.
 
 `Value`  `Shift` ▶ `RLC(Value, Shift)`
 
 
-## RotateRight (RR)
+## RotateRight
 
 Rotate the value right by one bit.
 
 `Value`  ▶ `RRC(Value, 1)`
 
-## RotateRightByte (RRB)
+## RotateRightByte
 
 Rotate the value right by one byte (8 bits).
 
 `Value`  ▶ `RRC(Value, 8)`
 
-## RotateRightCount (RRC)
+## RotateRightCount
 
 Rotate the value right by a given number of bits.
 
@@ -7282,7 +7282,7 @@ Library items are defined by the `config/library.csv`, and accessed using the
 `Library` command or the `XLib` command.
 
 
-## Constant (CONST)
+## Constant
 
 Returns the value of a constant from the constants library.
 The name can be given as a symbol or as text.
@@ -7290,7 +7290,7 @@ The name can be given as a symbol or as text.
 `'c'` ▶ `299792458_m/s`
 
 
-## LibraryEquation (LIBEQ)
+## LibraryEquation
 
 Returns the value of a library equation from the equation library.
 The name can be given as a symbol or as text.
@@ -7298,7 +7298,7 @@ The name can be given as a symbol or as text.
 `"RelativityMassEnergy"` ▶ `"'E=m*c^2'"`
 
 
-## LibraryItem (XLIB)
+## LibraryItem
 
 Returns the value of a library item from the library.
 The name can be given as a symbol or as text.
@@ -7325,7 +7325,7 @@ The debug menu contains operations necessary to debug RPL programs:
 * [Step↑](#stepout)
 
 
-## Debug (DBUG)
+## Debug
 
 The `Debug` command takes a program or expression as an argument, and starts
 debugging execution of it. When a program is halted for debugging, the header
@@ -7340,7 +7340,7 @@ by being interrupted using the _EXIT_ key, then this is seen as part of the same
 debugging session.
 
 
-## SingleStep (SST)
+## SingleStep
 
 The `SingleStep` command steps through a single instruction in the RPL program.
 
@@ -7364,7 +7364,7 @@ program being debugged. The number of steps to execute is passed as an argument
 in the first level of the stack. For example, `40 MultipleSteps` will execute
 the next 40 RPL instructions.
 
-## Continue (CONT)
+## Continue
 
 The `Continue` command resumes execution of the current RPL program at the
 current instruction.
@@ -7382,7 +7382,7 @@ debugged.
 
 Variables are named storage for RPL values.
 
-## Store (STO)
+## Store
 
 Store an object into a specified location. For example `2 'ABC' STO` stores the value `2` in a global variable named `ABC`.
 
@@ -7399,7 +7399,7 @@ The `Value` is copied in a storage location identified by `Name`. The storage lo
 * Text: `Value` is stored in a named file on the [flash storage](#flash-storage).
 
 
-## Recall (RCL)
+## Recall
 Recall an object from a specified location. For example `'ABC' RCL` recalls the value from a global variable named `ABC`.
 
 `Name` ▶ `Value`
@@ -7430,43 +7430,43 @@ The format of the file depends on how the name ends:
 * `.csv`: The value is stored in comma-separated values format. This is mostly interesting for arrays and lists, which can be echanged with spreadsheets and other PC applications that can input or output CSV files.
 
 
-## StoreAdd (STO+)
+## STO+
 Add a value to the content of a variable
 
 
-## StoreSub (STO-)
+## STO-
 Subtract a value from the contents of a variable
 
 
-## StoreMul (STO×)
+## STO×
 Multiply the contents of a variable by a value
 
 
-## StoreDiv (STO÷)
+## STO÷
 Divide the contents of a variable by a value
 
 
-## RecallAdd (RCL+)
+## RCL+
 Add the content of a variable to a value on the stack
 
 
-## RecallSub (RCL-)
+## RCL-
 Subtract the contents of a variable from a value on a stack
 
 
-## RecallMul (RCL×)
+## RCL×
 Multiply a value on the stack by the contents of a variable
 
 
-## RecallDiv (RCL÷)
+## RCL÷
 Divide a value on the stack by the contents of a variable
 
 
-## Increment (INCR)
+## Increment
 Add one to the content of a variable
 
 
-## Decrement (DECR)
+## Decrement
 Subtract one from content of a variable
 
 
@@ -7489,34 +7489,34 @@ directories, `PurgeAll` may purge multiple variables. Use [Purge](#Purge) if you
 want to only purge a variable in the current directory.
 
 
-## CreateDirectory (CRDIR)
+## CreateDirectory
 Create new directory
 
 
-## PurgeDirectory (PGDIR)
+## PurgeDirectory
 Purge entire directory tree
 
 
-## UpDirectory (UPDIR)
+## UpDirectory
 Change current directory to its parent
 
 
-## HomeDirectory (HOME)
+## HomeDirectory
 Change current directory to HOME
 
 
-## DirectoryPath (PATH)
+## DirectoryPath
 Get a path to the current directory
 
 
-## Variables (VARS)
+## Variables
 
 List all visible variables in a directory
 
 ▶ `{ Variables... }`
 
 
-## TypedVariables (TVARS)
+## TypedVariables
 
 List variables of a specific type
 
@@ -7774,14 +7774,14 @@ Change the separator symbols
 Change the display format for numbers
 
 
-## SetFlag (SF)
+## SetFlag
 
 Set a user or system flag.
 
 `33 SF` sets user flag 0.
 `'MixedFractions' SetFlag` enables the `MixedFractions` setting.
 
-## ClearFlag (CF)
+## ClearFlag
 
 Clear a user or system flag
 
@@ -7789,36 +7789,36 @@ Clear a user or system flag
 
 Invert a user or system flag
 
-## TestFlagSet (FS?)
+## TestFlagSet
 
 Test if a flag is set
 
-## TestFlagClear (FC?)
+## TestFlagClear
 
 Test if a flag is clear
 
-## TestFlagClearThenClear (FC?C)
+## TestFlagClearThenClear
 
 Test if a flag is clear, then clear it
 
-## TestFlagSetThenClear (FS?C)
+## TestFlagSetThenClear
 
 Test if a flag is set, then clear it
 
-## TestFlagClearThenSet (FC?S)
+## TestFlagClearThenSet
 
 Test if a flag is clear, then set it
 
-## TestFlagSetThenSet (FS?S)
+## TestFlagSetThenSet
 
 Test if a flag is set, then set it
 
-## FlagsToBinary (RCLF)
+## FlagsToBinary
 
 Recall all system flags as a binary number.
 
 
-## BinaryToFlags (STOF)
+## BinaryToFlags
 
 Store and replace all system flags from a binary number
 # Fonts
@@ -7946,12 +7946,12 @@ Note that unlike on the HP48, a complex value in DB50X can
 contain a based number.
 
 
-## ClearLCD (CLLCD)
+## ClearLCD
 
 Clear the LCD display, and block updates of the header or menu areas.
 
 
-## DrawText (DISP)
+## DrawText
 
 Draw the text or object in level 2 at the position indicated by level 1. A text
 is drawn without the surrounding quotation marks.
@@ -7986,7 +7986,7 @@ top-left corner (`#0 #0`) with the largest (editor) font (font identifier `3`),
 erasing the background (the first `true`), in reverse colors (the second
 `true`).
 
-## DrawStyledText (DISPXY)
+## DrawStyledText
 
 Draw the text or object in level 3 at the position indicated by level 2, using
 the font specified in level 1. This behaves like [DrawText](#drawtext), except
@@ -8018,7 +8018,7 @@ The maximum size of the graphic object is defined by the
 [MaximumShowWidth](#maximumshowwidth) and
 [MaximumShowHeight](#maximumshowheight) settings.
 
-## DrawLine (line)
+## DrawLine
 
 Draw a line between two points specified by level 1 and level 2 of the stack.
 
@@ -8026,7 +8026,7 @@ The width of the line is specified by [LineWidth](#linewidth). The line is drawn
 using the [foreground](#foreground) pattern.
 
 
-## PlotParameters (PPAR)
+## PlotParameters
 
 The `PlotParameters` reserved variable defines the plot parameters, as a list,
 with the following elements:
@@ -8154,7 +8154,7 @@ and are not necessarily rectangular, although some operations (e.g. matrix
 operations using arrays as input) can impose stricter constraints.
 
 
-## →List (ToList)
+## →List
 
 Build a list from elements on the stack. Level 1 of the stack contains the
 number of elements in the list. The elements are on the stack, the first element
@@ -8162,7 +8162,7 @@ being deepest in the stack. This is the opposite of [List→](#fromlist).
 
 `A` `B` ... `Count` ▶ `{ A B ... }`
 
-## List→ (FromList)
+## List→
 
 Expand a list on the stack and return the number of elements. After executing
 the command, level 1 contains the number of elements, and a corresponding number
@@ -8173,7 +8173,7 @@ at the deepest level in the stack. This is the opposite of [→List](#tolist). T
 `{ A B ... }` ▶ `A` `B` ... `Count`
 
 
-## List→ (FromList)
+## List→
 
 Expand a list on the stack and return the number of elements. After executing
 the command, level 1 contains the number of elements, and a corresponding number
@@ -8281,7 +8281,7 @@ Sort a list or array by value, in reverse order compared to `Sort`.
 Sort a list or array using the memory representation of objects, in reverse
 order compared to `QuickSort`.
 
-## ReverseList (REVLIST)
+## ReverseList
 
 Reverse the order of elements in a list
 
@@ -8294,7 +8294,7 @@ Add elements to a list, keep only the last N elements
 Assemble a list from results of sequential procedure
 # Operations with Matrices and vectors
 
-## ToArray (→Arry)
+## ToArray
 
 Stack to Array Command: Returns a vector of n real or complex elements or a
 matrix of n × m real or complex elements.
@@ -8306,7 +8306,7 @@ The elements of the result array should be entered in row order.
 `A11` ... `Arc` `{ r c }` ▶ `[[ A11 A1c] [ A21 ... Arc ]]`
 
 
-## FromArray (Arry→)
+## FromArray
 
 Array to Stack Command: Takes an array and returns its elements as separate real or complex numbers. Also returns a list of the dimensions of the array.
 If the argument is an n-element vector, the first element is returned to level n + 1 (not level nm + 1), and the nth element to level 2.
@@ -8384,7 +8384,7 @@ Perform Cholesky decomposition on a matrix
 Column norm (one norm) of a matrix
 
 
-## CON (ConstantArray)
+## ConstantArray
 
 Returns a constant array, defined as an array whose elements all have the same
 value.
@@ -8432,7 +8432,7 @@ Cross produce of vectors
 Swap two columns in a matrix
 
 
-## Determinant (DET)
+## Determinant
 
 Compute the determinant of a matrix
 
@@ -8466,7 +8466,7 @@ Assemble a Hilbert symbolic array
 Find a basis of the intersection of two vector spaces
 
 
-## IDN (IdentityMatrix)
+## IdentityMatrix
 
 Identity Matrix Command: Returns an identity matrix, that is, a square matrix
 with its diagonal elements equal to 1 and its off-diagonal elements equal to 0.
@@ -8543,7 +8543,7 @@ QR Decomposition of a matrix
 Rank of a matrix
 
 
-## RANM (RandomMatrix)
+## RandomMatrix
 
 Returns an array containing random integer values between -9 and 9.
 
@@ -8735,7 +8735,7 @@ cycle as follows:
 * `0.1_m` at which point the cycle repeats.
 
 
-## Explode (OBJ→)
+## Explode
 
 Explode an object into its sub-components. The various sub-components are placed
 on the stack, and if necessary, information about the size is places on the
@@ -9069,27 +9069,27 @@ DB50X has five display mode (one more than the HP48)s:
 * [Engineering mode](#EngineeringDisplay))
 * [Significant digits mode](#SignificantDisplay))
 
-## StandardDisplay (STD)
+## StandardDisplay
 
 Display numbers using full precision. All significant digts to the right of the
 decimal separator are shown, up to 34 digits.
 
-## FixedDisplay (FIX)
+## FixedDisplay
 
 Display numbers rounded to a specific number of decimal places.
 
-## ScientificDisplay (SCI)
+## ScientificDisplay
 
 Display numbers in scientific notation, i.e. with a mantissa and an
 exponent. The mantissa has one digit to the left of the decimal separator and
 shows the specified number of decimal places.
 
-## EngineeringDisplay (SCI)
+## EngineeringDisplay
 
 Display nunmbers as a mantissa with a sepcified number of digits, followed by an
 exponent that is a multiple of 3.
 
-## SignificantDisplay (SIG)
+## SignificantDisplay
 
 Display up to the given number of digits without trailing zero. This mode is
 useful because DB50X can compute with large precision, and it may be useful to
@@ -9167,20 +9167,20 @@ DB50X has four angle modes:
 * [Grads](#Grads): A full circle is 400 radians
 * [PiRadians](#PiRadians): Radians shown as multiple of π
 
-## Degrees (DEG)
+## Degrees
 
 Select degrees as the angular unit. A full circle is 360 degrees.
 
-## Radians (RAD)
+## Radians
 
 Select radians as the angular unit. A full circle is 2π radians,
 and the angle is shown as a numerical value.
 
-## Grads (GRAD)
+## Grads
 
 Select grads as the angular unit. A full circle is 400 grads.
 
-## PiRadians (PIRAD)
+## PiRadians
 
 Select multiples of π as the angular unit. A full circle is 2π radians,
 shown as a multiple of π.
@@ -9299,19 +9299,19 @@ Integer values can be reprecended in a number of different bases:
 * [Decimal](#Decimal) is base 10
 * [Hexadecimal](#Hexadecimal) is base 16
 
-## Binary (BIN)
+## Binary
 
 Selects base 2
 
-## Octal (OCT)
+## Octal
 
 Selects base 8
 
-## Decimal (DEC)
+## Decimal
 
 Selects base 10
 
-## Hexadecimal (HEX)
+## Hexadecimal
 
 Selects base 16
 
@@ -9319,13 +9319,13 @@ Selects base 16
 
 Select an arbitrary base for computations
 
-## WordSize (STWS)
+## WordSize
 
 Store the current [word size](#wordsize) in bits. The word size is used for
 operations on based numbers. The value must be greater than 1, and the number of
 bits is limited only by memory and performance.
 
-## RecallWordSize (RCWS)
+## RecallWordSize
 
 Return the current [word size](#wordsize) in bits.
 
@@ -9362,13 +9362,13 @@ real and imaginary part in a complex number. A complex number made of two
 fractions can therefore take up to four times the number of bits specified by
 this setting.
 
-## ToFractionIterations (→QIterations, →FracIterations)
+## →QIterations
 
 Define the maximum number of iterations converting a decimal value to a
 fraction. For example, `1 →FracIterations 3.1415926 →Frac` will give `22/7`,
 whereas `3 →FracIterations 3.1415926 →Frac` will give `355/113`.
 
-## ToFractionDigits (→QDigits, →FracDigits)
+## →QDigits
 
 Define the maximum number of digits of precision converting a decimal value to a
 fraction. For example, `2 →FracDigits 3.1415926 →Frac` will give `355/113`.
@@ -9487,12 +9487,12 @@ scale down the font size in order to make stack elements fit.
 
 This is the opposite of [AutoScaleStack](#autoscalestack).
 
-## MaximumShowWidth (MaxW)
+## MaximumShowWidth
 
 Maximum number of horizontal pixels used to display an object with
 [Show](#show).
 
-## MaximumShowHeight (MaxH)
+## MaximumShowHeight
 
 Maximum number of vertical pixels used to display an object with [Show](#show).
 
@@ -9660,7 +9660,7 @@ Root seeking (bisection method)
 
 # Stack manipulation
 
-## ClearStack (CLEAR)
+## ClearStack
 
 Remove all objects from the stack
 
@@ -9683,21 +9683,21 @@ Remove two objects form the stack
 Remove N objects from the stack, N being given in level 1.
 
 
-## Duplicate (DUP)
+## Duplicate
 Duplicate an object on the stack
 
 
-## Duplicate2 (DUP2)
+## Duplicate2
 Duplicate two objects on the stack
 
 
-## DuplicateTwice (DUPDUP)
+## DuplicateTwice
 Duplicate the same object twice on the stack
 
-## DuplicateN (DUPN)
+## DuplicateN
 Duplicate a group of N objects, N being given in stack level 1
 
-## LastArguments (LASTARG)
+## LastArguments
 Put the last arguments back on the stack
 
 ## LastX
@@ -9872,7 +9872,7 @@ Stores an array from the stack as statistics data in the `ΣData` variable.
 
 Clear statistics data.
 
-## Average (MEAN, AVG)
+## Average
 
 Compute the average (mean) of the values in the statistics data.
 If there is a single column of data, the result is a real number.
@@ -9890,53 +9890,53 @@ Compute the smallest of the values in the statistics data array `ΣData`.
 
 Compute the largest of the values in the statistics data array `ΣData`.
 
-## ΣSize (NΣ)
+## ΣSize
 
 Return the number of data rows in the statistics data array `ΣData`.
 
-## SumOfX (ΣX)
+## ΣX
 
 Return the sum of values in the `XCol` column of the statistics data array
 `ΣData`. The values are adjusted according to the current fitting model defined
 in `ΣParameters` if the `CurrentFitSums` setting is active.
 
-## SumOfY (ΣY)
+## ΣY
 
 Return the sum of values in the `YCol` column of the statistics data array
 `ΣData`. The values are adjusted according to the current fitting model defined
 in `ΣParameters` if the `CurrentFitSums` setting is active.
 
-## SumOfXY (ΣXY)
+## ΣXY
 
 Return the sum of the product of values in the `XCol` and `YCol` columns of the
 statistics data array `ΣData`. The values are adjusted according to the current
 fitting model defined in `ΣParameters` if the `CurrentFitSums` setting is
 active.
 
-## SumOfXSquares (ΣX²)
+## ΣX²
 
 Return the sum of the squares of the values in the `XCol` column of the
 statistics data array `ΣData`. The values are adjusted according to the current
 fitting model defined in `ΣParameters` if the `CurrentFitSums` setting is
 active.
 
-## SumOfYSquares (ΣY²)
+## ΣY²
 
 Return the sum of the squares of the values in the `YCol` column of the
 statistics data array `ΣData`. The values are adjusted according to the current
 fitting model defined in `ΣParameters` if the `CurrentFitSums` setting is
 active.
 
-## Total (TOT)
+## ΣTotal
 
 Returns the sum of all columns in the statistics data array `ΣData`.
 
-## Variance (VAR)
+## Variance
 
 Calculates the sample variance of the coordinate values in each of the columns
 in the current statistics matrix (`ΣData`).
 
-## Correlation (CORR)
+## Correlation
 
 Returns the correlation coefficient of the independent and dependent data
 columns in the current statistics matrix (reserved variable `ΣData`).
@@ -9946,7 +9946,7 @@ The columns are specified by the first two elements in the reserved variable
 exist, `Correlation` creates it and sets the elements to their default values
 (1 and 2).
 
-## Covariance (COV)
+## Covariance
 
 Returns the sample covariance of the independent and dependent data columns in
 the current statistics matrix (reserved variable `ΣData`).
@@ -9956,7 +9956,7 @@ The columns are specified by the first two elements in the reserved variable
 exist, `Correlation` creates it and sets the elements to their default values
 (1 and 2).
 
-## StandardDeviation (SDEV)
+## StandardDeviation
 
 Calculates the sample standard deviation of each of the columns of coordinate values in the current statistics matrix (reserved variable `ΣData`).
 
@@ -9964,7 +9964,7 @@ Calculates the sample standard deviation of each of the columns of coordinate va
 
 The standard deviation is the square root of the `Variance`.
 
-## LinearRegression (LR)
+## LinearRegression
 
 Uses the currently selected statistical model to calculate the linear regression
 coefficients (intercept and slope) for the selected dependent and independent
@@ -10010,24 +10010,24 @@ This is a DB50X extension, not present on HP calculators
 Select the best linear regression mode based on current data, i.e. the
 regression mode where the correlation value is the highest.
 
-## LinearFit (LINFIT)
+## LinearFit
 
 Select linear fit, i.e. try to model data with a linear equation `y = a*x+b`.
 
-## ExponentialFit (EXPFIT)
+## ExponentialFit
 
 Select exponential fit, i.e. try to model data with an equation `y = b*exp(a*x)`
 
-## LogarithmicFit (LOGFIT)
+## LogarithmicFit
 
 Select logarithmic fit, i.e. try to model data with an equation `y = a*ln(x)+b`.
 
-## PowerFit (PWRFIT)
+## PowerFit
 
 Select power fit, i.e. try to model data with an equation `y = x^a * b`.
 
 
-## FrequencyBins (BINS)
+## FrequencyBins
 
 Sorts the elements of the independent column (`XCol`) of the current statistics
 matrix (the reserved variable `ΣDat`) into (`nbins + 2`) bins, where the left
@@ -10042,7 +10042,7 @@ example, by executing `BarPlot`.
 `xmin` `xwidth` `nbins` ▶ `[[ n1 .. n2 ]]` `[ nlow nhigh ]`
 
 
-## PopulationVariance (PVAR)
+## PopulationVariance
 
 Calculates the population variance of the coordinate values in each of the m
 columns in the current statistics matrix (`ΣData`).
@@ -10051,7 +10051,7 @@ The population variance (equal to the square of the population standard
 deviation) is returned as a vector of m real numbers, or as a single real number
 if there is a single column of data.
 
-## PopulationStandardDeviation (PSDEV)
+## PopulationStandardDeviation
 
 Calculates the population standard deviation of each of the m columns of
 coordinate values in the current statistics matrix (reserved variable `ΣData`).
@@ -10059,7 +10059,7 @@ coordinate values in the current statistics matrix (reserved variable `ΣData`).
 The command returns a vector of m real numbers, or a single real number if there
 is a single column of data.
 
-## PopulationCovariance (PCOV)
+## PopulationCovariance
 
 Computes the population covariance of the independent and dependent data columns
 in the current statistics matrix (reserved variable `ΣData`).
@@ -10068,19 +10068,19 @@ The columns are specified by the first two elements in reserved variable
 `ΣParameters`, set by `XCol` and `YCol` respectively. If `ΣParameters` does not
 exist, `PCOV` creates it and sets the elements to their default values, 1 and 2.
 
-## IndependentColumn (XCOL)
+## IndependentColumn
 
 Set the independent variable column in the reserved variable `ΣParameters`.
 
 `XCol` ▶ (Update `ΣParameters`)
 
-## DependentColumn (YCOL)
+## DependentColumn
 
 Set the dependent variable column in the reserved variable `ΣParameters`.
 
 `YCol` ▶ (Update `ΣParameters`)
 
-## DataColumns (COLΣ)
+## DataColumns
 
 Set both the independent and dependent data columns in the reserved variable
 `ΣParameters`.
@@ -10177,7 +10177,7 @@ Examples:
 * `'(A+B)^3' { 'X^N' 'X*X^(N-1)' } ↓Match` returns `(A+B)*(A+B)^2`.
 
 
-## Isolate (ISOL)
+## Isolate
 
 Isolate variable: Returns an expression that rearranges an expression given in
 stack level 2 to “isolate” a variable specified in stack level 1.
@@ -10194,7 +10194,7 @@ The command will generate `Unable to isolate` if the expression cannot be
 reorganized, for example because it contains functions that have no known
 inverse.
 
-## ∂ (Derivative)
+## Derivative
 
 Compute the derivative function for an expression. The algebraic syntax for `∂` is `'∂name(expr)'` For example, `'∂x(sin(2*x^2)'` computes `4*X*cos(2*X^2)`
 
@@ -10250,19 +10250,19 @@ Evaluate algebraic rules on symbolic expressions one step at a time.
 
 
 
-## →Num (→Decimal, ToDecimal)
+## →Num
 
 Convert fractions and symbolic constants to decimal form.
 For example, `1/4 →Num` results in `0.25`.
 
-## →Frac (→Q, ToFraction)
+## →Q
 
 Convert decimal values to fractions. For example `1.25 →Frac` gives `5/4`.
 The precision of the conversion in digits is defined by
 [→FracDigits](#ToFractionDigits), and the maximum number of iterations for the
 conversion is defined by [→FracDigits](#ToFractionIterations)
 
-## ListExpressionNames (LName)
+## ListExpressionNames
 
 List all variables used in an expression or polynomial, leaving the original
 object on the stack, and returning the result as an array.
@@ -10278,7 +10278,7 @@ command, which extracts the units associated with the variables if there are
 any. The `LName` command only returns the names, without the associated unit.
 
 
-## ExpressionVariables (XVars)
+## ExpressionVariables
 
 List all variables used in an expression or polynomial, returning the result as
 a list.
@@ -10450,7 +10450,7 @@ cleanup of temporary values (garbage collection).
 See also: [GarbageCollect](#GarbageCollect), [FreeMemory](#FreeMemory)
 
 
-## AvailableMemory (MEM)
+## AvailableMemory
 
 Return the number of bytes available in memory.
 
@@ -10536,7 +10536,7 @@ Make a new copy of the given object
 ## USBFWUPDATE
 
 
-## PowerOff (OFF)
+## PowerOff
 
 Turn calculator off programmatically
 
@@ -10565,20 +10565,20 @@ integer, where the tag is `X` and the object is `3`.
 When displayed on the stack, tags are shown without the leading colon for
 readability. For example, the object above shows as `X:3` on the stack.
 
-## →Tag (ToTag)
+## →Tag
 
 Apply a tag to an object. The tag is in level 1 as text or name. The object to
 be tagged is in level 2. For example, `"Hello" 1 →Tag` results in `:Hello:1`.
 Like on the HP calculators, it is possible to next tags.
 
-## Tag→ (FromTag)
+## Tag→
 
 Expand a tagged object in level 1 into its object and tag. The object will be in
 level 2, the tag will be in level 1 as a text object.
 
 For example, `:Hello:1 Tag→` results in `"Hello"` in level 1 and `1` in level 2.
 
-## DeleteTag (DTAG)
+## DeleteTag
 
 Remove a tag from an object. For example, `:Hello:1 DeleteTag` results in `1`.
 If there is no tag, the object is returned as is.
@@ -10593,28 +10593,28 @@ Create a Utf8 string from a list of code points
 List all code points in a Utf8 string
 
 
-## ToText (→STR, →TEXT)
+## ToText
 
 Convert an object to its text representation.
 
-## Compile (STR→, TEXT→)
+## Compile
 
 Compile and evaluate the text, as if it was typed on the command line.
 
 `"1 2 + 4" TEXT→` will push `3` and `4` on the stack.
 
-## Char→Code (NUM, CODEPOINT, CharToUnicode)
+## Char→Code
 
 Return the Unicode codepoint of the first character in the text, or `-1` if the
 text is empty. `"Hello" NUM` returns `72`.
 
-## Text→Code (TextToUnicode)
+## Text→Code
 
 Return a list of the Unicode codepoints for all codepoints in the given text.
 `"Hello" Text→Code` returns `{ 72 101 108 108 111 }`.
 
 
-## Code→Text (CHR, Code→Char)
+## Code→Text
 
 Build a text out of a Unicode codepoint. The argument can be either a single
 numerical value or a list of numerical values. A negative numerical value
@@ -10907,13 +10907,13 @@ Create a user-defined unit
 Delete a user-defined unit
 
 
-## UnitValue (UVAL)
+## UnitValue
 
 Return the numeric part of a unit object.
 
 `3_km`  ▶ `3`
 
-## BaseUnits (UBASE)
+## BaseUnits
 
 Expand all unit factors to their base units.
 
@@ -10928,14 +10928,14 @@ Convert value from one unit to another. This convert the values in the second le
 
 
 
-## FactorUnit (UFACT)
+## FactorUnit
 
 Factor the unit in level 1 from the unit expression of the level 2 unit object.
 
 `1_W` `1_N` ▶ `1_N*m/s`
 
 
-## →Unit (ToUnit)
+## →Unit
 
 Creates a unit object from a real number and the unit part of a unit object.
 `→Unit` adds units to a number, combining the number and the unit part of a

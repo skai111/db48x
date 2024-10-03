@@ -38,12 +38,12 @@ Note that unlike on the HP48, a complex value in DB48X can
 contain a based number.
 
 
-## ClearLCD (CLLCD)
+## ClearLCD
 
 Clear the LCD display, and block updates of the header or menu areas.
 
 
-## DrawText (DISP)
+## DrawText
 
 Draw the text or object in level 2 at the position indicated by level 1. A text
 is drawn without the surrounding quotation marks.
@@ -78,7 +78,7 @@ top-left corner (`#0 #0`) with the largest (editor) font (font identifier `3`),
 erasing the background (the first `true`), in reverse colors (the second
 `true`).
 
-## DrawStyledText (DISPXY)
+## DrawStyledText
 
 Draw the text or object in level 3 at the position indicated by level 2, using
 the font specified in level 1. This behaves like [DrawText](#drawtext), except
@@ -110,7 +110,7 @@ The maximum size of the graphic object is defined by the
 [MaximumShowWidth](#maximumshowwidth) and
 [MaximumShowHeight](#maximumshowheight) settings.
 
-## DrawLine (line)
+## DrawLine
 
 Draw a line between two points specified by level 1 and level 2 of the stack.
 
@@ -118,7 +118,7 @@ The width of the line is specified by [LineWidth](#linewidth). The line is drawn
 using the [foreground](#foreground) pattern.
 
 
-## PlotParameters (PPAR)
+## PlotParameters
 
 The `PlotParameters` reserved variable defines the plot parameters, as a list,
 with the following elements:

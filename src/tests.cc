@@ -7991,6 +7991,11 @@ void tests::online_help()
     step("Select topic with ENTER")
         .test(LENGTHY(200), ENTER).noerror()
         .image_noheader("help-design");
+    step("Loading a URL")
+        .test(F1, F3, ENTER).noerror()
+        .image_noheader("help-url")
+        .test(EXIT)
+        .image_noheader("help-after-url");
     step("Exit to normal command line")
         .test(EXIT, CLEAR, EXIT).noerror();
     step("Invoke help about SIN command with long press")

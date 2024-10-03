@@ -581,7 +581,7 @@ OP(DegreesToRadians, "Degrees→Radians") ALIAS(DegreesToRadians, "D→R")
 OP(ToDegrees,   "→Degrees")             ALIAS(ToDegrees, "→Deg")
 OP(ToRadians,   "→Radians")             ALIAS(ToRadians, "→Rad")
 OP(ToGrads,     "→Grads")               ALIAS(ToGrads,   "→Grad")
-OP(ToPiRadians, "→PiRadians")           ALIAS(ToDegrees, "→πr")
+OP(ToPiRadians, "→PiRadians")           ALIAS(ToPiRadians, "→πr")
 
 // Timing and system commands
 CMD(Date)

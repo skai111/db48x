@@ -66,7 +66,10 @@ struct command : object
     static int32_t  int32_arg (uint level = 0);
 
     // Execute a command
-    static result evaluate()    { return OK; }
+    static result   evaluate()    { return OK; }
+
+    // Find the commadn object ID associated with a given spelling
+    static id       lookup(utf8 name, size_t &len, bool eq=false);
 
 public:
     PARSE_DECL(command);

@@ -40,7 +40,7 @@ cycle as follows:
 * `0.1_m` at which point the cycle repeats.
 
 
-## Explode (OBJ→)
+## Explode
 
 Explode an object into its sub-components. The various sub-components are placed
 on the stack, and if necessary, information about the size is places on the
