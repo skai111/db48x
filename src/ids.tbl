@@ -9,9 +9,16 @@
 //      ID(i)      defines an ID that is not parseable as a command, e.g. types
 //      CMD(i)     defines an ID that is parseable as a command, e.g. "drop"
 //      OP(i,n)    defines an operator ID, e.g. "+"
+//                 This can also be used when the best spelling does not parse
+//                 as a valid C++ name, e.g. StatsData for ΣData
 //      NAMED(i,l) defines an ID with an alternate long spelling, e.g. dup
+//                 This is used when the C++ name is not the long name
 //
-//
+//     There can be many aliases for each command. The last one is what we use
+//     in HP48/HP50 compatibility mode. For example StatsData is named ΣData
+//     when displayed in normal DB48X mode, and ΣDat in the HP48 modes.
+//     Case is always ignored while parsing, preserved when rendering in
+//     DB48X mode or in capitalized HP48 mode.
 //
 //
 // ****************************************************************************
@@ -740,10 +747,12 @@ OP(RemoveData,          "Σ-")
 OP(RecallData,          "RecallΣ")      ALIAS(RecallData,               "RclΣ")
 OP(StoreData,           "StoreΣ")       ALIAS(StoreData,                "StoΣ")
 OP(ClearData,           "ClearΣ")       ALIAS(ClearData,                "ClΣ")
-CMD(Average) ALIAS(Average, "Avg")      ALIAS(Average,                  "Mean")
+OP(Average,             "ΣMean")        ALIAS(Average,                  "Avg")
+                                        ALIAS(Average,                  "Mean")
 CMD(Median)
-OP(MinData,             "MinΣ")
-OP(MaxData,             "MaxΣ")
+OP(MinData,             "ΣMin")         ALIAS(MinData,                  "MinΣ")
+OP(MaxData,             "ΣMax")         ALIAS(MaxData,                  "MaxΣ")
+
 OP(DataSize,            "ΣSize")        ALIAS(DataSize,                 "NΣ")
 OP(SumOfX,              "ΣX")
 OP(SumOfY,              "ΣY")
@@ -758,10 +767,10 @@ CMD(FrequencyBins)                      ALIAS(FrequencyBins,            "Bins")
 CMD(PopulationVariance)                 ALIAS(PopulationVariance,       "PVar")
 CMD(PopulationStandardDeviation)        ALIAS(PopulationStandardDeviation, "PSDev")
 CMD(PopulationCovariance)               ALIAS(PopulationCovariance,     "PCov")
-CMD(Total)                              ALIAS(Total,                    "Tot")
+OP(DataTotal,           "ΣTotal")       ALIAS(DataTotal,                "Tot")
 CMD(IndependentColumn)                  ALIAS(IndependentColumn,        "XCol")
 CMD(DependentColumn)                    ALIAS(DependentColumn,          "YCol")
-NAMED(DataColumns,      "ColΣ")
+NAMED(DataColumns,      "ΣColumns")     ALIAS(DataColumns,              "ColΣ")
 CMD(Intercept)
 CMD(Slope)
 CMD(LinearRegression)                   ALIAS(LinearRegression,         "LR")
