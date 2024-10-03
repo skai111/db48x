@@ -353,6 +353,7 @@ RENDER_BODY(decimal)
         mode = object::ID_Std;
         digits += mexp;
         fancy = false;
+        showdec = true;
     }
     if (mode == object::ID_Std)
         mode = object::ID_Sig;
@@ -533,7 +534,7 @@ RENDER_BODY(decimal)
             if (decpos == 0 && (more || showdec))
             {
                 r.put(decimal);
-                lastnz = r.size() - !showdec;
+                lastnz = r.size() - (!showdec && (sigmode || digits == 0));
                 sep = frac_spc - 1;
             }
 

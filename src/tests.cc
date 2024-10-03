@@ -3003,6 +3003,10 @@ void tests::decimal_display_formats()
         .test("10", DIV).expect("0.0000")
         .test("10", DIV).expect("0.0000");
 
+    step("FIX 4 with no trailing decimal and 500 (#1236)")
+        .test(CLEAR, "NoTrailingDecimals 500.", ENTER).expect("500.0000")
+        .test(CLEAR, "TrailingDecimals 500.", ENTER).expect("500.0000");
+
     step("Reset defaults");
     test(CLEAR, LSHIFT, O, F1, KEY3, LSHIFT, F5).noerror();
 
