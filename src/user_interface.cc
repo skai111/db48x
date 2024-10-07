@@ -5496,6 +5496,7 @@ bool user_interface::editor_word_right()
         else
         {
             editor_history(true);
+            cursor = rt.editing();
         }
     }
     return true;
