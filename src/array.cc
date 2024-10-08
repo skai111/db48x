@@ -34,6 +34,7 @@
 #include "functions.h"
 #include "grob.h"
 #include "stats.h"
+#include "tag.h"
 #include "variables.h"
 
 
@@ -159,8 +160,12 @@ bool array::is_vector(size_t *size, bool push) const
         size_t count = 0;
         for (object_p obj : *this)
         {
+            obj = tag::strip(obj);
+
             id oty = obj->type();
             if (oty == ID_array || oty == ID_list)
+                result = false;
+            else if (!obj->is_algebraic())
                 result = false;
             else if (push && !rt.push(obj))
                 result = false;
@@ -169,11 +174,65 @@ bool array::is_vector(size_t *size, bool push) const
             count++;
         }
         if (!result)
-            rt.drop(count);
+            rt.drop(push ? count : 0);
         else if (size)
             *size = count;
     }
     return result;
+}
+
+
+object::id array::is_2Dor3D(bool push) const
+// ----------------------------------------------------------------------------
+//   Check if this is a 2D or 3D vector, returns an ID of its structure
+// ----------------------------------------------------------------------------
+{
+    id r = type() == ID_array ? ID_array : ID_object;
+    if (r)
+    {
+        size_t count  = 0;
+        uint   angles = 0;
+        for (object_p obj : *this)
+        {
+            obj = tag::strip(obj);
+
+            id oty = obj->type();
+            if (oty == ID_array || oty == ID_list)
+                r = ID_object;
+            else if (!obj->is_algebraic())
+                r = ID_object;
+            else if (push && !rt.push(obj))
+                r = ID_object;
+            if (!r)
+                break;
+
+            algebraic_g x = algebraic_p(obj);
+            if (x->is_symbolic())
+                r = ID_object;
+            else if (algebraic::adjust_angle(x))
+                angles |= (1<<count);
+            count++;
+        }
+
+        if (count != 2 && count != 3)
+            r = ID_object;
+
+        if (r)
+        {
+            r = (count == 2   ? (angles == 0 || angles == 3 ? ID_To2DVector
+                                 : angles == 2              ? ID_ToPolar
+                                                            : ID_object)
+                 : count == 3 ? (angles == 0 || angles == 7   ? ID_To3DVector
+                                 : angles == 2 || angles == 4 ? ID_ToCylindrical
+                                 : angles == 6                ? ID_ToSpherical
+                                                              : ID_object)
+                              : ID_object);
+        }
+
+        if (!r)
+            rt.drop(push ? count : 0);
+    }
+    return r;
 }
 
 
@@ -393,7 +452,7 @@ array_p array::build(size_t rows, size_t columns, item_fn items, void *data)
 //
 // ============================================================================
 
-array_g operator-(array_r x)
+array_p operator-(array_r x)
 // ----------------------------------------------------------------------------
 //   Negate all elements in an array
 // ----------------------------------------------------------------------------
@@ -415,7 +474,7 @@ static bool add_sub_dimension(size_t rx, size_t cx,
 }
 
 
-static algebraic_g matrix_op(object::id op,
+static algebraic_p matrix_op(object::id op,
                              size_t r, size_t c,
                              size_t rx, size_t cx,
                              size_t ry, size_t cy)
@@ -448,7 +507,7 @@ static algebraic_g matrix_op(object::id op,
 }
 
 
-static algebraic_g vector_op(object::id op, size_t c, size_t cx, size_t cy)
+static algebraic_p vector_op(object::id op, size_t c, size_t cx, size_t cy)
 // ----------------------------------------------------------------------------
 //   Add two elements in a vector
 // ----------------------------------------------------------------------------
@@ -457,7 +516,7 @@ static algebraic_g vector_op(object::id op, size_t c, size_t cx, size_t cy)
 }
 
 
-static algebraic_g vector_add(size_t c, size_t cx, size_t cy)
+static algebraic_p vector_add(size_t c, size_t cx, size_t cy)
 // ----------------------------------------------------------------------------
 //   Addition of vector elements
 // ----------------------------------------------------------------------------
@@ -466,7 +525,7 @@ static algebraic_g vector_add(size_t c, size_t cx, size_t cy)
 }
 
 
-static algebraic_g matrix_add(size_t r, size_t c,
+static algebraic_p matrix_add(size_t r, size_t c,
                               size_t rx, size_t cx,
                               size_t ry, size_t cy)
 // ----------------------------------------------------------------------------
@@ -477,7 +536,7 @@ static algebraic_g matrix_add(size_t r, size_t c,
 }
 
 
-static algebraic_g vector_sub(size_t c, size_t cx, size_t cy)
+static algebraic_p vector_sub(size_t c, size_t cx, size_t cy)
 // ----------------------------------------------------------------------------
 //   Subtraction of vector elements
 // ----------------------------------------------------------------------------
@@ -486,7 +545,7 @@ static algebraic_g vector_sub(size_t c, size_t cx, size_t cy)
 }
 
 
-static algebraic_g matrix_sub(size_t r, size_t c,
+static algebraic_p matrix_sub(size_t r, size_t c,
                               size_t rx, size_t cx,
                               size_t ry, size_t cy)
 // ----------------------------------------------------------------------------
@@ -519,7 +578,7 @@ static bool mul_dimension(size_t rx, size_t cx,
 }
 
 
-static algebraic_g vector_mul(size_t c, size_t cx, size_t cy)
+static algebraic_p vector_mul(size_t c, size_t cx, size_t cy)
 // ----------------------------------------------------------------------------
 //   Multiplication of vector elements
 // ----------------------------------------------------------------------------
@@ -528,7 +587,7 @@ static algebraic_g vector_mul(size_t c, size_t cx, size_t cy)
 }
 
 
-static algebraic_g matrix_mul(size_t r, size_t c,
+static algebraic_p matrix_mul(size_t r, size_t c,
                               size_t rx, size_t cx,
                               size_t ry, size_t cy)
 // ----------------------------------------------------------------------------
@@ -573,7 +632,7 @@ static algebraic_g matrix_mul(size_t r, size_t c,
 //
 // ============================================================================
 
-algebraic_g array::determinant() const
+algebraic_p array::determinant() const
 // ----------------------------------------------------------------------------
 //   Compute the determinant of a square matrix
 // ----------------------------------------------------------------------------
@@ -819,7 +878,7 @@ do                                              \
 #endif // SIMULATOR
 
 
-array_g array::invert() const
+array_p array::invert() const
 // ----------------------------------------------------------------------------
 //   Compute the inverse of a square matrix
 // ----------------------------------------------------------------------------
@@ -1126,7 +1185,7 @@ err:
 }
 
 
-algebraic_g array::norm_square() const
+algebraic_p array::norm_square() const
 // ----------------------------------------------------------------------------
 //   Compute the square of the norm of a matrix or vector
 // ----------------------------------------------------------------------------
@@ -1155,7 +1214,7 @@ algebraic_g array::norm_square() const
 }
 
 
-algebraic_g array::norm() const
+algebraic_p array::norm() const
 // ----------------------------------------------------------------------------
 //   Compute the square of the norm of a matrix or vector
 // ----------------------------------------------------------------------------
@@ -1564,6 +1623,301 @@ COMMAND_BODY(IdentityMatrix)
 
 // ============================================================================
 //
+//   Conversion between coordinate kinds
+//
+// ============================================================================
+
+array_p array::to_rectangular() const
+// ----------------------------------------------------------------------------
+//   Convert 2D or 3D vector to rectangular form
+// ----------------------------------------------------------------------------
+{
+    array_g v = this;
+    if (id mode = v->is_2Dor3D(false))
+    {
+        switch (mode)
+        {
+        case ID_To2DVector:
+        case ID_To3DVector:
+            // Already in rectangular form
+            return v;
+
+        case ID_ToPolar:
+        {
+            algebraic_g r = algebraic_p(v->at(0));
+            algebraic_g a = algebraic_p(v->at(1));
+            algebraic_g x = r * cos::evaluate(a);
+            algebraic_g y = r * sin::evaluate(a);
+            return array_p(list::make(ID_array, x, y));
+        }
+
+        case ID_ToCylindrical:
+        {
+            algebraic_g r = algebraic_p(v->at(0));
+            algebraic_g a = algebraic_p(v->at(1));
+            algebraic_g h = algebraic_p(v->at(2));
+            algebraic_g x = r * cos::evaluate(a);
+            algebraic_g y = r * sin::evaluate(a);
+            algebraic_g z = h;
+            return array_p(list::make(ID_array, x, y, z));
+        }
+
+        case ID_ToSpherical:
+        {
+            algebraic_g r     = algebraic_p(v->at(0));
+            algebraic_g theta = algebraic_p(v->at(1));
+            algebraic_g phi   = algebraic_p(v->at(2));
+            algebraic_g z     = r * cos::evaluate(phi);
+            phi               = sin::evaluate(phi);
+            algebraic_g x     = r * cos::evaluate(theta) * phi;
+            algebraic_g y     = r * sin::evaluate(theta) * phi;
+            return array_p(list::make(ID_array, x, y, z));
+        }
+        default:
+            rt.type_error();
+        }
+    }
+    return nullptr;
+}
+
+
+array_p array::to_polar() const
+// ----------------------------------------------------------------------------
+//   Convert 2D or 3D vector to rectangular form
+// ----------------------------------------------------------------------------
+{
+    array_g v = this;
+    if (id mode = v->is_2Dor3D(false))
+    {
+        switch (mode)
+        {
+        case ID_To2DVector:
+        {
+            algebraic_g x = algebraic_p(v->at(0));
+            algebraic_g y = algebraic_p(v->at(1));
+            algebraic_g r = hypot::evaluate(x, y);
+            algebraic_g a = atan2::evaluate(y, x);
+            return array_p(list::make(ID_array, r, a));
+        }
+
+        case ID_To3DVector:
+        {
+            // Convert to cylindrical
+            algebraic_g x = algebraic_p(v->at(0));
+            algebraic_g y = algebraic_p(v->at(1));
+            algebraic_g z = algebraic_p(v->at(2));
+            algebraic_g r = hypot::evaluate(x, y);
+            algebraic_g a = atan2::evaluate(y, x);
+            return array_p(list::make(ID_array, r, a, z));
+        }
+
+        case ID_ToCylindrical:
+        case ID_ToPolar:
+            return v;
+
+        case ID_ToSpherical:
+        {
+            algebraic_g r     = algebraic_p(v->at(0));
+            algebraic_g theta = algebraic_p(v->at(1));
+            algebraic_g phi   = algebraic_p(v->at(2));
+            algebraic_g z = r * cos::evaluate(phi);
+            r = r * sin::evaluate(phi);
+            return array_p(list::make(ID_array, r, theta, z));
+        }
+        default:
+            rt.type_error();
+        }
+    }
+    return nullptr;
+}
+
+
+array_p array::to_cylindrical() const
+// ----------------------------------------------------------------------------
+//   Convert 3D vector to cylindrical form
+// ----------------------------------------------------------------------------
+{
+    array_g v = this;
+    if (id mode = v->is_2Dor3D(false))
+    {
+        switch (mode)
+        {
+        case ID_ToCylindrical:
+            return v;
+
+        case ID_To3DVector:
+        {
+            // Convert to cylindrical
+            algebraic_g x = algebraic_p(v->at(0));
+            algebraic_g y = algebraic_p(v->at(1));
+            algebraic_g z = algebraic_p(v->at(2));
+            algebraic_g r = hypot::evaluate(x, y);
+            algebraic_g a = atan2::evaluate(y, x);
+            return array_p(list::make(ID_array, r, a, z));
+        }
+
+        case ID_ToSpherical:
+        {
+            algebraic_g r     = algebraic_p(v->at(0));
+            algebraic_g theta = algebraic_p(v->at(1));
+            algebraic_g phi   = algebraic_p(v->at(2));
+            algebraic_g z = r * cos::evaluate(phi);
+            r = r * sin::evaluate(phi);
+            return array_p(list::make(ID_array, r, theta, z));
+        }
+        default:
+            rt.type_error();
+        }
+    }
+    return nullptr;
+}
+
+
+array_p array::to_spherical() const
+// ----------------------------------------------------------------------------
+//   Convert 3D vector to cylindrical form
+// ----------------------------------------------------------------------------
+{
+    array_g v = this;
+    if (id mode = v->is_2Dor3D(false))
+    {
+        switch (mode)
+        {
+        case ID_ToSpherical:
+            return v;
+
+        case ID_To3DVector:
+        {
+            // Convert rectangular to cylindrical
+            algebraic_g x = algebraic_p(v->at(0));
+            algebraic_g y = algebraic_p(v->at(1));
+            algebraic_g z = algebraic_p(v->at(2));
+            algebraic_g rho2 = x*x + y*y;
+            algebraic_g r = sqrt::evaluate(rho2 + z*z);
+            algebraic_g theta = acos::evaluate(z / r);
+            algebraic_g phi = acos::evaluate(x / sqrt::evaluate(rho2));
+            if (y->is_negative(false))
+                phi = -phi;
+            return array_p(list::make(ID_array, r, phi, theta));
+        }
+
+        case ID_ToCylindrical:
+        {
+            algebraic_g r = algebraic_p(v->at(0));
+            algebraic_g theta = algebraic_p(v->at(1));
+            algebraic_g z = algebraic_p(v->at(2));
+            algebraic_g phi = atan2::evaluate(r, z);
+            r = sqrt::evaluate(r*r + z*z);
+            return array_p(list::make(ID_array, r, theta, phi));
+        }
+        default:
+            rt.type_error();
+        }
+    }
+    return nullptr;
+}
+
+
+COMMAND_BODY(ToCylindrical)
+// ----------------------------------------------------------------------------
+//   Convert vector to cylindrical coordinates
+// ----------------------------------------------------------------------------
+{
+    if (object_p obj = rt.top())
+    {
+        if (array_p v = obj->as<array>())
+        {
+            if (array_p c = v->to_cylindrical())
+                if (rt.top(c))
+                    return OK;
+        }
+        if (!rt.error())
+            rt.type_error();
+    }
+    return ERROR;
+}
+
+
+
+COMMAND_BODY(ToSpherical)
+// ----------------------------------------------------------------------------
+//   Convert vector to spherical coordinates
+// ----------------------------------------------------------------------------
+{
+    if (object_p obj = rt.top())
+    {
+        if (array_p v = obj->as<array>())
+        {
+            if (array_p c = v->to_spherical())
+                if (rt.top(c))
+                    return OK;
+        }
+        if (!rt.error())
+            rt.type_error();
+    }
+    return ERROR;
+}
+
+
+COMMAND_BODY(To2DVector)
+// ----------------------------------------------------------------------------
+//  Convert two coordinates to a 2D vector
+// ----------------------------------------------------------------------------
+{
+    algebraic_g x = rt.stack(1)->as_algebraic();
+    algebraic_g y = rt.stack(0)->as_algebraic();
+    if (x && y)
+    {
+        if (array_p a = array_p(list::make(ID_array, x, y)))
+            if (rt.drop() && rt.top(a))
+                return OK;
+    }
+    if (!rt.error())
+        rt.type_error();
+    return ERROR;
+}
+
+
+COMMAND_BODY(To3DVector)
+// ----------------------------------------------------------------------------
+//   Convert three coordinates ot a 3D vector
+// ----------------------------------------------------------------------------
+{
+    algebraic_g x = rt.stack(2)->as_algebraic();
+    algebraic_g y = rt.stack(1)->as_algebraic();
+    algebraic_g z = rt.stack(0)->as_algebraic();
+    if (x && y && z)
+    {
+        if (array_p a = array_p(list::make(ID_array, x, y, z)))
+            if (rt.drop(2) && rt.top(a))
+                return OK;
+    }
+    if (!rt.error())
+        rt.type_error();
+    return ERROR;
+}
+
+
+COMMAND_BODY(FromVector)
+// ----------------------------------------------------------------------------
+//   Convert a vector to its stack representation
+// ----------------------------------------------------------------------------
+{
+    if (object_g obj = rt.pop())
+    {
+        if (array_p v = obj->as<array>())
+            if (v->is_2Dor3D(true))
+                return OK;
+        rt.push(obj);
+        rt.type_error();
+    }
+    return ERROR;
+}
+
+
+
+// ============================================================================
+//
 //    Division
 //
 // ============================================================================
@@ -1581,7 +1935,7 @@ static bool div_dimension(size_t rx, size_t cx,
 }
 
 
-static algebraic_g vector_div(size_t c, size_t cx, size_t cy)
+static algebraic_p vector_div(size_t c, size_t cx, size_t cy)
 // ----------------------------------------------------------------------------
 //   Division of vector elements
 // ----------------------------------------------------------------------------
@@ -1590,7 +1944,7 @@ static algebraic_g vector_div(size_t c, size_t cx, size_t cy)
 }
 
 
-static algebraic_g matrix_div(size_t r, size_t c,
+static algebraic_p matrix_div(size_t r, size_t c,
                               size_t rx, size_t cx,
                               size_t ry, size_t cy)
 // ----------------------------------------------------------------------------
@@ -1601,7 +1955,7 @@ static algebraic_g matrix_div(size_t r, size_t c,
 }
 
 
-array_g array::do_matrix(array_r x, array_r y,
+array_p array::do_matrix(array_r x, array_r y,
                          dimension_fn dim, vector_fn vec, matrix_fn mat)
 // ----------------------------------------------------------------------------
 //   Perform a matrix or vector operation
@@ -1609,6 +1963,27 @@ array_g array::do_matrix(array_r x, array_r y,
 {
     size_t rx = 0, cx = 0, ry = 0, cy = 0, rr = 0, cr = 0;
     size_t depth = rt.depth();
+
+    // Check if either argument is non-rectangular.
+    // If so, convert to rectangular for computation, convert back to Y format
+    id xty = x->is_2Dor3D(false);
+    if (is_non_rectangular(xty))
+    {
+        array_g xr = x->to_rectangular();
+        return do_matrix(xr, y, dim, vec, mat);
+    }
+    id yty = y->is_2Dor3D(false);
+    if (is_non_rectangular(yty))
+    {
+        array_g yr = y->to_rectangular();
+        yr =  do_matrix(x, yr, dim, vec, mat);
+        if (yty == ID_ToSpherical)
+            yr = yr->to_spherical();
+        else
+            yr = yr->to_polar();
+        return yr;
+    }
+
     object::id ty = x->type();
     if (x->is_vector(&cx))
     {
@@ -1699,7 +2074,7 @@ err:
 }
 
 
-array_g operator+(array_r x, array_r y)
+array_p operator+(array_r x, array_r y)
 // ----------------------------------------------------------------------------
 //   Add two arrays
 // ----------------------------------------------------------------------------
@@ -1708,7 +2083,7 @@ array_g operator+(array_r x, array_r y)
 }
 
 
-array_g operator-(array_r x, array_r y)
+array_p operator-(array_r x, array_r y)
 // ----------------------------------------------------------------------------
 //   Subtract two arrays
 // ----------------------------------------------------------------------------
@@ -1717,7 +2092,7 @@ array_g operator-(array_r x, array_r y)
 }
 
 
-array_g operator*(array_r x, array_r y)
+array_p operator*(array_r x, array_r y)
 // ----------------------------------------------------------------------------
 //   Multiply two arrays
 // ----------------------------------------------------------------------------
@@ -1726,7 +2101,7 @@ array_g operator*(array_r x, array_r y)
 }
 
 
-array_g operator/(array_r x, array_r y)
+array_p operator/(array_r x, array_r y)
 // ----------------------------------------------------------------------------
 //   Divide two arrays
 // ----------------------------------------------------------------------------

@@ -176,7 +176,7 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-            graphic_commands();
+            vector_functions();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -5443,6 +5443,125 @@ void tests::vector_functions()
     step("Component-wise application of functions");
     test(CLEAR, "[a b c] SIN", ENTER)
         .expect("[ 'sin a' 'sin b' 'sin c' ]");
+
+    step("3D vector rectangular → rectangular")
+        .test(CLEAR, "[1 2 3]", ENTER, NOSHIFT, A, F4)
+        .expect("[ 1 2 3 ]");
+    step("3D vector rectangular → polar")
+        .test(F5)
+        .expect("[ 2.23606 79775 63.43494 88229 ° 3 ]");
+    step("3D vector polar → polar")
+        .test(F5)
+        .expect("[ 2.23606 79775 63.43494 88229 ° 3 ]");
+    step("3D vector polar → spherical")
+        .test(F6)
+        .expect("[ 3.74165 73867 7 63.43494 88229 ° 36.69922 52005 ° ]");
+    step("3D vector spherical → spherical")
+        .test(F6)
+        .expect("[ 3.74165 73867 7 63.43494 88229 ° 36.69922 52005 ° ]");
+    step("3D vector spherical → polar")
+        .test(F5)
+        .expect("[ 2.23606 79775 63.43494 88229 ° 3. ]");
+    step("3D vector polar → rectangular")
+        .test(F4)
+        .expect("[ 1. 2. 3. ]");
+    step("3D vector rectangular → cylindrical")
+        .test(LSHIFT, F4)
+        .expect("[ 2.23606 79775 63.43494 88229 ° 3. ]");
+    step("3D vector cylindrical → rectangular")
+        .test(F4)
+        .expect("[ 1. 2. 3. ]");
+    step("3D vector rectangular → spherical")
+        .test(F6)
+        .expect("[ 3.74165 73867 7 63.43494 88229 ° 36.69922 52005 ° ]");
+    step("3D vector spherical → rectangular")
+        .test(F4)
+        .expect("[ 1. 2. 3. ]");
+
+    step("3D vector conversion error - Symbolic")
+        .test(CLEAR, "[x y z]", ENTER, NOSHIFT, A, F4)
+        .error("Bad argument type")
+        .test(CLEAR, "[x y z]", ENTER, NOSHIFT, A, LSHIFT, F4)
+        .error("Bad argument type")
+        .test(CLEAR, "[x y z]", ENTER, NOSHIFT, A, F5)
+        .error("Bad argument type")
+        .test(CLEAR, "[x y z]", ENTER, NOSHIFT, A, F6)
+        .error("Bad argument type");
+
+    step("2D vector rectangular → rectangular")
+        .test(CLEAR, "[ 1 2 ]", ENTER, NOSHIFT, A)
+        .test(F4)
+        .expect("[ 1 2 ]");
+    step("2D vector rectangular → polar")
+        .test(F5)
+        .expect("[ 2.23606 79775 63.43494 88229 ° ]");
+    step("2D vector polar → polar")
+        .test(F5)
+        .expect("[ 2.23606 79775 63.43494 88229 ° ]");
+    step("2D vector polar → spherical")
+        .test(F6)
+        .error("Bad argument type");
+    step("2D vector polar → rectangular")
+        .test(F4)
+        .expect("[ 1. 2. ]");
+    step("2D vector rectangular → cylindrical")
+        .test(LSHIFT, F4)
+        .error("Bad argument type");
+    step("2D vector rectangular → spherical")
+        .test(F6)
+        .error("Bad argument type");
+
+   step("2D vector conversion error - Symbolic")
+       .test(CLEAR, "[x y]", ENTER, NOSHIFT, A, F4)
+       .error("Bad argument type")
+       .test(CLEAR, "[x y]", ENTER, NOSHIFT, A, LSHIFT, F4)
+       .error("Bad argument type")
+       .test(CLEAR, "[x y]", ENTER, NOSHIFT, A, F5)
+       .error("Bad argument type")
+       .test(CLEAR, "[x y]", ENTER, NOSHIFT, A, F6)
+       .error("Bad argument type");
+
+   step("Vector conversion only works on 2D or 3D vectors")
+       .test(CLEAR, "[ 1 2 3 4 ]", ENTER, NOSHIFT, A, F4)
+       .error("Bad argument type");
+
+   step("3D addition after polar conversion")
+       .test(CLEAR, "[ 1 2 3 ]", ENTER, NOSHIFT, A, F5)
+       .expect("[ 2.23606 79775 63.43494 88229 ° 3 ]")
+       .test("[ 4 5 6 ]", NOSHIFT, ADD)
+       .expect("[ 5. 7. 9 ]");
+   step("3D addition after cylindrical conversion")
+       .test(CLEAR, "[ 1 2 3 ]", ENTER, NOSHIFT, A, F6)
+       .expect("[ 3.74165 73867 7 63.43494 88229 ° 36.69922 52005 ° ]")
+       .test("[ 4 5 6 ]", NOSHIFT, ADD)
+       .expect("[ 5. 7. 9. ]");
+
+   step("3D addition with polar conversion")
+       .test(CLEAR, "[ 1 2 3 ]", ENTER, NOSHIFT, A, F4)
+       .expect("[ 1 2 3 ]")
+       .test("[ 4 5 6 ]", F5, NOSHIFT, ADD)
+       .expect("[ 8.60232 52670 4 54.46232 2208 ° 9 ]");
+   step("3D addition with cylindrical conversion")
+       .test(CLEAR, "[ 1 2 3 ]", ENTER, NOSHIFT, A, F4)
+       .expect("[ 1 2 3 ]")
+       .test("[ 4 5 6 ]", F6, NOSHIFT, ADD)
+       .expect("[ 12.44989 9598 54.46232 2208 ° 43.70578 41445 ° ]");
+   step("3D addition polar + cylindrical")
+       .test(CLEAR, "[ 1 2 3 ]", ENTER, NOSHIFT, A, F5)
+       .expect("[ 2.23606 79775 63.43494 88229 ° 3 ]")
+       .test("[ 4 5 6 ]", F6, NOSHIFT, ADD)
+       .expect("[ 12.44989 9598 54.46232 2208 ° 43.70578 41445 ° ]");
+
+   step("2D addition after polar conversion")
+       .test(CLEAR, "[ 1 2 ]", ENTER, NOSHIFT, A, F5)
+       .expect("[ 2.23606 79775 63.43494 88229 ° ]")
+       .test("[ 4 5 ]", NOSHIFT, ADD)
+       .expect("[ 5. 7. ]");
+   step("2D addition with polar conversion")
+       .test(CLEAR, "[ 1 2 ]", ENTER, NOSHIFT, A, F4)
+       .expect("[ 1 2 ]")
+       .test("[ 4 5 ]", F5, NOSHIFT, ADD)
+       .expect("[ 8.60232 52670 4 54.46232 2208 ° ]");
 }
 
 

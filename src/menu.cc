@@ -506,17 +506,15 @@ MENU(VectorMenu,
      "Norm",    ID_abs,
      "Dot",     ID_dot,
      "Cross",   ID_cross,
-     "→Vec2",   ID_Unimplemented,
-     "→Vec3",   ID_Unimplemented,
-     "Vec→",    ID_Unimplemented,
+     "→Rect",   ID_ToRectangular,
+     "→Polar",  ID_ToPolar,
+     "→Spher",  ID_ToSpherical,
 
-     "→Cart",   ID_Unimplemented,
-     "→Cylin",  ID_Unimplemented,
-     "→Spher",  ID_Unimplemented,
-     "Cart",    ID_Unimplemented,
-     "Cylin",   ID_Unimplemented,
-     "Spher",   ID_Unimplemented,
-
+     "→Vec2",   ID_To2DVector,
+     "→Vec3",   ID_To3DVector,
+     "Vec→",    ID_FromVector,
+     "→Cylind", ID_ToCylindrical,
+     "Complex", ID_ComplexMenu,
      "Matrix",  ID_MatrixMenu);
 
 

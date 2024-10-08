@@ -913,7 +913,16 @@ COMMAND_BODY(ToRectangular)
     object_g x = tag::strip(rt.top());
     if (!x)
         return ERROR;
-    if (!x->is_complex())
+    if (array_p v = x->as<array>())
+    {
+        if (array_p r = v->to_rectangular())
+            if (rt.top(r))
+                return OK;
+        if (!rt.error())
+            rt.type_error();
+        return ERROR;
+    }
+    else if (!x->is_complex())
     {
         rt.type_error();
         return ERROR;
@@ -936,7 +945,15 @@ COMMAND_BODY(ToPolar)
     object_g x = tag::strip(rt.top());
     if (!x)
         return ERROR;
-    if (!x->is_complex())
+    if (array_p v = x->as<array>())
+    {
+        if (array_p polar = v->to_polar())
+            if (rt.top(polar))
+                return OK;
+        rt.type_error();
+        return ERROR;
+    }
+    else if (!x->is_complex())
     {
         rt.type_error();
         return ERROR;
