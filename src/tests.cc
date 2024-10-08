@@ -10800,7 +10800,7 @@ tests &tests::itest(cstring txt)
         case L'∫': k = KEY8;        alpha = true; xshift = true; break;
 
             // Special characters that require the characters menu
-#define NEXT        k = RESERVED2; break
+#define NEXT        itest(NOSHIFT, A); k = RESERVED2; break
         case L'ℂ': itest(RSHIFT, KEY2, F4, RSHIFT, F3); NEXT;
         case L'ℚ': itest(RSHIFT, KEY2, F4, RSHIFT, F4); NEXT;
         case L'ℝ': itest(RSHIFT, KEY2, F4, RSHIFT, F5); NEXT;
