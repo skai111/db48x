@@ -1562,7 +1562,7 @@ MENU(GraphicsMenu,
      "ClLCD",   ID_ClLCD,
      "GOr",     ID_GOr,
      "GXor",    ID_GXor,
-     "GAnd",    ID_And,
+     "GAnd",    ID_GAnd,
 
      "RGB",     ID_RGB,
      "LnWidth", ID_LineWidth,
@@ -1582,8 +1582,22 @@ MENU(GraphicsMenu,
      "Pix?",    ID_PixTest,
      "PixCol?", ID_PixColor,
 
+     "Append",  ID_GraphicAppend,
+     "Stack",   ID_GraphicStack,
+     "Sub",     ID_GraphicSubscript,
+     "Sup",     ID_GraphicExponent,
+     "Ratio",   ID_GraphicRatio,
+
+     "Root",    ID_GraphicRoot,
+     "Paren",   ID_GraphicParentheses,
+     "Norm",    ID_GraphicNorm,
      "Freeze",  ID_Freeze,
-     "Plot",    ID_PlotMenu);
+     "Plot",    ID_PlotMenu,
+
+     "Sum",     ID_GraphicSum,
+     "Product", ID_GraphicProduct,
+     "Integral",ID_GraphicIntegral);
+
 
 MENU(MemoryMenu,
 // ----------------------------------------------------------------------------

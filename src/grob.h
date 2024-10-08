@@ -30,6 +30,7 @@
 // ****************************************************************************
 
 #include "blitter.h"
+#include "list.h"
 #include "object.h"
 #include "runtime.h"
 #include "target.h"
@@ -198,6 +199,17 @@ struct grob : object
     //  Shared code for GXor, GOr, GAnd
     // ------------------------------------------------------------------------
 
+    typedef grob_p(*grob1_fn)(grob_r x);
+    typedef grob_p(*grob2_fn)(grob_r y, grob_r x);
+    typedef grob_p(*grobop_fn)(pixsize height);
+    static object::result command(grob1_fn gfn);
+    static object::result command(grob2_fn gfn);
+    static object::result command(grobop_fn gfn);
+    // ------------------------------------------------------------------------
+    //   Shared code for GraphicAppend, GraphicStack, etc
+    // ------------------------------------------------------------------------
+
+
 
 public:
     OBJECT_DECL(grob);
@@ -250,9 +262,9 @@ struct grapher
 
     grapher(size          w     = LCD_W,
             size          h     = LCD_H,
-            font_id       f     = settings::EDITOR,
-            grob::pattern fg    = grob::pattern::black,
-            grob::pattern bg    = grob::pattern::white,
+            font_id       f     = Settings.ResultFont(),
+            grob::pattern fg    = Settings.Foreground(),
+            grob::pattern bg    = Settings.Background(),
             bool          stack = false,
             bool          expr  = false)
         : maxw(w),
@@ -264,11 +276,12 @@ struct grapher
           stack(stack),
           expression(expr)
     {}
+
     grapher(const grapher &other) = default;
 
     grob_p grob(size w, size h)
     {
-        if (w < maxw && h < maxh)
+        if (w <= maxw && h <= maxh)
             return grob::make(w, h);
         return nullptr;
     }

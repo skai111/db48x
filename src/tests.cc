@@ -176,7 +176,7 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-            library();
+            graphic_commands();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -10131,6 +10131,58 @@ void tests::graphic_commands()
     step("Reset pattern")
         .test(CLEAR, "0 GRAY FOREGROUND 1 GRAY BACKGROUND", ENTER)
         .noerror();
+
+    step("GraphicAppend")
+        .test(CLEAR, RSHIFT, DOT,
+              "ABC", LSHIFT, F1, "DEFGH", LSHIFT, F1,
+              F6, RSHIFT, F1, EXIT)
+        .image_noheader("graph-append");
+    step("GraphicStack")
+        .test(CLEAR, RSHIFT, DOT,
+              "ABC", LSHIFT, F1, "DEFGH", LSHIFT, F1,
+              F6, RSHIFT, F2, EXIT)
+        .image_noheader("graph-stack");
+    step("GraphicSubscript")
+        .test(CLEAR, RSHIFT, DOT,
+              "ABC", LSHIFT, F1, "DEFGH", LSHIFT, F1,
+              F6, RSHIFT, F3, EXIT)
+        .image_noheader("graph-subscript");
+    step("GraphicExponent")
+        .test(CLEAR, RSHIFT, DOT,
+              "ABC", LSHIFT, F1, "DEFGH", LSHIFT, F1,
+              F6, RSHIFT, F3, EXIT)
+        .image_noheader("graph-exponent");
+    step("GraphicRatio")
+        .test(CLEAR, RSHIFT, DOT,
+              "ABC", LSHIFT, F1, "DEFGH", LSHIFT, F1,
+              F6, RSHIFT, F4, EXIT)
+        .image_noheader("graph-ratio");
+
+    step("GraphicRoot")
+        .test(CLEAR, RSHIFT, DOT,
+              "ABC", LSHIFT, F1,
+              F6, F6, F1, EXIT)
+        .image_noheader("graph-root");
+    step("GraphicParentheses")
+        .test(CLEAR, RSHIFT, DOT,
+              "ABC", LSHIFT, F1,
+              F6, F6, F2, EXIT)
+        .image_noheader("graph-paren");
+    step("GraphicNorm")
+        .test(CLEAR, RSHIFT, DOT,
+              "ABC", LSHIFT, F1,
+              F6, F6, F3, EXIT)
+        .image_noheader("graph-norm");
+
+    step("GraphicSum")
+        .test(CLEAR, RSHIFT, DOT, "123", F6, F6, LSHIFT, F1, EXIT)
+        .image_noheader("graph-sum");
+    step("GraphicProduct")
+        .test(CLEAR, RSHIFT, DOT, "123", F6, F6, LSHIFT, F2, EXIT)
+        .image_noheader("graph-product");
+    step("GraphicIntegral")
+        .test(CLEAR, RSHIFT, DOT, "123", F6, F6, LSHIFT, F3, EXIT)
+        .image_noheader("graph-integral");
 }
 
 

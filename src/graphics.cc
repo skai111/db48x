@@ -35,14 +35,15 @@
 #include "compare.h"
 #include "complex.h"
 #include "decimal.h"
+#include "expression.h"
 #include "grob.h"
 #include "integer.h"
 #include "list.h"
 #include "sysmenu.h"
 #include "target.h"
+#include "tests.h"
 #include "user_interface.h"
 #include "util.h"
-#include "tests.h"
 #include "variables.h"
 
 typedef const based_integer *based_integer_p;
@@ -1173,6 +1174,167 @@ COMMAND_BODY(Pict)
 {
     rt.push(static_object(ID_Pict));
     return OK;
+}
+
+
+COMMAND_BODY(GraphicAppend)
+// ----------------------------------------------------------------------------
+//  Append two graphic objects side by side
+// ----------------------------------------------------------------------------
+{
+    return grob::command([](grob_r y, grob_r x)
+    {
+        grapher g;
+        return expression::prefix(g, 0, y, 0, x);
+    });
+}
+
+
+COMMAND_BODY(GraphicStack)
+// ----------------------------------------------------------------------------
+//   Append two graphic objects on top of one another
+// ----------------------------------------------------------------------------
+{
+    return grob::command([](grob_r y, grob_r x) -> grob_p
+    {
+        blitter::size xh = x->height();
+        blitter::size xw = x->width();
+        blitter::size yh = y->height();
+        blitter::size yw = y->width();
+        blitter::size gw = std::max(xw, yw);
+        blitter::size gh = xh + yh;
+        grapher g;
+        grob_g  result = g.grob(gw, gh);
+        if (!result)
+            return nullptr;
+
+        grob::surface xs = x->pixels();
+        grob::surface ys = y->pixels();
+        grob::surface rs = result->pixels();
+
+        rs.fill(0, 0, gw, gh, g.background);
+        rs.copy(ys, (gw - yw) / 2, 0);
+        rs.copy(xs, (gw - xw) / 2, yh);
+
+        return result;
+    });
+}
+
+
+COMMAND_BODY(GraphicRatio)
+// ----------------------------------------------------------------------------
+//  Compute a ratio betwen two graphic objects
+// ----------------------------------------------------------------------------
+{
+    return grob::command([](grob_r y, grob_r x)
+    {
+        grapher g;
+        return expression::ratio(g, y, x);
+    });
+}
+
+
+COMMAND_BODY(GraphicSubscript)
+// ----------------------------------------------------------------------------
+//  Position a graphic as a subscript
+// ----------------------------------------------------------------------------
+{
+    return grob::command([](grob_r y, grob_r x)
+    {
+        grapher g;
+        return expression::suscript(g, 0, y, 0, x, -1);
+    });
+}
+
+
+COMMAND_BODY(GraphicExponent)
+// ----------------------------------------------------------------------------
+//   Position a graphic as an exponent
+// ----------------------------------------------------------------------------
+{
+    return grob::command([](grob_r y, grob_r x)
+    {
+        grapher g;
+        return expression::suscript(g, 0, y, 0, x, 1);
+    });
+}
+
+
+COMMAND_BODY(GraphicRoot)
+// ----------------------------------------------------------------------------
+//  Put a graphic inside a square root sign
+// ----------------------------------------------------------------------------
+{
+    return grob::command([](grob_r x)
+    {
+        grapher g;
+        return expression::root(g, x);
+    });
+}
+
+
+COMMAND_BODY(GraphicParentheses)
+// ----------------------------------------------------------------------------
+//  Put a graphic inside parentheses
+// ----------------------------------------------------------------------------
+{
+    return grob::command([](grob_r x)
+    {
+        grapher g;
+        return expression::parentheses(g, x);
+    });
+}
+
+
+COMMAND_BODY(GraphicNorm)
+// ----------------------------------------------------------------------------
+//   Draw a norm around the graphic object
+// ----------------------------------------------------------------------------
+{
+    return grob::command([](grob_r x)
+    {
+        grapher g;
+        return expression::abs_norm(g, x);
+    });
+}
+
+
+COMMAND_BODY(GraphicSum)
+// ----------------------------------------------------------------------------
+//  Compute a sum sign for the given height
+// ----------------------------------------------------------------------------
+{
+    return grob::command([](blitter::size h)
+    {
+        grapher g;
+        return expression::sum(g, h);
+    });
+}
+
+
+COMMAND_BODY(GraphicProduct)
+// ----------------------------------------------------------------------------
+//   Compute a product sign for the given height
+// ----------------------------------------------------------------------------
+{
+    return grob::command([](blitter::size h)
+    {
+        grapher g;
+        return expression::product(g, h);
+    });
+}
+
+
+COMMAND_BODY(GraphicIntegral)
+// ----------------------------------------------------------------------------
+//   Compute an integral sign for the given height
+// ----------------------------------------------------------------------------
+{
+    return grob::command([](blitter::size h)
+    {
+        grapher g;
+        return expression::integral(g, h);
+    });
 }
 
 
