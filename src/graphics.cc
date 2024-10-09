@@ -767,10 +767,21 @@ COMMAND_BODY(ToGrob)
 //   Convert an object to graphical form
 // ----------------------------------------------------------------------------
 {
-    if (object_p obj = rt.top())
-        if (grob_p gr = obj->graph())
-            if (rt.top(gr))
+    uint size = rt.stack(0)->as_uint32(0, true);
+    if (!rt.error())
+    {
+        object_p obj = rt.stack(1);
+        settings::font_id fid = size
+            ? settings::font_id(size-1)
+            : Settings.StackFont();
+        grapher g(Settings.MaximumShowWidth(), Settings.MaximumShowHeight(),
+                  fid,
+                  Settings.Foreground(), Settings.Background(),
+                  true, false, true);
+        if (grob_p gr = obj->graph(g))
+            if (rt.drop() && rt.top(gr))
                 return OK;
+    }
     return ERROR;
 }
 

@@ -200,7 +200,7 @@ GRAPH_BODY(grob)
  // ----------------------------------------------------------------------------
  {
      // If not rendering for the stack, just return object as is
-     if (!g.stack)
+     if (!g.stack || g.graph)
          return o;
 
      using pixsize  = blitter::size;

@@ -266,7 +266,8 @@ struct grapher
             grob::pattern fg    = Settings.Foreground(),
             grob::pattern bg    = Settings.Background(),
             bool          stack = false,
-            bool          expr  = false)
+            bool          expr  = false,
+            bool          graph = false)
         : maxw(w),
           maxh(h),
           voffset(0),
@@ -274,7 +275,8 @@ struct grapher
           foreground(fg),
           background(bg),
           stack(stack),
-          expression(expr)
+          expression(expr),
+          graph(graph)
     {}
 
     grapher(const grapher &other) = default;
@@ -303,6 +305,7 @@ struct grapher
     grob::pattern background;
     bool          stack;
     bool          expression;
+    bool          graph;
 };
 
 #endif // GROB_H

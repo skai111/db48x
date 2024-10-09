@@ -10232,9 +10232,9 @@ void tests::graphic_commands()
     step("Convert to graph")
         .test(CLEAR, "'X+Y' cbrt inv 1 + sqrt dup 1 + 2 * /", ENTER, EXIT)
         .image_noheader("eq-xgraph")
-        .test("→Grob", ENTER)
+        .test("0 →Grob", ENTER)
         .image_noheader("eq-graph")
-        .test("→Grob", ENTER)
+        .test("0 →Grob", ENTER)
         .image_noheader("eq-graph");
 
     step("Pattern in graph conversion")
@@ -10242,9 +10242,9 @@ void tests::graphic_commands()
         .noerror()
         .test(CLEAR, "'X+Y' cbrt inv 1 + sqrt dup 1 + 2 * /", ENTER, EXIT)
         .image_noheader("pat-eq-xgraph")
-        .test("→Grob", ENTER)
+        .test("2 →Grob", ENTER)
         .image_noheader("pat-eq-graph")
-        .test("→Grob", ENTER)
+        .test("4 →Grob", ENTER)
         .image_noheader("pat-eq-graph");
 
     step("Reset pattern")
@@ -10253,43 +10253,43 @@ void tests::graphic_commands()
 
     step("GraphicAppend")
         .test(CLEAR, RSHIFT, DOT,
-              "ABC", LSHIFT, F1, "DEFGH", LSHIFT, F1,
+              "ABC 4", LSHIFT, F1, "DEFGH 2", LSHIFT, F1,
               F6, RSHIFT, F1, EXIT)
         .image_noheader("graph-append");
     step("GraphicStack")
         .test(CLEAR, RSHIFT, DOT,
-              "ABC", LSHIFT, F1, "DEFGH", LSHIFT, F1,
+              "ABC 2", LSHIFT, F1, "DEFGH 4", LSHIFT, F1,
               F6, RSHIFT, F2, EXIT)
         .image_noheader("graph-stack");
     step("GraphicSubscript")
         .test(CLEAR, RSHIFT, DOT,
-              "ABC", LSHIFT, F1, "DEFGH", LSHIFT, F1,
+              "ABC 0", LSHIFT, F1, "DEFGH 1", LSHIFT, F1,
               F6, RSHIFT, F3, EXIT)
         .image_noheader("graph-subscript");
     step("GraphicExponent")
         .test(CLEAR, RSHIFT, DOT,
-              "ABC", LSHIFT, F1, "DEFGH", LSHIFT, F1,
+              "ABC 4", LSHIFT, F1, "DEFGH 3", LSHIFT, F1,
               F6, RSHIFT, F3, EXIT)
         .image_noheader("graph-exponent");
     step("GraphicRatio")
         .test(CLEAR, RSHIFT, DOT,
-              "ABC", LSHIFT, F1, "DEFGH", LSHIFT, F1,
+              "ABC 3", LSHIFT, F1, "DEFGH 0", LSHIFT, F1,
               F6, RSHIFT, F4, EXIT)
         .image_noheader("graph-ratio");
 
     step("GraphicRoot")
         .test(CLEAR, RSHIFT, DOT,
-              "ABC", LSHIFT, F1,
+              "ABC 0", LSHIFT, F1,
               F6, F6, F1, EXIT)
         .image_noheader("graph-root");
     step("GraphicParentheses")
         .test(CLEAR, RSHIFT, DOT,
-              "ABC", LSHIFT, F1,
+              "ABC 2.1", LSHIFT, F1,
               F6, F6, F2, EXIT)
         .image_noheader("graph-paren");
     step("GraphicNorm")
         .test(CLEAR, RSHIFT, DOT,
-              "ABC", LSHIFT, F1,
+              "ABC 3.5", LSHIFT, F1,
               F6, F6, F3, EXIT)
         .image_noheader("graph-norm");
 

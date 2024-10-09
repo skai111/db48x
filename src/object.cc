@@ -1019,6 +1019,13 @@ GRAPH_BODY(object)
     pixsize rw     = 0;
     bool    flat   = false;
 
+    if (g.graph && sz >= 2 && *txt == '"' && end[-1] == '"')
+    {
+        txt = +txt + 1;
+        end = end-1;
+        sz -= 2;
+    }
+
     // Try to fit it with the original structure
     for (utf8 p = txt; p < end; p = utf8_next(p))
     {

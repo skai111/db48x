@@ -738,6 +738,7 @@ grob_p list::graph(grapher &g, size_t rows, size_t cols, bool mat) const
 // ----------------------------------------------------------------------------
 {
     list_g list = this;
+    save<bool> sgraph(g.graph, false);
 
     // Convert all elements to graphical equivalent
     size_t nitems = rows * cols;
