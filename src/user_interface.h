@@ -165,6 +165,7 @@ struct user_interface
     bool        replace_character_left_of_cursor(utf8 text, size_t len);
 
     uint        shift_plane()   { return xshift ? 2 : shift ? 1 : 0; }
+    void        clear_shift()   { xshift = shift = false; }
     void        clear_help();
     void        clear_menu();
     object_p    object_for_key(int key);
