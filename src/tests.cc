@@ -10341,6 +10341,7 @@ tests &tests::begin(cstring name, bool disabled)
     tstart = sys_current_ms();
     tname = name;
     tindex++;
+#undef BLACK
 #define BLACK "\033[40;97m"
 #define GREY  "\033[100;37m"
 #define CLREOL "\033[K"
