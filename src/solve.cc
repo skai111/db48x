@@ -150,12 +150,12 @@ algebraic_p solve(program_g eq, algebraic_g goal, object_g guess)
     }
 
     // Check if the variable we solve for is a unit
-    unit_g      uname = goal->as<unit>();
+    unit_g      uname = unit::get(goal);
     algebraic_g uexpr;
     if (uname || lx->type() == object::ID_unit || hx->type() == object::ID_unit)
     {
-        unit_g lu = lx->as<unit>();
-        unit_g hu = hx->as<unit>();
+        unit_g lu = unit::get(lx);
+        unit_g hu = unit::get(hx);
         if (uname)
             uexpr = uname->uexpr();
         else if (lu)
@@ -245,7 +245,7 @@ algebraic_p solve(program_g eq, algebraic_g goal, object_g guess)
         {
             if (algebraic_g neps = abs::run(y) * yeps)
             {
-                if (unit_p ru = neps->as<unit>())
+                if (unit_p ru = unit::get(neps))
                     neps = ru->value();
                 if (smaller_magnitude(yeps, neps))
                     yeps = neps;
@@ -269,7 +269,7 @@ algebraic_p solve(program_g eq, algebraic_g goal, object_g guess)
         else
         {
             is_valid = true;
-            if (unit_p yu = y->as<unit>())
+            if (unit_p yu = unit::get(y))
                 dy = yu->value();
             else
                 dy = y;
@@ -679,7 +679,7 @@ static algebraic_p expression_variable_or_unit(uint index)
             {
                 if (symbol_p sym = obj->as<symbol>())
                     return sym;
-                if (unit_p u = obj->as<unit>())
+                if (unit_p u = unit::get(obj))
                     return u;
             }
         }
@@ -748,13 +748,13 @@ COMMAND_BODY(SolvingMenuStore)
                         if (ui.menu_refresh())
                             return OK;
 
-                if (unit_g uvar = entry->as<unit>())
+                if (unit_g uvar = unit::get(entry))
                 {
                     if (symbol_g sym = symbol_p(uvar->value()))
                     {
                         if (algebraic_g sval = value->as_algebraic())
                         {
-                            unit_g uval = value->as<unit>();
+                            unit_g uval = unit::get(value);
                             if (uval)
                             {
                                 if (!uvar->convert(uval))

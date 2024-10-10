@@ -100,7 +100,7 @@ struct expression : program
         return rt.make<expression>(type, op, args, arity);
     }
 
-    static expression_p as_expression(object_p obj);
+    static expression_p get(object_p obj);
     static expression_p current_equation(bool error);
 
     typedef expression_p (expression::*command_fn)(symbol_r name) const;

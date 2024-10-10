@@ -207,7 +207,7 @@ algebraic_p function::evaluate(algebraic_r xr, id op, ops_t ops)
     }
 
     // Check if we need to deal with units specially
-    if (unit_p u = x->as<unit>())
+    if (unit_p u = unit::get(x))
     {
         algebraic_g value = u->value();
         algebraic_g uexpr = u->uexpr();

@@ -39,6 +39,7 @@
 #include "precedence.h"
 #include "renderer.h"
 #include "settings.h"
+#include "tag.h"
 #include "unit.h"
 #include "utf8.h"
 #include "variables.h"
@@ -952,7 +953,7 @@ static size_t check_match(size_t eq, size_t eqsz,
                                     b = integer::make(0);
                                 }
                             }
-                            expression_p x = expression::as_expression(ftop);
+                            expression_p x = expression::get(ftop);
                             if (x && x->is_linear(ivar, a, b))
                                 isok = true;
                         }
@@ -2461,19 +2462,20 @@ GRAPH_BODY(expression)
 }
 
 
-expression_p expression::as_expression(object_p obj)
+expression_p expression::get(object_p obj)
 // ----------------------------------------------------------------------------
 //   Convert an object to an expression, including polynomials and equations
 // ----------------------------------------------------------------------------
 {
     if (!obj)
         return nullptr;
+    obj = tag::strip(obj);
     if (expression_p expr = obj->as<expression>())
         return expr;
     if (equation_p eqn = obj->as<equation>())
-        return as_expression(eqn->value());
+        return get(eqn->value());
     if (polynomial_p poly = obj->as<polynomial>())
-        return as_expression(poly->as_expression());
+        return get(poly->as_expression());
     if (algebraic_g alg = obj->as_algebraic())
         return make(alg);
     return nullptr;
@@ -2524,7 +2526,7 @@ object::result expression::variable_command(command_fn callback)
 // ----------------------------------------------------------------------------
 {
     if (object_p exprobj = rt.stack(1))
-        if (expression_g expr = expression::as_expression(exprobj))
+        if (expression_g expr = expression::get(exprobj))
             if (object_p varobj = rt.stack(0))
                 if (symbol_g var = varobj->as_quoted<symbol>())
                     if (expression_p res = (expr->*callback)(var))
@@ -2871,7 +2873,7 @@ static object::result match_up_down(bool down)
     if (!x || !y)
         return object::ERROR;
     list_p transform = x->as<list>();
-    expression_g eq = expression::as_expression(y);
+    expression_g eq = expression::get(y);
     if (!transform || !eq)
     {
         rt.type_error();
@@ -2879,14 +2881,14 @@ static object::result match_up_down(bool down)
     }
 
     list::iterator it(transform);
-    expression_g from = expression::as_expression(*it++);
-    expression_g to = expression::as_expression(*it++);
+    expression_g from = expression::get(*it++);
+    expression_g to = expression::get(*it++);
     if (!from || !to)
     {
         rt.value_error();
         return object::ERROR;
     }
-    expression_g cond = expression::as_expression(*it++);
+    expression_g cond = expression::get(*it++);
     settings::SaveAutoSimplify noas(false);
     uint rwcount = 0;
     cond = eq->rewrite(from, to, cond, &rwcount, down);
@@ -3031,8 +3033,8 @@ bool expression::split(id type, expression_g &left, expression_g &right) const
                 {
                     if (object_g l = grab_arguments(eq, len))
                     {
-                        expression_g ra = expression::as_expression(r);
-                        expression_g la = expression::as_expression(l);
+                        expression_g ra = expression::get(r);
+                        expression_g la = expression::get(l);
                         if (la && ra)
                         {
                             right = ra;
@@ -3505,8 +3507,8 @@ NFUNCTION_BODY(Subst)
     if (args[1]->is_real() || args[1]->is_complex())
         return args[1];
 
-    if (expression_g pat = expression::as_expression(args[1]))
-        if (expression_g repl = expression::as_expression(args[0]))
+    if (expression_g pat = expression::get(args[1]))
+        if (expression_g repl = expression::get(args[0]))
             return substitute(pat, repl);
 
     rt.type_error();

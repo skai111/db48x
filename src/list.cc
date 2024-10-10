@@ -1863,7 +1863,7 @@ bool list::names_insert(size_t depth, symbol_p sym, unit_p uobj)
     for (level = 0; level < existing; level++)
     {
         object_p oobj  = rt.stack(level);
-        unit_p   ounit = oobj->as<unit>();
+        unit_p   ounit = unit::get(oobj);
         symbol_p other = ounit ? symbol_p(ounit->value()) : symbol_p(oobj);
         size_t   olen  = 0;
         utf8     oname = other->value(&olen);
