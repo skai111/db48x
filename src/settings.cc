@@ -426,6 +426,20 @@ static object_p object_from_value(Value value)
 
 
 template <>
+object_p object_from_value<ularge>(ularge value)
+// ----------------------------------------------------------------------------
+//   Convert patterns into hexadecimal or based integers
+// ----------------------------------------------------------------------------
+{
+#if CONFIG_FIXED_BASED_OBJECTS
+    return rt.make<hex_integer>(value);
+#else
+    return rt.make<based_integer>(value);
+#endif
+}
+
+
+template <>
 object_p object_from_value<object::id>(object::id value)
 // ----------------------------------------------------------------------------
 //   Return a static object for enum settings

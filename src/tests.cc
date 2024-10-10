@@ -8342,7 +8342,7 @@ void tests::overflow_and_underflow()
 
     step("Set maximum exponent to 499")
         .test(CLEAR, "499 MaximumDecimalExponent", ENTER).noerror()
-        .test("'MaximumDecimalExponent' RCL", ENTER).expect("499");
+        .test("'MaximumDecimalExponent' RCL", ENTER).expect("#1F3₁₆");
 
     step("Check that undeflow error is not set by default")
         .test("'UnderflowError' FS?", ENTER).expect("False")
@@ -8449,7 +8449,7 @@ void tests::overflow_and_underflow()
     step("Reset modes")
         .test(CLEAR, "ResetModes KillOnError", ENTER)
         .test("'MaximumDecimalExponent' RCL", ENTER)
-        .expect("1 152 921 504 606 846 976");
+        .expect("#1000 0000 0000 0000₁₆");
 }
 
 
