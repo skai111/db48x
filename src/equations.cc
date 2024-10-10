@@ -99,7 +99,7 @@ static const cstring basic_equations[] =
 
 
     "Cantilever Shear", "{"
-    "  '(V_n)=IFTE((x_m)≤(a_m);1;0)*(P_N)+(w_N/m)*((L_m)-(x_m))'"
+    "  '(V_N)=IFTE((x_m)≤(a_m);1;0)*(P_N)+(w_N/m)*((L_m)-(x_m))'"
     "}",
 
 
