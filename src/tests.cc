@@ -5908,6 +5908,9 @@ void tests::eqnlib_columns_and_beams()
     step("Enter directory for solving")
         .test(CLEAR, "'SLVTST' CRDIR SLVTST", ENTER);
 
+    step("Select CurrentEquationsVariables")
+        .test(CLEAR, "CurrentEquationVariables", ENTER);
+
     step("Solving Elastic Buckling")
         .test(CLEAR, RSHIFT, F, F2, RSHIFT, F1)
         .test("53.0967", NOSHIFT, F3)
@@ -6065,7 +6068,10 @@ void tests::eqnlib_columns_and_beams()
         .expect("V:200. lbf");
 
     step("Exit: Clear variables")
-        .test(CLEAR, "UPDIR 'SLVTST' PURGE", ENTER);
+        .test(CLEAR,
+              "UPDIR "
+              "'SLVTST' PURGE "
+              "'CurrentEquationVariables' PURGE", ENTER);
 }
 
 
