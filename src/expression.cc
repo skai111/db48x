@@ -29,6 +29,7 @@
 
 #include "expression.h"
 
+#include "algebraic.h"
 #include "arithmetic.h"
 #include "equations.h"
 #include "functions.h"
@@ -3452,52 +3453,6 @@ FUNCTION_BODY(Simplify)
 }
 
 
-static expression_p substitute(expression_r pattern,
-                               symbol_r     name,
-                               expression_r to)
-// ----------------------------------------------------------------------------
-//  Substitute a single name with the corresponding expression
-// ----------------------------------------------------------------------------
-{
-    scribble scr;
-    size_t replsz = 0;
-    object_g replobj = to->objects(&replsz);
-    for (object_g obj : *pattern)
-    {
-        symbol_p oname = obj->as<symbol>();
-        if (oname && name->is_same_as(oname))
-        {
-            if (!rt.append(replobj, replsz))
-                return nullptr;
-        }
-        else
-        {
-            if (!rt.append(obj))
-                return nullptr;
-        }
-    }
-    expression_g result = expression_p(list::make(object::ID_expression,
-                                                  scr.scratch(), scr.growth()));
-    return result;
-}
-
-
-static expression_p substitute(expression_r pattern,
-                               expression_r repl)
-// ----------------------------------------------------------------------------
-//   Run a rewrite up or down
-// ----------------------------------------------------------------------------
-{
-    expression_g from, to;
-    if (repl->split_equation(from, to))
-        if (symbol_g name = from->as_quoted<symbol>())
-            return substitute(pattern, name, to);
-
-    if (!rt.error())
-        rt.value_error();
-    return nullptr;
-}
-
 
 NFUNCTION_BODY(Subst)
 // ----------------------------------------------------------------------------
@@ -3509,7 +3464,7 @@ NFUNCTION_BODY(Subst)
 
     if (expression_g pat = expression::get(args[1]))
         if (expression_g repl = expression::get(args[0]))
-            return substitute(pat, repl);
+            return pat->substitute(repl);
 
     rt.type_error();
     return nullptr;
@@ -3521,72 +3476,11 @@ COMMAND_BODY(Where)
 //   Perform a substitution and evaluate the resulting expression
 // ----------------------------------------------------------------------------
 {
-    if (object_p patobj = rt.stack(1))
-    {
-        id patty = patobj->type();
-        if (patty == ID_expression)
-        {
-            expression_g pat = expression_p(patobj);
-            if (object_p replobj = rt.stack(0))
-            {
-                id rty = replobj->type();
-                if (rty == ID_expression)
-                {
-                    expression_g repl = expression_p(replobj);
-                    if (algebraic_g res = substitute(pat, repl))
-                        if (rt.drop() && rt.top(+res))
-                            return OK;
-                }
-                else if (rty == ID_list || rty == ID_array)
-                {
-                    symbol_g     name;
-                    expression_g repl;
-                    for (object_g item : *list_p(replobj))
-                    {
-                        if (!name)
-                        {
-                            name = item->as_quoted<symbol>();
-                            if (!name)
-                            {
-                                if (expression_g p = item->as<expression>())
-                                {
-                                    pat = substitute(pat, p);
-                                    if (!pat)
-                                        return ERROR;
-                                }
-                                else
-                                {
-                                    rt.value_error();
-                                    return ERROR;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            repl = item->as<expression>();
-                            if (!repl)
-                            {
-                                rt.value_error();
-                                return ERROR;
-                            }
-                            pat = substitute(pat, name, repl);
-                            if (!pat)
-                                return ERROR;
-                            name = nullptr;
-                        }
-                    }
-                    if (rt.drop() && rt.top(+pat))
-                        return OK;
-                }
-            }
-        }
-        else if (is_real(patty) || is_complex(patty))
-        {
-            rt.drop();
-            return OK;
-        }
-
-    }
+    object_g obj = rt.stack(1);
+    object_g args = rt.stack(0);
+    obj = list::substitute(obj, args);
+    if (obj && rt.drop() && rt.top(+obj))
+        return OK;
     if (!rt.error())
         rt.type_error();
     return ERROR;

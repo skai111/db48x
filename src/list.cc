@@ -32,6 +32,7 @@
 #include "algebraic.h"
 #include "array.h"
 #include "compare.h"
+#include "constants.h"
 #include "expression.h"
 #include "grob.h"
 #include "locals.h"
@@ -2217,4 +2218,165 @@ COMMAND_BODY(EndSub)
         if (rt.push(obj))
             return OK;
     return ERROR;
+}
+
+
+
+// ============================================================================
+//
+//   List element substitution
+//
+// ============================================================================
+
+algebraic_p list::where(algebraic_r expr, algebraic_r args)
+// ----------------------------------------------------------------------------
+//   Implementation of the "where" command
+// ----------------------------------------------------------------------------
+{
+    return algebraic_p(substitute(+expr, +args));
+}
+
+
+object_p list::substitute(object_p source, object_p args)
+// ----------------------------------------------------------------------------
+//   Implementation of the `where` command (input may not be algebraic)
+// ----------------------------------------------------------------------------
+{
+    id patty = source->type();
+    if (patty == ID_expression)
+    {
+        object_g ao = args;
+        return expression_p(+source)->substitute(ao);
+    }
+    else if (is_real(patty) || is_complex(patty))
+    {
+        return source;
+    }
+    else if (patty == ID_list || patty == ID_array)
+    {
+        algebraic_g aa = algebraic_p(args);
+        return list_p(+source)->map(list::where, aa);
+    }
+    else if (patty == ID_equation || patty == ID_xlib || patty == ID_constant)
+    {
+        object_p value = constant_p(source)->value();
+        return substitute(value, args);
+    }
+    return nullptr;
+}
+
+
+list_p list::substitute(symbol_r name, object_r replobj, size_t replsz) const
+// ----------------------------------------------------------------------------
+//  Substitute a single name with some other object
+// ----------------------------------------------------------------------------
+{
+    scribble scr;
+    id ltype = type();
+    for (object_p obj : *this)
+    {
+        object_p tobj = obj;
+        unit_p   uobj = obj->as<unit>();
+        if (uobj)
+            tobj = uobj->value();
+        symbol_p oname = tobj->as<symbol>();
+        if (oname && name->is_same_as(oname))
+        {
+            if (uobj)
+            {
+                // We map a name like (M_kg) with a value like 100_g
+                // Check that we can convert units
+
+                // In that case, the replacement needs to be algebraic
+                algebraic_g arepl = replobj->as_algebraic();
+                if (!arepl)
+                {
+                    rt.type_error();
+                    return nullptr;
+                }
+
+                algebraic_g one = integer::make(1);
+                unit_g fromu = unit::make(one, uobj->uexpr());
+                if (!fromu->convert(arepl))
+                {
+                    rt.inconsistent_units_error();
+                    return nullptr;
+                }
+                if (!arepl || !rt.append(arepl, arepl->size()))
+                    return nullptr;
+            }
+            else if (!rt.append(replobj, replsz))
+                return nullptr;
+        }
+        else
+        {
+            if (!rt.append(obj))
+                return nullptr;
+        }
+    }
+    list_p result = list::make(ltype, scr.scratch(), scr.growth());
+    return result;
+}
+
+
+list_p list::substitute(symbol_r name, object_r replobj) const
+// ----------------------------------------------------------------------------
+//  Substitute a name with an object, which can be an expression
+// ----------------------------------------------------------------------------
+{
+    if (expression_p expr = replobj->as<expression>())
+    {
+        size_t sz = 0;
+        object_g obj = expr->objects(&sz);
+        return substitute(name, obj, sz);
+    }
+    return substitute(name, replobj, replobj->size());
+}
+
+
+list_p list::substitute(expression_r assign) const
+// ----------------------------------------------------------------------------
+//   Perform substitution with an input that looks like A=B
+// ----------------------------------------------------------------------------
+{
+    list_g       l = this;
+    expression_g from, to;
+    if (assign->split_equation(from, to))
+        if (symbol_g name = from->as_quoted<symbol>())
+            return l->substitute(name, (object_g) to);
+    if (!rt.error())
+        rt.value_error();
+    return nullptr;
+}
+
+
+list_p list::substitute(list_r assignments) const
+// ----------------------------------------------------------------------------
+//   Substitute a list of assignments
+// ----------------------------------------------------------------------------
+{
+    list_g result = this;
+    for (object_g obj : *assignments)
+        result = result->substitute(obj);
+    return result;
+}
+
+
+list_p list::substitute(object_r repl) const
+// ----------------------------------------------------------------------------
+//   Check if we have an expression or a list as an argument
+// ----------------------------------------------------------------------------
+{
+    id rty = repl->type();
+    if (rty == ID_list || rty == ID_array)
+    {
+        list_g rlist = list_p(+repl);
+        return substitute(rlist);
+    }
+    if (rty == ID_expression)
+    {
+        expression_g expr = expression_p(+repl);
+        return substitute(expr);
+    }
+    return this;
 }

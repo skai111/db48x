@@ -176,7 +176,7 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-            vector_functions();
+            symbolic_operations();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -6633,6 +6633,11 @@ void tests::symbolic_operations()
         .expect("'X↑2+3·X+7|X=Z+1|Z=sin(A+B)|A=42'")
         .test(RUNSTOP)
         .expect("'(sin(42+B)+1)²+3·(sin(42+B)+1)+7'");
+    step("Where operator on library equations")
+        .test("'ⒺRelativity Mass Energy|m=(1_g)'", ENTER)
+        .expect("'Relativity Mass Energy:{ E=m·c↑2 }|m=1 g'")
+        .test(RUNSTOP)
+        .expect("{ 'E=¹/₁ ₀₀₀ kg·c↑2' }");
 
     step("Isolate a single variable, simple case")
         .test(CLEAR, "'A+1=sin(X+B)+C' 'X' ISOL", ENTER)
@@ -11056,6 +11061,7 @@ tests &tests::itest(cstring txt)
         case L'Ω': itest(RSHIFT, KEY2, LSHIFT, F1, F6, F6, F6, F6, LSHIFT, F4); NEXT;
         case L'∞': itest(RSHIFT, KEY2, F4, F6, F6, RSHIFT, F5); NEXT;
         case L'ℏ': itest(RSHIFT, KEY2, F4, F6, F6, F6, F6, LSHIFT, F5); NEXT;
+        case L' ': itest(RSHIFT, KEY2, F6, RSHIFT, F4); NEXT;
 #undef NEXT
         }
 

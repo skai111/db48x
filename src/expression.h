@@ -260,6 +260,15 @@ struct expression : program
     expression_p derivative(symbol_r sym) const;
     expression_p primitive(symbol_r sym) const;
 
+    expression_p where(algebraic_r args) const
+    {
+        algebraic_g expr = this;
+        if (algebraic_p obj = list::where(expr, args))
+            if (expression_p result = obj->as<expression>())
+                return result;
+        return expression_p(+expr);
+    }
+
 
     // ========================================================================
     //
