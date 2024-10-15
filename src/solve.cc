@@ -40,6 +40,7 @@
 #include "list.h"
 #include "recorder.h"
 #include "settings.h"
+#include "stats.h"
 #include "symbol.h"
 #include "tag.h"
 #include "unit.h"
@@ -157,6 +158,9 @@ algebraic_p Root::solve(program_r pgm, algebraic_r goal, algebraic_r guess)
         hx = +hu;
     }
 
+    // Check if we need to work in the complex plane
+    bool is_complex = lx->is_complex() || hx->is_complex();
+
     // Check if low and hight are identical, if so pick hx=1.01*lx
     if (algebraic_p diff = hx - lx)
     {
@@ -177,7 +181,7 @@ algebraic_p Root::solve(program_r pgm, algebraic_r goal, algebraic_r guess)
 
     // Initialize starting value
     x = lx;
-    record(solve, "Initial range %t-%t", +lx, +hx);
+    record(solve, "Initial range %t to %t", +lx, +hx);
 
     // We will run programs, do not save stack, etc.
     settings::PrepareForFunctionEvaluation willEvaluateFunctions;
@@ -206,16 +210,26 @@ algebraic_p Root::solve(program_r pgm, algebraic_r goal, algebraic_r guess)
     bool             is_constant = true;
     bool             is_valid    = false;
     uint             max         = Settings.SolverIterations();
+    algebraic_g      two         = integer::make(2);
+    int              degraded    = 0;
 
     for (uint i = 0; i < max && !program::interrupted(); i++)
     {
-        bool bad = false;
+        // If we failed during evaluation of x, break
+        if (!x)
+        {
+            solver_command_error();
+            if (!rt.error())
+                rt.bad_guess_error();
+            return nullptr;
+        }
 
         // If we are starting to use really big numbers, switch to decimal
         if (!algebraic::to_decimal_if_big(x))
         {
+            solver_command_error();
             store(x);
-            return x;
+            return nullptr;
         }
 
         // Evaluate equation
@@ -232,7 +246,7 @@ algebraic_p Root::solve(program_r pgm, algebraic_r goal, algebraic_r guess)
                     yeps = neps;
             }
         }
-        record(solve, "[%u] x=%t (%t to %t)  y=%t (%t to %t) err=%t",
+        record(solve, "[%u] x=%t [%t, %t]  y=%t [%t, %t] err=%t",
                i, +x, +lx, +hx, +y, +ly, +hy, +yeps);
         if (!y)
         {
@@ -246,7 +260,8 @@ algebraic_p Root::solve(program_r pgm, algebraic_r goal, algebraic_r guess)
                 store(x);
                 return nullptr;
             }
-            bad = true;
+            if (!degraded)
+                degraded = -1;                          // Look outside
         }
         else
         {
@@ -264,7 +279,11 @@ algebraic_p Root::solve(program_r pgm, algebraic_r goal, algebraic_r guess)
 
             if (!ly)
             {
-                record(solve, "Setting low");
+                record(solve, "Setting low %t=f(%t)", +y, +x);
+                if (y->is_negative(false))
+                    nx = x;
+                else
+                    px = x;
                 ly = y;
                 lx = x;
                 x  = hx;
@@ -272,92 +291,106 @@ algebraic_p Root::solve(program_r pgm, algebraic_r goal, algebraic_r guess)
             }
             else if (!hy)
             {
-                record(solve, "Setting high");
+                record(solve, "Setting high %t=f(%t)", +y, +x);
                 hy = y;
                 hx = x;
             }
             else if (smaller_magnitude(y, ly))
             {
                 // Smaller than the smallest
-                record(solve, "Smallest");
+                record(solve, "Smallest %t=f(%t) [%t, %t]", +y, +x, +lx, +hx);
                 hx = lx;
                 hy = ly;
                 lx = x;
                 ly = y;
+                degraded = 0;
             }
             else if (smaller_magnitude(y, hy))
             {
-                record(solve, "Improvement");
                 // Between smaller and biggest
+                record(solve, "Better %t=f(%t) [%t, %t]", +y, +x, +lx, +hx);
                 hx = x;
                 hy = y;
+                degraded = 0;
             }
             else if (smaller_magnitude(hy, y))
             {
                 // y became bigger, and all have the same sign:
                 // try to get closer to low
-                record(solve, "New value is worse");
+                record(solve, "Worse %t=f(%t) [%t, %t]", +y, +x, +lx, +hx);
                 is_constant = false;
-                bad         = true;
+                if (!degraded)
+                {
+                    // Look ouside if x is beteen lx and hx, inside otherwise
+                    dx = (hx - x) * (lx - x);
+                    degraded = dx && dx->is_negative(false) ? -1 : 1;
+                }
             }
             else
             {
                 // y is constant - Try a random spot
-                record(solve, "Value seems constant");
-                bad = true;
+                record(solve, "Value seems constant %t=f(%t) [%t, %t]",
+                       +y, +x, +lx, +hx);
+                if (!degraded)
+                    degraded = -1;                      // Look outside
             }
 
-            // Check if cross zero (change sign)
-            if (dy->is_negative(false))
-                nx = x;
-            else
-                px = x;
-
-            // Check the x interval
-            dx = hx - lx;
-            if (!dx)
+            if (!degraded)
             {
-                store(x);
-                return nullptr;
-            }
-            dy = hx + lx;
-            if (!dy || dy->is_zero(false))
-                dy = yeps;
-            else
-                dy = dy * yeps;
-            if (dx->is_zero(false) || smaller_magnitude(dx, xeps))
-            {
-                x = lx;
-                record(solve, "[%u] Minimum=%t value=%t", i, +x, +y);
-                if (nx && px)
-                    rt.sign_reversal_error();
+                // Check if cross zero (change sign)
+                if (dy->is_negative(false))
+                    nx = x;
                 else
-                    rt.no_solution_error();
-                solver_command_error();
-                store(x);
-                return x;
-            }
+                    px = x;
 
-            // Check the y interval
-            dy = hy - ly;
-            if (!dy)
-            {
-                store(x);
-                return nullptr;
-            }
-            if (dy->is_zero(false))
-            {
-                record(solve,
-                       "[%u] unmoving %t between %t and %t", +hy, +lx, +hx);
-                bad = true;
-            }
-            else
-            {
-                // Interpolate to find new position
-                record(solve, "[%u] Moving to %t - %t * %t / %t",
-                       i, +lx, +y, +dx, +dy);
-                is_constant = false;
-                x = lx - y * dx / dy;
+                // Check the x interval
+                dx = hx - lx;
+                if (!dx)
+                {
+                    store(x);
+                    return nullptr;
+                }
+                dy = hx + lx;
+                if (!dy || dy->is_zero(false))
+                    dy = yeps;
+                else
+                    dy = dy * yeps;
+                if (dx->is_zero(false) || smaller_magnitude(dx, xeps))
+                {
+                    x = lx;
+                    record(solve, "[%u] Minimum=%t value=%t", i, +x, +y);
+                    if (nx && px)
+                        rt.sign_reversal_error();
+                    else
+                        rt.no_solution_error();
+                    solver_command_error();
+                    store(x);
+                    return x;
+                }
+
+                // Check the y interval
+                dy = hy - ly;
+                if (!dy)
+                {
+                    store(x);
+                    return nullptr;
+                }
+                if (dy->is_zero(false))
+                {
+                    record(solve,
+                           "[%u] Unmoving %t [%t, %t]", +hy, +lx, +hx);
+                    degraded = 1;                       // Look inwards
+                }
+                else
+                {
+                    // Interpolate to find new position
+                    record(solve, "[%u] Moving to %t - %t * %t / %t",
+                           i, +lx, +y, +dx, +dy);
+                    is_constant = false;
+                    x = lx - y * dx / dy;
+                    record(solve, "[%u] Moved to %t [%t, %t]",
+                           i, +x, +lx, +hx);
+                }
             }
 
             // Check if there are unresolved symbols
@@ -371,15 +404,17 @@ algebraic_p Root::solve(program_r pgm, algebraic_r goal, algebraic_r guess)
             }
         }
 
-        // If we have some issue improving things, shake it a bit
-        if (bad)
+        // If we have some issue improving things, move to degraded mode
+        // When degraded > 0, x is ouside [lx, hx], and we move inwards
+        // When degraded < 0, x is inside [lx, hx], and we move outwards
+        // We move relative to hx, reducing/enlarging x-hx
+        if (degraded)
         {
             // Check if we crossed and the new x does not look good
             if (nx && px)
             {
                 // Try to bisect
-                dx = integer::make(2);
-                x  = (nx + px) / dx;
+                x  = (nx + px) / two;
                 if (!x)
                 {
                     store(nx);
@@ -388,25 +423,30 @@ algebraic_p Root::solve(program_r pgm, algebraic_r goal, algebraic_r guess)
             }
             else
             {
-                // Jitter value
-                int s = (i & 2) - 1;
-                if (x && x->is_complex())
-                    dx = polar::make(integer::make(997 * s * i),
-                                     integer::make(421 * s * i * i),
-                                     ID_Deg);
+                // Find the next step
+                dx = x - hx;
+                dy = +decimal::constants().e;
+                if (is_complex)
+                    dy = polar::make(dy, dy, ID_Deg);
+                if (degraded > 0)
+                {
+                    dx = dx / dy;
+                    degraded++;
+                }
                 else
-                    dx = integer::make(0x1081 * s * i);
-                dx = dx * yeps;
-                if (x && x->is_zero())
-                    x = dx;
-                else
-                    x = x + x * dx;
+                {
+                    dx = dx * dy;
+                    degraded--;
+                }
+                x = hx + dx;
                 if (!x)
                 {
-                    store(dx);
+                    solver_command_error();
+                    store(lx);
                     return nullptr;
                 }
-                record(solve, "Jitter x=%t", +x);
+                record(solve, "Degraded %d x=%t in [%t,%t]",
+                       degraded, +x, +lx, +hx);
             }
         }
     }
@@ -422,7 +462,7 @@ algebraic_p Root::solve(program_r pgm, algebraic_r goal, algebraic_r guess)
         rt.no_solution_error();
     if (rt.error())
         solver_command_error();
-    store(x);
+    store(lx);
     return nullptr;
 }
 

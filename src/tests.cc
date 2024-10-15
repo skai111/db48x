@@ -5835,10 +5835,10 @@ void tests::solver_testing()
         .test("'X'", ENTER, LSHIFT, BSP, F2)
         .noerror();
     step("Solver without solution")
-        .test(CLEAR, "'sq(x)+3=0' 'X' 0 ROOT", ENTER)
+        .test(CLEAR, "'sq(x)+3=0' 'X' 1 ROOT", ENTER)
         .error("No solution?")
         .test(CLEAR, "X", ENTER)
-        .expect("-8.09667 19281 1⁳⁵³⁶⁸⁷⁰⁸¹²⁵⁴⁹⁷⁹⁸")
+        .expect("0.00000 00712 63")
         .test("'X'", ENTER, LSHIFT, BSP, F2)
         .noerror();
 
@@ -5849,9 +5849,10 @@ void tests::solver_testing()
         .expect("C:5.");
     step("Evaluate equation case Left=Right")
         .test(F1)
-        .expect("'25=25.'");
+        .expect("'25=25.-4.⁳⁻²²'");
+
     step("Verify that we display the equation after entering value")
-        .test("4", F4)
+        .test(CLEAR, "42", F4)
         .image_noheader("solver-eqdisplay");
     step("Evaluate equation case Left=Right")
         .test("4", F4, F1)
