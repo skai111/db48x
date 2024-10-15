@@ -5623,11 +5623,11 @@ These equations describe the electrostatic force between two point charged parti
 
 The expression for the radial electric field at the distance 'r' is approximately valid if this distance is such that 'r << L' and therefore also applies to a wire of finite length 'L'.
 
-![E field infinite line](img/E Field Infinite Line.bmp)
-
 ### E Field Finite Line
 
 The expression of the radial electric field at the distance 'r' depends on the subtended angles 'θ1' and 'θ2' relative to the ends of the wire of finite length 'L'.
+
+![E field finite line](img/E Field Finite Line.bmp)
 
 ### E Field Infinite Plate
 
