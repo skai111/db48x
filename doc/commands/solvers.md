@@ -19,8 +19,8 @@ of `cos(x)/3` close to `1.5_°`, use the following:
 
 ```rpl
 'sin(x)=cos(x)/3'
-'x' 1.5_° ROOT
-@ Expect: :x:18.43494 88229 22010 64803 35_°
+'x' 0.5_° ROOT
+@ Expecting x=18.43494 88229 °
 ```
 
 ### Guess range
@@ -39,8 +39,8 @@ In the example above, the guess was . Otherwise, the result would depend on the 
 ```rpl
 RAD
 'sin(x)=cos(x)/3'
-'x' 1.5 ROOT
-@ Expect: :x:-2.81984 20991 93151 04528 867
+'x' 0.5 ROOT
+@ Expecting x=0.32175 05543 97
 ```
 
 ### Algebraic form
@@ -53,7 +53,7 @@ The previous example can be written in algebraic form as follows:
 ```rpl
 'ROOT(sin(x)=cos(x)/3;x;1.5_°)'
 EVAL
-@ Expect: :x:18.43494 88229 22010 64803 35_°
+@ Expecting x=18.43494 88229 °
 ```
 
 ### Solver (im)precision
@@ -89,7 +89,7 @@ compared to HP implementations of RPL.
 For example, you can find a complex root for the following equation:
 ```rpl
 'ROOT((X-5)²+3;X;0+0ⅈ)'
-@ Expect: :X:5.+1.73205 08075 7ⅈ
+@ Expecting X=5.+1.73205 08075 7ⅈ
 ```
 
 ### Differences with HP calculators
@@ -105,7 +105,15 @@ or HP50G, but returns an error on DB48X, with the variable `X` containing a
 value close to 5.
 
 ```rpl
-'sq(X-5)+3' 'X' 0 ROOT
+@ Expecting "DB48X"
+IFERR
+ 'sq(X-5)+3' 'X' 0 ROOT
+THEN
+ "DB48X"
+ELSE
+ "HP50G"
+END
+
 ```
 
 

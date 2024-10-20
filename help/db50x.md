@@ -5460,7 +5460,7 @@ These equations apply to a slender column (`K·L/r>100`) with length factor `K`.
 * To calculate [Pcr_kN;σcr_kPa] (Critical load; Critical stress) from 6 known variables:
 ```rpl
 L=7.3152_m  r=4.1148_cm  E=199947961.502_kPa  A=53.0967_cm^2  K=0.7  I=8990598.7930_mm^4
-@ Expecting [Pcr=676.60193_kN;σcr=127428.24438_kPa]: OK.
+@ Expecting [ Pcr=676.60192 6324 kN σcr=127 428.24437 8 kPa ]
 'ROOT(ⒺElastic Buckling;[Pcr;σcr];[1_kN;1_kPa])'
 ```
 
@@ -5474,7 +5474,7 @@ These equations apply to a slender column (`K·L/r>100`) with length factor `K`.
 ```rpl
 L=6.6542_m  A=187.9351_cm^2  r=8.4836_cm  E=206842718.795_kPa  K=1  P=1908.2571_kN  c=15.24_cm
  ε=1.1806_cm
-@ Expecting [σmax=140853.0970_kPa;I=135259652.161_mm^4]: OK.
+@ Expecting [ σmax=140 853.09700 6 kPa I=135 259 652.161 mm↑4 ]
 'ROOT(ⒺEccentric Columns;[σmax;I];[1_kPa;1_mm^4])'
 ```
 
@@ -5486,7 +5486,7 @@ L=6.6542_m  A=187.9351_cm^2  r=8.4836_cm  E=206842718.795_kPa  K=1  P=1908.2571_
 ```rpl
 L=20_ft  E=29000000_psi  I=40_in^4  a=10_ft  P=674.427_lbf  c=17_ft  M=3687.81_ft*lbf
  w=102.783_lbf/ft  x=9_ft
-@ Expecting [y=-0.600485_in]: OK.
+@ Expecting [ y=-0.60048 54094 96 in ]
 'ROOT(ⒺSimple Deflection;[y];[1_in])'
 ```
 
@@ -5498,7 +5498,7 @@ L=20_ft  E=29000000_psi  I=40_in^4  a=10_ft  P=674.427_lbf  c=17_ft  M=3687.81_f
 ```rpl
 L=20_ft  E=29000000_psi  I=40_in^4  a=10_ft  P=674.427_lbf  c=17_ft  M=3687.81_ft*lbf
  w=102.783_lbf/ft  x=9_ft
-@ Expecting [Θ=-0.0876318_°]: NOT OK To be checked since I corrected (x^2+c^2)/(2*L)
+@ Expecting [ θ=-0.08763 17825 27 ° ]
 'ROOT(ⒺSimple Slope;[θ];[0_°])'
 ```
 
@@ -5509,7 +5509,7 @@ L=20_ft  E=29000000_psi  I=40_in^4  a=10_ft  P=674.427_lbf  c=17_ft  M=3687.81_f
 * To calculate [Mx_ft*lbf] (Internal bending moment at x) from 7 known variables:
 ```rpl
 L=20_ft  a=10_ft  P=674.427_lbf  c=17_ft  M=3687.81_ft*lbf  w=102.783_lbf/ft  x=9_ft
-@ Expecting [Mx=9782.1945_ft*lbf]: OK.
+@ Expecting [ Mx=9 782.1945 lbf·ft ]
 'ROOT(ⒺSimple Moment;[Mx];[1_ft*lbf])'
 ```
 
@@ -5520,7 +5520,7 @@ L=20_ft  a=10_ft  P=674.427_lbf  c=17_ft  M=3687.81_ft*lbf  w=102.783_lbf/ft  x=
 * To calculate [V_lbf] (Shear force at x) from 6 known variables:
 ```rpl
 L=20_ft  a=10_ft  P=674.427_lbf  M=3687.81_ft*lbf  w=102.783_lbf/ft  x=9_ft
-@ Expecting [V=624.387_lbf]: OK:
+@ Expecting [ V=624.387 lbf ]
 'ROOT(ⒺSimple Shear;[V];[1_lbf])'
 ```
 
@@ -5531,7 +5531,7 @@ L=20_ft  a=10_ft  P=674.427_lbf  M=3687.81_ft*lbf  w=102.783_lbf/ft  x=9_ft
 * To calculate [y_in] (Deflection at x) from 9 known variables:
 ```rpl
 L=10_ft  E=29000000_psi  I=15_in^4  P=500_lbf  M=800_ft*lbf  a=3_ft  c=6_ft  w=100_lbf/ft  x=8_ft
-@ Expecting: [y=-0.331630_in]: OK.
+@ Expecting: [y=-0.331630_in]
 'ROOT(ⒺCantilever Deflection;[y];[0_in])'
 ```
 
@@ -5542,7 +5542,7 @@ L=10_ft  E=29000000_psi  I=15_in^4  P=500_lbf  M=800_ft*lbf  a=3_ft  c=6_ft  w=1
 * To calculate [Θ_°] (Slope at `x`) from 9 known variables:
 ```rpl
 L=10_ft  E=29000000_psi  I=15_in^4  P=500_lbf  M=800_ft*lbf  a=3_ft  c=6_ft  w=100_lbf/ft  x=8_ft
-@ Expecting [Θ=-0.26522_°]: OK.
+@ Expecting [ θ=-0.26522 01876 49 ° ]
 'ROOT(ⒺCantilever Slope;[θ];[0_°])'
 ```
 
@@ -5553,7 +5553,7 @@ L=10_ft  E=29000000_psi  I=15_in^4  P=500_lbf  M=800_ft*lbf  a=3_ft  c=6_ft  w=1
 * To calculate [Mx_ft*lbf] (Internal bending moment at x) from 7 known variables:
 ```rpl
 L=10_ft  P=500_lbf  M=800_ft*lbf  a=3_ft  c=6_ft  w=100_lbf/ft  x=8_ft
-@ Expecting [Mx=-200_ft*lbf]: OK.
+@ Expecting [ Mx=-200. lbf·ft ]
 'ROOT(ⒺCantilever Moment;[Mx];[1_ft*lbf])'
 ```
 
@@ -5564,7 +5564,7 @@ L=10_ft  P=500_lbf  M=800_ft*lbf  a=3_ft  c=6_ft  w=100_lbf/ft  x=8_ft
 * To calculate [V_lbf] (Shear force at x) from 5 known variables:
 ```rpl
 L=10_ft  P=500_lbf  a=3_ft  x=8_ft  w=100_lbf/ft
-@ Expecting [V=200_lbf]: OK.
+@ Expecting [ V=200. lbf ]
 'ROOT(ⒺCantilever Shear;[V];[1_lbf])'
 ```
 
@@ -5641,21 +5641,22 @@ The variables in the Electricity section are:
 
 These equations describe the electrostatic force between two point charged particles and the electric field observed at the position of a test charge which replaces one of the two charges 'q1' or 'q2' in the expression of the electric force. A finite object carrying a net charge 'q1' can be considered as a point charge if the distance to the position of the point charge 'q2' is much greater than the object dimension, see example 2, for the approximate calculations of the electric force and electric field far away from a charged plate.
 
-* Example 1. To calculate [F_N;Er_N/C] (Electric force; Electric Field) from 5 known variables:
+* **Example 1**. To calculate [F_N;Er_N/C] (Electric force; Electric Field) from 5 known variables:
 
 ```rpl
 q1=1.6E-19_C  q2=1.6E-19_C  r=4.00E-13_cm  εr=1  qtest=1.6E-19_C
-@ Expecting [F=14.38008_N;Er=8.98755e19_N/C]: OK.
+@ Expecting [ F=14.38008 28598 N Er=8.98755 17873 8⁳¹⁹ N/C ]
 'ROOT(ⒺCoulomb’s Law & E Field;[F;Er];[1_N;1_N/C])'
 ```
 
-* Example 2. A square metal plate 'L = 8_cm' on a side carries a charge of 'q1 = 6_μC'. Approximate values of the electric force & electric field for a point charge 'q2 = 1_μC' located at 'r = 3_m' can be calculated with Coulomb's law if the separation distance is much greater than the plate dimension 'r >> L'. The whole plate is indeed considered as being a point charge providing that 'r > 10 · L'. Therefore, to calculate [F_N;Er_N/C]:
+* **Example 2**. A square metal plate 'L = 8_cm' on a side carries a charge of 'q1 = 6_μC'. Approximate values of the electric force & electric field for a point charge 'q2 = 1_μC' located at 'r = 3_m' can be calculated with Coulomb's law if the separation distance is much greater than the plate dimension 'r >> L'. The whole plate is indeed considered as being a point charge providing that 'r > 10 · L'. Therefore, to calculate [F_N;Er_N/C]:
 
 ```rpl
-8_cm 'L' STO 3_m 'r' STO 'r' 'L' 10 * > @Expected [True] r >> L is verified
-q1=6E-6_C  q2=1E-6_C  r=3_m  εr=1  qtest=1E-6_C
-@ Expecting [F=5.9917E-3_N;Er=5.9917E3_N/C]: OK.
-'ROOT(ⒺCoulomb’s Law & E Field;[F;Er];[1_N;1_N/C])'
+L=8_cm r=3_m q1=6E-6_C  q2=1E-6_C  r=3_m  εr=1  qtest=1E-6_C
+@ Expecting [ F=0.00599 17011 92 N Er=5 991.70119 159 N/C ]
+if 'r > 10*L' then
+ 'ROOT(ⒺCoulomb’s Law & E Field;[F;Er];[1_N;1_N/C])'
+end
 ```
 
 ### E Field Infinite Line
@@ -5666,7 +5667,7 @@ The expression for the radial electric field at the distance 'r' is approximatel
 
 ```rpl
 Q=5E-6_C  L=3_m  r=0.05_m  εr=1
-@ Expecting [λ=1.666667e-6_C/m;Er=5.991701e5_N/C]: OK.
+@ Expecting [ λ=1.66666 66666 7⁳⁻⁸ C/m Er=5 991.70119 159 N/C ]
 'ROOT(ⒺE Field Infinite Line;[λ;Er];[1_C/m;1_N/C])'
 ```
 
@@ -5679,20 +5680,26 @@ The expression of the radial electric field at the distance 'r' depends on the s
 * Example 1. To calculate [λ_C/m;Er_N/C] (Electric Field; Linear charge density) from 6 known variables and also with the distance 'r=(L/2)/tanθ1' and angle 'θ2=360°-θ1' (see fig):
 
 ```rpl
-3_m 2 / 30° TAN / 'r' STO 360° 30° - 'θ2' STO  @ Expecting: [r=2.5981_m;θ2=330_°]
-Q=5E-6_C  L=3_m  r=2.5981_m  εr=1  θ1=30_°  θ2=330_°
-@ Expecting [λ=1.666667e-6_C/m;Er=5.765517E3_N/C]: OK but eqns order to be inverted.
+r='(3_m)/(2*tan 30_°)' θ2='360_°-30_°'
+Q=5E-6_C  L=3_m  r=2.5981_m  εr=1  θ1=30_°
+@ Expecting [ λ=1.73206 66666 7⁳⁻⁶ C/m Er=5 991.70119 159 N/C ]
 'ROOT(ⒺE Field Finite Line;[λ;Er];[1_C/m;1_N/C;])'
 ```
 
 * Example 2. To show the infinite line approximation ('r << L') of the previous section we calculate [λ_C/m;Er_N/C] with the angles θ1=ATAN((L/2)/r) and θ2=360°-θ1 (see fig):
 
 ```rpl
-3 2 / 0.05 / ATAN 'θ1' STO 360° 'θ1' - 'θ2' STO  @ Expected: [θ1=88.0876_°;θ2=271.9124_°]
+θ1='atan(3/2/0.05)' θ2='360_°-θ1'
 Q=5E-6_C  L=3_m  r=0.05_m  εr=1  θ1=88.0876_°  θ2=271.9124_°
-@ Expecting [λ=1.666667e-6_C/m;Er=5.988364E5_N/C]: OK but eqns order to be inverted.
+@ Expecting [ λ=1.66759 54889⁳⁻⁸ C/m Er=5 991.70119 159 N/C ]
 'ROOT(ⒺE Field Finite Line;[λ;Er];[1_C/m;1_N/C])'
-'Er' 5.991701E5_N/C %Chg  @ Expecting [0,056%] of relative difference because 5_cm << 3_m.
+```
+
+```rpl
+5.991701E3_N/C 'Er' %Ch
+@ Verify relative difference under condition 5_cm << 3_m.
+@ Expecting 3.19751 95082 1⁳⁻⁶
+@ (Was 0.056%)
 ```
 
 ### E Field Infinite Plate
@@ -5702,10 +5709,11 @@ The expression of the perpendicular electric field is constant over an infinite 
 * To calculate [Ep_N/C;σ_C/m^2] (Electric Field; Linear charge density) at position [d=5_mm] above a square plate of width [L=8_cm] and surface 'A=L^2' where 'd << L' when 'd < L/10' is verified:
 
 ```rpl
-8_cm 'L' STO 'L' SQUARE 'A' STO 5_mm 'd' STO 'd' 'L' 10 / < @Expected [True] d << L is verified
-Q=6E-6_C  A=64_cm^2  εr=1
-@ Expecting [σ=9.375e-8_C/cm^2;Ep=5.29411E7_N/C]: OK but eqns order to be inverted.
-'ROOT(ⒺE Field Ininite Plate;[σ;Ep];[1_C/m^2;1_N/C])'
+L=8_cm A='L^2' d=5_mm Q=6E-6_C  A=64_cm^2  εr=1
+@ Expecting [ σ=9.375⁳⁻⁸ C/cm↑2 Ep=52 941 050.0044 N/C ]
+if 'd < L/10' then
+ 'ROOT(ⒺE Field Infinite Plate;[σ;Ep];[1_C/cm^2;1_N/C])'
+end
 ```
 
 ### Ohm’s Law & Power
@@ -5714,7 +5722,7 @@ Q=6E-6_C  A=64_cm^2  εr=1
 
 ```rpl
 V=24_V  I=16_A
-@ Expecting [R=1.5_Ω;P=384_W]: OK.
+@ Expecting [ R=1.5 Ω P=384. W ]
 'ROOT(ⒺOhm’s Law & Power;[R;P];[1_Ω;1_W])'
 ```
 
@@ -5724,7 +5732,7 @@ V=24_V  I=16_A
 
 ```rpl
 R1=40_Ω  R2=10_Ω  V=100_V
-@ Expecting [V1=80_V]: OK.
+@ Expecting [ V1=80. V ]
 'ROOT(ⒺVolt Divider;[V1];[1_V])'
 ```
 
@@ -5734,7 +5742,7 @@ R1=40_Ω  R2=10_Ω  V=100_V
 
 ```rpl
 R1=10_Ω  R2=6_Ω  I=15_A
-@ Expecting [I1=5.625_A]: OK.
+@ Expecting [ I1=5.625 A ]
 'ROOT(ⒺCurrent Divider;[I1];[1_A])'
 ```
 
@@ -5744,7 +5752,7 @@ R1=10_Ω  R2=6_Ω  I=15_A
 
 ```rpl
 ρ=0.0035_Ω*cm  L=50_cm  A=1_cm^2
-@ Expecting [R=0.175_Ω]: OK.
+@ Expecting [ R=0.175 Ω ]
 'ROOT(ⒺWire Resistance;[R];[1_Ω])'
 ```
 
@@ -5756,7 +5764,7 @@ The electrical resistivity 'ρ' of most materials changes with temperature. If t
 
 ```rpl
 ρ0=1.68E-8_Ω*m  αT=4.04E-3_K^-1  T0=293,15_K  T=373,15_K
-@ Expecting [ρ=2.22298E-8_(Ω*m);σ=44984741_(S/m)]: OK.
+@ Expecting [ ρ=2.22297 6⁳⁻⁸ Ω·m σ=44 984 741.1758 S/m ]
 'ROOT(ⒺResistivity & Conductivity;[ρ;σ];[1_(Ω*m);1_(S/m)])'
 ```
 
@@ -5768,7 +5776,7 @@ The electrical resistivity 'ρ' of most materials changes with temperature. If t
 
 ```rpl
 R1=2_Ω  R2=3_Ω
-@ Expecting [Rs=5_Ω;Rp=1.2_Ω]: OK.
+@ Expecting [ Rs=5. Ω Rp=1.2 Ω ]
 'ROOT(ⒺSeries & Parallel R;[Rs;Rp];[1_Ω;1_Ω])'
 ```
 
@@ -5780,7 +5788,7 @@ R1=2_Ω  R2=3_Ω
 
 ```rpl
 C1=2_μF  C2=3_μF
-@ Expecting [Cs=1.2_μF;Cp=5_μF]: OK.
+@ Expecting [ Cs=1.2 μF Cp=5. μF ]
 'ROOT(ⒺSeries & Parallel C;[Cs;Cp];[1_μF;1_μF])'
 ```
 
@@ -5792,7 +5800,7 @@ C1=2_μF  C2=3_μF
 
 ```rpl
 L1=17_mH  L2=16.5_mH
-@ Expecting [Ls=33.5_mH;Lp=8.37313_mH]: OK.
+@ Expecting [ Ls=33.5 mH Lp=8.37313 43283 6 mH ]
 'ROOT(ⒺSeries & Parallel L;[Ls;Lp];[1_mH;1_mH])'
 ```
 
@@ -5802,7 +5810,7 @@ L1=17_mH  L2=16.5_mH
 
 ```rpl
 E=0.025_J  C=20_μF
-@ Expecting [V=50_V;q=0.001_C]: OK.
+@ Expecting [ V=50. V q=1 000. μC ]
 'ROOT(ⒺCapacitive Energy;[V;q];[1_V;1_μC])'
 ```
 
@@ -5812,7 +5820,7 @@ E=0.025_J  C=20_μF
 
 ```rpl
 E=5_V/m  εr=1
-@ Expecting [uE=1.106774E-10_(J/m^3)]: OK.
+@ Expecting [ uE=1.10677 34772⁳⁻¹⁰ J/m↑3 ]
 'ROOT(ⒺVolumic Density Electric Energy;[uE];[1_(J/m^3)])'
 ```
 
@@ -5822,7 +5830,7 @@ E=5_V/m  εr=1
 
 ```rpl
 E=4_J L=15_mH
-@ Expecting [I=23.09401_A]: OK.
+@ Expecting [ I=23.09401 07676 A ]
 'ROOT(ⒺInductive Energy;[I];[1_A])'
 ```
 
@@ -5832,7 +5840,7 @@ E=4_J L=15_mH
 
 * To calculate [ω_r/s;φs_°;φp_°;XC_Ω;XL_Ω] (Phases and inpedances) from 4 known variables:
 ```rpl
-@ Expecting [ω=672.3008_r/s;φs=-45.82926_°;φp=-5.87716_°;XC=18.59287_Ω;XL=13.44601_Ω]: OK.
+@ Expecting [ ω=672.30082 7868 r/s φs=-45.82915 71488 ° φp=-5.87715 65317 1 ° XC=18.59286 71836 Ω XL=13.44601 65574 Ω ]
 f=107_Hz  C=80_μF  L=20_mH  R=5_Ω
 'ROOT(ⒺRLC Current Delay;[ω;φs;φp;XC;XL];[1_r/s;1_°;1_°;1_Ω;1_Ω])'
 ```
@@ -7829,6 +7837,7 @@ used among other things to define equations for the solver. If an assignment
 object appears in an expression, it will render as `Value▶Name` so that parsing
 it would turn it into a `Copy` operation.
 
+
 ### Assignments with the solver
 
 Assignments are useful in conjonction with the solver. For example, the
@@ -7838,8 +7847,13 @@ following example will solve a simple triangle equation for specific values of
 ```rpl
 α=20 β=30
 'ROOT(α+β+γ=180;γ;0)' EVAL
+@Expecting γ=130.
+```
+
+```rpl
 β=30 γ=60
 'ROOT(α+β+γ=180;α;0)' EVAL
+@Expecting α=90.
 ```
 
 The interactive stack, in combination with the `Eval` or `Edit` buttons, makes
@@ -7847,7 +7861,7 @@ it possible to return to earlier values. This can also be tried with the
 interactive `SolvingMenu`:
 
 ```rpl
-'α+β+γ=180' STEQ
+'α+β+γ=180' STEQ RCEQ
 SolvingMenu
 ```
 
@@ -10236,8 +10250,8 @@ of `cos(x)/3` close to `1.5_°`, use the following:
 
 ```rpl
 'sin(x)=cos(x)/3'
-'x' 1.5_° ROOT
-@ Expect: :x:18.43494 88229 22010 64803 35_°
+'x' 0.5_° ROOT
+@ Expecting x=18.43494 88229 °
 ```
 
 ### Guess range
@@ -10256,8 +10270,8 @@ In the example above, the guess was . Otherwise, the result would depend on the 
 ```rpl
 RAD
 'sin(x)=cos(x)/3'
-'x' 1.5 ROOT
-@ Expect: :x:-2.81984 20991 93151 04528 867
+'x' 0.5 ROOT
+@ Expecting x=0.32175 05543 97
 ```
 
 ### Algebraic form
@@ -10270,7 +10284,7 @@ The previous example can be written in algebraic form as follows:
 ```rpl
 'ROOT(sin(x)=cos(x)/3;x;1.5_°)'
 EVAL
-@ Expect: :x:18.43494 88229 22010 64803 35_°
+@ Expecting x=18.43494 88229 °
 ```
 
 ### Solver (im)precision
@@ -10306,7 +10320,7 @@ compared to HP implementations of RPL.
 For example, you can find a complex root for the following equation:
 ```rpl
 'ROOT((X-5)²+3;X;0+0ⅈ)'
-@ Expect: :X:5.+1.73205 08075 7ⅈ
+@ Expecting X=5.+1.73205 08075 7ⅈ
 ```
 
 ### Differences with HP calculators
@@ -11666,4 +11680,3 @@ Create a backup on a remote machine
 
 ## USBRESTORE
 Restore a backup from a remote machine
-

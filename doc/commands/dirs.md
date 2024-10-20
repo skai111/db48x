@@ -177,6 +177,7 @@ used among other things to define equations for the solver. If an assignment
 object appears in an expression, it will render as `Value▶Name` so that parsing
 it would turn it into a `Copy` operation.
 
+
 ### Assignments with the solver
 
 Assignments are useful in conjonction with the solver. For example, the
@@ -186,8 +187,13 @@ following example will solve a simple triangle equation for specific values of
 ```rpl
 α=20 β=30
 'ROOT(α+β+γ=180;γ;0)' EVAL
+@Expecting γ=130.
+```
+
+```rpl
 β=30 γ=60
 'ROOT(α+β+γ=180;α;0)' EVAL
+@Expecting α=90.
 ```
 
 The interactive stack, in combination with the `Eval` or `Edit` buttons, makes
@@ -195,7 +201,7 @@ it possible to return to earlier values. This can also be tried with the
 interactive `SolvingMenu`:
 
 ```rpl
-'α+β+γ=180' STEQ
+'α+β+γ=180' STEQ RCEQ
 SolvingMenu
 ```
 

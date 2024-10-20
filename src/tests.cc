@@ -9759,6 +9759,12 @@ void tests::check_help_examples()
 {
     BEGIN(examples);
 
+    step("Creating and entering ExamplesTest directory")
+        .test(CLEAR, "'ExamplesTest' CRDIR", ENTER).noerror()
+        .test("ExamplesTest", ENTER).noerror();
+    step("Set higher significant digits")
+        .test(CLEAR, "8 MinimumSignificantDigits", ENTER).noerror();
+
     step("Opening help file").test(CLEAR);
     FILE *f = fopen(HELPFILE_NAME, "r");
     if (!f)
@@ -9768,18 +9774,23 @@ void tests::check_help_examples()
     }
     noerror();
 
-    uint    opencheck  = 0;
-    uint    closecheck = 0;
-    cstring open       = "\n```rpl\n";
-    cstring close      = "\n```\n";
-    bool    hadcr      = false;
-    bool    testing    = false;
-    uint    line       = 1;
-    uint    tidx       = 0;
-    bool    intopic    = false;
-    uint    uidx       = 0;
-    byte    ubuf[8];
-    char    topic[80];
+    uint        opencheck  = 0;
+    uint        closecheck = 0;
+    uint        expcheck   = 0;
+    cstring     open       = "\n```rpl\n";
+    cstring     close      = "\n```\n";
+    cstring     expecting  = "@ Expecting ";
+    bool        hadcr      = false;
+    bool        testing    = false;
+    bool        inref      = false;
+    uint        line       = 1;
+    uint        tidx       = 0;
+    bool        intopic    = false;
+    uint        uidx       = 0;
+    byte        ubuf[8];
+    char        topic[80];
+    std::string ref;
+
     while (true)
     {
         int ci = fgetc(f);
@@ -9793,6 +9804,8 @@ void tests::check_help_examples()
             intopic = true;
         else if (intopic)
             topic[tidx++] = c;
+        else if (inref)
+            ref += c;
 
         hadcr = c == '\n';
         if (hadcr)
@@ -9804,6 +9817,11 @@ void tests::check_help_examples()
                 topic[tidx - 1] = 0;
                 tidx = 0;
                 intopic = false;
+            }
+            if (inref)
+            {
+                inref = false;
+                ref.pop_back();
             }
         }
 
@@ -9833,15 +9851,15 @@ void tests::check_help_examples()
             opencheck++;
             if (!open[opencheck])
             {
+                opencheck = 0;
                 position(HELPFILE_NAME, line);
                 istep(topic).itest(CLEAR);
                 testing = true;
-                opencheck = 0;
             }
         }
         else
         {
-            opencheck = 0;
+            opencheck = (c == open[0]);
         }
 
         if (c == close[closecheck])
@@ -9849,18 +9867,24 @@ void tests::check_help_examples()
             closecheck++;
             if (!close[closecheck])
             {
+                closecheck = 0;
                 if (testing)
                 {
                     size_t nfailures = failures.size();
                     testing = false;
-                    itest(ENTER).noerror();
-                    itest(RUNSTOP).noerror();
+                    itest(LENGTHY(20000), ENTER).noerror();
+                    itest(LENGTHY(20000), RUNSTOP).noerror();
+                    if (!ref.empty())
+                    {
+                        expect(ref.c_str());
+                        ref = "";
+                    }
                     if (failures.size() > nfailures)
                     {
                         std::string grep = "grep -inr '^##*";
                         grep += topic;
                         grep += "' doc";
-                        fprintf(stderr, "\n\n[%s]\n", grep.c_str());
+                        fprintf(stderr, "[FAIL]\nRunning: %s\n", grep.c_str());
                         system(grep.c_str());
                     }
                 }
@@ -9868,11 +9892,32 @@ void tests::check_help_examples()
         }
         else
         {
-            closecheck = 0;
+            closecheck = (c == close[0]);
         }
+
+        if (c == expecting[expcheck])
+        {
+            expcheck++;
+            if (!expecting[expcheck])
+            {
+                expcheck = 0;
+                inref = true;
+                ref = "";
+            }
+        }
+        else
+        {
+            expcheck = (c == expecting[0]);
+        }
+
     }
     fclose(f);
 
+    step("Exiting ExamplesTest directory and purging it")
+        .test(CLEAR, "UPDIR", ENTER).noerror()
+        .test("'ExamplesTest' PURGE").noerror();
+    step("Restore MinimumSignificantDigits")
+        .test(CLEAR, "'MinimumSignificantDigits' PURGE", ENTER);
 }
 
 
@@ -11137,6 +11182,7 @@ tests &tests::itest(cstring txt)
         case '7': k = KEY7;         shift = alpha; break;
         case '8': k = KEY8;         shift = alpha; break;
         case '9': k = KEY9;         shift = alpha; break;
+        case L'⁳': k = EEX;                        break;
 
         case '+': k = ADD;          alpha = true;  shift = true; break;
         case '-': k = SUB;          alpha = true;  shift = true; break;
@@ -11281,6 +11327,11 @@ tests &tests::itest(cstring txt)
         case L'∞': itest(RSHIFT, KEY2, F4, F6, F6, RSHIFT, F5); NEXT;
         case L'ℏ': itest(RSHIFT, KEY2, F4, F6, F6, F6, F6, LSHIFT, F5); NEXT;
         case L' ': itest(RSHIFT, KEY2, F6, RSHIFT, F4); NEXT;
+        case L'’': itest(RSHIFT, KEY2, F6, RSHIFT, F5); NEXT;
+        case L'█': itest(RSHIFT, KEY2, LSHIFT, F3, F6, F5); NEXT;
+        case L'▓': itest(RSHIFT, KEY2, LSHIFT, F3, F6,F6,F6, LSHIFT, F2); NEXT;
+        case L'⊕': itest(RSHIFT, KEY2, F4, F6, F6, F6, F6, F6, LSHIFT, F3); NEXT;
+        case L'⊖': itest(RSHIFT, KEY2, F4, F6, F6, F6, F6, F6, LSHIFT, F4); NEXT;
         case L' ': continue;       // Number space: just ignore
 #undef NEXT
         }
