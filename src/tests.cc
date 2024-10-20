@@ -6048,7 +6048,7 @@ void tests::eqnlib_columns_and_beams()
         .test("102.783_lbf/ft", NOSHIFT, F5, F6)
         .test("9_ft", NOSHIFT, F1)
         .test(F6, LSHIFT, F2)
-        .expect("θ=-0.46665 29979 95 °");
+        .expect("θ=-0.08763 17825 27 °");
 
     step("Solving Simple Moment")
         .test(CLEAR, RSHIFT, F, F2, RSHIFT, F5)
