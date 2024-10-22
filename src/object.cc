@@ -1189,11 +1189,15 @@ grob_p object::graph(bool showing) const
     grob_g  graph  = obj->is_graph() ? grob_p(+obj) : nullptr;
     size    width  = LCD_W;
     size    height = LCD_H;
+    bool    astext = false;
     grapher g(width, height, settings::EDITOR,
               Settings.Foreground(), Settings.Background(), !showing);
     while (!graph)
     {
-        graph = obj->graph(g);
+        if (astext)
+            graph = object::do_graph(obj, g);
+        else
+            graph = obj->graph(g);
         if (graph)
             break;
 
@@ -1209,6 +1213,13 @@ grob_p object::graph(bool showing) const
         {
             g.maxw = Settings.MaximumShowWidth();
             g.font = settings::EDITOR;
+            continue;
+        }
+        if (!astext)
+        {
+            g.maxw = width;
+            g.maxh = height;
+            astext = true;
             continue;
         }
 
