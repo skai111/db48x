@@ -625,7 +625,7 @@ object::result show(object_r obj)
 {
     if (obj)
     {
-        grob_g graph = obj->graph();
+        grob_g graph = obj->graph(true);
         if (!graph)
         {
             if (!rt.error())

@@ -1178,25 +1178,19 @@ GRAPH_BODY(object)
 }
 
 
-grob_p object::graph() const
+grob_p object::graph(bool showing) const
 // ----------------------------------------------------------------------------
 //  Render the object like for the `Show` command
 // ----------------------------------------------------------------------------
 {
     object_g obj = this;
-    uint digits = Settings.DisplayDigits();
-    if (obj->is_decimal())
-        digits = decimal_p(+obj)->kigits() * 3;
-    else if (obj->is_complex())
-        digits = Settings.Precision();
-    settings::SaveDisplayDigits sdd(digits);
 
     using size = grob::pixsize;
     grob_g  graph  = obj->is_graph() ? grob_p(+obj) : nullptr;
     size    width  = LCD_W;
     size    height = LCD_H;
     grapher g(width, height, settings::EDITOR,
-              Settings.Foreground(), Settings.Background(), true);
+              Settings.Foreground(), Settings.Background(), !showing);
     while (!graph)
     {
         graph = obj->graph(g);
