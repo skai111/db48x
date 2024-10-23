@@ -1060,6 +1060,7 @@ void user_interface::menu(menu_p menu, uint page)
     menu::id mid = menu ? menu->type() : menu::ID_object;
 
     record(menus, "Selecting menu %t page %u", menu, page);
+    transient_object(nullptr);
 
     if (mid != *menuStack)
     {
@@ -1104,6 +1105,7 @@ void user_interface::menu_pop()
     uint cpage = pageStack[0];
 
     record(menus, "Popping menu %+s", menu::name(current));
+    transient_object(nullptr);
 
     memmove(menuStack, menuStack + 1, sizeof(menuStack) - sizeof(*menuStack));
     memmove(pageStack, pageStack + 1, sizeof(pageStack) - sizeof(*pageStack));
@@ -2754,7 +2756,7 @@ bool user_interface::transient_object(object_p obj)
 //   Set transient object to draw on screen
 // ----------------------------------------------------------------------------
 {
-    if (obj && !editing && !rt.editing())
+    if (!rt.editing())
     {
         editing = obj;
         dirtyStack = true;
