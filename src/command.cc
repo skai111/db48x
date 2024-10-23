@@ -1336,6 +1336,10 @@ COMMAND_BODY(StackEditor)
 // ----------------------------------------------------------------------------
 {
     if (!Stack.interactive)
+    {
         Stack.interactive = 1;
+        ui.dirty_all();
+    }
+
     return OK;
 }

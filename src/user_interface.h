@@ -142,6 +142,7 @@ struct user_interface
     bool        draw_command();
     void        draw_user_command(utf8 cmd, size_t sz);
     bool        draw_stepping_object();
+    void        dirty_all();
 
     bool        draw_menus();
     bool        draw_cursor(int show, uint ncursor);

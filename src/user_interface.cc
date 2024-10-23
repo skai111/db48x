@@ -2264,9 +2264,9 @@ reposition:
     int   errorHeight     = rt.error() ? LCD_H / 3 + 10 : 0;
     int   bottom          = LCD_H-1 - menuHeight;
     int   top             = (Stack.interactive
-                             ? bottom - lineHeight
+                             ? bottom - lineHeight - 1
                              : HeaderFont->height() + errorHeight + 2);
-    int   availableHeight = bottom - top;
+    int   availableHeight = (bottom - top);
     int   fullRows        = availableHeight / lineHeight;
     int   clippedRows     = (availableHeight + lineHeight - 1) / lineHeight;
     utf8  display         = ed;
@@ -3663,6 +3663,18 @@ restart:
     }
     follow = false;
     return true;
+}
+
+
+void user_interface::dirty_all()
+// ----------------------------------------------------------------------------
+//   Redraw stack and editor, e.g. when entering interactive stack
+// ----------------------------------------------------------------------------
+{
+    dirtyStack = true;
+    dirtyEditor = true;
+    dirtyMenu = true;
+    edRows = 0;
 }
 
 
