@@ -4234,9 +4234,10 @@ bool user_interface::handle_editing(int key)
 #endif // CONFIG_FIXED_BASED_OBJECTS
                     if (bignum_g bin = rt.make<bignum>(type, bytes, hashsize))
                     {
-                        char sizebuf[20];
+                        char sizebuf[40];
                         char valbuf[40];
-                        snprintf(sizebuf, sizeof(sizebuf), "%zu bytes", size);
+                        snprintf(sizebuf, sizeof(sizebuf), "%zu bytes %s",
+                                 size, obj->fancy());
                         bin->render(valbuf, sizeof(valbuf));
                         draw_message("Object info", sizebuf, valbuf);
                         wait_for_key_press();
