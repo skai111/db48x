@@ -1006,7 +1006,7 @@ COMMAND_BODY(SystemMemory)
 }
 
 
-COMMAND_BODY(home)
+COMMAND_BODY(Home)
 // ----------------------------------------------------------------------------
 //   Return the home directory
 // ----------------------------------------------------------------------------
@@ -1049,9 +1049,9 @@ list_p directory::path(id type)
 {
     scribble scr;
 
-    size_t sz = leb128size(ID_home);
+    size_t sz = leb128size(ID_Home);
     byte *p = rt.allocate(sz);
-    leb128(p, ID_home);
+    leb128(p, ID_Home);
 
     uint depth = rt.directories();
     directory_p dir = rt.homedir();
@@ -1072,7 +1072,7 @@ list_p directory::path(id type)
 }
 
 
-COMMAND_BODY(path)
+COMMAND_BODY(Path)
 // ----------------------------------------------------------------------------
 //   Build a path with the list of paths
 // ----------------------------------------------------------------------------
@@ -1084,7 +1084,7 @@ COMMAND_BODY(path)
 }
 
 
-COMMAND_BODY(crdir)
+COMMAND_BODY(CrDir)
 // ----------------------------------------------------------------------------
 //   Create a directory
 // ----------------------------------------------------------------------------
@@ -1118,7 +1118,7 @@ COMMAND_BODY(crdir)
 }
 
 
-COMMAND_BODY(updir)
+COMMAND_BODY(UpDir)
 // ----------------------------------------------------------------------------
 //   Go up one directory
 // ----------------------------------------------------------------------------
@@ -1129,7 +1129,7 @@ COMMAND_BODY(updir)
 }
 
 
-COMMAND_BODY(pgdir)
+COMMAND_BODY(PgDir)
 // ----------------------------------------------------------------------------
 //   Really the same as 'purge'
 // ----------------------------------------------------------------------------

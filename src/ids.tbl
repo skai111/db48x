@@ -517,12 +517,12 @@ CMD(FlagsToBinary)              ALIAS(FlagsToBinary,          "RclF")
 CMD(BinaryToFlags)              ALIAS(BinaryToFlags,          "StoF")
 
 // Directories
-NAMED(home, "HomeDirectory")
+NAMED(Home, "HomeDirectory")
 CMD(CurrentDirectory)
-NAMED(path, "DirectoryPath")
-NAMED(crdir, "CreateDirectory")
-NAMED(updir, "UpDirectory")
-NAMED(pgdir, "PurgeDirectory")
+NAMED(Path, "DirectoryPath")
+NAMED(CrDir, "CreateDirectory") ALIAS(CrDir, "MkDir")
+NAMED(UpDir, "UpDirectory")
+NAMED(PgDir, "PurgeDirectory")
 
 /// Equations
 NAMED(MatchUp,   "↑Match")
