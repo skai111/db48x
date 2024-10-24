@@ -47,14 +47,20 @@ struct CustomMenu : menu
     CustomMenu(id type = ID_CustomMenu) : menu(type) {}
 
     static list_p custom();
-    static uint count_custom();
-    static void list_custom(info &mi);
+    static uint   count_custom();
+    static void   list_custom(info &mi, list_p cst = nullptr);
+    static result run_menu_command(bool tmp);
 
-public:
+  public:
     OBJECT_DECL(CustomMenu);
     MENU_DECL(CustomMenu);
 };
 
 COMMAND_DECLARE(ToggleCustomMenu, 0);
+
+COMMAND_DECLARE(Menu, 1);
+COMMAND_DECLARE(TemporaryMenu, 1);
+COMMAND_DECLARE(RecallMenu, 0);
+
 
 #endif // CUSTOM_H

@@ -28,8 +28,9 @@
 // ****************************************************************************
 
 #include "custom.h"
-#include "variables.h"
 
+#include "integer.h"
+#include "variables.h"
 
 
 COMMAND_BODY(ToggleCustomMenu)
@@ -88,12 +89,14 @@ uint CustomMenu::count_custom()
 }
 
 
-void CustomMenu::list_custom(info &mi)
+void CustomMenu::list_custom(info &mi, list_p cst)
 // ----------------------------------------------------------------------------
 //   Fill the menu with variable names
 // ----------------------------------------------------------------------------
 {
-    if (list_p cst = custom())
+    if (!cst)
+        cst = custom();
+    if (cst)
     {
         for (object_g obj : *cst)
         {
@@ -129,4 +132,112 @@ void CustomMenu::list_custom(info &mi)
             menu::items(mi, sym, obj);
         }
     }
+}
+
+
+object::result CustomMenu::run_menu_command(bool tmp)
+// ----------------------------------------------------------------------------
+//   Shared code between Menu and TMenu
+// ----------------------------------------------------------------------------
+{
+    if (object_p obj = rt.top())
+    {
+        id oty = obj->type();
+        if (object::is_real(oty))
+        {
+            if (obj->is_zero(false))
+                if (rt.drop())
+                    return run<LastMenu>();
+
+            // Translation of MENU values is not implemented
+            rt.unimplemented_error();
+            return ERROR;
+        }
+
+        // Check names
+        if (symbol_p sym = obj->as_quoted<symbol>())
+        {
+            obj = directory::recall_all(sym, true);
+            if (!obj)
+                return ERROR;
+            oty = obj->type();
+        }
+
+        // Consume the object
+        if (!rt.drop())
+            return ERROR;
+
+        // Result from RclMenu: apply as is
+        if (is_menu(oty))
+        {
+            ui.menu(menu_p(obj));
+            return OK;
+        }
+
+        // Check the input (differs from HP50G documented behaviour)
+        if (!obj->is_array_or_list())
+        {
+            rt.push(obj);
+            rt.type_error();
+            return ERROR;
+        }
+
+        // Check if we have a persistent menu
+        if (!tmp)
+        {
+            // Store in CST and evaluate the custom menu
+            object_p cst = static_object(ID_CustomMenu);
+            if (directory::store_here(cst, obj))
+                return run<CustomMenu>();
+        }
+
+        // Run the custom menu
+        list_g tmenu  = list_p(obj);
+        uint   nitems = tmenu->items();
+        info   mi(0);
+        items_init(mi, nitems);
+        list_custom(mi, tmenu);
+        return OK;
+    }
+    return ERROR;
+
+}
+
+
+
+COMMAND_BODY(Menu)
+// ----------------------------------------------------------------------------
+//   Define the Custom menu from the input
+// ----------------------------------------------------------------------------
+{
+    return CustomMenu::run_menu_command(false);
+}
+
+
+COMMAND_BODY(TemporaryMenu)
+// ----------------------------------------------------------------------------
+//   Define a temporary menu
+// ----------------------------------------------------------------------------
+{
+    return CustomMenu::run_menu_command(true);
+}
+
+
+COMMAND_BODY(RecallMenu)
+// ----------------------------------------------------------------------------
+//   Recall current menu
+// ----------------------------------------------------------------------------
+{
+    if (menu_p m = ui.menu())
+    {
+        if (rt.push(m))
+            return OK;
+    }
+    else
+    {
+        if (integer_p z = integer::make(0))
+            if (rt.push(z))
+                return OK;
+    }
+    return ERROR;
 }

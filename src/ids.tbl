@@ -139,7 +139,7 @@ ID_RANGE(is_plot,          Function,       Parametric)
 ID_RANGE(is_program,       program,        funcall)
 ID_RANGE(is_graph,         grob,           bitmap)
 ID_RANGE(is_forced_entry,  IfThen,         CaseWhen,    IfErrThen, IfErrThenElse)
-
+ID_RANGE(is_menu,          MainMenu,       Catalog,     UnitMenu00, CharactersMenu99)
 
 
 // ============================================================================
@@ -485,11 +485,15 @@ NAMED(Center,           "PlotCenter")           ALIAS(Center, "Centr")
 
 CMD(Beep)
 
+CMD(Menu)
+CMD(TemporaryMenu)                              ALIAS(TemporaryMenu, "TMenu")
+CMD(RecallMenu)                                 ALIAS(RecallMenu, "RclMenu")
+
 
 
 // ============================================================================
 //
-//   Rarely used commands (two bytes)
+//   Rarely used commands that are deepp in the two-bytes area
 //
 // ============================================================================
 
