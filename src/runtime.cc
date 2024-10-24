@@ -1311,6 +1311,12 @@ bool runtime::enter(directory_p dir)
 //   Enter a given directory
 // ----------------------------------------------------------------------------
 {
+    // Check if this is a directory up
+    size_t depth = (object_p *) XLibs - Directories;
+    for (size_t i = 0; i < depth; i++)
+        if (dir == Directories[i])
+            return !i || updir(i);
+
     size_t sz = sizeof(directory_p);
     if (available(sz) < sz)
         return false;
