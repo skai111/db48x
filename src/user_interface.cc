@@ -4061,6 +4061,8 @@ bool user_interface::handle_editing(int key)
     {
         uint amount;
         uint digit = ~0U;
+
+        transient_object(nullptr);
         switch (key)
         {
         case KEY_UP:
