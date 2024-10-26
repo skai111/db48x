@@ -5414,6 +5414,9 @@ bool user_interface::handle_functions(int key)
             case PARENTHESES:
                 if (ty == object::ID_Sto)
                 {
+                    if (autoComplete)
+                        if (obj->insert() != object::OK)
+                            return false;
                     if (!end_edit())
                         return false;
                     break;
@@ -5448,6 +5451,9 @@ bool user_interface::handle_functions(int key)
                 // If we have the editor open, need to close it
                 if (ty != object::ID_SelfInsert)
                 {
+                    if (autoComplete)
+                        if (obj->insert() != object::OK)
+                            return false;
                     if (!end_edit())
                         return false;
                     editing = false;
