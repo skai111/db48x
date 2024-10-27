@@ -9879,7 +9879,8 @@ void tests::check_help_examples()
                     size_t nfailures = failures.size();
                     testing = false;
                     itest(LENGTHY(20000), ENTER).noerror();
-                    itest(LENGTHY(20000), RUNSTOP).noerror();
+                    if (rt.depth())
+                        itest(LENGTHY(20000), RUNSTOP).noerror();
                     if (!ref.empty())
                     {
                         expect(ref.c_str());
