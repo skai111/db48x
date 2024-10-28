@@ -45,6 +45,7 @@ extern bool run_tests;
 volatile uint test_command = 0;
 
 RECORDER(tests, 256, "Information about tests");
+RECORDER_TWEAK_DEFINE(snapshots, 0, "Record snapshots for failing tests");
 RECORDER_DECLARE(errors);
 
 uint    tests::default_wait_time  = 1000;
@@ -10698,6 +10699,8 @@ tests &tests::fail()
 {
     failures.push_back(failure(file, line, tname, sname,
                                explanation, tindex, sindex, cindex));
+    if (RECORDER_TRACE(snapshots))
+        image_match(sname, 0, 0, LCD_W, LCD_H, true);
     if (dump_on_fail)
         recorder_dump_for(dump_on_fail);
     ok = false;
