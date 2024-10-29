@@ -253,8 +253,8 @@ struct tests
     {
         failure(cstring     file,
                 uint        line,
-                cstring     test,
-                cstring     step,
+                std::string test,
+                std::string step,
                 std::string explanation,
                 uint        ti,
                 uint        si,
@@ -271,8 +271,8 @@ struct tests
         }
         cstring     file;
         uint        line;
-        cstring     test;
-        cstring     step;
+        std::string test;
+        std::string step;
         std::string explanation;
         uint        tindex;
         uint        sindex;
@@ -305,8 +305,9 @@ public:
     tests &check(bool test);
     tests &fail();
     tests &summary();
-    tests &show(failure &f, cstring &last, uint &line);
+    tests &show(failure &f, std::string &last, uint &line);
     tests &show(failure &f);
+    tests &passfail(int ok);    // ok=-1 means expected failure
 
     // Used to build the tests
     tests &itest(key k, bool release = true);
@@ -435,15 +436,15 @@ public:
     cstring              file;
     uint                 line;
     uint                 tstart;
-    cstring              tname;
-    cstring              sname;
+    std::string          tname;
+    std::string          sname;
     uint                 tindex;
     uint                 sindex;
     uint                 cindex;
     uint                 count;
     uint                 refresh_count;
     int                  last_key;
-    bool                 ok;
+    int                  ok;
     bool                 longpress;
     std::vector<failure> failures;
     std::string          explanation;

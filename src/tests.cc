@@ -9784,15 +9784,18 @@ void tests::check_help_examples()
     uint        opencheck  = 0;
     uint        closecheck = 0;
     uint        expcheck   = 0;
+    uint        failcheck  = 0;
     cstring     open       = "\n```rpl\n";
     cstring     close      = "\n```\n";
     cstring     expecting  = "@ Expecting ";
+    cstring     failing    = "@ Failing ";
     bool        hadcr      = false;
     bool        testing    = false;
     bool        inref      = false;
     uint        line       = 1;
     uint        tidx       = 0;
     bool        intopic    = false;
+    bool        skiptest   = false;
     uint        uidx       = 0;
     byte        ubuf[8];
     char        topic[80];
@@ -9883,18 +9886,24 @@ void tests::check_help_examples()
                     if (rt.depth())
                         itest(LENGTHY(20000), RUNSTOP).noerror();
                     if (!ref.empty())
-                    {
-                        expect(ref.c_str());
-                        ref = "";
-                    }
+                        want(ref.c_str());
                     if (failures.size() > nfailures)
                     {
                         std::string grep = "grep -inr '^##*";
                         grep += topic;
                         grep += "' doc";
-                        fprintf(stderr, "[FAIL]\nRunning: %s\n", grep.c_str());
+                        passfail(skiptest ? -1 : 0);
+                        fprintf(stderr, "Running: %s\n", grep.c_str());
                         system(grep.c_str());
+                        ok = -1;
                     }
+                    else if (skiptest)
+                    {
+                        explain("Test '", ref.c_str(), "'now passes");
+                        fail();
+                    }
+                    ref = "";
+                    skiptest = false;
                 }
             }
         }
@@ -9918,6 +9927,20 @@ void tests::check_help_examples()
             expcheck = (c == expecting[0]);
         }
 
+        if (c == failing[failcheck])
+        {
+            failcheck++;
+            if (!failing[failcheck])
+            {
+                skiptest = true;
+                inref = true;
+                ref = "";
+            }
+        }
+        else
+        {
+            failcheck = (c == failing[0]);
+        }
     }
     fclose(f);
 
@@ -10589,18 +10612,23 @@ void tests::graphic_commands()
 //
 // ============================================================================
 
-static void passfail(bool ok)
+tests &tests::passfail(int ok)
 // ----------------------------------------------------------------------------
 //   Print a pass/fail message
 // ----------------------------------------------------------------------------
 {
-#define GREEN "\033[32m"
-#define RED   "\033[41;97m"
-#define RESET "\033[39;49;99;27m"
-    fprintf(stderr, "%s\n", ok ? GREEN "[PASS]" RESET : RED "[FAIL]" RESET);
+#define GREEN   "\033[32m"
+#define ORANGE  "\033[43;90m"
+#define RED     "\033[41;97m"
+#define RESET   "\033[39;49;99;27m"
+    fprintf(stderr, "%s\n",
+              ok < 0 ? ORANGE "[TODO]" RESET
+            : ok > 0 ? GREEN "[PASS]" RESET
+                     : RED "[FAIL]" RESET);
 #undef GREEN
 #undef RED
 #undef RESET
+    return *this;
 }
 
 tests &tests::begin(cstring name, bool disabled)
@@ -10610,9 +10638,12 @@ tests &tests::begin(cstring name, bool disabled)
 {
     if (sindex)
     {
-        passfail(ok);
-        if (!ok)
+        if (ok >= 0)
+            passfail(ok);
+        if (ok <= 0)
             show(failures.back());
+        if (ok < 0)
+            failures.pop_back();
     }
 
     tstart = sys_current_ms();
@@ -10624,9 +10655,9 @@ tests &tests::begin(cstring name, bool disabled)
 #define CLREOL "\033[K"
 #define RESET "\033[39;49;27m"
     if (disabled)
-        fprintf(stderr,  GREY "%3u: %-75s" CLREOL RESET "\n", tindex, tname);
+        fprintf(stderr,  GREY "%3u: %-75s" CLREOL RESET "\n", tindex, name);
     else
-        fprintf(stderr, BLACK "%3u: %-75s" CLREOL RESET "\n", tindex, tname);
+        fprintf(stderr, BLACK "%3u: %-75s" CLREOL RESET "\n", tindex, name);
 #undef BLACK
 #undef CLREOL
 #undef RESET
@@ -10650,16 +10681,29 @@ tests &tests::istep(cstring name)
     sname = name;
     if (sindex++)
     {
-        passfail(ok);
-        if (!ok)
+        if (ok >= 0)
+            passfail(ok);
+        if (ok <= 0)
             show(failures.back());
+        if (ok < 0)
+            failures.pop_back();
     }
     uint spent = sys_current_ms() - tstart;
     cstring blk = "                                                        ";
-    size_t  off = utf8_length(utf8(sname));
+    size_t  off = utf8_length(utf8(sname.c_str()));
     cstring pad = blk + (off < 56 ? off : 56);
+    std::string slabel = sname;
+    if (off >= 56)
+    {
+        utf8 s = utf8(sname.c_str());
+        utf8 b = s;
+        for (uint i = 0; i < 56; i++)
+            s = utf8_next(s);
+        slabel.erase(slabel.begin() + (s - b), slabel.end());
+    }
     fprintf(stderr, "|%3u: %03u %3u.%u: %s%s",
-            tindex, sindex, spent / 1000, spent / 100 % 10, sname, pad);
+            tindex, sindex, spent / 1000, spent / 100 % 10,
+            slabel.c_str(), pad);
     cindex = 0;
     count++;
     ok          = true;
@@ -10699,8 +10743,8 @@ tests &tests::fail()
 {
     failures.push_back(failure(file, line, tname, sname,
                                explanation, tindex, sindex, cindex));
-    if (RECORDER_TRACE(snapshots))
-        image_match(sname, 0, 0, LCD_W, LCD_H, true);
+    if (RECORDER_TWEAK(snapshots))
+        image_match(sname.c_str(), 0, 0, LCD_W, LCD_H, true);
     if (dump_on_fail)
         recorder_dump_for(dump_on_fail);
     ok = false;
@@ -10714,13 +10758,14 @@ tests &tests::summary()
 // ----------------------------------------------------------------------------
 {
     if (sindex)
-        passfail(ok);
+        if (ok >= 0)
+            passfail(ok);
 
     if (failures.size())
     {
         fprintf(stderr, "Summary of %zu failures:\n", failures.size());
-        cstring last = nullptr;
-        uint    line = 0;
+        std::string last;
+        uint        line = 0;
         for (auto f : failures)
             show(f, last, line);
     }
@@ -10734,13 +10779,13 @@ tests &tests::show(tests::failure &f)
 //   Show a single failure
 // ----------------------------------------------------------------------------
 {
-    cstring last = nullptr;
-    uint    line = 0;
+    std::string last;
+    uint        line = 0;
     return show(f, last, line);
 }
 
 
-tests &tests::show(tests::failure &f, cstring &last, uint &line)
+tests &tests::show(tests::failure &f, std::string &last, uint &line)
 // ----------------------------------------------------------------------------
 //   Show an individual failure
 // ----------------------------------------------------------------------------
@@ -10752,7 +10797,7 @@ tests &tests::show(tests::failure &f, cstring &last, uint &line)
                 f.file,
                 f.line,
                 f.tindex,
-                f.test);
+                f.test.c_str());
         last = f.test;
     }
     fprintf(stderr,
@@ -10762,7 +10807,7 @@ tests &tests::show(tests::failure &f, cstring &last, uint &line)
             f.tindex,
             f.sindex,
             f.cindex,
-            f.step);
+            f.step.c_str());
     fprintf(stderr, "%s\n", f.explanation.c_str());
     return *this;
 }
@@ -11342,6 +11387,8 @@ tests &tests::itest(cstring txt)
         case L'▓': itest(RSHIFT, KEY2, LSHIFT, F3, F6,F6,F6, LSHIFT, F2); NEXT;
         case L'⊕': itest(RSHIFT, KEY2, F4, F6, F6, F6, F6, F6, LSHIFT, F3); NEXT;
         case L'⊖': itest(RSHIFT, KEY2, F4, F6, F6, F6, F6, F6, LSHIFT, F4); NEXT;
+        case '\t': itest(RSHIFT, KEY2, F6, RSHIFT, F6); NEXT;
+
         case L' ': continue;       // Number space: just ignore
 #undef NEXT
         }
