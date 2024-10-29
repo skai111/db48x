@@ -1492,6 +1492,7 @@ MENU_BODY(unit_menu)
                 position = ufile.position();
                 while (ufile.next(false))
                     matching++;
+                menu = id(menu + 1);
                 break;
             }
             menu = id(menu + 1);
@@ -1519,7 +1520,8 @@ MENU_BODY(unit_menu)
                 menu = id(menu + 1);
             }
         }
-        count = (last - first) / 2;
+        if (found)
+            count = (last - first) / 2;
     }
 
     items_init(mi, count + matching, 3, 1);
