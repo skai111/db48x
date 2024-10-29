@@ -9770,7 +9770,7 @@ void tests::check_help_examples()
         .test(CLEAR, "'ExamplesTest' CRDIR", ENTER).noerror()
         .test("ExamplesTest", ENTER).noerror();
     step("Set higher significant digits")
-        .test(CLEAR, "8 MinimumSignificantDigits", ENTER).noerror();
+        .test(CLEAR, "11 MinimumSignificantDigits", ENTER).noerror();
 
     step("Opening help file").test(CLEAR);
     FILE *f = fopen(HELPFILE_NAME, "r");
