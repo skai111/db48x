@@ -1415,17 +1415,17 @@ GRAPH_BODY(equation)
                     {
                         coord nv = g.voffset;
                         g.voffset = 0;
-                        grob_g r = expression::infix(g,
-                                                     nv, nameg,
-                                                     0, ":",
-                                                     vv, valg);
-                        return r;
+                        if (grob_g r = expression::infix(g,
+                                                         nv, nameg,
+                                                         0, ":",
+                                                         vv, valg))
+                            return r;
                     }
                 }
             }
         }
     }
-    return object::do_graph(o, g);
+    return object::do_graph(+eq, g);
 }
 
 

@@ -559,7 +559,7 @@ intptr_t list::list_render(renderer &r, unicode open, unicode close) const
         r.wantCR();
 
     // Loop on all objects inside the list
-    for (object_p obj : *list)
+    for (object_g obj : *list)
     {
         id oty = obj->type();
         if (oty == ID_program || oty == ID_list || oty == ID_array)
