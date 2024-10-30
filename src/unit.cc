@@ -963,7 +963,7 @@ unit_p unit::lookup(symbol_p name, int *prefix_info)
 //
 // ============================================================================
 
-bool unit::convert(algebraic_g &x) const
+bool unit::convert(algebraic_g &x, bool error) const
 // ----------------------------------------------------------------------------
 //   Convert the object to the given unit
 // ----------------------------------------------------------------------------
@@ -973,19 +973,19 @@ bool unit::convert(algebraic_g &x) const
 
     // If we already have a unit object, perform a conversion
     if (x->type() == ID_unit)
-        return convert((unit_g &) x);
+        return convert((unit_g &) x, error);
 
     // Otherwise, convert to a unity unit
     algebraic_g one = algebraic_p(integer::make(1));
     unit_g u = unit::make(x, one);
-    if (!convert(u))
+    if (!convert(u, error))
         return false;
     x = +u;
     return true;
 }
 
 
-bool unit::convert(unit_g &x) const
+bool unit::convert(unit_g &x, bool error) const
 // ----------------------------------------------------------------------------
 //   Convert a unit object to the current unit
 // ----------------------------------------------------------------------------
@@ -1030,7 +1030,8 @@ bool unit::convert(unit_g &x) const
             algebraic_g cfu = cf->uexpr();
             if (!cfu->is_real())
             {
-                rt.inconsistent_units_error();
+                if (error)
+                    rt.inconsistent_units_error();
                 return false;
             }
             o = cf->value();
@@ -1040,7 +1041,8 @@ bool unit::convert(unit_g &x) const
 
         if (!o->is_real())
         {
-            rt.inconsistent_units_error();
+            if (error)
+                rt.inconsistent_units_error();
             return false;
         }
 

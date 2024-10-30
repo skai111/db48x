@@ -51,8 +51,8 @@ struct unit : complex
     algebraic_p value() const   { return x(); }
     algebraic_p uexpr() const   { return y(); }
 
-    bool convert(algebraic_g &x) const;
-    bool convert(unit_g &x) const;
+    bool convert(algebraic_g &x, bool error = true) const;
+    bool convert(unit_g &x, bool error = true) const;
 
     static algebraic_p parse_uexpr(gcutf8 source, size_t &len);
 

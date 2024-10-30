@@ -571,7 +571,7 @@ retry:
         {
             algebraic_g aunit = integer::make(1);
             if (add_angle(aunit))
-                if (unit_p(+aunit)->convert(x))
+                if (unit_p(+aunit)->convert(x, false))
                     goto retry;
         }
         if (amode)

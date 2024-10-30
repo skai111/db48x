@@ -178,7 +178,7 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-            exact_trig_cases();
+            vector_functions();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -5607,6 +5607,12 @@ void tests::vector_functions()
         .test(CLEAR, "[x y z]", ENTER, NOSHIFT, A, F6)
         .error("Bad argument type");
 
+    step("3D vector with non-angle units (#1276)")
+        .test(CLEAR, "[ 1_m 2_s 3_g ]", ENTER, A, LSHIFT, F3)
+        .got("3 g", "2 s", "1 m")
+        .test(CLEAR, "[ 1_m 2_s 3_g ] Vector→", ENTER)
+        .got("3 g", "2 s", "1 m");
+
     step("2D vector rectangular → rectangular")
         .test(CLEAR, "[ 1 2 ]", ENTER, NOSHIFT, A)
         .test(F4)
@@ -5639,6 +5645,12 @@ void tests::vector_functions()
        .error("Bad argument type")
        .test(CLEAR, "[x y]", ENTER, NOSHIFT, A, F6)
        .error("Bad argument type");
+
+    step("2D vector with non-angle units (#1276)")
+        .test(CLEAR, "[ 1_m 2_s ]", ENTER, A, LSHIFT, F3)
+        .got("2 s", "1 m")
+        .test(CLEAR, "[ 1_m 2_s ] V→", ENTER)
+        .got("2 s", "1 m");
 
    step("Vector conversion only works on 2D or 3D vectors")
        .test(CLEAR, "[ 1 2 3 4 ]", ENTER, NOSHIFT, A, F4)
