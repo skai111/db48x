@@ -73,7 +73,7 @@ static inline bool at_end(utf8 name, size_t max, utf8 cmd, size_t len, bool eq)
     return len >= max
         || (eq && (!is_valid_as_name_initial(cmd) ||
                    ((name[len] < '0' || name[len] > '9') &&
-                    !is_valid_as_name_initial(name + len))))
+                    !is_valid_in_function_name(name + len))))
         || (is_separator(name + len) && (*cmd != '=' || name[len] != '='));
 }
 

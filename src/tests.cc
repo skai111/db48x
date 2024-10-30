@@ -178,7 +178,7 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-            check_help_examples();
+            expression_operations();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -9624,6 +9624,14 @@ void tests::expression_operations()
         .expect("{ X Y }")
         .test(BSP, BSP)
         .error("Too few arguments");
+
+    step("Check special parsing for expressions")
+        .test(CLEAR, "'sin⁻¹ x'", ENTER).expect("'sin⁻¹ x'")
+        .test(CLEAR, "'cos⁻¹ x'", ENTER).expect("'cos⁻¹ x'")
+        .test(CLEAR, "'tan⁻¹ x'", ENTER).expect("'tan⁻¹ x'")
+        .test(CLEAR, "'sin⁻¹(x)'", ENTER).expect("'sin⁻¹ x'")
+        .test(CLEAR, "'cos⁻¹(x)'", ENTER).expect("'cos⁻¹ x'")
+        .test(CLEAR, "'tan⁻¹(x)'", ENTER).expect("'tan⁻¹ x'");
 }
 
 

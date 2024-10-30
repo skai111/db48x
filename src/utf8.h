@@ -371,6 +371,24 @@ inline bool is_valid_in_name(utf8 s)
 }
 
 
+inline bool is_valid_in_function_name(unicode cp)
+// ----------------------------------------------------------------------------
+//   Check if character is valid in a command name after the initial character
+// ----------------------------------------------------------------------------
+{
+    return cp == L'⁻' || is_valid_in_name(cp);
+}
+
+
+inline bool is_valid_in_function_name(utf8 s)
+// ----------------------------------------------------------------------------
+//   Check if first character in a string is valid in a name
+// ----------------------------------------------------------------------------
+{
+    return is_valid_in_function_name(utf8_codepoint(s));
+}
+
+
 inline bool is_valid_in_constant_name(unicode cp)
 // ----------------------------------------------------------------------------
 //   In constants, we accept a few additional characters
