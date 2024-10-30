@@ -1287,7 +1287,10 @@ symbol_g unit_file::lookup(gcutf8 what, size_t len, bool menu, bool seek0)
     uint     column   = 0;
     bool     quoted   = false;
     bool     found    = false;
+    bool     hadeq    = false;
+    bool     nodefs   = false;
     size_t   matching = 0;
+    size_t   index    = 0;
     symbol_g def      = nullptr;
     scribble scr;
 
@@ -1299,7 +1302,6 @@ symbol_g unit_file::lookup(gcutf8 what, size_t len, bool menu, bool seek0)
         byte c = getchar();
         if (!c)
             break;
-
         if (c == '"')
         {
             if (quoted && peek() == '"') // Treat double "" as a data quote
@@ -1317,6 +1319,7 @@ symbol_g unit_file::lookup(gcutf8 what, size_t len, bool menu, bool seek0)
             }
             if (quoted)
             {
+                index = 0;
                 if (!column)
                 {
                     found = true;
@@ -1325,20 +1328,29 @@ symbol_g unit_file::lookup(gcutf8 what, size_t len, bool menu, bool seek0)
             }
             else
             {
+                bool endline = peek() == '\n';
                 if (found)
                 {
                     if (column == 0)
                     {
-                        found = found && matching == len;
+                        found = found && matching == len && (!menu || endline);
                         if (menu && found)
                             def = symbol::make(what, matching);
                     }
                     else if (column == 1 && !menu)
                     {
-                        def = symbol::make(scr.scratch(), scr.growth());
-                        scr.clear();
+                        if (!nodefs)
+                            def = symbol::make(scr.scratch(), scr.growth());
+                        else
+                            found = false;
                     }
                 }
+                if (column == 0 && endline)
+                {
+                    nodefs = hadeq;
+                    hadeq = false;
+                }
+                scr.clear();
                 column++;
             }
         }
@@ -1354,12 +1366,15 @@ symbol_g unit_file::lookup(gcutf8 what, size_t len, bool menu, bool seek0)
             if (column == 0)
             {
                 found = found && matching < len && c == (+what)[matching++];
+                if (!index && c == '=')
+                    hadeq = true;
             }
             else if (column == 1 && found)
             {
                 byte *buf = rt.allocate(1);
                 *buf = byte(c);
             }
+            index++;
         }
     }
     return def;

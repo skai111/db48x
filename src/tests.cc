@@ -5002,6 +5002,26 @@ void tests::units_and_conversions()
         .expect("'360 °-30 °'")
         .test(RUNSTOP)
         .expect("330 °");
+
+    step("Convert units from Cycle section (#1227)")
+        .test(CLEAR, "2_lb 1_kg CONVERT", ENTER)
+        .expect("⁴⁵ ³⁵⁹ ²³⁷/₅₀ ₀₀₀ ₀₀₀ kg")
+        .test(CLEAR,
+              LSHIFT, KEY5,     // Units menu
+              LSHIFT, F3,       // Select Mass
+              KEY2, F6, F1,     // Enter 2_lb
+              LSHIFT, F6,       // Previous page
+              LSHIFT, F1)       // Convert to kg
+        .expect("⁴⁵ ³⁵⁹ ²³⁷/₅₀ ₀₀₀ ₀₀₀ kg");
+    step("Convert units from units configuration file (#1227)")
+        .test(CLEAR, "2_EUR 1_GBP CONVERT", ENTER)
+        .expect("1.72580 64516 1 GBP")
+        .test(CLEAR,
+              LSHIFT, KEY5,     // Units menu
+              F3,               // Select Mass
+              KEY2, F2,         // Enter 2_lb
+              LSHIFT, F1)       // Convert to USD
+        .expect("2.14 USD");
 }
 
 
