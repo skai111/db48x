@@ -91,6 +91,9 @@ struct algebraic : command
                                       angle_unit from, angle_unit to,
                                       bool negmod = false);
 
+    // Generate a fraction of a turn in the given unit
+    static algebraic_p exact_angle(int num, int denom, angle_unit aunit);
+
     // Numerical value of pi
     static algebraic_g pi();
 

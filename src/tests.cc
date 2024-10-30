@@ -178,7 +178,7 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-            expression_operations();
+            exact_trig_cases();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -3869,6 +3869,47 @@ void tests::exact_trig_cases()
         step("sin(330) = -1/2")
             .test(base + 330, ENTER, circle[unit], MUL, 360, DIV, SIN)
             .expect("-1/2");
+
+        step("atan2(0,2) = 0 degrees")
+            .test("0 2 ATAN2", ENTER)
+            .type(object::ID_unit)
+            .test("UVAL 4 *", ENTER)
+            .expect(circle[unit] * 0 / 2);
+        step("atan2(2,2) = 45 degrees")
+            .test("2 2 ATAN2", ENTER)
+            .type(object::ID_unit)
+            .test("UVAL 4 *", ENTER)
+            .expect(circle[unit] * 1 / 2);
+        step("atan2(2,0) = 90 degrees")
+            .test("2 0 ATAN2", ENTER)
+            .type(object::ID_unit)
+            .test("UVAL 4 *", ENTER)
+            .expect(circle[unit] * 2 / 2);
+        step("atan2(2,-2) = 135 degrees")
+            .test("2 -2 ATAN2", ENTER)
+            .type(object::ID_unit)
+            .test("UVAL 4 *", ENTER)
+            .expect(circle[unit] * 3 / 2);
+        step("atan2(0,-2) = 180 degrees")
+            .test("0 -2 ATAN2", ENTER)
+            .type(object::ID_unit)
+            .test("UVAL 4 *", ENTER)
+            .expect(circle[unit] * 4 / 2);
+        step("atan2(-2,-2) = -135 degrees")
+            .test("-2 -2 ATAN2", ENTER)
+            .type(object::ID_unit)
+            .test("UVAL 4 *", ENTER)
+            .expect(circle[unit] * -3 / 2);
+        step("atan2(0,-2) = 90 degrees")
+            .test("-2 0 ATAN2", ENTER)
+            .type(object::ID_unit)
+            .test("UVAL 4 *", ENTER)
+            .expect(circle[unit] * -2 / 2);
+        step("atan2(2,-2) = 135 degrees")
+            .test("-2 2 ATAN2", ENTER)
+            .type(object::ID_unit)
+            .test("UVAL 4 *", ENTER)
+            .expect(circle[unit] * -1 / 2);
     }
 
     step("Conversion from non-standard units")

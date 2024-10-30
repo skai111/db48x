@@ -697,6 +697,22 @@ algebraic_p algebraic::convert_angle(algebraic_r ra,
 }
 
 
+algebraic_p algebraic::exact_angle(int num, int denom, angle_unit aunit)
+// ----------------------------------------------------------------------------
+//   Generate a fraction of a turn in the given unit
+// ----------------------------------------------------------------------------
+{
+    if (aunit != ID_Deg && aunit != ID_Grad && aunit != ID_PiRadians)
+        return nullptr;
+
+    int hturn = aunit == ID_Deg ? 180 : aunit == ID_Grad ? 200 : 1;
+    num *= hturn;
+    if (num % denom == 0)
+        return integer::make(num/denom);
+    return fraction::make(integer::make(num), integer::make(denom));
+}
+
+
 algebraic_p algebraic::evaluate_function(program_r eq, algebraic_r x)
 // ----------------------------------------------------------------------------
 //   Evaluate the eq object as a function

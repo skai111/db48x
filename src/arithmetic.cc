@@ -1105,21 +1105,16 @@ algebraic_p arithmetic::non_numeric<struct atan2>(algebraic_r y, algebraic_r x)
 //   Note that the first argument to atan2 is traditionally called y,
 //   and represents the imaginary axis for complex numbers
 {
-    auto angle_mode = Settings.AngleMode();
+    id angle_mode = Settings.AngleMode();
     if (angle_mode != object::ID_Rad)
     {
         // Deal with special cases without rounding
         if (y->is_zero(false))
-        {
-            if (x->is_negative(false))
-                return integer::make(1);
-            return integer::make(0);
-        }
+            return exact_angle(x->is_negative() ? 1 : 0, 1, angle_mode);
+
         if (x->is_zero(false))
-        {
-            return fraction::make(integer::make(y->is_negative() ? -1 : 1),
-                                  integer::make(2));
-        }
+            return exact_angle(y->is_negative() ? -1 : 1, 2, angle_mode);
+
         algebraic_g s = x + y;
         algebraic_g d = x - y;
         if (!s || !d)
@@ -1130,17 +1125,7 @@ algebraic_p arithmetic::non_numeric<struct atan2>(algebraic_r y, algebraic_r x)
         {
             bool xneg = x->is_negative();
             int  num  = posdiag ? (xneg ? -3 : 1) : (xneg ? 3 : -1);
-            switch (angle_mode)
-            {
-            case object::ID_PiRadians:
-                return fraction::make(integer::make(num), integer::make(4));
-            case object::ID_Deg:
-                return integer::make(num * 45);
-            case object::ID_Grad:
-                return integer::make(num * 50);
-            default:
-                break;
-            }
+            return exact_angle(num, 4, angle_mode);
         }
     }
     return nullptr;
