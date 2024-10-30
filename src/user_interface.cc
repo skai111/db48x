@@ -5559,6 +5559,7 @@ bool user_interface::handle_functions(int key, object_p obj, bool user)
 
     bool imm     = object::is_immediate(ty);
     bool editing = rt.editing();
+    bool skipcmd = false;
     if (editing && !imm)
     {
         if (key == KEY_ENTER || key == KEY_BSP)
@@ -5593,14 +5594,7 @@ bool user_interface::handle_functions(int key, object_p obj, bool user)
         case ALGEBRAIC:
         case PARENTHESES:
             if (ty == object::ID_Sto)
-            {
-                if (autoComplete)
-                    if (obj->insert() != object::OK)
-                        return false;
-                if (!end_edit())
-                    return false;
-                break;
-            }
+                goto direct;
             [[fallthrough]];
 
         case PROGRAM:
@@ -5631,9 +5625,14 @@ bool user_interface::handle_functions(int key, object_p obj, bool user)
             // If we have the editor open, need to close it
             if (ty != object::ID_SelfInsert)
             {
+            direct:
+                draw_busy();
                 if (autoComplete)
+                {
                     if (obj->insert() != object::OK)
                         return false;
+                    skipcmd = true;
+                }
                 if (!end_edit())
                     return false;
                 editing = false;
@@ -5652,7 +5651,8 @@ bool user_interface::handle_functions(int key, object_p obj, bool user)
     }
     save<bool> no_halt(program::halted, false);
     bool usr = Settings.UserMode();
-    obj->evaluate();
+    if (!skipcmd)
+        obj->evaluate();
     draw_idle();
     dirtyStack = true;
     if (!imm)
