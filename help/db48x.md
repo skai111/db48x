@@ -6270,6 +6270,9 @@ The magnetic field expression differs depending upon whether the point at 'r' is
 
 The expression for the magnetic field at the distance r depends on the subtended angles θ1 and θ2 relative to the ends of the wire of finite length L. The magnetic field expression differs depending upon whether the point at 'r' is inside or outside the wire of radius 'rw' and the calculations are done accordingly.
 
+![B Field From Finite Wire](img/B Field From Finite Wire.bmp)
+
+
 #### Force Between Wires
 
 The force between wires is positive for an attractive force (for currents having the same sign) and negative otherwise, corresponding to a repulsive force.
