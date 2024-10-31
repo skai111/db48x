@@ -1064,6 +1064,7 @@ SETTING(LowBatteryForeground,   ularge(0), ~ularge(0), GRAY25(255, 255, 255))
 SETTING(ChargingForeground,     ularge(0), ~ularge(0), GRAY50(128, 192, 255))
 SETTING(BatteryRefresh,         uint(100),  uint(3600000), uint(3000))
 SETTING(CustomHeaderRefresh,    uint(100),  uint(3600000), uint(1000))
+SETTING(BusyIndicatorRefresh,   uint(5),    uint(3600000), uint(50))
 
 SETTING_ENUM(DateSlash,         nullptr,        DateSeparatorCommand)
 SETTING_ENUM(DateDash,          nullptr,        DateSeparatorCommand)

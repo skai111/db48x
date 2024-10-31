@@ -1489,9 +1489,18 @@ MENU(UserInterfaceModesMenu,
 
      "Fixed0",                                  ID_FixedWidthDigits,
      "VProg",                                   ID_VerticalProgramRendering,
-     "Units",                                   ID_ShowBuiltinUnits,
+     BusyIndicatorRefresh::label,               ID_BusyIndicatorRefresh,
      "ExitMenu",                                ID_ExitClearsMenu,
-     "ListEval",                                ID_ListAsProgram);
+     "ListEval",                                ID_ListAsProgram,
+
+     "Units",                                   ID_ShowBuiltinUnits,
+     "Const",                                   ID_ShowBuiltinConstants,
+     "Eqns",                                    ID_ShowBuiltinEquations,
+     "Libs",                                    ID_ShowBuiltinLibrary,
+     "Chars",                                   ID_ShowBuiltinCharacters,
+
+     "AllVars",                                 ID_AllEquationVariables,
+     CustomHeaderRefresh::label,                ID_CustomHeaderRefresh);
 
 MENU(UserModeMenu,
 // ----------------------------------------------------------------------------
