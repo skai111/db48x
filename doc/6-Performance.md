@@ -230,4 +230,39 @@ For 5 runs on USB power:
 | No autosimplify        |   688-723  | 2383-2585  |           |           |
 | Commit no autosimplify |   691-722  | 2362-2568  |           |           |
 
+
+## Garbage collector performance
+
+### Before implementing `cleaner`:
+
+* IS: Initial State, just loading `Demos` file and displaying initial text
+* L: Sum test Test with loop
+* S: Sum test with "sigma" function
+* N: NQueens benchmark
+* K: Kinetic energy
+* C: Collatz Benchmark
+* R: Romberg plot
+* T: Text drawing example
+
+#### DM42 (USB)
+
+| GC metric     |DM42 I|DM42 L |DM42 F |DM42 N|DM42 K|DM42 C |DM42 R |DM42 T |
+|---------------|------|-------|-------|------|------|-------|-------|------|
+| Cycles        |     2|     44|     43|     1|     3|   1349|    119|     30|
+| Purged        | 40621|2599816|2553096| 57541|172967| 241872|6874889|1769618|
+| Duration      |    33|   3345|   3236|    48|   350|    659|  13579|   4998|
+| Last purged   | 19192|  59224|  59521| 57541| 57753|    101|  57741|  58968|
+| Last duration |     7|     81|     64|    48|   137|      0|    114|     98|
+| Test duration |      |  18834|  18394|  1316|      |  15618|       |      0|
+
+#### DM32 (USB)
+| GC metric     |DM32 I|DM32 L |DM32 F |DM32 N|DM32 K|DM32 C |DM32 R |DM32 T|
+|---------------|------|-------|-------|------|------|-------|-------|------|
+| Cycles        |     0|      6|      6|     0|     0|   1349|     15|     1|
+| Purged        |     0|2530293|2618873|     0|     0| 483501|6571504| 57541|
+| Duration      |     0|   1462|   1378|     0|     0|    600|   6455|    48|
+| Last purged   |     0| 421768| 439698|     0|     0|    102| 438050| 57541|
+| Last duration |     0|    248|    295|     0|     0|      0|    428|    48|
+| Test duration |     0|   6716|   6660|     0|      |  25391|       |  1316|
+
 <!--- !DMNONE --->

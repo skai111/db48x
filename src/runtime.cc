@@ -84,6 +84,11 @@ runtime::runtime(byte *mem, size_t size)
       CallStack(),
       Returns(),
       HighMem(),
+      GCCycles(),
+      GCPurged(),
+      GCDuration(),
+      GCLPurged(),
+      GCLDuration(),
       SaveArgs(false)
 {
     if (mem)
@@ -312,6 +317,7 @@ size_t runtime::gc()
 //   Objects in the global area are copied there, so they need no recycling
 //   This algorithm is linear in number of objects and moves only live data
 {
+    uint     now      = sys_current_ms();
     size_t   recycled = 0;
     object_p first    = (object_p) Globals;
     object_p last     = Temporaries;
@@ -425,6 +431,15 @@ size_t runtime::gc()
            recycled, available());
 
     ui.draw_busy();
+
+    // Update statistics
+    uint duration = sys_current_ms() - now;
+    GCCycles += 1;
+    GCLPurged = recycled;
+    GCLDuration = duration;
+    GCPurged += recycled;
+    GCDuration += duration;
+
     return recycled;
 }
 

@@ -995,8 +995,6 @@ struct runtime
 #include "errors.tbl"
 
 
-
-
 protected:
     utf8      Error;        // Error message if any
     utf8      ErrorSave;    // Last error message (for ERRM)
@@ -1017,10 +1015,17 @@ protected:
     object_p *CallStack;    // Start of call stack (rounded 16 entries)
     object_p *Returns;      // Start of return stack, end of locals
     object_p *HighMem;      // End of available memory
+    size_t    GCCycles;     // Number of garbage collection cycles
+    size_t    GCPurged;     // Number of bytes collected by the GC
+    size_t    GCDuration;   // Total duration of GC execution
+    size_t    GCLPurged;    // Number of bytes collected during last GC
+    size_t    GCLDuration;  // Duration of last GC execution
     bool      SaveArgs;     // Save arguents (LastArgs)
 
     // Pointers that are GC-adjusted
     static gcptr *GCSafe;
+
+    friend struct GarbageCollectorStatistics;
 };
 
 template<typename T>

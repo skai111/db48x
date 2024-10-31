@@ -513,6 +513,7 @@ CMD(GarbageCollect)             ALIAS(GarbageCollect, "GC")
 CMD(Clone)                      ALIAS(Clone, "NewObject")
                                 ALIAS(Clone, "NewObj")
                                 ALIAS(Clone, "NewOb")
+CMD(GarbageCollectorStatistics) ALIAS(GarbageCollectorStatistics, "GCStats")
 
 // Object commands
 NAMED(Compile, "Text→")         ALIAS(Compile, "Str→")
@@ -910,6 +911,7 @@ FLAG(ListAsProgram,             ListAsData)
 FLAG(KillOnError,               DebugOnError)
 FLAG(AllEquationVariables,      CurrentEquationVariables)
 FLAG(PushEvaluatedAssignment,   PushOriginalAssignment)
+FLAG(GCStatsKeepAfterRead,      GCStatsClearAfterRead)
 
 ALIAS(HardwareFloatingPoint,    "HFP")
 ALIAS(HardwareFloatingPoint,    "HardFP")

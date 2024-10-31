@@ -1631,7 +1631,7 @@ MENU(MemoryMenu,
      "Free",    ID_FreeMemory,
      "System",  ID_SystemMemory,
      "PgAll",   ID_PurgeAll,
-     "Bytes",   ID_Bytes,
+     "GCStats", ID_GarbageCollectorStatistics,
      "Clone",   ID_Clone,
 
      "Store",   ID_Sto,
