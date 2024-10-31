@@ -102,6 +102,7 @@ cmp-% compare-%:
 	echo mv -f $(IMAGES)/bad/$*.png $(IMAGES)/$*.png
 update-%:
 	mv $(IMAGES)/bad/$*.png $(IMAGES)/$*.png
+	rm -f $*.png
 
 BAD_IMAGES=$(wildcard $(IMAGES)/bad/*.png)
 compare: $(BAD_IMAGES:$(IMAGES)/bad/%.png=cmp-%)
