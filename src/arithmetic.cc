@@ -1427,7 +1427,10 @@ object::result arithmetic::evaluate(id op, ops_t ops)
         return ERROR;
 
     // Evaluate the operation
+    cleaner     purge;
     algebraic_g r = evaluate(op, y, x, ops);
+    if (+r != +x && +r != +y)
+        r = purge(r);
 
     // If result is valid, drop second argument and push result on stack
     if (r)

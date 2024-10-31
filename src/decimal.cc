@@ -3135,6 +3135,7 @@ decimal_p decimal::lgamma_internal(decimal_r x)
             tmp = tmp * scale / factorial;
 
             cks[i-1] = tmp;
+            cleaner::disable();
             if (!tmp)
                 return nullptr;
 
@@ -3367,6 +3368,7 @@ decimal::ccache &decimal::constants()
         cst->oosqpi    = nullptr;
         cst->lpi       = nullptr;
         cst->precision = precision;
+        cleaner::disable();
     }
     return *cst;
 }
@@ -3381,6 +3383,7 @@ decimal_r decimal::ccache::ln10()
     {
         decimal_g ten = make(10);
         log10 = log(ten);
+        cleaner::disable();
     }
     return log10;
 }
@@ -3395,6 +3398,7 @@ decimal_r decimal::ccache::ln2()
     {
         decimal_g two = make(2);
         log2 = log(two);
+        cleaner::disable();
     }
     return log2;
 }
@@ -3406,7 +3410,10 @@ decimal_r decimal::ccache::lnpi()
 // ----------------------------------------------------------------------------
 {
     if (!lpi)
+    {
         lpi = log(pi);
+        cleaner::disable();
+    }
     return lpi;
 }
 
@@ -3417,7 +3424,10 @@ decimal_r decimal::ccache::sqrt_2pi()
 // ----------------------------------------------------------------------------
 {
     if (!sq2pi)
+    {
         sq2pi = sqrt(pi + pi);
+        cleaner::disable();
+    }
     return sq2pi;
 }
 
@@ -3432,6 +3442,7 @@ decimal_r decimal::ccache::one_over_sqrt_pi()
         decimal_g one = make(1);
         decimal_g sqpi = sqrt(pi);
         oosqpi = one / sqpi;
+        cleaner::disable();
     }
     return oosqpi;
 }

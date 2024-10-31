@@ -1020,12 +1020,15 @@ protected:
     size_t    GCDuration;   // Total duration of GC execution
     size_t    GCLPurged;    // Number of bytes collected during last GC
     size_t    GCLDuration;  // Duration of last GC execution
+    size_t    GCCleared;    // Cleaned automatically by `clearer`
+    size_t    GCUnclear;    // Disable 'clearer' class
     bool      SaveArgs;     // Save arguents (LastArgs)
 
     // Pointers that are GC-adjusted
     static gcptr *GCSafe;
 
     friend struct GarbageCollectorStatistics;
+    friend struct cleaner;
 };
 
 template<typename T>
@@ -1189,6 +1192,32 @@ struct error_save
     gcutf8    source;
     size_t    srclen;
     gcp<text> command;
+};
+
+
+struct cleaner
+// ----------------------------------------------------------------------------
+//   Reclaim temporaries created during a lengthy operation
+// ----------------------------------------------------------------------------
+{
+    cleaner();
+    object_p adjust(object_p temp);
+
+    template<typename T>
+    const T *operator()(const T* temp)
+    {
+        return (const T *) adjust(object_p(temp));
+    }
+    template<typename T>
+    const T *operator()(const gcp<T> &temp)
+    {
+        return (const T *) adjust(object_p(+temp));
+    }
+
+    static void disable()       { rt.GCUnclear++; }
+
+    object_p temporaries;
+    size_t   gccycles;
 };
 
 #endif // RUNTIME_H

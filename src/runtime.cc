@@ -89,6 +89,8 @@ runtime::runtime(byte *mem, size_t size)
       GCDuration(),
       GCLPurged(),
       GCLDuration(),
+      GCCleared(),
+      GCUnclear(),
       SaveArgs(false)
 {
     if (mem)
@@ -1860,4 +1862,45 @@ error_save::~error_save()
 // ----------------------------------------------------------------------------
 {
     rt.error(errmsg).source(source, srclen).command(+command);
+}
+
+
+
+// ============================================================================
+//
+//    Class that automatically cleans up temporaries
+//
+// ============================================================================
+
+cleaner::cleaner()
+// ----------------------------------------------------------------------------
+//    Save the current temporaries and the latest number of GC Cycles
+// ----------------------------------------------------------------------------
+    : temporaries(rt.Temporaries), gccycles(rt.GCCycles + rt.GCUnclear)
+{}
+
+
+RECORDER(cleaner, 32, "Runtime temporary object cleaner");
+
+object_p cleaner::adjust(object_p temp)
+// ----------------------------------------------------------------------------
+//   Check if we can cleanup temporaries
+// ----------------------------------------------------------------------------
+{
+    if (temp && temp > temporaries &&
+        gccycles == rt.GCCycles + rt.GCUnclear &&
+        Settings.AutomaticTemporariesCleanup() &&
+        !rt.Editing && !rt.Scratch)
+    {
+        size_t sz = temp->size();
+        record(cleaner,
+               "Cleaning %u for %u bytes from %p to %p, T from %p to %p",
+               temp - temporaries, sz, temp, temporaries,
+               rt.Temporaries, temporaries + sz);
+        rt.GCCleared += temp - temporaries;
+        memmove((void *) temporaries, temp, sz);
+        temp = temporaries;
+        rt.Temporaries = temp + sz;
+    }
+    return temp;
 }

@@ -237,6 +237,19 @@ algebraic_p function::evaluate(algebraic_r xr, id op, ops_t ops)
 //   Shared code for evaluation of all common math functions
 // ----------------------------------------------------------------------------
 {
+    cleaner purge;
+    algebraic_p result = evaluate_noclean(xr, op, ops);
+    if (result != +xr)
+        result = purge(result);
+    return result;
+}
+
+
+algebraic_p function::evaluate_noclean(algebraic_r xr, id op, ops_t ops)
+// ----------------------------------------------------------------------------
+//   Shared code for evaluation of all common math functions
+// ----------------------------------------------------------------------------
+{
     if (!xr)
         return nullptr;
 

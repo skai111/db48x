@@ -996,15 +996,17 @@ COMMAND_BODY(GarbageCollectorStatistics)
     tag_g duration  = tag::make("Duration",     integer::make(rt.GCDuration));
     tag_g lpurged   = tag::make("LastPurged",   integer::make(rt.GCLPurged));
     tag_g lduration = tag::make("LastDuration", integer::make(rt.GCLDuration));
+    tag_g cleared   = tag::make("Cleared",      integer::make(rt.GCCleared));
 
     if (cycles && purged && duration && lpurged && lduration)
     {
         scribble scr;
-        if (rt.append(cycles)   &&
-            rt.append(purged)   &&
-            rt.append(duration) &&
-            rt.append(lpurged)  &&
-            rt.append(lduration))
+        if (rt.append(cycles)    &&
+            rt.append(purged)    &&
+            rt.append(duration)  &&
+            rt.append(lpurged)   &&
+            rt.append(lduration) &&
+            rt.append(cleared))
         {
             size_t sz = scr.growth();
             gcbytes data = scr.scratch();
@@ -1019,6 +1021,7 @@ COMMAND_BODY(GarbageCollectorStatistics)
                         rt.GCDuration  = 0;
                         rt.GCLPurged   = 0;
                         rt.GCLDuration = 0;
+                        rt.GCCleared   = 0;
                     }
                     return OK;
                 }

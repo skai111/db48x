@@ -912,6 +912,7 @@ FLAG(KillOnError,               DebugOnError)
 FLAG(AllEquationVariables,      CurrentEquationVariables)
 FLAG(PushEvaluatedAssignment,   PushOriginalAssignment)
 FLAG(GCStatsKeepAfterRead,      GCStatsClearAfterRead)
+FLAG(GCTemporariesCleanup,      AutomaticTemporariesCleanup)
 
 ALIAS(HardwareFloatingPoint,    "HFP")
 ALIAS(HardwareFloatingPoint,    "HardFP")
