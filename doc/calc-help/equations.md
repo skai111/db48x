@@ -489,6 +489,43 @@ Vi=0_V  C=50_μF  Vf=10_V  R=100_Ω  t=2_ms
 'ROOT(ⒺRC Transient;[V];[1_V])'
 ```
 
+### RL Transient
+
+![RL Transient](img/Missing name.bmp)
+
+* To calculate `[I_A]` (Current) from 5 known variables:
+
+```rpl
+Vi=0_V  Vf=5_V  R=50_Ω  L=50_mH  t=75_μs
+@ Failing [ I=0.00722 56513 67 A ]
+@ NOT OK. exp(-t*R/L) in error: BASE to be applied to the mixed units argument
+'ROOT(ⒺRL Transient;[I];[1_A])'
+```
+
+### Resonant Frequency
+
+* To calculate `[ω0;Qs;Qp;f0]` (Resonant pulsation, parallel and series quality factors, resonant frequency) from 3 known variables:
+10_Ω 500_mH 8_μF
+```rpl
+L=500_mH  C=8_μF  R=10_Ω
+@ Failing [ ω0=500. r/s Qs=25. Qp=0.04 f0=79.57747 15459 Hz ]
+@ NOT OK. radians missing in ω0 ; Error: "Inconsistent units" but units are ok
+'ROOT(ⒺResonant Frequency;[ω0;Qs;Qp;f0];[1_r/s;1;1;1_Hz])'
+```
+
+### Plate Capacitor
+
+![Plate Capacitor](img/Missing name.bmp)
+
+* To calculate `[d_cm;ΔV_V;Ein_(N/C);σ_(μC/m^2)]` (Distance, voltage, internal E fiels, surface charge density) from 3 known variables:
+
+```rpl
+C=25_μF  εr=2.26  A=1_cm^2  Q=75_μC
+@ Failing [ d=8.00418 57871 19⁳⁻⁹ cm σ=750 000. μC/m↑2 Ein=3.74803 89383 6⁳¹⁰ N/C ΔV=3. V ]
+@ C#4 NOT OK. MSOLVER: "NO solution?", OK if solve for each variable seperately
+'ROOT(ⒺPlate Capacitor;[d;σ;Ein;ΔV];[1_cm;1_(μC/m^2);1_(N/C);1_V])'
+```
+
 ### Cylindrical Capacitor
 
 ![Cylindrical Capacitor](img/Missing name.bmp)
@@ -524,6 +561,28 @@ Vi=0_V  C=50_μF  Vf=10_V  R=100_Ω  t=2_ms
 @ Expecting [ L=69.31471 80562 mH ]
 @ Error in ri input data of HP50gAUR.pdf
 'ROOT(ⒺToroid Inductance;[L];[1_mH])'
+```
+
+### Sinusoidal Voltage
+
+* To calculate `[ω_r/s;V_V]` (Pulsation, voltage) from 4 known variables:
+
+```rpl
+Vmax=110_V  t=30_μs  f=60_Hz  φ=15_°
+@ Failing [ ω=376.99111 8431 r/s V=29.66992 85671 V ]
+@ C#5 NOT OK. MSOLVER: "NO solution?", OK if solve for each variable seperately
+'ROOT(ⒺSinusoidal Voltage;[ω;V];[1_r/s;1_V])'
+```
+
+### Sinusoidal Current
+
+* To calculate `[I_A;f_Hz]` (Current, frequency) from 4 known variables:
+
+```rpl
+t=32_s  Imax=10_A  ω=636_r/s  φ=30_°
+@ Failing [ f=101.22254 3806 Hz I=9.59828 06834 1 A ]
+@ C#6 NOT OK. MSOLVER: "NO solution?", OK solving for f separately BUT "sin error: numerical precision lost" when solving for I_A
+'ROOT(ⒺSinusoidal Current;[f;I];[1_Hz;1_A])'
 ```
 
 ### Drift Speed & Current Density
@@ -603,6 +662,68 @@ h=100_m  ρ=1025.1817_kg/m^3  P0=1_atm
 'ROOT(ⒺPressure at Depth;[P];[1_kPa])'
 ```
 
+### Bernoulli Equation
+
+These equations represent the streamlined flow of an incompressible fluid.
+
+![Bernoulli Equation](img/Missing name.bmp)
+
+* To calculate `[A1_in^2;ΔP_psi;Δy_ft;Q_ft^3/min;M_lb/min;v2_ft/s;A2_in^2;D2_in]` (Various hydrodynamic parameters) from 7 known variables:
+
+```rpl
+P2=25_psi  P1=75_psi  y2=35_ft  y1=0_ft  D1=18_in  ρ=64_lb/ft^3  v1=100_ft/s
+@ Failing [ A1=254.46900 4941 in↑2 ΔP=-50. psi Δy=35. ft Q=5.00399 98439 8 m↑3/s M=5 130.00884 634 kg/s v2=122.42131 1569 ft/s A2=207.86332 19 in↑2 D2=16.26836 81217 in ]
+@ C#8 NOT OK. MSOLVER: "NO solution?", OK for A1;ΔP;Δy;Q;M solved one at a time in order NOT OK for v2;A2;D2 "Inconsistent units" while searching for each unknown
+'ROOT(ⒺBernoulli Equation;[A1;ΔP;Δy;Q;M;v2;A2;D2];[1_in^2;1_psi;1_ft;1_ft^3/min;1_in^2;1_lb/min;1_ft/s;1_in])'
+```
+
+Alternate présentation adding one more known value: `v2`
+
+```rpl
+P2=25_psi  P1=75_psi  y2=35_ft  y1=0_ft  D1=18_in  ρ=64_lb/ft^3  v1=100_ft/s v2=122.421311569_ft/s
+@ Failing [ A1=254.46900 4941 in↑2 ΔP=-50. psi Δy=35. ft Q=5.00399 98439 8 m↑3/s M=5 130.00884 634 kg/s v2=122.42131 1569 ft/s A2=207.86332 19 in↑2 D2=16.26836 81217 in ]
+@ C#8 NOT OK. MSOLVER: "NO solution?", OK for A1;ΔP;Δy;Q;M solved one at a time NOT OK for A2;D2 "Inconsistent units" while searching for each remaining unknown
+'ROOT(ⒺBernoulli Equation;[A1;ΔP;Δy;Q;M;v2;A2;D2];[1_in^2;1_psi;1_ft;1_ft^3/min;1_in^2;1_lb/min;1_ft/s;1_in])'
+```
+
+### Flow with Losses
+
+These equations extend Bernoulli’s equation to include power input (or output) and head loss.
+
+![Flow with Losses](img/Missing name.bmp)
+
+* To calculate `[A1_in^2;ΔP_psi;Δy_ft;Q_ft^3/min;M_lb/min;v2_ft/s;A2_in^2;D2_in]` (Various hydrodynamic parameters) from 7 known variables:
+
+```rpl
+P2=30_psi  P1=65_psi  y2=100_ft  y1=0_ft  ρ=64_lb/ft^3  D1=24_in  hL=2.0_(ft/s)^2  W=25_hp
+v1=100_ft/s
+@ Failing [ A1=452.38934 2117 in↑2 ΔP=-50. psi Δy=35. ft Q=18 849.55592 15 ft↑3/min M=1 206 371.57898 lb/min v2=93.12684 14502 ft/s A2=485.77760 7264 in↑2 D2=24.86988 66004 in ]
+@ C#9 NOT OK. MSOLVER: "NO solution?", BUT SOLVE works for each unknown with its respective eqn rank#: A1#9;ΔP#4;Δy#5;Q#8;M#6;v2#1;A2#7;D2#10. Note: eqns 2 & 3 : "Inconsistent units"
+'ROOT(ⒺFlow with Losses;[A1;ΔP;Δy;Q;M;v2;A2;D2];[1_in^2;1_psi;1_ft;1_ft^3/min;1_in^2;1_lb/min;1_ft/s;1_in])'
+```
+
+Notes about manual solution:
+```
+@ proposed format for sequential ROOT calls where each unknown variable is affected to its corresponding equ rank # and calculated one at a time
+@ 'ROOT(ⒺFlow with Losses;[A1 #9;ΔP #4;Δy #5;Q #8;M #6;v2 #1;A2 #7;D2 #10];[1_in^2;1_psi;1_ft;1_ft^3/min;1_in^2;1_lb/min;1_ft/s;1_in])'
+```
+
+### Flow In Full Pipes
+
+These equations adapt Bernoulli’s equation for flow in a round, full pipe, including power input (or output) and frictional losses (with the fanning friction factor `f`).
+
+![Flow In Full Pipes](img/Missing name.bmp)
+
+* To calculate `[A1_in^2;ΔP_psi;Δy_ft;Q_ft^3/min;M_lb/min;v2_ft/s;A2_in^2;D2_in]` (Various hydrodynamic parameters) from 7 known variables:
+
+```rpl
+ρ=62.4_lb/ft^3  D=12_in  vavg=8_ft/s  P2=15_psi  P1=20_psi  y2=40_ft  y1=0_ft
+μ=0.00002_lbf*s/ft^2  ΣK=2.25  ε=0.02_in  L=250_ft
+@ Failing [ A1=452.38934 2117 in↑2 ΔP=-50. psi Δy=35. ft Q=18 849.55592 15 ft↑3/min M=1 206 371.57898 lb/min v2=93.12684 14502 ft/s A2=485.77760 7264 in↑2 D2=24.86988 66004 in ]
+@ NOT OK. Fanning function not implemented yet !!! "EquationSolver error: Bad argument type"
+'ROOT(ⒺFlow In Full Pipes;[ΔP;Δy;A;n;Q;M;W;Re];[1_psi;1_ft;1_in^2;1_ft^2/s;1_ft^3/min;1_lb/min;1_hp;1])'
+```
+
 ## Forces and Energy
 
 The variables in the Force and Energy section are:
@@ -637,6 +758,60 @@ force (Law of Gravitation), or Drag force (Drag force)
 * `x`: Displacement
 * `UGf, UGi`: Final and initial gravitational potential energy (dim.: force·length, in SI: joule, J)
 
+### Linear Mechanics
+
+* To calculate `[F_lbf;Ki_ft*lbf;vf_ft/s;Kf_ft*lbf;W_ft*lbf;x_ft;Pavg_hp]` (Various dynamical variables) from 4 known variables:
+
+```rpl
+t=10_s  m=50_lb  a=12.5_ft/s^2  vi=0_ft/s
+@ Failing [ F=86.40934 6485 N Ki=0 J vf=38.1 m/s Kf=16 460.98050 54 J W=16 460.98050 54 J x=190.5 m Pavg=1 646.09805 054 W ]
+@ C#9 NOT OK. MSOLVER: "NO solution?", BUT SOLVE works for each unknown with its respective eqn.
+'ROOT(ⒺLinear Mechanics;[F;Ki;vf;Kf;W;x;Pavg];[1_lbf;1_ft*lbf;1_ft/s;1_ft*lbf;1_ft*lbf;1_ft;1_hp])'
+```
+
+### Angular Mechanics
+
+* To calculate `[τ_ft*lbf;Ki_ft*lbf;W_ft*lbf;Kf_ft*lbf;at_ft/s^2;Ni_rpm;ωf_r/min;t_min;Nf_rpm;Pavg_hp]` (Various dynamical variables) from 5 known variables:
+
+```rpl
+I=1750_lb*in^2  Θ=360_°  r=3.5_in  α=10.5_r/min^2  ωi=0_r/s
+@ Failing [  ]
+@ C#10 NOT OK. MSOLVER: "NO solution?", BUT trying to SOLVE for each ordered unknown with its respective eqn leads to Error [Inconsistent units]
+'ROOT(ⒺAngular Mechanics;[τ;Ki;W;Kf;at;Ni;ωf;t;Nf;Pavg];[1_ft*lbf;1_ft*lbf;1_ft*lbf;1_ft*lbf;1_ft/s^2;1_rpm;1_r/min;1_min;1_rpm;1_hp])'
+```
+
+### Centripetal Force
+
+* To calculate `[ω_r/s;F_N;v_m/s;ar_m/s]` (Various dynamical variables) from 3 known variables:
+
+```rpl
+m=1_kg  r=5_cm  N=2000_Hz
+@ Failing [ ω=12 566.37061 44 r/s F=7 895 683.52087 N v=628.31853 0718 m/s 7 895 683.52087 m/s↑2 ]
+@ C#11 NOT OK. MSOLVER: "NO solution?", SOLVE for each ordered unknown with its respective eqn works up to ar leading to [Inconsistent units]
+'ROOT(ⒺCentripetal Force;[ω;F;v;ar];[1_r/s;1_N;1_m/s;1_m/s])'
+```
+
+
+### Hooke’s Law
+
+The force is that exerted by the spring.
+
+![Hooke’s Law](img/Missing name.bmp)
+
+* To calculate `[F_lbf;W_ft*lbf]` (Force, work) from 2 known variables:
+
+```rpl
+k=1725_lbf/in  x=125_in
+@ Failing [ 215 625 lbf -1 123 046.875 ft·lbf ]
+@ C#12 NOT OK. MSOLVER: "NO solution?", SOLVE for each ordered unknown with its respective eqn works except for F: wrong numerical result
+'ROOT(ⒺHooke’s Law;[F;W];[1_lbf;1_ft*lbf])'
+```
+
+Notes about a manually-ordered solution:
+```
+@ 'ROOT(ⒺHooke’s Law;[F #1;W #2];[1_lbf;1_ft*lbf])'
+```
+
 ### 1D Elastic Collisions
 
 ![1D Elastic Collisions](img/Missing name.bmp)
@@ -657,6 +832,17 @@ m1=10_kg  m2=25_kg  v1i=100_m/s
 Cd=0.05  ρ=1000_kg/m^3  A=7.5E6_cm^2  v=35_m/s
 @ Expecting [ F=22 968 750. N ]
 'ROOT(ⒺDrag Force;[F];[1_N])'
+```
+
+### Gravitation Law
+
+* To calculate `[F_N;UGf_J;UGi_J;W_J]` (Gravitational force, work, final & initial potential energy) from 5 known variables:
+
+```rpl
+m1=2E15_kg  m2=2E18_kg  r=1000000_km  ri=1000000_km  rf=5000000_km
+@ Failing [ F=266 903.6 N UGf=-5.33807 2⁳¹³ J UGi=-2.66903 6⁳¹⁴ J W=W=2.13522 88⁳¹⁴ J ]
+@ NOT OK. MSOLVER: "No solution ?", Errors in formulas for UGf & UGi: to be corrected
+'ROOT(ⒺGravitation Law;[F;UGf;UGi;W];[1_N;1_J;1_J;1_J])'
 ```
 
 ### Relativity Mass Energy
@@ -699,6 +885,17 @@ The variables in the Gases section are:
 * `vrms`: Root-mean-square (rms) velocity
 * `W`: Work (dim.: force·length, in SI: joule, J)
 * `Z, Zi, Zf`: Initial and final gas compressibility correction factors
+
+### Ideal Gas
+
+* To calculate `[n_mol;m_kg]` (Number of moles, mass) from 4 known variables:
+
+```rpl
+T=16.85_°C  P=1_atm  V=25_l  MW=36_g/mol
+@ Failing [ n=1.05056 26661 2 mol m=3.78202 55980 42⁳⁻² kg ]
+@ NOT OK. MSOLVER: "NO solution?", Units error in eq#1 & units conversion °C => K not yet implemented & gmol => mol in eqns
+'ROOT(ⒺIdeal Gas;[n;m];[1_mol;1_kg])'
+```
 
 ### Ideal Gas Law Change
 
@@ -748,6 +945,65 @@ k=2  M=0.9  T0=300_K  T=373.15_K  ρ0=100_kg/m^3  P0=100_kPa  A=1_cm^2
 'ROOT(ⒺIsentropic Flow;[P;ρ;At];[1_kPa;1_kg/m^3;1_cm^2])'
 ```
 
+### Real Gas Law
+
+These equations adapt the ideal gas law to emulate real-gas behavior.
+
+* To calculate `[n_mol;m_kg;Z_1]` (Number of mole, mass, gas compressibility correction factor) from 7 known variables:
+
+```rpl
+Pc=48_atm  Tc=298_K  P=5_kPa  V=10_l  MW=64_g/mol  T=348.15_K
+@ Failing [ n=1.72768 40576 08⁳⁻² mol m=1.10571 77968 69⁳⁻³ kg Z=0.999775 79726 90 ]
+@ C#13 NOT OK. MSOLVER: "NO solution?", MSOLVE works only if we provide the right initial value for Z
+'ROOT(ⒺReal Gas Law;[n;m;Z];[1_mol;1_kg;1])'
+```
+
+Notes about the current error:
+```
+@ SOLUTIONS with an individual ROOT call. Since it works the Z function (in equation.cc) will be rewritten in closed form
+@ 'ROOT(-Z+1+(0.31506237-1.04670990/((348.15_K)/(298_K))-0.57832729/((348.15_K)/(298_K))^3)*(0.27*(((5_kPa)/(4863.6_kPa))/(Z*((348.15_K)/(298_K)))))+(0.53530771-0.61232032/((348.15_K)/(298_K)))*(0.27*(((5_kPa)/(4863.6_kPa))/(Z*((348.15_K)/(298_K)))))^2+0.61232032*0.10488813*(0.27*(((5_kPa)/(4863.6_kPa))/(Z*((348.15_K)/(298_K)))))^5/((348.15_K)/(298_K))+0.68157001*(0.27*(((5_kPa)/(4863.6_kPa))/(Z*((348.15_K)/(298_K)))))^2/((348.15_K)/(298_K))^3*(1+0.68446549*(0.27*(((5_kPa)/(4863.6_kPa))/(Z*((348.15_K)/(298_K)))))^2)*exp(-0.68446549*(0.27*(((5_kPa)/(4863.6_kPa))/(Z*((348.15_K)/(298_K)))))^2);Z;1)'
+@ Z=0.99977 57972 690
+```
+
+### Real Gas State Change
+
+This equation adapts the ideal gas state-change equation to emulate real-gas behavior.
+
+* To calculate `[Vf_l;Zi_1;Zf_1]` (Final volume, initial & final gas compressibility correction factor) from 7 known variables:
+
+```rpl
+Pc=48_atm  Pi=100_kPa  Pf=50_kPa  Ti=348.15_K  Tc=298_K  Vi=10_l  Tf=523.15_K
+@ Failing [ Vf=30.17028 92973 l Zi=0.99550 62096 36 Zf=0.99938 68303 14 ]
+@ C#14 NOT OK. MSOLVER: "Unable to solve for all variables" even if I provide the value for Zi & Zf (see below) the Vf calculated is wrong
+'ROOT(ⒺReal Gas State Change;[Vf;Zi;Zf];[Vf_l;1;1])'
+```
+
+Notes about the current error:
+```
+@ SOLUTIONS with individual ROOT calls. Since it works the Zi & Zf function (in equation.cc) will be rewritten in closed form
+@ 'ROOT(-Zi+1+(0.31506237-1.04670990/((348.15_K)/(298_K))-0.57832729/((348.15_K)/(298_K))^3)*(0.27*(((100_kPa)/(4863.6_kPa))/(Zi*((348.15_K)/(298_K)))))+(0.53530771-0.61232032/((348.15_K)/(298_K)))*(0.27*(((100_kPa)/(4863.6_kPa))/(Zi*((348.15_K)/(298_K)))))^2+0.61232032*0.10488813*(0.27*(((100_kPa)/(4863.6_kPa))/(Zi*((348.15_K)/(298_K)))))^5/((348.15_K)/(298_K))+0.68157001*(0.27*(((100_kPa)/(4863.6_kPa))/(Zi*((348.15_K)/(298_K)))))^2/((348.15_K)/(298_K))^3*(1+0.68446549*(0.27*(((100_kPa)/(4863.6_kPa))/(Zi*((348.15_K)/(298_K)))))^2)*exp(-0.68446549*(0.27*(((100_kPa)/(4863.6_kPa))/(Zi*((348.15_K)/(298_K)))))^2);Zi;1)'
+@ => Zi=0.99550 62096 36
+@ 'ROOT(-Zf+1+(0.31506237-1.04670990/((523.15_K)/(298_K))-0.57832729/((523.15_K)/(298_K))^3)*(0.27*(((50_kPa)/(4863.6_kPa))/(Zf*((523.15_K)/(298_K)))))+(0.53530771-0.61232032/((523.15_K)/(298_K)))*(0.27*(((50_kPa)/(4863.6_kPa))/(Zf*((523.15_K)/(298_K)))))^2+0.61232032*0.10488813*(0.27*(((50_kPa)/(4863.6_kPa))/(Zf*((523.15_K)/(298_K)))))^5/((523.15_K)/(298_K))+0.68157001*(0.27*(((50_kPa)/(4863.6_kPa))/(Zf*((523.15_K)/(298_K)))))^2/((523.15_K)/(298_K))^3*(1+0.68446549*(0.27*(((50_kPa)/(4863.6_kPa))/(Zf*((523.15_K)/(298_K)))))^2)*exp(-0.68446549*(0.27*(((50_kPa)/(4863.6_kPa))/(Zf*((523.15_K)/(298_K)))))^2);Zf;1)'
+@ => Zf=0.99938 68303 14
+@ => Zi/Zf=0.99611 69983 83  which is the required answer
+```
+
+### Kinetic Theory
+
+
+These equations describe properties of an ideal gas.
+
+* To calculate `[vrms_m/s;n_mol;m_kg;λ_nm]` (Root-mean-square velocity, number of mole, mean free path) from 7 known variables:
+
+```rpl
+P=100_kPa  V=2_l  T=300_K  MW=18_g/mol  d=2.5_nm
+@ Failing [ vrms=644.76778 7657 m/s n=0.08018 11130 98 mol m=1.44326 00357 69⁳⁻³ kg λ=1.49163 44918 94⁳⁰ nm ]
+@ C#15 NOT OK. MSOLVER calculates wrong values, SOLVE only calculates separately the 3 first unknowns then the computation of λ is wrong
+@ MSOLVER calculates wrong values : [ vrms=1 388.08583 078 m/s n=0.0173 mol m=0.00031 14 kg λ=1 nm ]
+'ROOT(ⒺKinetic Theory;[vrms;n;m;λ];[1_m/s;1_mol;1_kg;1_nm])'
+```
+
+
 ## Heat transfer
 
 The variables in the Heat Transfer section are:
@@ -774,6 +1030,17 @@ The variables in the Heat Transfer section are:
 * `Ti, Tf`: Initial and final temperatures
 * `U`: Overall heat transfer coefficient (dim.: power/(area·temperature) in SI: W/(m^2·K))
 
+### Heat Capacity
+
+* To calculate `[c_kJ/(kg*K);Tf_°C]` (Specific heat, final temperature) from 4 known variables:
+
+```rpl
+ΔT=15_°C  Ti=0_°C  m=10_kg  Q=25_kJ
+@ Failing [ c=0.16666 66666 67 kJ/(kg·K) Tf=15_°C ]
+@ C#16 NOT OK. MSOLVER: "NO solution?", doesn't SOLVE for each ordered unknown: "Inconsistent units" see issue # 1289
+'ROOT(ⒺHeat Capacity;[c;Tf];[1_kJ/(kg*K);1_°C])'
+```
+
 ### Thermal Expansion
 
 ![Thermal Expansion](img/Missing name.bmp)
@@ -784,6 +1051,19 @@ The variables in the Heat Transfer section are:
 ΔT=15_°C  L=10_m  Tf=25_°C  δ=1_cm
 @ Expecting [ α=9.⁳⁻⁴ K⁻¹ Ti=10. °C ]
 'ROOT(ⒺThermal Expansion;[α;Ti];[1_K^-1;1_°C])'
+```
+
+### Conduction
+
+![Conduction](img/Missing name.bmp)
+
+* To calculate `[qr_W;ΔT_°C]` (Heat transfer rate, temperature difference) from 5 known variables:
+
+```rpl
+Tc=25_°C  Th=75_°C  A=12.5_m^2  L=1.5_cm  k=0.12_W/(m*K)
+@ Failing [ qr=5000 W ΔT=50_°C ]
+@ C#17 NOT OK. MSOLVER: "NO solution?", doesn't SOLVE for each ordered unknown: "Inconsistent units" see issue # 1289
+'ROOT(ⒺConduction;[qr;ΔT];[1_W;1_°C])'
 ```
 
 ### Convection
@@ -811,6 +1091,22 @@ If you have fewer than three layers, give the extra layers a zero thickness and 
 @ Expecting [ qr=6.91646 19164 6 W Tc=300. °C U=-2.82304 56801 9⁳⁻³ W/(m↑2·K) ]
 'ROOT(ⒺConduction & Convection;[qr;Tc;U];[1_W;1_°C;1_W/(m^2*K)])'
 ```
+
+### Black Body Radiation
+
+F0λ(λ_m, T_K) is the black body emissive power Function which returns the fraction of total black-body emissive power at temperature `T_K` between wavelengths 0 and `λ_m`. It is the integral of the Planck distribution.
+
+![Black Body Radiation](img/Missing name.bmp)
+
+* To calculate `[λmax_nm;eb_W/m^2;f_1;eb12_W/m^2;q_W]` (Wavelength of maximal emission, total emissive power, fraction of emissive power between λ1 & λ2, emissive power between λ1 & λ2, heat transfer rate) from 4 known variables:
+
+```rpl
+T=1273,15_K  λ1=1000_nm  λ2=600_nm  A=1_cm^2
+@ Failing [ λmax=2276.0523_nm eb=148984.2703_W/m^2 f=0.0036 eb12=537.7264_W/m^2 q=14.8984_W ]
+@ NOT OK: Integration not functionning
+'ROOT(ⒺBlack Body Radiation;[λmax;eb;f;eb12;q];[1_nm;1_W/m^2;1;1_W/m^2;1_W])'
+```
+
 
 ## Magnetism
 
