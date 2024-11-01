@@ -347,7 +347,7 @@ inline bool is_valid_in_name(unicode cp)
 {
     if (cp == (cp & 0x7F) && isalnum(cp))
         return true;
-    static utf8 valid = utf8("!$%&?");
+    static utf8 valid = utf8("$%&?");
     for (utf8 p = valid; *p; p = utf8_next(p))
         if (cp == utf8_codepoint(p))
             return true;

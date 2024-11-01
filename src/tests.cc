@@ -178,7 +178,7 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-            conditionals();
+            sum_and_product();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -9494,6 +9494,12 @@ void tests::sum_and_product()
         .expect("'∏(I;1;N;(A+I)↑3)'")
         .test(CLEAR, "I N 1 '(A+I)^3' ∏", ENTER)
         .expect("'∏(I;N;1;(A+I)↑3)'");
+
+    step("Parsing x! in a sum #1285")
+        .test(CLEAR, "'Σ(x;0;5;(2^x)/(2*x!))'", ENTER)
+        .expect("'Σ(x;0;5;2↑x÷(2·x!))'")
+        .test(RUNSTOP)
+        .expect("3 ¹⁹/₃₀");
 }
 
 
