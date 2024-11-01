@@ -178,7 +178,7 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-            vector_functions();
+            conditionals();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -2309,6 +2309,8 @@ void tests::conditionals()
     test(CLEAR, "'IFTE(1-1;ln(0);PASS+0)'", ENTER, RUNSTOP)
         .expect("'PASS'");
 
+    step("Clear DebugOnError for IfErr tests")
+        .test(CLEAR, "DebugOnError", ENTER).noerror();
     step("IfErr-Then (true)");
     test(CLEAR, "FAIL iferr 1 0 / drop then PASS end", ENTER)
         .expect("'PASS'");
@@ -2424,6 +2426,9 @@ void tests::conditionals()
     step("Conditionals forward progress with false condition")
         .test(CLEAR, "if 0 1 0 IFTE then FAIL else PASS end", ENTER)
         .expect("'PASS'");
+
+    step("Restore the KillOnError setting for testing")
+        .test(CLEAR, "KillOnError Kill", ENTER);
 }
 
 
