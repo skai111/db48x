@@ -178,7 +178,7 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-            sum_and_product();
+            units_and_conversions();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -5069,6 +5069,25 @@ void tests::units_and_conversions()
               KEY2, F2,         // Enter 2_lb
               LSHIFT, F1)       // Convert to USD
         .expect("2.14 USD");
+
+    step("Temperature conversions forward, simple case")
+        .test(CLEAR, "100_°C 1_K CONVERT", ENTER)
+        .expect("373.15 K");
+    step("Temperature conversions backward, simple case")
+        .test(CLEAR, "100_K 1_°C CONVERT", ENTER)
+        .expect("-173.15 °C");
+    step("Temperature conversions forward, combined case")
+        .test(CLEAR, "30_°C 1_°F CONVERT", ENTER)
+        .expect("86. °F");
+    step("Temperature conversions with scaling operations on units")
+        .test(CLEAR, "100_°C/s 1_K/min CONVERT", ENTER)
+        .error("Inconsistent units");
+    step("Ubase on non-scaling units")
+        .test(CLEAR, "100_°C UBASE", ENTER)
+        .expect("373.15 K");
+    step("Ubase on non-scaling units with scaling request")
+        .test(CLEAR, "100_°C/s UBASE", ENTER)
+        .error("Inconsistent units");
 }
 
 

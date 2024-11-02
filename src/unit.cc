@@ -281,17 +281,44 @@ EVAL_BODY(unit)
     algebraic_g value = o->value();
     algebraic_g uexpr = o->uexpr();
     bool skip = value->as_quoted<symbol>();
-    value = value->evaluate();
+    {
+        save<bool> umode(unit::mode, false);
+        value = value->evaluate();
+    }
     if (!value)
         return ERROR;
     if (!skip)
     {
         if (unit::mode)
         {
+            algebraic_g svu = uexpr;
             uexpr = uexpr->evaluate();
             if (!uexpr)
                 return ERROR;
+            if (unit_g u = uexpr->as<unit>())
+            {
+                if (expression_p oe = u->value()->as<expression>())
+                {
+                    symbol_g name = svu->as<symbol>();
+                    if (!name)
+                    {
+                        // Cannot convert °F/s into °C/min, sorry
+                        rt.inconsistent_units_error();
+                        return ERROR;
+                    }
+                    save<symbol_g *> si(expression::independent, &name);
+                    object_g         xvalue = +value;
+                    save<object_g *> sv(expression::independent_value, &xvalue);
+                    save<bool>       sumode(unit::mode, false);
+                    uexpr = oe->evaluate();
+                    if (!uexpr)
+                        return ERROR;
+                    uexpr = unit_p(unit::simple(uexpr, u->uexpr()));
+                    return uexpr && rt.push(+uexpr) ? OK : ERROR;
+                }
+            }
 
+            settings::SaveAutoSimplify sas(true);
             while (unit_g u = unit::get(uexpr))
             {
                 algebraic_g scale = u->value();
@@ -654,10 +681,10 @@ static const cstring basic_units[] =
     "torr",     "1/760_atm",            // Torr = 1/760 standard atm
 
     "K",        "1_K",                  // Kelvin
-    "°C",       "1_K",                  // Celsius
-    "°R",       "9/5_K",                // Rankin
-    "°F",       "9/5_K",                // Fahrenheit
-    "°D",       "-2/3_K",               // Delisle
+    "°C",       "'(°C+273.15)'_K",      // Celsius
+    "°R",       "5/9_K",                // Rankin
+    "°F",       "'((°F+459.67)*5/9)'_K",// Fahrenheit
+    "°D",       "'(373.15-2/3*°D)'_K",  // Delisle
 
     "m³/yr",    "=",                    // Cubic meters per year
     "m³/d",     "=",                    // Cubic meters per day
@@ -828,13 +855,14 @@ static const si_prefix si_prefixes[] =
 
 
 
-unit_p unit::lookup(symbol_p name, int *prefix_info)
+unit_p unit::lookup(symbol_p namep, int *prefix_info)
 // ----------------------------------------------------------------------------
 //   Lookup a built-in unit
 // ----------------------------------------------------------------------------
 {
+    symbol_g  name = namep;
     size_t    len  = 0;
-    gcutf8    gtxt = name->value(&len);
+    gcutf8    gtxt = namep->value(&len);
     uint      maxs = sizeof(si_prefixes) / sizeof(si_prefixes[0]);
     unit_file ufile;
 
@@ -939,6 +967,9 @@ unit_p unit::lookup(symbol_p name, int *prefix_info)
 
                         settings::SaveAutoSimplify sas(false);
                         settings::SaveNumericalConstants snc(true);
+                        save<symbol_g *> si(expression::independent, &name);
+                        save<object_g *> sv(expression::independent_value,
+                                            nullptr);
                         uexpr = u->evaluate();
                         if (!uexpr || uexpr->type() != ID_unit)
                         {
@@ -1006,7 +1037,7 @@ bool unit::convert(unit_g &x, bool error) const
 
     if (!unit::mode)
     {
-        save<bool> save(unit::mode, true);
+        save<bool> sumode(unit::mode, true);
 
         // Evaluate the unit expression for this one
         u = u->evaluate();
@@ -1018,8 +1049,76 @@ bool unit::convert(unit_g &x, bool error) const
         if (!o)
             return false;
 
-        // Compute conversion factor
+        // Check the complicated cases involving expressions, e.g. °C to K
+        if (unit_p ou = o->as<unit>())
         {
+            if (expression_p oe = ou->value()->as<expression>())
+            {
+                algebraic_g      ounit = ou->uexpr();
+                symbol_g         name  = x->uexpr()->as<symbol>();
+                if (!name)
+                {
+                    // Cannot convert °F/s into °C/min, sorry
+                    rt.inconsistent_units_error();
+                    return false;
+                }
+                save<symbol_g *> si(expression::independent, &name);
+                object_g         xvalue = x->value();
+                save<object_g *> sv(expression::independent_value, &xvalue);
+                save<bool>       sumode2(unit::mode, false);
+                o = oe->evaluate();
+                if (!o)
+                    return false;
+                x = unit_p(unit::simple(o, ounit));
+                o = unit::simple(integer::make(1), ounit);
+            }
+        }
+        // If the expression is in the destination
+        if (unit_p uu = u->as<unit>())
+        {
+            if (expression_g ue = uu->value()->as<expression>())
+            {
+                // We have an expression like '(°C+273.15)_K'
+                // Turn it into K=(°C+273.15), then isolate °C to get
+                // °C=K-273.15, and run that the second half
+                symbol_g tname = uu->uexpr()->as<symbol>(); // K
+                if (!tname)
+                {
+                    rt.inconsistent_units_error();
+                    return false;
+                }
+                algebraic_g tdef = +tname;
+                algebraic_g udef = +ue;
+                symbol_g xname = svu->as<symbol>();            // °C
+                if (!xname)
+                {
+                    rt.inconsistent_units_error();
+                    return false;
+                }
+                ue = expression::make(ID_TestEQ, tdef, udef);
+                if (!ue)
+                {
+                    rt.inconsistent_units_error();
+                    return false;
+                }
+                ue = ue->isolate(xname);
+
+                expression_g tmpeq;
+                if (ue && ue->split_equation(tmpeq, ue))
+                {
+                    save<symbol_g *> si(expression::independent, &tname);
+                    object_g         xv = x->value();
+                    save<object_g *> sv(expression::independent_value, &xv);
+                    save<bool> sumode3(unit::mode, false);
+                    udef = ue->evaluate();
+                    x = unit_p(unit::simple(udef, +xname));
+                    u = unit::simple(integer::make(1), +tname);
+                }
+            }
+        }
+        if (o)
+        {
+            // Two numerical values, simply compute conversion factor
             settings::SaveAutoSimplify sas(true);
             o = o / u;
         }
