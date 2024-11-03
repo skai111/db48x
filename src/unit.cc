@@ -668,6 +668,12 @@ static const cstring basic_units[] =
     // ------------------------------------------------------------------------
     "Fluids",    nullptr,
 
+    "K",        "1_K",                  // Kelvin
+    "°C",       "'(°C+273.15)'_K",      // Celsius
+    "°R",       "5/9_K",                // Rankin
+    "°F",       "'((°F+459.67)*5/9)'_K",// Fahrenheit
+    "°D",       "'(373.15-2/3*°D)'_K",  // Delisle
+
     "Pa",       "1_N/m^2",              // Pascal
     "atm",      "101325_Pa",            // Atmosphere
     "bar",      "100000_Pa",            // bar
@@ -679,12 +685,6 @@ static const cstring basic_units[] =
     "inHg",     "1_in/mm*mmHg",         // inch of mercury
     "inH2O",    "249.0889_Pa",          // Inch of H2O
     "torr",     "1/760_atm",            // Torr = 1/760 standard atm
-
-    "K",        "1_K",                  // Kelvin
-    "°C",       "'(°C+273.15)'_K",      // Celsius
-    "°R",       "5/9_K",                // Rankin
-    "°F",       "'((°F+459.67)*5/9)'_K",// Fahrenheit
-    "°D",       "'(373.15-2/3*°D)'_K",  // Delisle
 
     "m³/yr",    "=",                    // Cubic meters per year
     "m³/d",     "=",                    // Cubic meters per day
