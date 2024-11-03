@@ -87,7 +87,7 @@ L=20_ft  E=29000000_psi  I=40_in^4  a=10_ft  P=674.427_lbf  c=17_ft  M=3687.81_f
 ```rpl
 L=20_ft  E=29000000_psi  I=40_in^4  a=10_ft  P=674.427_lbf  c=17_ft  M=3687.81_ft*lbf
  w=102.783_lbf/ft  x=9_ft
-@ Expecting [ θ=-8.76317 82526 7⁳⁻² ° ]
+@ Expecting [ θ=-0.08763 17825 27 ° ]
 'ROOT(ⒺSimple Slope;[θ];[0_°])'
 ```
 
@@ -256,7 +256,7 @@ The expression for the radial electric field at the distance `r` is approximatel
 
 ```rpl
 Q=5E-6_C  L=3_m  r=0.05_m  εr=1
-@ Expecting [ λ=1.66666 66666 7⁳⁻⁸ C/m Er=5 991.70119 159 N/C ]
+@ Expecting [ λ=1.66666 66666 7⁳⁻⁶ C/m Er=599 170.11915 9 N/C ]
 'ROOT(ⒺE Field Infinite Line;[λ;Er];[1_C/m;1_N/C])'
 ```
 
@@ -277,9 +277,7 @@ The expression of the radial electric field at the distance `r` depends on the s
 ```rpl
 r='(3_m)/(2*tan 30_°)' θ2='360_°-30_°'
 Q=5E-6_C  L=3_m  r=2.5981_m  εr=1  θ1=30_°
-@ Expecting [ λ=1.73206 66666 7⁳⁻⁶ C/m Er=5 991.70119 159 N/C ]
-@ Wanted [ λ=1.66666 66666 7⁳⁻⁸ C/m Er=5 765.46436 972 N/C ]
-@ C#1-NOT OK: MROOT doesn't converge to both λ & Er correct values OK if calculated separatly
+@ Expecting [ λ=1.66666 66666 7⁳⁻⁶ C/m Er=5 765.46436 972 N/C ]
 'ROOT(ⒺE Field Finite Line;[λ;Er];[1_C/m;1_N/C])'
 ```
 
@@ -288,9 +286,7 @@ Q=5E-6_C  L=3_m  r=2.5981_m  εr=1  θ1=30_°
 ```rpl
 Q=5E-6_C  L=3_m  r=5_cm  εr=1  θ1='atan(L/2/r)' θ2='360_°-θ1'
 if 'r < L/10' then
-@ Expecting [ λ=-2.17809 14718 7⁳⁻⁸ C/m Er=5 991.70119 159 N/C ]
-@ Wanted [ λ=1.66666 66666 7⁳⁻⁸ C/m Er=598 837.52400 7 N/C ]
-@ C#2-NOT OK: ROOT doesn't converge to both λ & Er correct values OK if calculated separatly
+@ Expecting [ λ=1.66666 66666 7⁳⁻⁶ C/m Er=598 837.52400 7 N/C ]
 'ROOT(ⒺE Field Finite Line;[λ;Er];[1_C/m;1_N/C])'
 end
 ```
@@ -298,7 +294,7 @@ end
 ```rpl
 @ Verify relative difference under condition 5_cm << 3_m.
 Er0 Er %Ch
-@ Expecting 2.03923 54⁳⁻¹⁴
+@ Expecting -5.55093 02084 6⁳⁻²
 ```
 
 ### E Field Infinite Plate
@@ -454,7 +450,6 @@ These equations approximate the dc current required to charge the voltage on a c
 ```rpl
 C=15_μF  Vi=2.3_V  Vf=3.2_V  I=10_A  ti=0_μs
 @ Expecting [ ΔV=0.9 V Δt=1.35 μs tf=1.35 μs ]
-@ C#3 NOT OK Doesn't converge to correct solution, except if calculated individually
 'ROOT(ⒺDC Capacitor Current;[ΔV;Δt;tf];[1_V;1_μs;1_μs])'
 ```
 
@@ -479,7 +474,6 @@ These equations approximate the dc voltage induced in an inductor by a change in
 ```rpl
 L=100_mH  V=52_V  Δt=32_μs  ILi=23_A  ti=0_μs
 @ Expecting [ ΔIL=-1.664⁳⁻² A ILf=22.98336 A tf=32. μs ]
-@ NOT OK. Doesn't parse correctly due to "If". Replacements: If, Ii, ΔI => ILf, ILi, ΔIL
 'ROOT(ⒺDC Inductor Voltage;[ΔIL;ILf;tf];[1_A;1_A;1_μs])'
 ```
 
@@ -491,9 +485,7 @@ L=100_mH  V=52_V  Δt=32_μs  ILi=23_A  ti=0_μs
 
 ```rpl
 Vi=0_V  C=50_μF  Vf=10_V  R=100_Ω  t=2_ms
-@ Expecting [ V=-9 986.00079 989 V ]
-@ Wanted [ V=3.29679 95396 4 V ]
-@ NOT OK. exp(-t/(R*C)) in error: BASE to be applied to the mixed units argument
+@ Expecting [ V=3.29679 95396 4 V ]
 'ROOT(ⒺRC Transient;[V];[1_V])'
 ```
 
@@ -556,9 +548,9 @@ In accordance with microscopic Ohm's law, the current density is proportional to
 @ mheff_kg='0.5*Ⓒme'  ne=1.04e19_(cm^-3)  nh=6.0e18_(m^-3) E=6.0e-9_V/m
 
 τc=4.09365 36801 40e-15_s meeff=1.09312 60456 68e-31 kg mheff=4.55469 18569 5e-31 kg nh=6.0e18_(m^-3) ne=1.04e19_(m^-3) E=6.0e-9_V/m
-@ Wanted [ μe=49.03846 15384 64976 91445 22_cm↑2/(s·V) μh=60.00000 00000 03822 51215 7_cm↑2/(s·V) Je=4.90266 05000 386⁳-11_A/m↑2 Jh=3.46070 15294 402⁳-11_A/m↑2 J=8.36336 20294 771⁳-11_A/m↑2 σ=0.01393 89367 15800 94039 7294_S/m ]
+@ Wanted [ μe=49.03846 15384 64976 91445 22_cm↑2/(s·V) μh=60.00000 00000 03822 512o15 7_cm↑2/(s·V) Je=4.90266 05000 386⁳-11_A/m↑2 Jh=3.46070 15294 402⁳-11_A/m↑2 J=8.36336 20294 771⁳-11_A/m↑2 σ=0.01393 89367 15800 94039 7294_S/m ]
 @ The solution below is different, but seems to validate4 with EvalEq
-@ Expecting [ μe=60. cm↑2/(V·s) μh=14.4 cm↑2/(V·s) Je=5.99854 93176 9⁳⁻¹¹ A/m↑2 Jh=318 309.88618 4 A/m↑2 J=318 309.88618 4 A/m↑2 σ=1.13818 62807 9⁳⁻² S/m ]
+@ Expecting [ μe=60. cm↑2/(V·s) μh=14.4 cm↑2/(V·s) Je=5.99854 93176 9⁳⁻¹¹ A/m↑2 Jh=8.30568 36706 4⁳⁻¹² A/m↑2 J=6.82911 76847 6⁳⁻¹¹ A/m↑2 σ=1.13818 62807 9⁳⁻² S/m ]
 'ROOT(ⒺElectron & Hole Mobilities;[μe;μh;Je;Jh;J;σ];[1_(cm^2/(V*s));1_(cm^2/(V*s));1_(A/m^2);1_(A/m^2);1_(A/m^2);1_(S/m)])'
 ```
 
@@ -608,7 +600,6 @@ This equation describes hydrostatic pressure for an incompressible fluid. Depth 
 ```rpl
 h=100_m  ρ=1025.1817_kg/m^3  P0=1_atm
 @ Expecting [ P=1 106.68481 183 kPa ]
-@ C#7 NOT OK. MSOLVER: "NO solution?", OK if solve for each variable seperately
 'ROOT(ⒺPressure at Depth;[P];[1_kPa])'
 ```
 
