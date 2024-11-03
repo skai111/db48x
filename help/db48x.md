@@ -6286,7 +6286,7 @@ These equations apply to an ideal gas.
 
 ```rpl
 Vi=2_l  Vf=125_l  T=573.15_°C  n=0.25_mol  MW=64_g/mol
-@ Expecting [ m=1.6⁳⁻² kg W=4 926.49415 89 J ]
+@ Expecting [ m=1.6⁳⁻² kg W=7 274.34704 123 J ]
 'ROOT(ⒺIsothermal Expansion;[m;W];[1_kg;1_J])'
 ```
 
@@ -6298,7 +6298,7 @@ These equations describe a reversible pressure-volume change of an ideal gas suc
 
 ```rpl
 Pi=15_psi  Pf=35_psi  Vi=1_ft^3  Vf=0.50_ft^3  Ti=75_°F
-@ Expecting [ n=1.22239 24213 4 Tf=87.5 °F ]
+@ Expecting [ n=1.22239 24213 4 Tf=346.54537 037 K ]
 'ROOT(ⒺPolytropic Processes;[n;Tf];[1;1_°F])'
 ```
 

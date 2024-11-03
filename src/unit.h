@@ -54,6 +54,8 @@ struct unit : complex
     bool convert(algebraic_g &x, bool error = true) const;
     bool convert(unit_g &x, bool error = true) const;
 
+    static bool convert_to_linear(algebraic_g &value, algebraic_g &uexpr);
+
     static algebraic_p parse_uexpr(gcutf8 source, size_t &len);
 
     static unit_p lookup(symbol_p name, int *prefix_index = nullptr);

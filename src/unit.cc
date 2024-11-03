@@ -1159,6 +1159,35 @@ bool unit::convert(unit_g &x, bool error) const
 }
 
 
+bool unit::convert_to_linear(algebraic_g &value, algebraic_g &uexpr)
+// ----------------------------------------------------------------------------
+//   For units like °C, we need to convert to the baseline before computing
+// ----------------------------------------------------------------------------
+{
+    if (symbol_g usym = uexpr->as<symbol>())
+    {
+        if (unit_g base = lookup(usym))
+        {
+            if (expression_p be = base->value()->as<expression>())
+            {
+                algebraic_g      bunit = base->uexpr();
+                save<symbol_g *> si(expression::independent, &usym);
+                object_g         xvalue = +value;
+                save<object_g *> sv(expression::independent_value, &xvalue);
+                save<bool>       sumode(unit::mode, false);
+                if (algebraic_g cvt = be->evaluate())
+                {
+                    value = cvt;
+                    uexpr = bunit;
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+
 unit_p unit::cycle() const
 // ----------------------------------------------------------------------------
 //   Cycle the unit SI prefix across the closest appropriate ones
