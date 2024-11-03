@@ -415,7 +415,7 @@ static const cstring basic_equations[] =
 
     "Polytropic Processes",  "{ "
     "'(Pf_atm)/(Pi_atm)=((Vf_(ft^3))/(Vi_(ft^3)))^(-n)' "
-    "'(Tf_°F)/(Ti_°F)=((Pf_atm)/(Pi_atm))^((n-1)/n)' "
+    "'(Tf_°C)/(Ti_°C)=((Pf_atm)/(Pi_atm))^((n-1)/n)' "
     "}",
 
     "Isentropic Flow",  "{ "
