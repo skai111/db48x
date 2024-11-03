@@ -687,7 +687,8 @@ list_p Root::multiple_equation_solver(list_r eqs, list_r names, list_r guesses)
                 if (!solved)
                 {
                     solver_command_error();
-                    rt.no_solution_error();
+                    if (!rt.error())
+                        rt.no_solution_error();
                     return nullptr;
                 }
 
