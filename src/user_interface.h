@@ -212,6 +212,8 @@ struct user_interface
 
     void        load_help(utf8 topic, size_t len = 0);
 
+    bool        load_keymap(cstring filename);
+
 protected:
     bool        handle_screen_capture(int key);
     bool        handle_shifts(int &key, bool talpha);
@@ -301,6 +303,7 @@ protected:
 
 protected:
     // Key mappings
+    list_p   keymap;
     object_p function[NUM_PLANES][NUM_SOFTKEYS];
     cstring  menu_label[NUM_PLANES][NUM_SOFTKEYS];
     uint16_t menu_marker[NUM_PLANES][NUM_SOFTKEYS];

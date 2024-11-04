@@ -144,6 +144,7 @@ user_interface::user_interface()
       adjustSeps(false),
       graphics(false),
       dbl_release(false),
+      keymap(),
       helpfile()
 {
     for (uint p = 0; p < NUM_PLANES; p++)
@@ -5474,6 +5475,76 @@ static const byte *const defaultCommand[user_interface::NUM_PLANES] =
 };
 
 
+bool user_interface::load_keymap(cstring name)
+// ----------------------------------------------------------------------------
+//   Load the keymap from a file
+// ----------------------------------------------------------------------------
+{
+    file kmap(name, false);
+    if (!kmap.valid())
+        return false;
+
+    static byte buffer[80];
+    size_t      idx = 0;
+    uint        key = 0;
+    scribble    scr;
+    bool        quoted = false;
+    list_g      result;
+
+    while (kmap.valid())
+    {
+        unicode c = kmap.get();
+        if (c == '@')
+        {
+            do { c = kmap.get(); } while (c && c != '\n');
+            continue;
+        }
+        if (c == '"')
+            quoted = !quoted;
+        if (!quoted)
+        {
+            if (c == '[' || c == '{')
+                continue;
+            if (c == ']' || c == '}')
+            {
+                list_g plane = list::make(object::ID_list,
+                                          scr.scratch(), scr.growth());
+                if (!result)
+                    result = list::make(object::ID_list, plane);
+                else
+                    result = result->append(object_p(+plane));
+                scr.clear();
+                key = 0;
+                continue;
+            }
+        }
+        if (quoted || !utf8_whitespace(c))
+        {
+            idx += utf8_encode(c, buffer + idx);
+            if (idx >= sizeof(buffer) - 4)
+                return false;
+        }
+        else if (idx)
+        {
+            object_p parsed = object::parse(buffer, idx);
+            if (!parsed)
+                return false;
+            key++;
+            record(user_interface, "For key %u object %t", key, parsed);
+            rt.append(parsed);
+            idx = 0;
+        }
+        if (!c)
+            break;
+    }
+
+    if (result)
+        keymap = result;
+
+    return result;
+}
+
+
 object_p user_interface::object_for_key(int key)
 // ----------------------------------------------------------------------------
 //    Return the object for a given key
@@ -5488,6 +5559,12 @@ object_p user_interface::object_for_key(int key)
         if (obj)
             return obj;
     }
+
+    if (keymap && key > 0 && key <= NUM_KEYS)
+        if (object_p planeobj = keymap->at(plane))
+            if (list_p plane = planeobj->as_array_or_list())
+                if (object_p keyobj = plane->at(key-1))
+                    return keyobj;
 
     const byte *ptr = defaultCommand[plane] + 2 * (key - 1);
     if (*ptr)
@@ -5525,20 +5602,7 @@ bool user_interface::handle_user(int key)
                              shift, xshift,
                              alpha, lowercase, transalpha);
     if (object_p binding = assigned(kc))
-    {
-        if (text_p direct = binding->as<text>())
-        {
-            size_t sz = 0;
-            utf8 txt = direct->value(&sz);
-            result = insert(txt, sz, TEXT) == object::OK;
-            if (user_once)
-                Settings.UserMode(false);
-        }
-        else
-        {
-            result = handle_functions(key, binding, true);
-        }
-    }
+        result = handle_functions(key, binding, true);
     return result;
 }
 
@@ -5548,6 +5612,16 @@ bool user_interface::handle_functions(int key, object_p obj, bool user)
 //   Code shared for user-mode and normal mode commands
 // ----------------------------------------------------------------------------
 {
+    if (text_p direct = obj->as<text>())
+    {
+        size_t sz = 0;
+        utf8 txt = direct->value(&sz);
+        bool result = insert(txt, sz, TEXT) == object::OK;
+        if (user_once)
+            Settings.UserMode(false);
+        return result;
+    }
+
     save<int>  saveEvaluating(evaluating, key);
     object::id ty = obj->type();
     if (object::is_forced_entry(ty))

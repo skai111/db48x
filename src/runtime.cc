@@ -379,12 +379,18 @@ size_t runtime::gc()
                 ||  (ErrorSave     >= start && ErrorSave     < end)
                 ||  (ErrorSource   >= start && ErrorSource   < end)
                 ||  (ErrorCommand  >= obj   && ErrorCommand  < next)
-                ||  (ui.command    >= start && ui.command    < end);
+                ||  (ui.command    >= start && ui.command    < end)
+                ||  (ui.keymap     >= obj   && ui.keymap     < next);
             if (!found)
             {
                 utf8 *label = (utf8 *) &ui.menu_label[0][0];
                 for (uint l = 0; !found && l < ui.NUM_MENUS; l++)
                     found = label[l] >= start && label[l] < end;
+
+                object_p *functions = &ui.function[0][0];
+                const uint max = sizeof(ui.function)/sizeof(ui.function[0][0]);
+                for (uint k = 0; !found && k < max; k++)
+                    found = functions[k] >= obj && functions[k] < next;
             }
         }
 
@@ -521,6 +527,10 @@ void runtime::move(object_p to, object_p from,
     for (uint l = 0; l < ui.NUM_MENUS; l++)
         if (label[l] >= start && label[l] < end)
             label[l] += delta;
+
+    // Adjust keymap
+    if (ui.keymap >= from && ui.keymap < last)
+        ui.keymap = list_p(object_p(ui.keymap) + delta);
 
     // Adjust functions
     object_p *functions = &ui.function[0][0];
