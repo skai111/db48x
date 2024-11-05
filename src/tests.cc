@@ -3286,8 +3286,8 @@ void tests::float_numerical_functions()
         .test(CLEAR, "7 PRECISION 10 SIG HardFP", ENTER).noerror();
     step("Binary representation does not align with decimal")
         .test(CLEAR, "1.2", ENTER).noerror().expect("1.20000 0048");
-    step("Select 6-digit precision for output stability")
-        .test("6 SIG", ENTER)
+    step("Select 6-digit precision and Radians for output stability")
+        .test("6 SIG RAD", ENTER)
         .noerror();
 
     step("Addition")
@@ -3437,6 +3437,10 @@ void tests::float_numerical_functions()
     step("atan2 neg / neg quadrant")
         .test(CLEAR, "-3.21 -1.23 atan2", ENTER)
         .expect("-1.93672 r");
+
+    step("Check integer rounding in hardware FP mode (#1309)")
+        .test(CLEAR, "{ 3 3 } RANM", ENTER)
+        .type(object::ID_array);
 
     step("Restore default 24-digit precision");
     test(CLEAR, "24 PRECISION 12 SIG SoftFP", ENTER).noerror();
@@ -3604,6 +3608,11 @@ void tests::double_numerical_functions()
     step("atan2 neg / neg quadrant")
         .test(CLEAR, "-3.21 -1.23 atan2", ENTER)
         .expect("-1.93671 70284 3698 r");
+
+    step("Check integer rounding in hardware FP mode (#1309)")
+        .test(CLEAR, "{ 3 3 } RANM", ENTER)
+        .type(object::ID_array);
+
 
     step("Restore default 24-digit precision");
     test(CLEAR, "24 PRECISION 12 SIG SoftFP", ENTER).noerror();

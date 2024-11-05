@@ -1199,10 +1199,11 @@ algebraic_p decimal::to_integer() const
     {
         size_t  xs    = xi.nkigits;
         gcbytes xb    = xi.base;
-        bool    neg   = x->type() == ID_neg_decimal;
+        bool    neg   = x->type() == ID_neg_decimal && xe >= 0;
         large   xl    = xe - 3 * xs;
         ularge  scale = 1;
         ularge  mul   = 10;
+        ularge  res   = 0;
         if (xl >= 0)
         {
             large p = xl;
@@ -1214,18 +1215,27 @@ algebraic_p decimal::to_integer() const
                 mul *= mul;
             }
         }
+        else
+        {
+            xs += xl/3;
+            xl = xl % 3;
+            if (xl < 0)
+            {
+                xs--;
 
-        ularge res = 0;
-        for (size_t xd = xs; xd --> 0; )
+                kint xk = kigit(xb, xs);
+                scale = xl == -1 ? 100 : 10;
+                res = xk / (1000 / scale);
+            }
+
+        }
+
+        for (size_t xd = xs; xd --> 0; xl += 3)
         {
             kint xk = kigit(xb, xd);
             res += xk * scale;
             scale *= 1000;
         }
-        if (xl == -1)
-            res = res / 10;
-        else if (xl == -2)
-            res = res / 100;
 
         id ty = neg ? ID_neg_integer : ID_integer;
         return rt.make<integer>(ty, res);
@@ -1270,6 +1280,8 @@ bignum_p decimal::to_bignum() const
         tmp = rt.make<bignum>(ty, xk);
         res = res + tmp * scale;
         scale = scale / mul;
+        if (scale && scale->is_zero())
+            break;
     }
 
     res = res / mul;

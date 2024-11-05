@@ -1425,7 +1425,7 @@ FUNCTION_BODY(ToFraction)
     if (!x)
         return nullptr;
     algebraic_g xg = x;
-    if (arithmetic::decimal_to_fraction(xg))
+    if (arithmetic::to_fraction(xg))
         return xg;
     if (!rt.error())
         rt.type_error();

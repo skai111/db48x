@@ -555,7 +555,7 @@ void render_time(renderer &r, algebraic_g &value,
             settings::SaveDisplayMode sdm(dm);
             value->render(r);
         }
-        else if (algebraic::decimal_to_fraction(value))
+        else if (algebraic::to_fraction(value))
         {
             value->render(r);
         }
@@ -701,7 +701,7 @@ object::result to_hms_dms(cstring name)
     if (!x || !xc)
         return object::ERROR;
 
-    if (!arithmetic::decimal_to_fraction(xc))
+    if (!arithmetic::to_fraction(xc))
     {
         if (!rt.error())
             rt.value_error();
@@ -723,7 +723,7 @@ algebraic_p from_hms_dms(algebraic_g x, cstring name)
     if (x->is_real())
     {
         // Compatibility mode (including behaviour for 1.60->2.00)
-        if (!algebraic::decimal_to_fraction(x))
+        if (!algebraic::to_fraction(x))
             return nullptr;
         algebraic_g hours = IntPart::run(x);
         algebraic_g fp = FracPart::run(x);

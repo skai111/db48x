@@ -1245,7 +1245,7 @@ unit_p unit::cycle() const
                     uval = u->value();
                     if (isdec)
                     {
-                        if (!arithmetic::decimal_to_fraction(uval))
+                        if (!arithmetic::to_fraction(uval))
                             return nullptr;
                     }
                     else
@@ -1362,7 +1362,7 @@ unit_p unit::cycle() const
     }
     else if (decimal)
     {
-        if (arithmetic::decimal_to_fraction(value))
+        if (arithmetic::to_fraction(value))
             u = unit::make(value, uexpr);
     }
     return u;
