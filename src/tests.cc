@@ -5727,6 +5727,16 @@ void tests::vector_functions()
        .expect("[ 1 2 ]")
        .test("[ 4 5 ]", F5, NOSHIFT, ADD)
        .expect("[ 8.60232 52670 4 54.46232 2208 ° ]");
+
+   step("Extracting from 1D vector (#1310)")
+       .test(CLEAR, "[ 1_m ]", ENTER, A, LSHIFT, F3)
+       .got("1 m");
+   step("Extracting from 4D vector (#1310)")
+       .test(CLEAR, "[ 1_m 2_s 3_km 42 ] V→", ENTER)
+       .got("42", "3 km", "2 s", "1 m");
+   step("Extracting vector from matrix")
+       .test(CLEAR, "[ [ 1_m 2_s 3_km 42 ] ] V→", ENTER)
+        .error("Bad argument type");
 }
 
 
