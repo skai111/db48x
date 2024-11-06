@@ -929,14 +929,17 @@ UnitBenchmark
 @@
 @@ ---------------------------------------------------------------------------
 
-{
-        Demos
-        { "Hello" « "Hello" 3 DISP » }
-        { "Authors" « "Authors" HELP DROP » }
-        ⓁKineticEnergy
-        42_in
-        DebugOnError
-}
+«
+	{
+		Demos
+		{ "Hello" « "Hello" 3 DISP » }
+		{ "Authors" « "Authors" HELP DROP » }
+		ⓁKineticEnergy
+		42_in
+		DebugOnError
+	}
+	Time + Date + "" + { Purge } +
+»
 'CustomMenu' STO
 
 

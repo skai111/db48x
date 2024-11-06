@@ -42,8 +42,12 @@ COMMAND_BODY(ToggleCustomMenu)
 {
     menu_p m = ui.menu();
     if (m && m->type() == ID_VariablesMenu)
+    {
         if (CustomMenu::custom())
             return run<CustomMenu>();
+        if (rt.error())
+            return ERROR;
+    }
     return run<VariablesMenu>();
 }
 
@@ -74,8 +78,15 @@ list_p CustomMenu::custom()
 {
     object_p name = static_object(ID_CustomMenu);
     if (object_p cst = directory::recall_all(name, false))
+    {
         if (list_p cstl = cst->as_array_or_list())
             return cstl;
+        if (algebraic_p alg = cst->as_extended_algebraic())
+            if (algebraic_p eval = alg->evaluate())
+                if (list_p cstl = eval->as_array_or_list())
+                    return cstl;
+        rt.invalid_custom_menu_error();
+    }
     return nullptr;
 }
 
