@@ -1,21 +1,21 @@
 @  PLANE 0: UNSHIFTED
 [
-ToolsMenu	inv		sqrt		exp		ln		UIAlgebraic
-Store		VariablesMenu	StackMenu	sin		cos		tan
-UIEnter				Swap		neg		EditorCycle	UIBackspace
-UILeft				"7"		"8"		"9"		*
-UIRight				"4"		"5"		"6"		/
+ToolsMenu	inv		sqrt		exp		ln		UIKey
+Store	       ToggleCustomMenu	StackMenu	sin		cos		tan
+Duplicate			Swap		neg		Cycle           Drop
+StackEditor			"7"		"8"		"9"		/
+Edit				"4"		"5"		"6"		*
 UILeftShift			"1"		"2"		"3"		-
-UIExit				"0"		UIDecimal	UIEvaluate	+
+UIExit				"0"		UIDecimal	Evaluate	+
 ]
 
 @ PLANE 1: LEFT SHIFTED
 [
 LastMenu	pow		sq		exp10		log10		LoopsMenu
 ComplexMenu	FractionsMenu	ConstantsMenu	asin		acos		atan
-UIAlpha				LastArg		ModesMenu	DisplayModesMenu UIDelete
-UIUp				SolverMenu	IntegrationMenu "[	]"	StatisticsMenun
-UIDown				BasesMenu	UnitsMenu	FlagsMenu	ProbabilitiesMenu
+UIAlpha				LastArg		ModesMenu	DisplayModesMenu ClearThingsMenu
+EditorHistory			SolverMenu	IntegrationMenu "[	]"	StatisticsMenun
+EditMenu			BasesMenu	UnitsMenu	FlagsMenu	ProbabilitiesMenu
 UIRightShift			ToDecimal	ToggleUserMode	ProgramMenu	ListsMenu
 Off				SystemMenu	Show		"«	»"	Catalog
 ]
@@ -25,7 +25,7 @@ Off				SystemMenu	Show		"«	»"	Catalog
 MainMenu	xroot		PolynomialsMenu ExpLogMenu	PartsMenu	EquationsMenu
 MemoryMenu	Library		MathMenu	HyperbolicMenu	CircularMenu	RealMenu
 UIText				Undo		ObjectMenu	PlotMenu	UpDir
-UIHistory			SymbolicMenu	DifferentiationMenu MatrixMenu	FinanceSolverMenu
+EditorHistory			SymbolicMenu	DifferentiationMenu MatrixMenu	FinanceSolverMenu
 EditMenu			TextMenu	UnitsConversionsMenu TimeMenu	NumbersMenu
 UINoShift			DebugMenu	CharactersMenu	TestsMenu	IOMenu
 SaveState			FilesMenu	GraphicsMenu	"{	}"	Help

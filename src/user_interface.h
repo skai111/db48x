@@ -167,9 +167,11 @@ struct user_interface
     bool        replace_character_left_of_cursor(symbol_p sym);
     bool        replace_character_left_of_cursor(utf8 text, size_t len);
 
-    uint        shift_plane()   { return xshift ? 2 : shift ? 1 : 0; }
-    uint        alpha_plane()   { return alpha + 2*lowercase+4*transalpha; }
-    void        clear_shift()   { xshift = shift = false; }
+    void        shift_plane(uint p) { shift = p & 1; xshift = p & 2; }
+    uint        shift_plane()       { return xshift ? 2 : shift ? 1 : 0; }
+    void        alpha_plane(uint p) { alpha = p & 1; lowercase = p & 2; }
+    uint        alpha_plane()       { return alpha + 2*lowercase+4*transalpha; }
+    void        clear_shift()       { xshift = shift = false; }
     void        clear_help();
     void        clear_menu();
     object_p    object_for_key(int key);
@@ -193,9 +195,21 @@ struct user_interface
                                bool midcursor);
     size_t      remove(size_t offset, size_t len);
 
+    bool        do_edit();
+    bool        do_enter();
+    bool        do_exit();
+    bool        do_algebraic();
+    bool        do_decimal_separator();
+    bool        do_text();
+    bool        do_left();
+    bool        do_right();
+    bool        do_up();
+    bool        do_down();
+    bool        do_delete(bool forward);
+
     text_p      editor_save(text_r ed, bool rewinding = false);
     text_p      editor_save(bool rewinding = false);
-    void        editor_history(bool back = false);
+    bool        editor_history(bool back = false);
     bool        editor_select();
     bool        editor_word_left();
     bool        editor_word_right();

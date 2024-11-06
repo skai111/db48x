@@ -1220,6 +1220,51 @@ CMD(Catalog)
 
 CMD(ToggleUserMode)
 CMD(Undo)                       // Immediate: do not save stack before Undo
+
+
+
+// ============================================================================
+//
+//   Editor commands
+//
+// ============================================================================
+
+CMD(Edit)
+CMD(StackEditor)
+
+CMD(UILeftShift)
+CMD(UIRightShift)
+CMD(UINoShift)
+CMD(UIAlpha)
+CMD(UILowercase)
+CMD(UINoAlpha)
+CMD(UIAlgebraic)
+CMD(UIExit)
+CMD(UIDecimal)
+CMD(UIText)
+CMD(UIEnter)
+CMD(UILeft)
+CMD(UIRight)
+CMD(UIUp)
+CMD(UIDown)
+CMD(UIBackspace)
+CMD(UIDelete)
+
+CMD(EditorSelect)
+CMD(EditorWordLeft)
+CMD(EditorWordRight)
+CMD(EditorBegin)
+CMD(EditorEnd)
+CMD(EditorCut)
+CMD(EditorCopy)
+CMD(EditorPaste)
+CMD(EditorSearch)
+CMD(EditorReplace)
+CMD(EditorClear)
+CMD(EditorFlip)
+CMD(EditorHistory)
+CMD(EditorHistoryBack)
+
 CMD(LastMenu)                   // Last parseable command
 
 
@@ -1345,28 +1390,6 @@ CHARACTER_MENUS(CharactersMenu7)
 CHARACTER_MENUS(CharactersMenu8)
 CHARACTER_MENUS(CharactersMenu9)
 
-
-// ============================================================================
-//
-//   Editor commands
-//
-// ============================================================================
-
-CMD(EditorSelect)
-CMD(EditorWordLeft)
-CMD(EditorWordRight)
-CMD(EditorBegin)
-CMD(EditorEnd)
-CMD(EditorCut)
-CMD(EditorCopy)
-CMD(EditorPaste)
-CMD(EditorSearch)
-CMD(EditorReplace)
-CMD(EditorClear)
-CMD(EditorFlip)
-CMD(EditorHistory)
-CMD(EditorHistoryBack)
-CMD(StackEditor)
 
 
 // ============================================================================
