@@ -178,7 +178,7 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-            units_and_conversions();
+            matrix_functions();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -5977,6 +5977,10 @@ void tests::matrix_functions()
         .test("MyIdn", ENTER)
         .want("[[ 1 0 0 0 ] [ 0 1 0 0 ] [ 0 0 1 0 ] [ 0 0 0 1 ]]")
         .test("'MyIdn'", ENTER, LSHIFT, BSP, F2);
+
+    step("Divide fails")
+        .test(CLEAR, "[[1 1][1 1]]", ENTER, ENTER, DIV)
+        .error("Divide by zero");
 }
 
 
