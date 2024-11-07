@@ -588,7 +588,7 @@ intptr_t list::list_render(renderer &r, unicode open, unicode close) const
     // Add final space and closing separator
     if (close)
     {
-        if (!unnest)
+        if (!unnest && !expr)
         {
             r.unindent();
             if (lty != ID_array && !expr)
