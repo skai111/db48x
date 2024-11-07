@@ -621,7 +621,7 @@ static const cstring basic_equations[] =
 //  "'xfr_ft=(175.74722 3631_ft/s)*∫(0;10.00590 25332;TANH(t*Ⓒg/(175.74722 3631_ft/s)*(1_s));t)*(1_s)' " works in example 1
 //  "'xfr_m=(95.13182 74789_m/s)*∫(0;17.76964 17471;TANH(t*Ⓒg/(95.13182 74789_m/s)*(1_s));t)*(1_s)' " works in example 2
     "}",
-
+zzz
 // New section added with new eqns (1), (3) & (4), but the integration doesn't work
 //W=Fb+D <=> Vol*(ρ-ρf)*g=1/2*Cd*Ah*ρf*vt^2  => vt=IFTE('ρ<ρf';-1;1)*√(2*Vol/Ah*ABS(ρ/ρf-1)*g/Cd)
     "Buoyancy & Terminal Velocity",  "{ "
