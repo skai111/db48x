@@ -555,6 +555,8 @@ static const cstring basic_units[] =
     "minute",   "1_min",                // Minute
     "second",   "1_s",                  // Second
 
+    "hms",      "1_h",                  // Hour/minutes/seconds to hours
+
     // ------------------------------------------------------------------------
     // Speed menu
     // ------------------------------------------------------------------------

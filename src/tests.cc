@@ -178,7 +178,7 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-            matrix_functions();
+            hms_dms_operations();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -8200,6 +8200,13 @@ void tests::hms_dms_operations()
         .test(LSHIFT, F5).noerror().expect("1:02:03")
         .test(LSHIFT, F5).noerror().expect("1:02:03");
 
+    step("Converting time to DMS")
+        .test(CLEAR, "1.25_h ToDMS", ENTER)
+        .error("Inconsistent units");
+    step("Converting time to HMS")
+        .test(CLEAR, "1.25_h ToHMS", ENTER)
+        .expect("1:15:00");
+
     step("Converting angles to DMS")
         .test(CLEAR, "0.5", LSHIFT, J, A, RSHIFT, F1).expect("30°00′00″");
 }
@@ -8263,6 +8270,9 @@ void tests::date_operations()
     step("Adding days to a date (with time unit)")
         .test("112_h", NOSHIFT, ADD)
         .expect("Sat 19/Aug/2023, 16:00:00");
+    step("Adding days to a date (with HMS value)")
+        .test("5/2_hms", NOSHIFT, ADD)
+        .expect("Sat 19/Aug/2023, 18:30:00");
 
     step("Runing TEVAL to time something")
         .test(CLEAR, LSHIFT, RUNSTOP,
