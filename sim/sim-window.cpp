@@ -665,6 +665,19 @@ void MainWindow::screenshot(cstring basename, int x, int y, int w, int h)
 }
 
 
+void MainWindow::load_keymap(cstring keymapfile)
+// ----------------------------------------------------------------------------
+//   A new keymap was loaded, update visible keyboard layout on screen
+// ----------------------------------------------------------------------------
+{
+    QFileInfo fi(keymapfile);
+    QString name = fi.baseName() + ".png";
+    QString style = ("border-image: url(:/bitmap/" + name + ") "
+                     "0 0 0 0 stretch stretch;");
+    theMainWindow()->ui.keyboard->setStyleSheet(style);
+}
+
+
 
 // ============================================================================
 //
@@ -1102,6 +1115,14 @@ int ui_wrap_io(file_sel_fn callback, const char *path, void *data, bool)
     return callback(path, name, data);
 }
 
+void ui_load_keymap(cstring name)
+// ----------------------------------------------------------------------------
+//   Change the visible keyboard layout
+// ----------------------------------------------------------------------------
+{
+    MainWindow::load_keymap(name);
+}
+
 
 bool tests::image_match(cstring file, int x, int y, int w, int h, bool force)
 // ----------------------------------------------------------------------------
@@ -1285,6 +1306,5 @@ int ui_wrap_io(file_sel_fn callback, const char *path, void *data, bool)
             name = p + 1;
     return callback(path, name, data);
 }
-
 
 #endif // WASM

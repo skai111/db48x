@@ -224,6 +224,9 @@ void program_init()
 
     // Check if we have a state file to load
     load_system_state();
+
+    // Load default keymap
+    ui.load_keymap("config/keymap.48k");
 }
 
 

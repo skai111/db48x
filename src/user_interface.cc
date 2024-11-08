@@ -55,6 +55,7 @@
 #include "variables.h"
 
 #ifdef SIMULATOR
+#include "sim-dmcp.h"
 #include "tests.h"
 #endif // SIMULATOR
 
@@ -5274,7 +5275,12 @@ bool user_interface::load_keymap(cstring name)
     }
 
     if (result)
+    {
         keymap = result;
+#if SIMULATOR
+        ui_load_keymap(name);
+#endif // SIMULATOR
+    }
 
     return result;
 }

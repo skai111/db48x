@@ -113,7 +113,7 @@ keyboard:				\
 	Keyboard-Cutout.png		\
 	sim/keyboard-db48x.png 		\
 	sim/keyboard-db48x-42like.png	\
-	sim/keyboard-db48x-pold.png	\
+	sim/keyboard-db48x-old.png	\
 	help/keyboard.png		\
 	doc/keyboard.png
 Keyboard-Layout.png: DB48X-Keys/DB48X-Keys.001.png
