@@ -248,6 +248,16 @@ struct tests
 
     };
 
+    enum id : unsigned
+    // ------------------------------------------------------------------------
+    //  Object ID
+    // ------------------------------------------------------------------------
+    {
+#define ID(i)   ID_##i,
+#include "ids.tbl"
+        NUM_IDS
+    };
+
   protected:
     struct failure
     {
@@ -310,6 +320,7 @@ public:
     tests &passfail(int ok);    // ok=-1 means expected failure
 
     // Used to build the tests
+    tests &itest(id cmd);
     tests &itest(key k, bool release = true);
     tests &itest(unsigned int value);
     tests &itest(int value);
@@ -375,7 +386,7 @@ public:
     tests &image_noheader(cstring name, uint ignoremenus=0,
                           uint extrawait = 0);
     tests &image_menus(cstring name, uint menus=3, uint extrawait = 0);
-    tests &type(object::id ty, uint extrawait = 0);
+    tests &type(id ty, uint extrawait = 0);
     tests &shift(bool s, uint extrawait = 0);
     tests &xshift(bool x, uint extrawait = 0);
     tests &alpha(bool a, uint extrawait = 0);
