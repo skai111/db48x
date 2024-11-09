@@ -3443,6 +3443,15 @@ void tests::float_numerical_functions()
         .test(CLEAR, "{ 3 3 } RANM", ENTER)
         .type(ID_array);
 
+    step("Check hwfp overflow (#1317)")
+        .test(CLEAR, "1E80", ID_sq)
+        .expect("∞");
+    step("Check hwfp overflow (#1317)")
+        .test(CLEAR, "OverflowError", ENTER).noerror()
+        .test("1E80", ID_sq)
+        .error("Numerical overflow")
+        .test(CLEAR, "'OverflowError' Purge", ENTER).noerror();;
+
     step("Restore default 24-digit precision");
     test(CLEAR, "24 PRECISION 12 SIG SoftFP", ENTER).noerror();
 }
@@ -3614,6 +3623,14 @@ void tests::double_numerical_functions()
         .test(CLEAR, "{ 3 3 } RANM", ENTER)
         .type(ID_array);
 
+    step("Check hwfp overflow (#1317)")
+        .test(CLEAR, "1E256", ID_sq)
+        .expect("∞");
+    step("Check hwfp overflow (#1317)")
+        .test(CLEAR, "OverflowError", ENTER).noerror()
+        .test("1E256", ID_sq)
+        .error("Numerical overflow")
+        .test(CLEAR, "'OverflowError' Purge", ENTER).noerror();;
 
     step("Restore default 24-digit precision");
     test(CLEAR, "24 PRECISION 12 SIG SoftFP", ENTER).noerror();

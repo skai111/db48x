@@ -148,7 +148,7 @@ bool decimal::is_infinity() const
 //  Check if the value overflowed and represents an infinity
 // ----------------------------------------------------------------------------
 {
-    return exponent() > large(Settings.MaximumDecimalExponent()) + 1;
+    return exponent() > large(Settings.MaximumDecimalExponent());
 }
 
 
