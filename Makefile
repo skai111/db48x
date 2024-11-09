@@ -153,6 +153,8 @@ TAR_FILES=	$(TARGET).$(PGM)		\
 		help/*.bmp help/*/*.bmp		\
 		state/*.48[sSbB]		\
 		config/*.csv			\
+		config/*.48k			\
+		config/*.cfg			\
 		library/*.48[sSbB]
 
 # installation steps
