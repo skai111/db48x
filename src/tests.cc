@@ -5755,6 +5755,11 @@ void tests::vector_functions()
    step("Extracting vector from matrix")
        .test(CLEAR, "[ [ 1_m 2_s 3_km 42 ] ] V→", ENTER)
         .error("Bad argument type");
+
+   step("Error in in vector operation")
+       .test(CLEAR, "[1][0]", ID_div)
+       .error("Divide by zero");
+
 }
 
 

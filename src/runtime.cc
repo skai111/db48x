@@ -790,7 +790,7 @@ byte *runtime::append(object_p obj)
 //   Append an object at end of scratch pad
 // ----------------------------------------------------------------------------
 {
-    return append(obj, obj->size());
+    return obj ? append(obj, obj->size()) : nullptr;
 }
 
 
