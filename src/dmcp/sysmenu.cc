@@ -562,6 +562,9 @@ static int keymap_load_callback(cstring path, cstring name, void *)
         return 1;
     }
 
+    file kcfg("config/keymap.cfg", true);
+    kcfg.write(path, strlen(path));
+
     // Exit with success
     return MRET_EXIT;
 }

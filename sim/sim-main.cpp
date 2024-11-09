@@ -32,6 +32,7 @@
 #include "recorder.h"
 #include "sim-rpl.h"
 #include "sim-window.h"
+#include "sysmenu.h"
 #include "version.h"
 
 #include <QApplication>
@@ -42,7 +43,6 @@ RECORDER_TWEAK_DEFINE(rpl_objects_detail, 0, "Set to 1 to see object addresses")
 
 bool run_tests = false;
 bool noisy_tests = false;
-bool db48x_keyboard = true;
 uint memory_size = 100;           // Memory size in kilobytes
 
 size_t recorder_render_object(intptr_t tracing,
@@ -166,7 +166,10 @@ int main(int argc, char *argv[])
                 break;
 
             case 'k':
-                db48x_keyboard = true;
+                if (argv[a][2])
+                    keymap_filename = argv[a] + 2;
+                else if (a < argc)
+                    keymap_filename = argv[++a];
                 break;
             case 'w':
                 if (argv[a][2])

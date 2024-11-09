@@ -5218,7 +5218,10 @@ bool user_interface::load_keymap(cstring name)
 {
     file kmap(name, false);
     if (!kmap.valid())
+    {
+        rt.error(kmap.error());
         return false;
+    }
 
     static byte buffer[80];
     size_t      idx = 0;
@@ -5258,10 +5261,14 @@ bool user_interface::load_keymap(cstring name)
         {
             idx += utf8_encode(c, buffer + idx);
             if (idx >= sizeof(buffer) - 4)
+            {
+                rt.syntax_error();
                 return false;
+            }
         }
         else if (idx)
         {
+            // Parse object
             object_p parsed = object::parse(buffer, idx);
             if (!parsed)
                 return false;

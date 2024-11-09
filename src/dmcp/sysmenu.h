@@ -67,6 +67,7 @@ extern const smenu_t  application_menu;
 extern const smenu_t  settings_menu;
 extern const smenu_t  state_menu;
 extern const smenu_t  program_menu;
+extern cstring        keymap_filename;
 
 // Callbacks installed in the SDB to run the menu system
 int                   menu_item_run(uint8_t mid);

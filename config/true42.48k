@@ -1,6 +1,6 @@
 @  PLANE 0: UNSHIFTED
 [
-ToolsMenu	inv		sqrt		pow		MathMenu	UIKey
+ToolsMenu	inv		sqrt		exp		ln		UIKey
 Store	       ToggleCustomMenu	StackMenu	sin		cos		tan
 Duplicate			Swap		neg		Cycle           Drop
 StackEditor			"7"		"8"		"9"		/
@@ -11,23 +11,23 @@ UIExit				"0"		UIDecimal	Evaluate	+
 
 @ PLANE 1: LEFT SHIFTED
 [
-LastMenu	exp		sq		abs		ExpLogMenu	LoopsMenu
-ComplexMenu	MemoryMenu	ConstantsMenu	asin		acos		atan
+LastMenu	pow		sq		exp10		log10		LoopsMenu
+ComplexMenu	FractionsMenu	ConstantsMenu	asin		acos		atan
 UIAlpha				LastArg		ModesMenu	DisplayModesMenu ClearThingsMenu
 EditorHistory			SolverMenu	IntegrationMenu "[	]"	StatisticsMenun
-EditMenu			BasesMenu	UnitsMenu	FlagsMenu	ProbabilitiesMenu
+EditMenu			BasesMenu	UnitsMenu	FlagsMenu	ProbabilitiesMen
 UIRightShift			ToDecimal	ToggleUserMode	ProgramMenu	ListMenu
 Off				SystemSetup	Show		"«	»"	Catalog
 ]
 
 @ PLANE 2: RIGHT SHIFTED
 [
-MainMenu	ln		xroot 		AlgebraMenu	PartsMenu	EquationsMenu
-RealMenu	Library		FractionsMenu	HyperbolicMenu	CircularMenu	AnglesMenu
-UIText				Undo		UserInterfaceModesMenu	PlotMenu	UpDir
-EditorHistory			SymbolicMenu	PolynomialsMenu	MatrixMenu	FinanceSolverMenu
+MainMenu	xroot		PolynomialsMenu ExpLogMenu	PartsMenu	EquationsMenu
+MemoryMenu	Library		MathMenu	HyperbolicMenu	CircularMenu	RealMenu
+UIText				Undo		ObjectMenu	PlotMenu	UpDir
+EditorHistory			SymbolicMenu	DifferentiationMenu MatrixMenu	FinanceSolverMenu
 EditMenu			TextMenu	UnitsConversionsMenu TimeMenu	NumbersMenu
-UINoShift			DebugMenu	CharactersMenu	TestsMenu	ObjectMenu
+UINoShift			DebugMenu	CharactersMenu	TestsMenu	IOMenu
 SaveState			FilesMenu	GraphicsMenu	"{	}"	Help
 ]
 
