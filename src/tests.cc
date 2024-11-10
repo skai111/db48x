@@ -6163,19 +6163,17 @@ void tests::eqnlib_columns_and_beams()
         .test(NOSHIFT, F1)
         .expect("'676.60192 6324 kN"
                 "=6.76601 92632 4⁳¹⁴ kPa·mm↑4/m↑2"
-                "-0.00000 0005 kPa·mm↑4/m↑2'");
+                "-0.00000 0001 kPa·mm↑4/m↑2'");
     step("Solving Elastic Buckling third equation")
         .test(CLEAR, LSHIFT, F1, LSHIFT, F2)
         .expect("σcr=127 428.24437 8 kPa")
         .test(NOSHIFT, F1)
-        .expect("'127 428.24437 8 kPa"
-                "=12.74282 44378 kN/cm↑2"
-                "-8.⁳⁻²² kN/cm↑2'");
+        .expect("'127 428.24437 8 kPa=12.74282 44378 kN/cm↑2+1.⁳⁻²² kN/cm↑2'");
     step("Solving Elastic Buckling fourth equation")
         .test(CLEAR, LSHIFT, F1, LSHIFT, F4)
         .expect("r=4.1148 cm")
         .test(NOSHIFT, F1)
-        .expect("'4.1148 cm=411.48 mm↑2/cm+6.12⁳⁻¹⁹ mm↑2/cm'");
+        .expect("'4.1148 cm=411.48 mm↑2/cm+6.13⁳⁻¹⁹ mm↑2/cm'");
 
     step("Solving Eccentric Columns")
         .test(CLEAR, ID_EquationsMenu, F2, RSHIFT, F2)
@@ -6235,7 +6233,7 @@ void tests::eqnlib_columns_and_beams()
         .test(F6, LSHIFT, F2)
         .expect("Mx=13 262.87487 72 N·m")
         .test("1_ft*lbf", NOSHIFT, F2, LSHIFT, F2)
-        .expect("Mx=9 782.1945 lbf·ft");
+        .expect("Mx=9 782.1945 ft·lbf");
 
     step("Solving Simple Shear")
         .test(CLEAR, EXIT, ID_EquationsMenu, F2, F6, RSHIFT, F1)
@@ -6292,7 +6290,7 @@ void tests::eqnlib_columns_and_beams()
         .test("100_lbf/ft", NOSHIFT, F6, F3)
         .test("8_ft", NOSHIFT, F4)
         .test(F6, LSHIFT, F2)
-        .expect("Mx=-200. lbf·ft");
+        .expect("Mx=-200. ft·lbf");
 
     step("Solving Cantilever Shear")
         .test(CLEAR, EXIT, ID_EquationsMenu, F2, F6, RSHIFT, F5)

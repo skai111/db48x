@@ -387,7 +387,7 @@ algebraic_p Root::solve(program_r pgm, algebraic_r goal, algebraic_r guess)
                     record(solve, "[%u] Moving to %t - %t * %t / %t",
                            i, +lx, +y, +dx, +dy);
                     is_constant = false;
-                    x = lx - y * dx / dy;
+                    x = lx - (y / dy) * dx;
                     record(solve, "[%u] Moved to %t [%t, %t]",
                            i, +x, +lx, +hx);
                 }
@@ -526,9 +526,8 @@ algebraic_p Root::solve(algebraic_g &eq,
             vars = list::make(ID_list, var);
         if (!guesses)
             guesses = list::make(ID_list, guess);
-        algebraic_g r = algebraic_p(multiple_equation_solver(eqs,
-                                                             vars, guesses));
-        if (onevar)
+        algebraic_g r = multiple_equation_solver(eqs, vars, guesses);
+        if (r && onevar)
             if (list_p lst = r->as_array_or_list())
                 if (lst->items() == 1)
                     r = algebraic_p(lst->head());

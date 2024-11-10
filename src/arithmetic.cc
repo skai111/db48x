@@ -458,12 +458,13 @@ algebraic_p arithmetic::non_numeric<mul>(algebraic_r x, algebraic_r y)
     {
         algebraic_g xv = xu->value();
         algebraic_g xe = xu->uexpr();
-        unit::convert_to_linear(xv, xe);
 
         if (unit_p yu = unit::get(y))
         {
             algebraic_g yv = yu->value();
             algebraic_g ye = yu->uexpr();
+
+            unit::convert_to_linear(xv, xe);
             unit::convert_to_linear(yv, ye);
 
             xv = xv * yv;
@@ -485,7 +486,6 @@ algebraic_p arithmetic::non_numeric<mul>(algebraic_r x, algebraic_r y)
         if (!x->is_symbolic() || yv->is_one())
         {
             algebraic_g ye = yu->uexpr();
-            unit::convert_to_linear(yv, ye);
             yv = x * yv;
             return unit::simple(yv, ye);
         }
@@ -600,13 +600,26 @@ algebraic_p arithmetic::non_numeric<struct div>(algebraic_r x, algebraic_r y)
     {
         algebraic_g xv = xu->value();
         algebraic_g xe = xu->uexpr();
-        unit::convert_to_linear(xv, xe);
 
         if (unit_p yu = unit::get(y))
         {
             algebraic_g yv = yu->value();
             algebraic_g ye = yu->uexpr();
-            unit::convert_to_linear(yv, ye);
+
+            if (xe && ye)
+            {
+                if (xe->is_same_as(ye))
+                {
+                    // Two identical units: just return ratio
+                    xv = xv / yv;
+                    return xv;
+                }
+                else
+                {
+                    unit::convert_to_linear(xv, xe);
+                    unit::convert_to_linear(yv, ye);
+                }
+            }
             xv = xv / yv;
             {
                 save<bool> umode(unit::mode, true);
@@ -626,7 +639,6 @@ algebraic_p arithmetic::non_numeric<struct div>(algebraic_r x, algebraic_r y)
         {
             algebraic_g yv = yu->value();
             algebraic_g ye = yu->uexpr();
-            unit::convert_to_linear(yv, ye);
             yv = x / yv;
             save<bool> umode(unit::mode, true);
             save<bool> ufact(unit::factoring, true);
