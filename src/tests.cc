@@ -179,7 +179,7 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-            hms_dms_operations();
+            data_types();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -930,6 +930,16 @@ void tests::data_types()
     test(DOWN, SPACE, SPACE, SPACE,
          RSHIFT, DOWN, SHIFT, F3, " 1 +", ENTER)
         .type(ID_expression).expect("'X⁻¹+Y²+Z³+1'");
+    step("Parsing text in an algebraic expression")
+        .test(CLEAR, "'SIZE(\"Hello\")'", ENTER)
+        .expect("'Size \"Hello\"'")
+        .test(ID_Eval)
+        .expect("5");
+    step("Parsing arrays in an algebraic expression")
+        .test(CLEAR, "'SIZE([1;2;3;4])'", ENTER)
+        .expect("'Size [1;2;3;4]'")
+        .test(ID_Eval)
+        .expect("{ 4 }");
 
     step("Fractions");
     test(CLEAR, "1/3", ENTER).type(ID_fraction).expect("¹/₃");
@@ -5115,6 +5125,11 @@ void tests::units_and_conversions()
     step("Ubase on non-scaling units with scaling request")
         .test(CLEAR, "100_°C/s", ID_UnitsConversionsMenu, ID_UBase)
         .error("Inconsistent units");
+    step("Ubase in arithmetic expression (#1321)")
+        .test(CLEAR, "'UBASE(100_km)'", ENTER)
+        .expect("'BaseUnits 100 km'")
+        .test(RUNSTOP)
+        .expect("100 000 m");
 }
 
 
