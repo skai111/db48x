@@ -460,31 +460,32 @@ static const cstring basic_equations[] =
     "Heat Transfer", nullptr,
     // ------------------------------------------------------------------------
     // 17 eqns
+    // We need to use UBASE to ensure we get Kelvin everywhere
     "Heat Capacity",  "{ "
-    "'(Q_kJ)=(m_kg)*(c_(kJ/(kg*K)))*(ΔT_°C)' "
-    "'(Q_kJ)=(m_kg)*(c_(kJ/(kg*K)))*((Tf_°C)-(Ti_°C))' "
+    "'(Q_kJ)=(m_kg)*(c_(kJ/(kg*K)))*(UBASE(Tf_°C)-UBASE(Ti_°C))' "
+    "'(ΔT_°C)=(Tf_°C)-(Ti_°C)' "
     "}",
 
     "Thermal Expansion",  "{ "
-    "'(δ_cm)=(α_(1/°C))*(L_m)*(ΔT_°C)' "
-    "'(δ_cm)=(α_(1/°C))*(L_m)*((Tf_°C)-(Ti_°C))' "
+    "'(δ_cm)=(α_(1/K))*(L_m)*(UBASE(Tf_°C)-UBASE(Ti_°C))' "
+    "'(ΔT_°C)=(Tf_°C)-(Ti_°C)' "
     "}",
 
     "Conduction",  "{ "
-    "'(qr_W)=((k_(W/(m*K)))*(A_(m^2))/(L_m))*(ΔT_°C)' "
-    "'(qr_W)=((k_(W/(m*K)))*(A_(m^2))/(L_m))*((Th_°C)-(Tc_°C))' "
+    "'(qr_W)=((k_(W/(m*K)))*(A_(m^2))/(L_m))*(UBASE(Th_°C)-UBASE(Tc_°C))' "
+    "'(ΔT_°C)=(Th_°C)-(Tc_°C)' "
     "}",
 
     "Convection",  "{ "
-    "'(qr_W)=(h_(W/(m^2*K)))*(A_(m^2))*(ΔT_°C)' "
-    "'(qr_W)=(h_(W/(m^2*K)))*(A_(m^2))*((Th_°C)-(Tc_°C))' "
+    "'(qr_W)=(h_(W/(m^2*K)))*(A_(m^2))*(UBASE(Th_°C)-UBASE(Tc_°C))' "
+    "'(ΔT_°C)=(Th_°C)-(Tc_°C)' "
     "}",
 
     "Conduction & Convection",  "{ "
-    "'(qr_W)=(A_(m^2))*(ΔT_°C)/(1/(h1_(W/(m^2*K)))+(L1_cm)/(k1_(W/(m*K)))+(L2_cm)/(k2_(W/(m*K)))+(L3_cm)/(k3_(W/(m*K)))+1/(h3_(W/(m^2*K))))' "
+    "'(qr_W)=(A_(m^2))*(UBASE(Th_°C)-UBASE(Tc_°C))/(1/(h1_(W/(m^2*K)))+(L1_cm)/(k1_(W/(m*K)))+(L2_cm)/(k2_(W/(m*K)))+(L3_cm)/(k3_(W/(m*K)))+1/(h3_(W/(m^2*K))))' "
     "'(qr_W)=(A_(m^2))*((Th_°C)-(Tc_°C))/(1/(h1_(W/(m^2*K)))+(L1_cm)/(k1_(W/(m*K)))+(L2_cm)/(k2_(W/(m*K)))+(L3_cm)/(k3_(W/(m*K)))+1/(h3_(W/(m^2*K))))' "
-    "'(U_(W/(m^2*K)))=(qr_W)/((A_(m^2))*(ΔT_°C))' "
-    "'(U_(W/(m^2*K)))=(qr_W)/((A_(m^2))*((Th_°C)-(Tc_°C)))' "
+    "'(U_(W/(m^2*K)))=(qr_W)/((A_(m^2))*(UBASE(Th_°C)-UBASE(Tc_°C)))' "
+    "'(ΔT_°C)=(Th_°C)-(Tc_°C)' "
     "}",
 //
     // WARNING The db48x needs the Black-Body Integral function F0λ(T_K,λ_nm)
