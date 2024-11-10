@@ -179,7 +179,7 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-            data_types();
+            units_and_conversions();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -5128,8 +5128,15 @@ void tests::units_and_conversions()
     step("Ubase in arithmetic expression (#1321)")
         .test(CLEAR, "'UBASE(100_km)'", ENTER)
         .expect("'BaseUnits 100 km'")
-        .test(RUNSTOP)
+        .test(ID_Eval)
         .expect("100 000 m");
+    step("Ubase on numerical values (#1322)")
+        .test(CLEAR, "'ubase(1)'", ENTER)
+        .expect("'BaseUnits 1'")
+        .test(ID_Eval)
+        .expect ("1")
+        .test(CLEAR, "1 ubase", ENTER)
+        .expect("1");
 }
 
 

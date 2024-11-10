@@ -1810,7 +1810,13 @@ COMMAND_BODY(UBase)
         if (r && rt.top(r))
             return OK;
     }
-    if (expression_p expr = obj->as<expression>())
+
+    // No-op for numerical values
+    id ty = obj->type();
+    if (is_real(ty) || is_complex(ty) || ty == ID_symbol)
+        return OK;
+
+    if (expression_p expr = expression::get(obj))
     {
         scribble scr;
         for (object_p lobj : *expr)
@@ -1831,7 +1837,6 @@ COMMAND_BODY(UBase)
         if (list && rt.top(list))
             return OK;
     }
-
     if (!rt.error())
         rt.type_error();
     return ERROR;
