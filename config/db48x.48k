@@ -1,6 +1,6 @@
 @  PLANE 0: UNSHIFTED
 [
-ToolsMenu	inv		sqrt		pow		MathMenu	UIKey
+ToolsMenu	inv		sqrt		pow		MathMenu	UIAlgebraic
 Store	       ToggleCustomMenu	StackMenu	sin		cos		tan
 Duplicate			Swap		neg		Cycle           Drop
 StackEditor			"7"		"8"		"9"		/

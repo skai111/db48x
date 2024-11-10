@@ -1,6 +1,6 @@
 @  PLANE 0: UNSHIFTED
 [
-ToolsMenu	inv		sqrt		exp		ln		UIKey
+ToolsMenu	inv		sqrt		exp		ln		UIAlgebraic
 Store	       ToggleCustomMenu	StackMenu	sin		cos		tan
 Duplicate			Swap		neg		Cycle           Drop
 StackEditor			"7"		"8"		"9"		/

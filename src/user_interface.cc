@@ -77,6 +77,7 @@ RECORDER(menus,         16, "Menu operations");
 RECORDER(help,          16, "On-line help");
 RECORDER(help_search,   16, "On-line help topic search");
 RECORDER(tests_ui,      16, "Test interaction with user interface");
+RECORDER(keymap_warning, 8, "Warnings about invalid keymaps");
 
 #define NUM_TOPICS      (sizeof(topics) / sizeof(topics[0]))
 
@@ -5220,6 +5221,7 @@ bool user_interface::load_keymap(cstring name)
     if (!kmap.valid())
     {
         rt.error(kmap.error());
+        record(keymap_warning, "%s not valid: %s", name, rt.error());
         return false;
     }
 
@@ -5262,6 +5264,9 @@ bool user_interface::load_keymap(cstring name)
             idx += utf8_encode(c, buffer + idx);
             if (idx >= sizeof(buffer) - 4)
             {
+                buffer[idx] = 0;
+                record(keymap_warning, "%s: [%s] is too long",
+                       name, buffer);
                 rt.syntax_error();
                 return false;
             }
@@ -5271,9 +5276,16 @@ bool user_interface::load_keymap(cstring name)
             // Parse object
             object_p parsed = object::parse(buffer, idx);
             if (!parsed)
+            {
+                record(keymap_warning, "%s key %u: could not parse [%s]: %s",
+                       name, key, buffer, rt.error());
                 return false;
+            }
             key++;
             record(user_interface, "For key %u object %t", key, parsed);
+            if (parsed->type() == object::ID_symbol)
+                record(keymap_warning, "%s key %u: %t is a symbol",
+                       name, key, parsed);
             rt.append(parsed);
             idx = 0;
         }
