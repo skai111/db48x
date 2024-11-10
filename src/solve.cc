@@ -1160,7 +1160,8 @@ COMMAND_BODY(SolvingMenuSolve)
                 if (algebraic_g var = expression_variable_or_unit(idx))
                     if (algebraic_g res = Root::solve(eql, var, value))
                         if (rt.push(+res))
-                            return OK;
+                            if (ui.menu_refresh())
+                                return OK;
         }
     }
 
