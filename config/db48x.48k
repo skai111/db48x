@@ -11,7 +11,7 @@ UIExit				"0"		UIDecimal	Evaluate	+
 
 @ PLANE 1: LEFT SHIFTED
 [
-LastMenu	exp		sq		abs		ExpLogMenu	LoopsMenu
+LastMenu	exp		sq		abs		ExpLogMenu	EquationsMenu
 ComplexMenu	MemoryMenu	ConstantsMenu	asin		acos		atan
 UIAlpha				LastArg		ModesMenu	DisplayModesMenu ClearThingsMenu
 EditorHistory			SolverMenu	IntegrationMenu "[	]"	StatisticsMenu
@@ -22,12 +22,12 @@ Off				SystemSetup	Show		"«	»"	Catalog
 
 @ PLANE 2: RIGHT SHIFTED
 [
-MainMenu	ln		xroot 		AlgebraMenu	PartsMenu	EquationsMenu
+MainMenu	ln		xroot 		AlgebraMenu	PartsMenu	CharactersMenu
 RealMenu	Library		FractionsMenu	HyperbolicMenu	CircularMenu	AnglesMenu
 UIText				Undo		UserInterfaceModesMenu	PlotMenu	UpDir
 EditorHistory			SymbolicMenu	PolynomialsMenu	MatrixMenu	FinanceSolverMenu
 EditMenu			TextMenu	UnitsConversionsMenu TimeMenu	NumbersMenu
-UINoShift			DebugMenu	CharactersMenu	TestsMenu	ObjectMenu
+UINoShift			DebugMenu	LoopsMenu	TestsMenu	ObjectMenu
 SaveState			FilesMenu	GraphicsMenu	"{	}"	Help
 ]
 

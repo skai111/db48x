@@ -363,7 +363,7 @@ void tests::demo_ui()
               LSHIFT, F1, LSHIFT, F2, WSHOW,
               LSHIFT, I, F3, F1, LSHIFT, F1, WSHOW,
               CLEAR,
-              RSHIFT, F, F2, RSHIFT, F2, RSHIFT, F1, WSHOW,
+              ID_EquationsMenu, F2, RSHIFT, F2, RSHIFT, F1, WSHOW,
               LSHIFT, F1, RSHIFT, F1, WSHOW);
 
     step("Graphing and plotting")
@@ -6127,7 +6127,7 @@ void tests::eqnlib_columns_and_beams()
         .test(CLEAR, "CurrentEquationVariables", ENTER);
 
     step("Solving Elastic Buckling")
-        .test(CLEAR, RSHIFT, F, F2, RSHIFT, F1)
+        .test(CLEAR, ID_EquationsMenu, F2, RSHIFT, F1)
         .test("53.0967", NOSHIFT, F3)
         .test("199947961.502", NOSHIFT, F4)
         .test(".7", NOSHIFT, F5, F6)
@@ -6156,7 +6156,7 @@ void tests::eqnlib_columns_and_beams()
         .expect("'4.1148 cm=411.48 mm↑2/cm+6.12⁳⁻¹⁹ mm↑2/cm'");
 
     step("Solving Eccentric Columns")
-        .test(CLEAR, RSHIFT, F, F2, RSHIFT, F2)
+        .test(CLEAR, ID_EquationsMenu, F2, RSHIFT, F2)
         .test("1.1806", NOSHIFT, F3)
         .test("187.9351", NOSHIFT, F4)
         .test("15.24", NOSHIFT, F5, F6)
@@ -6172,7 +6172,7 @@ void tests::eqnlib_columns_and_beams()
         .expect("I=135 259 652.161 mm↑4");
 
     step("Solving Simple Deflection")
-        .test(CLEAR, RSHIFT, F, F2, RSHIFT, F3)
+        .test(CLEAR, ID_EquationsMenu, F2, RSHIFT, F3)
         .test("10_ft", NOSHIFT, F2)
         .test("17_ft", NOSHIFT, F3)
         .test("29000000_psi", NOSHIFT, F4)
@@ -6188,7 +6188,7 @@ void tests::eqnlib_columns_and_beams()
         .expect("y=-0.60048 54094 96 in");
 
     step("Solving Simple Slope")
-        .test(CLEAR, RSHIFT, F, F2, RSHIFT, F4)
+        .test(CLEAR, ID_EquationsMenu, F2, RSHIFT, F4)
         .test("10_ft", NOSHIFT, F3)
         .test("17_ft", NOSHIFT, F4)
         .test("29000000_psi", NOSHIFT, F5, F6)
@@ -6202,7 +6202,7 @@ void tests::eqnlib_columns_and_beams()
         .expect("θ=-0.08763 17825 27 °");
 
     step("Solving Simple Moment")
-        .test(CLEAR, RSHIFT, F, F2, RSHIFT, F5)
+        .test(CLEAR, ID_EquationsMenu, F2, RSHIFT, F5)
         .test("20_ft", NOSHIFT, F5)
         .test("10_ft", NOSHIFT, F3)
         .test("674.427_lbf", NOSHIFT, F6, F2)
@@ -6216,7 +6216,7 @@ void tests::eqnlib_columns_and_beams()
         .expect("Mx=9 782.1945 lbf·ft");
 
     step("Solving Simple Shear")
-        .test(CLEAR, EXIT, RSHIFT, F, F2, F6, RSHIFT, F1)
+        .test(CLEAR, EXIT, ID_EquationsMenu, F2, F6, RSHIFT, F1)
         .test("20_ft", NOSHIFT, F3)
         .test("10_ft", NOSHIFT, F2)
         .test("674.427_lbf", NOSHIFT, F5)
@@ -6229,7 +6229,7 @@ void tests::eqnlib_columns_and_beams()
         .expect("V=624.387 lbf");
 
     step("Solving Cantilever Deflection")
-        .test(CLEAR, EXIT, RSHIFT, F, F2, F6, RSHIFT, F2)
+        .test(CLEAR, EXIT, ID_EquationsMenu, F2, F6, RSHIFT, F2)
         .test("10_ft", NOSHIFT, F6, F1)
         .test("29000000_psi", NOSHIFT, F6, F6, F4)
         .test("15_in^4", NOSHIFT, F5)
@@ -6247,7 +6247,7 @@ void tests::eqnlib_columns_and_beams()
         .expect("y=-0.84234 10758 62 cm");
 
     step("Solving Cantilever Slope")
-        .test(CLEAR, EXIT, RSHIFT, F, F2, F6, RSHIFT, F3)
+        .test(CLEAR, EXIT, ID_EquationsMenu, F2, F6, RSHIFT, F3)
         .test("10_ft", NOSHIFT, F6, F2)
         .test("29000000_psi", LSHIFT, F6, F5)
         .test("15_in^4", NOSHIFT, F6, F1)
@@ -6261,7 +6261,7 @@ void tests::eqnlib_columns_and_beams()
         .expect("θ=-0.26522 01876 49 °");
 
     step("Solving Cantilever Moment")
-        .test(CLEAR, EXIT, RSHIFT, F, F2, F6, RSHIFT, F4)
+        .test(CLEAR, EXIT, ID_EquationsMenu, F2, F6, RSHIFT, F4)
         .test("10_ft", NOSHIFT, F5)
         .test("500_lbf", NOSHIFT, F6, F2)
         .test("800_ft*lbf", NOSHIFT, F1)
@@ -6273,7 +6273,7 @@ void tests::eqnlib_columns_and_beams()
         .expect("Mx=-200. lbf·ft");
 
     step("Solving Cantilever Shear")
-        .test(CLEAR, EXIT, RSHIFT, F, F2, F6, RSHIFT, F5)
+        .test(CLEAR, EXIT, ID_EquationsMenu, F2, F6, RSHIFT, F5)
         .test("10_ft", NOSHIFT, F3)
         .test("500_lbf", NOSHIFT, F4)
         .test("3_ft", NOSHIFT, F2)
@@ -9268,11 +9268,11 @@ void tests::character_menu()
     BEGIN(characters);
 
     step("Character menu")
-        .test(CLEAR, RSHIFT, KEY2).noerror()
+        .test(CLEAR, ID_CharactersMenu).noerror()
         .image_menus("char-menu", 3);
 
     step("RPL menu")
-        .test(CLEAR, RSHIFT, KEY2).noerror()
+        .test(CLEAR, ID_CharactersMenu).noerror()
         .test(F2, RSHIFT, ENTER)
         .test(NOSHIFT, F1, F2, F3, F4, F5, F6,
               LSHIFT, F1, LSHIFT, F2, LSHIFT, F3,
@@ -9282,7 +9282,7 @@ void tests::character_menu()
               ENTER)
         .expect("\"→⇄Σ∏∆_⁳°′″ⒸⒺⓁ|?\"");
     step("Arith menu")
-        .test(CLEAR, RSHIFT, KEY2).noerror()
+        .test(CLEAR, ID_CharactersMenu).noerror()
         .test(F3, RSHIFT, ENTER)
         .test(NOSHIFT, F1, F2, F3, F4, F5, F6,
               LSHIFT, F1, LSHIFT, F2, LSHIFT, F3,
@@ -9292,7 +9292,7 @@ void tests::character_menu()
               ENTER)
         .expect("\"+-*/×÷<=>≤≠≥·%^↑\\±\"");
     step("Math menu")
-        .test(CLEAR, RSHIFT, KEY2).noerror()
+        .test(CLEAR, ID_CharactersMenu).noerror()
         .test(F4, RSHIFT, ENTER)
         .test(NOSHIFT, F1, F2, F3, F4, F5,
               LSHIFT, F1, LSHIFT, F2, LSHIFT, F3,
@@ -9302,7 +9302,7 @@ void tests::character_menu()
               ENTER)
         .expect("\"Σ∏∆∂∫πℼ′″°ⅈⅉℂℚℝ\"");
     step("French menu")
-        .test(CLEAR, RSHIFT, KEY2).noerror()
+        .test(CLEAR, ID_CharactersMenu).noerror()
         .test(F1, RSHIFT, ENTER)
         .test(NOSHIFT, F1, F2, F3, F4, F5,
               LSHIFT, F1, LSHIFT, F2, LSHIFT, F3,
@@ -9312,7 +9312,7 @@ void tests::character_menu()
               ENTER)
         .expect("\"àéèêôÀÉÈÊÔëîïûü\"");
     step("Punct menu")
-        .test(CLEAR, RSHIFT, KEY2).noerror()
+        .test(CLEAR, ID_CharactersMenu).noerror()
         .test(F5, RSHIFT, ENTER)
         .test(NOSHIFT, F1, F2, F3, F4, F5, F6,
               LSHIFT, F1, LSHIFT, F2, LSHIFT, F3,
@@ -9322,7 +9322,7 @@ void tests::character_menu()
               ENTER)
         .expect("\".,;:!?#$%&'\"\"¡¿`´~\\\"");
     step("Delim menu")
-        .test(CLEAR, RSHIFT, KEY2).noerror()
+        .test(CLEAR, ID_CharactersMenu).noerror()
         .test(F6, RSHIFT, ENTER)
         .test(NOSHIFT, F1, F2, F3, F4, F5, F6,
               LSHIFT, F1, LSHIFT, F2, LSHIFT, F3,
@@ -9332,7 +9332,7 @@ void tests::character_menu()
         .expect("\"()[]{}«»'\"\"¦§¨­¯\"");
 
     step("Arrows menu")
-        .test(CLEAR, RSHIFT, KEY2).noerror()
+        .test(CLEAR, ID_CharactersMenu).noerror()
         .test(LSHIFT, F2, RSHIFT, ENTER)
         .test(NOSHIFT, F1, F2, F3, F4, F5,
               LSHIFT, F1, LSHIFT, F2, LSHIFT, F3,
@@ -9342,7 +9342,7 @@ void tests::character_menu()
               ENTER)
         .expect("\"←↑→↓↔↕⇄⇆↨⌂▲▼◀▬▶\"");
     step("Blocks menu")
-        .test(CLEAR, RSHIFT, KEY2).noerror()
+        .test(CLEAR, ID_CharactersMenu).noerror()
         .test(LSHIFT, F3, RSHIFT, ENTER)
         .test(NOSHIFT, F1, F2, F3, F4, F5,
               LSHIFT, F1, LSHIFT, F2, LSHIFT, F3,
@@ -9352,7 +9352,7 @@ void tests::character_menu()
               ENTER)
         .expect("\"┌┬┐─├┼┤│└┴┘▬╒╤╕\"");
     step("Bullets menu")
-        .test(CLEAR, RSHIFT, KEY2).noerror()
+        .test(CLEAR, ID_CharactersMenu).noerror()
         .test(LSHIFT, F4, RSHIFT, ENTER)
         .test(NOSHIFT, F1, F2, F3, F4, F5,
               LSHIFT, F1, LSHIFT, F2, LSHIFT, F3,
@@ -9361,244 +9361,87 @@ void tests::character_menu()
               ENTER)
         .expect("\"·∙►▶→□▪▫▬○●◊◘◙\"");
     step("Currency menu")
-        .test(CLEAR, RSHIFT, KEY2).noerror()
+        .test(CLEAR, ID_CharactersMenu).noerror()
         .test(LSHIFT, F5, RSHIFT, ENTER)
         .test(NOSHIFT, F1, F2, F3, F4, F5,
               LSHIFT, F1, LSHIFT, F2, LSHIFT,F3,
-              LSHIFT,
-              F4,
-              LSHIFT,
-              F5,
-              LSHIFT,
-              F6,
-              RSHIFT,
-              F1,
-              RSHIFT,
-              F2,
-              RSHIFT,
-              F3,
+              LSHIFT, F4, LSHIFT, F5, LSHIFT, F6,
+              RSHIFT, F1, RSHIFT, F2, RSHIFT, F3,
               ENTER)
         .expect("\"$€¢£¤₣₤₧₫₭₹₺₽ƒ\"");
     step("Greek menu")
-        .test(CLEAR, RSHIFT, KEY2)
+        .test(CLEAR, ID_CharactersMenu)
         .noerror()
         .test(LSHIFT, F1, RSHIFT, ENTER)
-        .test(NOSHIFT,
-              F1,
-              F2,
-              F3,
-              F4,
-              F5,
-              LSHIFT,
-              F1,
-              LSHIFT,
-              F2,
-              LSHIFT,
-              F3,
-              LSHIFT,
-              F4,
-              LSHIFT,
-              F5,
-              RSHIFT,
-              F1,
-              RSHIFT,
-              F2,
-              RSHIFT,
-              F3,
-              RSHIFT,
-              F4,
-              RSHIFT,
-              F5,
+        .test(NOSHIFT, F1, F2, F3, F4, F5,
+              LSHIFT, F1, LSHIFT, F2, LSHIFT, F3, LSHIFT, F4, LSHIFT, F5,
+              RSHIFT, F1, RSHIFT, F2, RSHIFT, F3, RSHIFT, F4, RSHIFT, F5,
               ENTER)
         .expect("\"αβγδεΑΒΓΔΕάΆ·Έέ\"");
     step("Europe menu")
-        .test(CLEAR, RSHIFT, KEY2)
+        .test(CLEAR, ID_CharactersMenu)
         .noerror()
         .test(LSHIFT, F6, RSHIFT, ENTER)
-        .test(NOSHIFT,
-              F1,
-              F2,
-              F3,
-              F4,
-              F5,
-              LSHIFT,
-              F1,
-              LSHIFT,
-              F2,
-              LSHIFT,
-              F3,
-              LSHIFT,
-              F4,
-              LSHIFT,
-              F5,
-              RSHIFT,
-              F1,
-              RSHIFT,
-              F2,
-              RSHIFT,
-              F3,
-              RSHIFT,
-              F4,
-              RSHIFT,
-              F5,
+        .test(NOSHIFT, F1, F2, F3, F4, F5,
+              LSHIFT, F1,
+              LSHIFT, F2, LSHIFT, F3, LSHIFT, F4, LSHIFT, F5,
+              RSHIFT, F1, RSHIFT, F2, RSHIFT, F3, RSHIFT, F4, RSHIFT, F5,
               ENTER)
         .expect("\"ÀÁÂÃÄàáâãäÅÆÇåæ\"");
 
     step("Cyrillic menu")
-        .test(CLEAR, RSHIFT, KEY2)
+        .test(CLEAR, ID_CharactersMenu)
         .noerror()
         .test(RSHIFT, F1, RSHIFT, ENTER)
         .test(NOSHIFT,
-              F1,
-              F2,
-              F3,
-              F4,
-              F5,
-              LSHIFT,
-              F1,
-              LSHIFT,
-              F2,
-              LSHIFT,
-              F3,
-              LSHIFT,
-              F4,
-              LSHIFT,
-              F5,
+              F1, F2, F3, F4, F5,
+              LSHIFT, F1, LSHIFT, F2, LSHIFT, F3, LSHIFT, F4, LSHIFT, F5,
               ENTER)
         .expect("\"АБВГДабвгд\"");
     step("Picto menu")
-        .test(CLEAR, RSHIFT, KEY2)
+        .test(CLEAR, ID_CharactersMenu)
         .noerror()
         .test(RSHIFT, F2, RSHIFT, ENTER)
         .test(NOSHIFT,
-              F1,
-              F2,
-              F3,
-              F4,
-              F5,
-              LSHIFT,
-              F1,
-              LSHIFT,
-              F2,
-              LSHIFT,
-              F3,
-              LSHIFT,
-              F4,
-              LSHIFT,
-              F5,
-              RSHIFT,
-              F1,
-              RSHIFT,
-              F2,
-              RSHIFT,
-              F3,
-              RSHIFT,
-              F4,
-              RSHIFT,
-              F5,
+              F1, F2, F3, F4, F5,
+              LSHIFT, F1, LSHIFT, F2, LSHIFT, F3, LSHIFT, F4, LSHIFT, F5,
+              RSHIFT, F1, RSHIFT, F2, RSHIFT, F3, RSHIFT, F4, RSHIFT, F5,
               ENTER)
         .expect("\"⌂№℡™⚙☺☻☼♀♂♠♣♥♦◊\"");
     step("Music menu")
-        .test(CLEAR, RSHIFT, KEY2)
+        .test(CLEAR, ID_CharactersMenu)
         .noerror()
         .test(RSHIFT, F3, RSHIFT, ENTER)
         .test(NOSHIFT, F1, F2, F3, F4, F5, F6, ENTER)
         .expect("\"♩♪♫♭♮♯\"");
     step("Num-like menu")
-        .test(CLEAR, RSHIFT, KEY2)
+        .test(CLEAR, ID_CharactersMenu)
         .noerror()
         .test(RSHIFT, F4, RSHIFT, ENTER)
         .test(NOSHIFT,
-              F1,
-              F2,
-              F3,
-              F4,
-              F5,
-              LSHIFT,
-              F1,
-              LSHIFT,
-              F2,
-              LSHIFT,
-              F3,
-              LSHIFT,
-              F4,
-              LSHIFT,
-              F5,
-              RSHIFT,
-              F1,
-              RSHIFT,
-              F2,
-              RSHIFT,
-              F3,
-              RSHIFT,
-              F4,
-              RSHIFT,
-              F5,
+              F1, F2, F3, F4, F5,
+              LSHIFT, F1, LSHIFT, F2, LSHIFT, F3, LSHIFT, F4, LSHIFT, F5,
+              RSHIFT, F1, RSHIFT, F2, RSHIFT, F3, RSHIFT, F4, RSHIFT, F5,
               ENTER)
         .expect("\"⁰¹²³⁴₀₁₂₃₄ⅠⅡⅢⅣⅤ\"");
     step("Ltr-like menu")
-        .test(CLEAR, RSHIFT, KEY2)
+        .test(CLEAR, ID_CharactersMenu)
         .noerror()
         .test(RSHIFT, F5, RSHIFT, ENTER)
         .test(NOSHIFT,
-              F1,
-              F2,
-              F3,
-              F4,
-              F5,
-              LSHIFT,
-              F1,
-              LSHIFT,
-              F2,
-              LSHIFT,
-              F3,
-              LSHIFT,
-              F4,
-              LSHIFT,
-              F5,
-              RSHIFT,
-              F1,
-              RSHIFT,
-              F2,
-              RSHIFT,
-              F3,
-              RSHIFT,
-              F4,
-              RSHIFT,
-              F5,
+              F1, F2, F3, F4, F5,
+              LSHIFT, F1, LSHIFT, F2, LSHIFT, F3, LSHIFT, F4, LSHIFT, F5,
+              RSHIFT, F1, RSHIFT, F2, RSHIFT, F3, RSHIFT, F4, RSHIFT, F5,
               ENTER)
         .expect("\"$&@¢©¥ℂ℅ℊℎℏℓ№ℚℝ\"");
     step("All menu")
-        .test(CLEAR, RSHIFT, KEY2)
+        .test(CLEAR, ID_CharactersMenu)
         .noerror()
         .test(RSHIFT, F6, RSHIFT, ENTER)
         .test(NOSHIFT,
-              F1,
-              F2,
-              F3,
-              F3,
-              F4,
-              F5,
-              LSHIFT,
-              F1,
-              LSHIFT,
-              F2,
-              LSHIFT,
-              F3,
-              LSHIFT,
-              F4,
-              LSHIFT,
-              F5,
-              RSHIFT,
-              F1,
-              RSHIFT,
-              F2,
-              RSHIFT,
-              F3,
-              RSHIFT,
-              F4,
-              RSHIFT,
-              F5,
+              F1, F2, F3, F3, F4, F5,
+              LSHIFT, F1, LSHIFT, F2, LSHIFT, F3, LSHIFT, F4, LSHIFT, F5,
+              RSHIFT, F1, RSHIFT, F2, RSHIFT, F3, RSHIFT, F4, RSHIFT, F5,
               ENTER)
         .expect("\" !\"\"#$%&'()*+,-.\"");
 
@@ -9610,17 +9453,8 @@ void tests::character_menu()
         .test(LSHIFT, F3)
         .editor("\"a\"");
     step("Générons un peu de français")
-        .test(CLEAR,
-              RSHIFT,
-              ENTER,
-              ADD,
-              "Ge",
-              F5,
-              "ne",
-              F5,
-              "rons un peu de franc",
-              F4,
-              "ais")
+        .test(CLEAR, RSHIFT, ENTER, ADD,
+              "Ge", F5, "ne", F5, "rons un peu de franc", F4, "ais")
         .editor("\"Générons un peu de français\"")
         .test(ENTER)
         .expect("\"Générons un peu de français\"");
