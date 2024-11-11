@@ -104,8 +104,8 @@ struct unit_file : file
     unit_file(cstring name = "config/units.csv"): file(name, false) {}
     ~unit_file() {}
 
-    symbol_g    lookup(gcutf8 what,size_t len,bool menu=false,bool seek0=true);
-    symbol_g    next(bool menu = false);
+    symbol_p    lookup(gcutf8 what,size_t len,bool menu=false,bool seek0=true);
+    symbol_p    next(bool menu = false);
 };
 
 

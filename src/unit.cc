@@ -884,7 +884,7 @@ unit_p unit::lookup(symbol_p namep, int *prefix_info)
         for (uint kibi = 0; kibi < maxkibi; kibi++)
         {
             size_t  rlen = len - plen - kibi;
-            utf8    txt  = ntxt + plen + kibi;
+            gcutf8  txt  = +gtxt + plen + kibi;
             cstring utxt = nullptr;
             cstring udef = nullptr;
             size_t  ulen = 0;
@@ -902,7 +902,7 @@ unit_p unit::lookup(symbol_p namep, int *prefix_info)
                     if (*fdef != '=')
                     {
                         udef = cstring(fdef);
-                        utxt = cstring(txt);
+                        utxt = cstring(+txt);
                         break;
                     }
                 }
@@ -912,7 +912,7 @@ unit_p unit::lookup(symbol_p namep, int *prefix_info)
             for (size_t u = 0; !udef && u < maxu; u += 2)
             {
                 utxt = basic_units[u];
-                if (memcmp(utxt, txt, rlen) == 0 && utxt[rlen] == 0)
+                if (memcmp(utxt, +txt, rlen) == 0 && utxt[rlen] == 0)
                 {
                     udef = basic_units[u + 1];
                     if (udef)
@@ -959,8 +959,7 @@ unit_p unit::lookup(symbol_p namep, int *prefix_info)
                         {
                             size_t slen = 0;
                             utf8   stxt = sym->value(&slen);
-                            if (slen == rlen &&
-                                memcmp(stxt, utxt, slen) == 0)
+                            if (slen == rlen && memcmp(stxt, utxt, slen) == 0)
                                 return u;
                         }
 
@@ -1410,7 +1409,7 @@ unit_p unit::custom_cycle(symbol_r sym) const
 }
 
 
-symbol_g unit_file::lookup(gcutf8 what, size_t len, bool menu, bool seek0)
+symbol_p unit_file::lookup(gcutf8 what, size_t len, bool menu, bool seek0)
 // ----------------------------------------------------------------------------
 //   Find the next row that begins with "what", return definition for it
 // ----------------------------------------------------------------------------
@@ -1513,7 +1512,7 @@ symbol_g unit_file::lookup(gcutf8 what, size_t len, bool menu, bool seek0)
 }
 
 
-symbol_g unit_file::next(bool menu)
+symbol_p unit_file::next(bool menu)
 // ----------------------------------------------------------------------------
 //   Find the next file entry if there is one
 // ----------------------------------------------------------------------------
