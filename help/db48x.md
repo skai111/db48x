@@ -506,9 +506,10 @@ unintentional differences, since the implementation is completely new.
 The application of a same operation on arrays or matrices has never been very
 consistent nor logical across RPL models from HP.
 
-* On HP48 and HP50, `{ 1 2 3 } 4 +` gives `{1 2 3 4}`. However, `{ 1 2 3} 4 *`
+* On HP48 and HP50, `{1 2 3} 4 +` gives `{1 2 3 4}`. However, `{1 2 3} 4 *`
   gives a type error on the HP48 but applies the operation to list elements on
-  the HP50, yielding `{ 4 8 12}`.
+  the HP50, yielding `{4 8 12}`. Finally, `{1 2 3} 4 add` will give `{5 6 7}` on
+  the HP50, but that command does not exist on HP48.
 
 * For arrays, `[ 1 2 3 ] 4 +` fails on both the HP48 and HP50, but
   `[ 1 2 3 ] 4 *` works.
@@ -7593,6 +7594,11 @@ Add two values.
 * For text, concatenate text, or concatenate the text representation of an
   object to an existing text. For example `"X" "Y" + ` gives `"XY"`, and
   `"X=" 1 +` gives `"X=1"`.
+
+*Note*: The ` Add ` command and the ` + ` operation are identical on DB48X.
+[This differs from HP calculators](#list-operation-differences).
+
+
 
 ## Sub
 

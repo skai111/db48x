@@ -16,6 +16,11 @@ Add two values.
   object to an existing text. For example `"X" "Y" + ` gives `"XY"`, and
   `"X=" 1 +` gives `"X=1"`.
 
+*Note*: The ` Add ` command and the ` + ` operation are identical on DB48X.
+[This differs from HP calculators](#list-operation-differences).
+
+
+
 ## Sub
 
 Subtract two values
