@@ -5650,7 +5650,7 @@ bool user_interface::do_left()
     }
 
     beep(4000, 50);
-    return false;
+    return true;
 }
 
 
