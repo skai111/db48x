@@ -4676,6 +4676,7 @@ bool user_interface::handle_editing(int key)
             if (shift || xshift)
                 return false;
             alpha = false;
+            lowercase = false;
             if (Settings.ExitClearsMenu())
                 clear_menu();
             return true;
