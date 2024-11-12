@@ -154,8 +154,9 @@ brings back numbers. This means 🟨 cannot be used for lowercase, but as
 indicated above, there are two other methods to enter lowercase
 characters.
 
-Using 🟨 or 🟦 in combination with keys other than the numeric keypad
-gives a variety of special characters.
+Using 🟨 or 🟦 in combination with keys other than the numeric keypad gives a
+variety of special characters. The `CharactersMenu` and `Catalog` can be used to
+enter special characters in a more comfortable way.
 
 
 ### Key mapping
@@ -9873,8 +9874,8 @@ displayed in alphabetical order. If you type `ACO`, `ACOS, `ACOSH` and
 Inside text, all characters related to the last entered character will be shown.
 For example, if you typed `A`, options to add accents to `A` or to select the
 Greek `α` or the related `ª` character. If no matching character is found,
-the `CharactersMenu` [characters menu](#CharactersMenu) is presented, allowing
-you to select specific characters from predefined categories.
+the `CharactersMenu` is presented, allowing you to select specific characters
+from predefined categories.
 
 
 ## CharactersMenu
@@ -9892,6 +9893,12 @@ the `config/characters.csv` file. Each row in that file contains two texts:
   shown, but is used to find characters related to a given character.
 
 * The second is the list of characters to be shown.
+
+Some language-specific submenus in the characters menu enable *transliteration*,
+which select alphabetic characters in that language. For example, if you use the
+character menu for Greek and lowercase, then typing `A` will insert
+`α` (greek lowercase alpha). Repeated use of the same key cycles through
+options, in that case `ά` and `a` before cycling back to `α`.
 
 
 ## ConstantsMenu

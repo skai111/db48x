@@ -182,8 +182,9 @@ brings back numbers. This means 🟨 cannot be used for lowercase, but as
 indicated above, there are two other methods to enter lowercase
 characters.
 
-Using 🟨 or 🟦 in combination with keys other than the numeric keypad
-gives a variety of special characters.
+Using 🟨 or 🟦 in combination with keys other than the numeric keypad gives a
+variety of special characters. The `CharactersMenu` and `Catalog` can be used to
+enter special characters in a more comfortable way.
 
 
 ### Key mapping
