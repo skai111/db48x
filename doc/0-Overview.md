@@ -45,8 +45,11 @@ or [submit a proposed change](https://github.com/c3d/db48x/pulls) is
 on the project's [GitHub page](https://github.com/c3d/db48x).
 
 The [implementation status](#implementation-status) section categorizes all the
-RPL commands in the HP50G and in DB48X into "implemented", "not implemented" and
-"DB48X only" lists.
+RPL commands in the HP50G and in DB48X into
+[implemented](#implemented-commands),
+[not implemented yet](#unimplemented-commands),
+[unapplicable commands](#unapplicable-commands) and
+[DB48X only](#additional-commands) lists.
 
 ## Design overview
 
