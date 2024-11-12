@@ -31,7 +31,7 @@ following stack diagram:
 
 `Y` `X` ▶ `Y+X`
 
-The duplication operation `Duplicate` (`DUP`) can be described in synthetic form
+The duplication operation `Duplicate` can be described in synthetic form
 using the following synthetic stack diagram:
 
 `X` ▶ `X` `X`
