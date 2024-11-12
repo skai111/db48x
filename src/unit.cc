@@ -529,6 +529,8 @@ static const cstring basic_units[] =
     "bbl",      "7056_in³",             // Barrel
     "crbl",     "5826_in³",             // Cranberry barrel
 
+    "L",        "l",                    // Liter can be spelled uppercase
+
     // ------------------------------------------------------------------------
     // Time menu
     // ------------------------------------------------------------------------
