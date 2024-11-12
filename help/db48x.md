@@ -106,8 +106,7 @@ Other aspects of the keyboard interaction are fine-tuned for RPL usage:
 
 * Using 🟨 _◀︎_ and 🟨 _▶︎_ moves the cursor up and down.  When not editing, _◀︎_
   and _▶︎_ behave like _▲_ and _▼_ on the HP48, i.e. _◀︎_ enters the *interactive
-  stack* (not yet implemented) and _▶︎_ edits the object on the first level of
-  the stack.
+  stack*  and _▶︎_ edits the object on the first level of the stack.
 
 * Long-pressing arrow keys, the _←_ (also known as *Backspace*) or text entry
   keys in Alpha mode activates auto-repeat.
