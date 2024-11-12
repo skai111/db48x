@@ -256,7 +256,7 @@ OP(pow, "↑")                    ALIAS(pow, "Power")     ALIAS(pow, "^")
 
 NAMED(neg, "Negate")
 CMD(abs)                        ALIAS(abs, "norm") ALIAS(abs, "modulus") ALIAS(abs, "abs")
-NAMED(inv, "x⁻¹")
+NAMED(inv, "x⁻¹")               ALIAS(inv, "Invert")      ALIAS(inv, "inv")
 NAMED(sqrt, "√")                ALIAS(sqrt, "SquareRoot") ALIAS(sqrt, "√")
 NAMED(sq,  "x²")                ALIAS(sq,   "Square")     ALIAS(sq, "sq")
 NAMED(cubed, "x³")
