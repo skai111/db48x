@@ -11905,6 +11905,9 @@ tests &tests::itest(cstring txt)
 
             // Special characters that require the characters menu
 #define NEXT        itest(ID_ToolsMenu); k = RESERVED2; break
+
+        case L'à': itest(ID_CharactersMenu, F1, F1); NEXT;
+
         case L'ℂ': itest(ID_CharactersMenu, F4, RSHIFT, F3); NEXT;
         case L'ℚ': itest(ID_CharactersMenu, F4, RSHIFT, F4); NEXT;
         case L'ℝ': itest(ID_CharactersMenu, F4, RSHIFT, F5); NEXT;
