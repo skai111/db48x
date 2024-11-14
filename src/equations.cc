@@ -464,7 +464,7 @@ static const cstring basic_equations[] =
     // ------------------------------------------------------------------------
     "Heat Transfer", nullptr,
     // ------------------------------------------------------------------------
-    // We need to use UBASE to ensure we get Kelvin everywhere
+    //T#: 31 vars 17 eqns 6 sims
     "Heat Capacity",  "{ "
     "'(Q_kJ)=(m_kg)*(c_(kJ/(kg*K)))*(UBASE(Tf_°C)-UBASE(Ti_°C))' "
     "'(ΔT_°C)=(Tf_°C)-(Ti_°C)' "
@@ -934,7 +934,6 @@ zzz
     "'(Vbi_V)=(Ⓒk*(T_K))/Ⓒqe*LN((ND_(cm^-3))/(ni_(cm^-3)))' "
     //"'(ni_(cm^-3))=SIDENS(T_K)' "
     "'(ni_(cm^-3))=(8.35123e20_cm^-3)*exp(-(7555.17_K)/(T_K))' "
-
     "'(xdmax_μ)=√((2*Ⓒεsi*Ⓒε0)/(Ⓒqe*(ND_(cm^-3)))*((Vbi_V)-(VGS_V)+(VDS_V)))' "
     "'(G0_S)=Ⓒqe*(ND_(cm^-3))*(μn_((cm^2)/(V*s)))*(((a_μ)*(W_μ))/(L_μ))' "
     "'(ID_mA)=(G0_S)*((VDS_V)-((2/3)*√((2*Ⓒεsi*Ⓒε0)/(Ⓒqe*(ND_(cm^-3))*(a_μ)^2)))*(((Vbi_V)-(VGS_V)+(VDS_V))^(3/2)-((Vbi_V)-(VGS_V))^(3/2)))' "
