@@ -5990,6 +5990,12 @@ void tests::matrix_functions()
     test(CLEAR, "[[1 2] [3 4]][1 2] /", ENTER)
         .error("Bad argument type");
 
+    step("Min and max")
+        .test(CLEAR, "[[1 2][3 4][5 6]] [[0 3][4 6][2 1]] MIN", ENTER)
+        .want("[[ 0 2 ] [ 3 4 ] [ 2 1 ]]")
+        .test(CLEAR, "[[1 2][3 4][5 6]] [[0 3][4 6][2 1]] MAX", ENTER)
+        .want("[[ 1 3 ] [ 4 6 ] [ 5 6 ]]");
+
     step("Inversion of a definite matrix");
     test(CLEAR, "[[1 2 3][4 5 6][7 8 19]] INV", ENTER)
         .want("[[ -1 ¹⁷/₃₀ ⁷/₁₅ ¹/₁₀ ]"

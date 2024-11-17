@@ -1516,10 +1516,10 @@ static algebraic_p min_max(algebraic_r x, algebraic_r y,
             while (xi != xe && yi != ye)
             {
                 object_p xobj = *xi++;
-                if (!xobj->is_algebraic())
+                if (!xobj->is_extended_algebraic())
                     return nullptr;
                 object_p yobj = *yi++;
-                if (!yobj->is_algebraic())
+                if (!yobj->is_extended_algebraic())
                     return nullptr;
                 xo = algebraic_p(xobj);
                 yo = algebraic_p(yobj);
