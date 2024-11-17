@@ -9978,10 +9978,10 @@ void tests::random_number_generation()
         .noerror();
 
     step("Check statistics total")
-        .test(CLEAR, ID_StatisticsMenu, ID_DataTotal).expect("3 869");
-    step("Check statistics mean").test(ID_Average).expect("3 ⁸⁶⁹/₁ ₀₀₀");
+        .test(CLEAR, ID_StatisticsMenu, ID_DataTotal).expect("3 375");
+    step("Check statistics mean").test(ID_Average).expect("3 ³/₈");
     step("Check statistics min and max")
-        .test(ID_MinData).expect("-999")
+        .test(ID_MinData).expect("-1 000")
         .test(ID_MaxData).expect("998");
 
     step("Random graphing")
