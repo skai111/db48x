@@ -179,10 +179,7 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
-        {
-            logical_operations();
-            polynomials();
-        }
+            matrix_functions();
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -5908,6 +5905,14 @@ void tests::matrix_functions()
         .want("[[ 6 8 ] [ 10 12 ]]");
     test(CLEAR, "[[a b][c d]] [[e f][g h]] +", ENTER)
         .want("[[ 'a+e' 'b+f' ] [ 'c+g' 'd+h' ]]");
+
+    step("Addition (non-square), #1343");
+    test(CLEAR, "[[1 2]] [[7 8]] +", ENTER)
+        .want("[[ 8 10 ]]");
+    test(CLEAR, "[[a b c]] [[g h i]] -", ENTER)
+        .want("[[ 'a-g' 'b-h' 'c-i' ]]");
+    test(CLEAR, "[[a] [b] [c]] [[g][ h] [i]] +", ENTER)
+        .want("[[ 'a+g' ] [ 'b+h' ] [ 'c+i' ]]");
 
     step("Subtraction");
     test(CLEAR, "[[1 2] [3 4]] [[5 6][7 8]] -", ENTER)
