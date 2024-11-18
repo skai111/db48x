@@ -174,8 +174,8 @@ bool array::is_vector(size_t *size, bool push, bool stripped) const
                 break;
             count++;
         }
-        if (!result)
-            rt.drop(push ? count : 0);
+        if (!result && push)
+            rt.drop(count);
         else if (size)
             *size = count;
     }
@@ -230,8 +230,8 @@ object::id array::is_2Dor3D(bool push) const
                               : ID_object);
         }
 
-        if (!r)
-            rt.drop(push ? count : 0);
+        if (!r && push)
+            rt.drop(count);
     }
     return r;
 }
