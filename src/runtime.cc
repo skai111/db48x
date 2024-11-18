@@ -1901,8 +1901,7 @@ object_p cleaner::adjust(object_p temp)
 {
     if (temp && temp > temporaries &&
         gccycles == rt.GCCycles + rt.GCUnclear &&
-        Settings.AutomaticTemporariesCleanup() &&
-        !rt.Editing && !rt.Scratch)
+        Settings.AutomaticTemporariesCleanup())
     {
         size_t sz = temp->size();
         record(cleaner,
@@ -1911,6 +1910,8 @@ object_p cleaner::adjust(object_p temp)
                rt.Temporaries, temporaries + sz);
         rt.GCCleared += temp - temporaries;
         memmove((void *) temporaries, temp, sz);
+        if (size_t scsz = rt.Editing + rt.Scratch)
+            rt.move(temporaries + sz, rt.Temporaries, scsz, 1, 1);
         temp = temporaries;
         rt.Temporaries = temp + sz;
     }
