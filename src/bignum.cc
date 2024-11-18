@@ -359,7 +359,7 @@ inline object::id bignum::opposite_type(id type)
 }
 
 
-bignum_g operator-(bignum_r xg)
+bignum_p operator-(bignum_r xg)
 // ----------------------------------------------------------------------------
 //   Negate the input value
 // ----------------------------------------------------------------------------
@@ -379,7 +379,7 @@ bignum_g operator-(bignum_r xg)
 }
 
 
-bignum_g operator~(bignum_r x)
+bignum_p operator~(bignum_r x)
 // ----------------------------------------------------------------------------
 //   Boolean not
 // ----------------------------------------------------------------------------
@@ -395,7 +395,7 @@ bignum_g operator~(bignum_r x)
 }
 
 
-bignum_g bignum::add_sub(bignum_r y, bignum_r x, bool issub)
+bignum_p bignum::add_sub(bignum_r y, bignum_r x, bool issub)
 // ----------------------------------------------------------------------------
 //   Add the two bignum values
 // ----------------------------------------------------------------------------
@@ -437,7 +437,7 @@ bignum_g bignum::add_sub(bignum_r y, bignum_r x, bool issub)
 }
 
 
-bignum_g operator+(bignum_r y, bignum_r x)
+bignum_p operator+(bignum_r y, bignum_r x)
 // ----------------------------------------------------------------------------
 //   Add the two bignum values, result has type of x
 // ----------------------------------------------------------------------------
@@ -446,7 +446,7 @@ bignum_g operator+(bignum_r y, bignum_r x)
 }
 
 
-bignum_g operator-(bignum_r y, bignum_r x)
+bignum_p operator-(bignum_r y, bignum_r x)
 // ----------------------------------------------------------------------------
 //   Subtract two bignum values, result has type of x
 // ----------------------------------------------------------------------------
@@ -455,7 +455,7 @@ bignum_g operator-(bignum_r y, bignum_r x)
 }
 
 
-bignum_g operator&(bignum_r y, bignum_r x)
+bignum_p operator&(bignum_r y, bignum_r x)
 // ----------------------------------------------------------------------------
 //   Perform a binary and operation
 // ----------------------------------------------------------------------------
@@ -464,7 +464,7 @@ bignum_g operator&(bignum_r y, bignum_r x)
 }
 
 
-bignum_g operator|(bignum_r y, bignum_r x)
+bignum_p operator|(bignum_r y, bignum_r x)
 // ----------------------------------------------------------------------------
 //   Perform a binary or operation
 // ----------------------------------------------------------------------------
@@ -473,7 +473,7 @@ bignum_g operator|(bignum_r y, bignum_r x)
 }
 
 
-bignum_g operator^(bignum_r y, bignum_r x)
+bignum_p operator^(bignum_r y, bignum_r x)
 // ----------------------------------------------------------------------------
 //   Perform a binary xor operation
 // ----------------------------------------------------------------------------
@@ -482,7 +482,7 @@ bignum_g operator^(bignum_r y, bignum_r x)
 }
 
 
-bignum_g bignum::multiply(bignum_r yg, bignum_r xg, id ty)
+bignum_p bignum::multiply(bignum_r yg, bignum_r xg, id ty)
 // ----------------------------------------------------------------------------
 //   Perform multiply operation on the two big nums, with result type ty
 // ----------------------------------------------------------------------------
@@ -550,7 +550,7 @@ bignum_g bignum::multiply(bignum_r yg, bignum_r xg, id ty)
 }
 
 
-bignum_g operator*(bignum_r y, bignum_r x)
+bignum_p operator*(bignum_r y, bignum_r x)
 // ----------------------------------------------------------------------------
 //   Multiplication of bignums
 // ----------------------------------------------------------------------------
@@ -678,7 +678,7 @@ bool bignum::quorem(bignum_r yg, bignum_r xg, id ty, bignum_g *q, bignum_g *r)
 }
 
 
-bignum_g operator/(bignum_r y, bignum_r x)
+bignum_p operator/(bignum_r y, bignum_r x)
 // ----------------------------------------------------------------------------
 //   Perform long division of y by x
 // ----------------------------------------------------------------------------
@@ -695,7 +695,7 @@ bignum_g operator/(bignum_r y, bignum_r x)
 }
 
 
-bignum_g operator%(bignum_r y, bignum_r x)
+bignum_p operator%(bignum_r y, bignum_r x)
 // ----------------------------------------------------------------------------
 //  Perform long-remainder of y by x
 // ----------------------------------------------------------------------------
@@ -709,7 +709,7 @@ bignum_g operator%(bignum_r y, bignum_r x)
 }
 
 
-bignum_g bignum::pow(bignum_r yr, bignum_r xr)
+bignum_p bignum::pow(bignum_r yr, bignum_r xr)
 // ----------------------------------------------------------------------------
 //    Compute y^abs(x)
 // ----------------------------------------------------------------------------
@@ -903,7 +903,7 @@ bignum_p bignum::shift(bignum_r xg, int bits, bool rotate, bool arith)
 }
 
 
-bignum_g operator<<(bignum_r y, bignum_r x)
+bignum_p operator<<(bignum_r y, bignum_r x)
 // ----------------------------------------------------------------------------
 //   Shift left
 // ----------------------------------------------------------------------------
@@ -917,7 +917,7 @@ bignum_g operator<<(bignum_r y, bignum_r x)
 }
 
 
-bignum_g operator>>(bignum_r y, bignum_r x)
+bignum_p operator>>(bignum_r y, bignum_r x)
 // ----------------------------------------------------------------------------
 //  Shift right (as an unsigned)
 // ----------------------------------------------------------------------------
@@ -931,7 +931,7 @@ bignum_g operator>>(bignum_r y, bignum_r x)
 }
 
 
-bignum_g operator<<(bignum_r y, uint x)
+bignum_p operator<<(bignum_r y, uint x)
 // ----------------------------------------------------------------------------
 //   Shift left
 // ----------------------------------------------------------------------------
@@ -942,7 +942,7 @@ bignum_g operator<<(bignum_r y, uint x)
 }
 
 
-bignum_g operator>>(bignum_r y, uint x)
+bignum_p operator>>(bignum_r y, uint x)
 // ----------------------------------------------------------------------------
 //  Shift right (as an unsigned)
 // ----------------------------------------------------------------------------

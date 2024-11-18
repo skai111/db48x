@@ -50,7 +50,7 @@ object::result comparison::evaluate()
 
 
 template <typename Cmp>
-algebraic_g comparison::evaluate(algebraic_r x, algebraic_r y)
+algebraic_p comparison::evaluate(algebraic_r x, algebraic_r y)
 // ----------------------------------------------------------------------------
 //   The actual evaluation for all binary operators
 // ----------------------------------------------------------------------------
@@ -280,7 +280,7 @@ object::result comparison::compare(comparison_fn comparator, id op)
 }
 
 
-algebraic_g comparison::compare(comparison_fn comparator,
+algebraic_p comparison::compare(comparison_fn comparator,
                                 id            op,
                                 algebraic_r   x,
                                 algebraic_r   y)
@@ -441,7 +441,7 @@ COMMAND_BODY(False)
 //
 // ============================================================================
 
-algebraic_g operator==(algebraic_r x, algebraic_r y)
+algebraic_p operator==(algebraic_r x, algebraic_r y)
 // ----------------------------------------------------------------------------
 //   Equality operation on algebraic objects
 // ----------------------------------------------------------------------------
@@ -450,7 +450,7 @@ algebraic_g operator==(algebraic_r x, algebraic_r y)
 }
 
 
-algebraic_g operator<=(algebraic_r x, algebraic_r y)
+algebraic_p operator<=(algebraic_r x, algebraic_r y)
 // ----------------------------------------------------------------------------
 //   Less or equal operation on algebraic objects
 // ----------------------------------------------------------------------------
@@ -459,7 +459,7 @@ algebraic_g operator<=(algebraic_r x, algebraic_r y)
 }
 
 
-algebraic_g operator>=(algebraic_r x, algebraic_r y)
+algebraic_p operator>=(algebraic_r x, algebraic_r y)
 // ----------------------------------------------------------------------------
 //   Gretter or equal operation on algebraic objects
 // ----------------------------------------------------------------------------
@@ -468,7 +468,7 @@ algebraic_g operator>=(algebraic_r x, algebraic_r y)
 }
 
 
-algebraic_g operator!=(algebraic_r x, algebraic_r y)
+algebraic_p operator!=(algebraic_r x, algebraic_r y)
 // ----------------------------------------------------------------------------
 //   Inequality operation on algebraic objects
 // ----------------------------------------------------------------------------
@@ -477,7 +477,7 @@ algebraic_g operator!=(algebraic_r x, algebraic_r y)
 }
 
 
-algebraic_g operator<(algebraic_r x, algebraic_r y)
+algebraic_p operator<(algebraic_r x, algebraic_r y)
 // ----------------------------------------------------------------------------
 //   Less  operation on algebraic objects
 // ----------------------------------------------------------------------------
@@ -486,7 +486,7 @@ algebraic_g operator<(algebraic_r x, algebraic_r y)
 }
 
 
-algebraic_g operator>(algebraic_r x, algebraic_r y)
+algebraic_p operator>(algebraic_r x, algebraic_r y)
 // ----------------------------------------------------------------------------
 //   Gretter operation on algebraic objects
 // ----------------------------------------------------------------------------

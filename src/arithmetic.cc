@@ -212,8 +212,8 @@ algebraic_p arithmetic::non_numeric<add>(algebraic_r x, algebraic_r y)
 }
 
 
-inline bool add::integer_ok(object::id &xt, object::id &yt,
-                            ularge &xv, ularge &yv)
+bool add::integer_ok(object::id &xt, object::id &yt,
+                     ularge &xv, ularge &yv)
 // ----------------------------------------------------------------------------
 //   Check if adding two integers works or if we need to promote to real
 // ----------------------------------------------------------------------------
@@ -253,7 +253,7 @@ inline bool add::integer_ok(object::id &xt, object::id &yt,
 }
 
 
-inline bool add::bignum_ok(bignum_g &x, bignum_g &y)
+bool add::bignum_ok(bignum_g &x, bignum_g &y)
 // ----------------------------------------------------------------------------
 //   We can always add two big integers (memory permitting)
 // ----------------------------------------------------------------------------
@@ -263,7 +263,7 @@ inline bool add::bignum_ok(bignum_g &x, bignum_g &y)
 }
 
 
-inline bool add::fraction_ok(fraction_g &x, fraction_g &y)
+bool add::fraction_ok(fraction_g &x, fraction_g &y)
 // ----------------------------------------------------------------------------
 //   We can always add two fractions
 // ----------------------------------------------------------------------------
@@ -273,7 +273,7 @@ inline bool add::fraction_ok(fraction_g &x, fraction_g &y)
 }
 
 
-inline bool add::complex_ok(complex_g &x, complex_g &y)
+bool add::complex_ok(complex_g &x, complex_g &y)
 // ----------------------------------------------------------------------------
 //   Add complex numbers if we have them
 // ----------------------------------------------------------------------------
@@ -348,8 +348,8 @@ algebraic_p arithmetic::non_numeric<sub>(algebraic_r x, algebraic_r y)
 }
 
 
-inline bool sub::integer_ok(object::id &xt, object::id &yt,
-                            ularge &xv, ularge &yv)
+bool sub::integer_ok(object::id &xt, object::id &yt,
+                     ularge &xv, ularge &yv)
 // ----------------------------------------------------------------------------
 //   Check if subtracting two integers works or if we need to promote to real
 // ----------------------------------------------------------------------------
@@ -388,7 +388,7 @@ inline bool sub::integer_ok(object::id &xt, object::id &yt,
 }
 
 
-inline bool sub::bignum_ok(bignum_g &x, bignum_g &y)
+bool sub::bignum_ok(bignum_g &x, bignum_g &y)
 // ----------------------------------------------------------------------------
 //   We can always subtract two big integers (memory permitting)
 // ----------------------------------------------------------------------------
@@ -398,7 +398,7 @@ inline bool sub::bignum_ok(bignum_g &x, bignum_g &y)
 }
 
 
-inline bool sub::fraction_ok(fraction_g &x, fraction_g &y)
+bool sub::fraction_ok(fraction_g &x, fraction_g &y)
 // ----------------------------------------------------------------------------
 //   We can always subtract two fractions (memory permitting)
 // ----------------------------------------------------------------------------
@@ -408,7 +408,7 @@ inline bool sub::fraction_ok(fraction_g &x, fraction_g &y)
 }
 
 
-inline bool sub::complex_ok(complex_g &x, complex_g &y)
+bool sub::complex_ok(complex_g &x, complex_g &y)
 // ----------------------------------------------------------------------------
 //   Subtract complex numbers if we have them
 // ----------------------------------------------------------------------------
@@ -516,8 +516,8 @@ algebraic_p arithmetic::non_numeric<mul>(algebraic_r x, algebraic_r y)
 }
 
 
-inline bool mul::integer_ok(object::id &xt, object::id &yt,
-                            ularge &xv, ularge &yv)
+bool mul::integer_ok(object::id &xt, object::id &yt,
+                     ularge &xv, ularge &yv)
 // ----------------------------------------------------------------------------
 //   Check if multiplying two integers works or if we need to promote to real
 // ----------------------------------------------------------------------------
@@ -546,7 +546,7 @@ inline bool mul::integer_ok(object::id &xt, object::id &yt,
 }
 
 
-inline bool mul::bignum_ok(bignum_g &x, bignum_g &y)
+bool mul::bignum_ok(bignum_g &x, bignum_g &y)
 // ----------------------------------------------------------------------------
 //   We can always multiply two big integers (memory permitting)
 // ----------------------------------------------------------------------------
@@ -556,7 +556,7 @@ inline bool mul::bignum_ok(bignum_g &x, bignum_g &y)
 }
 
 
-inline bool mul::fraction_ok(fraction_g &x, fraction_g &y)
+bool mul::fraction_ok(fraction_g &x, fraction_g &y)
 // ----------------------------------------------------------------------------
 //   We can always multiply two fractions (memory permitting)
 // ----------------------------------------------------------------------------
@@ -566,7 +566,7 @@ inline bool mul::fraction_ok(fraction_g &x, fraction_g &y)
 }
 
 
-inline bool mul::complex_ok(complex_g &x, complex_g &y)
+bool mul::complex_ok(complex_g &x, complex_g &y)
 // ----------------------------------------------------------------------------
 //   Multiply complex numbers if we have them
 // ----------------------------------------------------------------------------
@@ -678,8 +678,8 @@ algebraic_p arithmetic::non_numeric<struct div>(algebraic_r x, algebraic_r y)
 }
 
 
-inline bool div::integer_ok(object::id &xt, object::id &yt,
-                            ularge &xv, ularge &yv)
+bool div::integer_ok(object::id &xt, object::id &yt,
+                     ularge &xv, ularge &yv)
 // ----------------------------------------------------------------------------
 //   Check if dividing two integers works or if we need to promote to real
 // ----------------------------------------------------------------------------
@@ -713,7 +713,7 @@ inline bool div::integer_ok(object::id &xt, object::id &yt,
 }
 
 
-inline bool div::bignum_ok(bignum_g &x, bignum_g &y)
+bool div::bignum_ok(bignum_g &x, bignum_g &y)
 // ----------------------------------------------------------------------------
 //   Division works if there is no remainder
 // ----------------------------------------------------------------------------
@@ -740,7 +740,7 @@ inline bool div::bignum_ok(bignum_g &x, bignum_g &y)
 }
 
 
-inline bool div::fraction_ok(fraction_g &x, fraction_g &y)
+bool div::fraction_ok(fraction_g &x, fraction_g &y)
 // ----------------------------------------------------------------------------
 //   Division of fractions, except division by zero
 // ----------------------------------------------------------------------------
@@ -755,7 +755,7 @@ inline bool div::fraction_ok(fraction_g &x, fraction_g &y)
 }
 
 
-inline bool div::complex_ok(complex_g &x, complex_g &y)
+bool div::complex_ok(complex_g &x, complex_g &y)
 // ----------------------------------------------------------------------------
 //   Divide complex numbers if we have them
 // ----------------------------------------------------------------------------
@@ -770,8 +770,8 @@ inline bool div::complex_ok(complex_g &x, complex_g &y)
 }
 
 
-inline bool mod::integer_ok(object::id &xt, object::id &yt,
-                            ularge &xv, ularge &yv)
+bool mod::integer_ok(object::id &xt, object::id &yt,
+                     ularge &xv, ularge &yv)
 // ----------------------------------------------------------------------------
 //   The modulo of two integers is always an integer
 // ----------------------------------------------------------------------------
@@ -801,7 +801,7 @@ inline bool mod::integer_ok(object::id &xt, object::id &yt,
 }
 
 
-inline bool mod::bignum_ok(bignum_g &x, bignum_g &y)
+bool mod::bignum_ok(bignum_g &x, bignum_g &y)
 // ----------------------------------------------------------------------------
 //   Modulo always works except divide by zero
 // ----------------------------------------------------------------------------
@@ -817,7 +817,7 @@ inline bool mod::bignum_ok(bignum_g &x, bignum_g &y)
 }
 
 
-inline bool mod::fraction_ok(fraction_g &x, fraction_g &y)
+bool mod::fraction_ok(fraction_g &x, fraction_g &y)
 // ----------------------------------------------------------------------------
 //   Modulo of fractions, except division by zero
 // ----------------------------------------------------------------------------
@@ -834,7 +834,7 @@ inline bool mod::fraction_ok(fraction_g &x, fraction_g &y)
 }
 
 
-inline bool mod::complex_ok(complex_g &, complex_g &)
+bool mod::complex_ok(complex_g &, complex_g &)
 // ----------------------------------------------------------------------------
 //   No modulo on complex numbers
 // ----------------------------------------------------------------------------
@@ -843,7 +843,7 @@ inline bool mod::complex_ok(complex_g &, complex_g &)
 }
 
 
-inline bool rem::integer_ok(object::id &/* xt */, object::id &/* yt */,
+bool rem::integer_ok(object::id &/* xt */, object::id &/* yt */,
                             ularge &xv, ularge &yv)
 // ----------------------------------------------------------------------------
 //   The reminder of two integers is always an integer
@@ -862,7 +862,7 @@ inline bool rem::integer_ok(object::id &/* xt */, object::id &/* yt */,
 }
 
 
-inline bool rem::bignum_ok(bignum_g &x, bignum_g &y)
+bool rem::bignum_ok(bignum_g &x, bignum_g &y)
 // ----------------------------------------------------------------------------
 //   Remainder always works except divide by zero
 // ----------------------------------------------------------------------------
@@ -872,7 +872,7 @@ inline bool rem::bignum_ok(bignum_g &x, bignum_g &y)
 }
 
 
-inline bool rem::fraction_ok(fraction_g &x, fraction_g &y)
+bool rem::fraction_ok(fraction_g &x, fraction_g &y)
 // ----------------------------------------------------------------------------
 //   Modulo of fractions, except division by zero
 // ----------------------------------------------------------------------------
@@ -887,7 +887,7 @@ inline bool rem::fraction_ok(fraction_g &x, fraction_g &y)
 }
 
 
-inline bool rem::complex_ok(complex_g &, complex_g &)
+bool rem::complex_ok(complex_g &, complex_g &)
 // ----------------------------------------------------------------------------
 //   No remainder on complex numbers
 // ----------------------------------------------------------------------------
@@ -965,7 +965,7 @@ algebraic_p arithmetic::non_numeric<struct pow>(algebraic_r x, algebraic_r y)
 }
 
 
-inline bool pow::integer_ok(object::id &xt, object::id &yt,
+bool pow::integer_ok(object::id &xt, object::id &yt,
                             ularge &xv, ularge &yv)
 // ----------------------------------------------------------------------------
 //   Compute Y^X
@@ -1004,7 +1004,7 @@ inline bool pow::integer_ok(object::id &xt, object::id &yt,
 }
 
 
-inline bool pow::bignum_ok(bignum_g &x, bignum_g &y)
+bool pow::bignum_ok(bignum_g &x, bignum_g &y)
 // ----------------------------------------------------------------------------
 //   Compute y^x, works if x >= 0
 // ----------------------------------------------------------------------------
@@ -1017,7 +1017,7 @@ inline bool pow::bignum_ok(bignum_g &x, bignum_g &y)
 }
 
 
-inline bool pow::complex_ok(complex_g &x, complex_g &y)
+bool pow::complex_ok(complex_g &x, complex_g &y)
 // ----------------------------------------------------------------------------
 //   Implement x^y as exp(y * log(x))
 // ----------------------------------------------------------------------------
@@ -1027,7 +1027,7 @@ inline bool pow::complex_ok(complex_g &x, complex_g &y)
 }
 
 
-inline bool pow::fraction_ok(fraction_g &/* x */, fraction_g &/* y */)
+bool pow::fraction_ok(fraction_g &/* x */, fraction_g &/* y */)
 // ----------------------------------------------------------------------------
 //   Compute y^x, works if x >= 0
 // ----------------------------------------------------------------------------
@@ -1036,7 +1036,7 @@ inline bool pow::fraction_ok(fraction_g &/* x */, fraction_g &/* y */)
 }
 
 
-inline bool hypot::integer_ok(object::id &/* xt */, object::id &/* yt */,
+bool hypot::integer_ok(object::id &/* xt */, object::id &/* yt */,
                               ularge &/* xv */, ularge &/* yv */)
 // ----------------------------------------------------------------------------
 //   hypot() involves a square root, so not working on integers
@@ -1047,7 +1047,7 @@ inline bool hypot::integer_ok(object::id &/* xt */, object::id &/* yt */,
 }
 
 
-inline bool hypot::bignum_ok(bignum_g &/* x */, bignum_g &/* y */)
+bool hypot::bignum_ok(bignum_g &/* x */, bignum_g &/* y */)
 // ----------------------------------------------------------------------------
 //   Hypot never works with big integers
 // ----------------------------------------------------------------------------
@@ -1056,7 +1056,7 @@ inline bool hypot::bignum_ok(bignum_g &/* x */, bignum_g &/* y */)
 }
 
 
-inline bool hypot::fraction_ok(fraction_g &/* x */, fraction_g &/* y */)
+bool hypot::fraction_ok(fraction_g &/* x */, fraction_g &/* y */)
 // ----------------------------------------------------------------------------
 //   Hypot never works with big integers
 // ----------------------------------------------------------------------------
@@ -1065,7 +1065,7 @@ inline bool hypot::fraction_ok(fraction_g &/* x */, fraction_g &/* y */)
 }
 
 
-inline bool hypot::complex_ok(complex_g &, complex_g &)
+bool hypot::complex_ok(complex_g &, complex_g &)
 // ----------------------------------------------------------------------------
 //   No hypot on complex yet, to be defined as sqrt(x^2+y^2)
 // ----------------------------------------------------------------------------
@@ -1081,7 +1081,7 @@ inline bool hypot::complex_ok(complex_g &, complex_g &)
 //
 // ============================================================================
 
-inline bool atan2::integer_ok(object::id &/* xt */, object::id &/* yt */,
+bool atan2::integer_ok(object::id &/* xt */, object::id &/* yt */,
                               ularge &/* xv */, ularge &/* yv */)
 // ----------------------------------------------------------------------------
 //   Optimized for integers on the real axis
@@ -1091,7 +1091,7 @@ inline bool atan2::integer_ok(object::id &/* xt */, object::id &/* yt */,
 }
 
 
-inline bool atan2::bignum_ok(bignum_g &/* x */, bignum_g &/* y */)
+bool atan2::bignum_ok(bignum_g &/* x */, bignum_g &/* y */)
 // ----------------------------------------------------------------------------
 //   Optimize for bignums on the real axis
 // ----------------------------------------------------------------------------
@@ -1100,7 +1100,7 @@ inline bool atan2::bignum_ok(bignum_g &/* x */, bignum_g &/* y */)
 }
 
 
-inline bool atan2::fraction_ok(fraction_g &/* x */, fraction_g &/* y */)
+bool atan2::fraction_ok(fraction_g &/* x */, fraction_g &/* y */)
 // ----------------------------------------------------------------------------
 //   Optimize for fractions on the real and complex axis and for diagonals
 // ----------------------------------------------------------------------------
@@ -1109,7 +1109,7 @@ inline bool atan2::fraction_ok(fraction_g &/* x */, fraction_g &/* y */)
 }
 
 
-inline bool atan2::complex_ok(complex_g &, complex_g &)
+bool atan2::complex_ok(complex_g &, complex_g &)
 // ----------------------------------------------------------------------------
 //   No atan2 on complex numbers yet
 // ----------------------------------------------------------------------------
@@ -1722,14 +1722,23 @@ COMMAND_BODY(Div2)
             bignum_g   xd = xf->denominator();
             bignum_g   yn = yf->numerator();
             bignum_g   yd = yf->denominator();
-            fraction_g q  = big_fraction::make(yn * xd, yd * xn);
-            bignum_g   ir = q->numerator() / q->denominator();
-            q = big_fraction::make(ir, bignum::make(1));
-            fraction_g r = yf - q * xf;
-            tag_g  qtag = tag::make("Q", +ir);
-            tag_g  rtag = tag::make("R", +r);
-            if (qtag && rtag && rt.stack(0, rtag) && rt.stack(1, qtag))
-                return OK;
+            bignum_g   qn = yn * xd;
+            bignum_g   qd = yd * xn;
+            if (fraction_g q  = big_fraction::make(qn, qd))
+            {
+                qn = q->numerator();
+                qd = q->denominator();
+                if (bignum_g ir = qn / qd)
+                {
+                    q = big_fraction::make(ir, bignum::make(1));
+                    fraction_g r = q * xf;
+                    r =  yf - r;
+                    tag_g  qtag = tag::make("Q", +ir);
+                    tag_g  rtag = tag::make("R", +r);
+                    if (qtag && rtag && rt.stack(0, rtag) && rt.stack(1, qtag))
+                        return OK;
+                }
+            }
             return ERROR;
         }
     }

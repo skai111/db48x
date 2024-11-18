@@ -1294,7 +1294,8 @@ bignum_p decimal::to_bignum() const
     {
         kint xk = kigit(xb, xd);
         tmp = rt.make<bignum>(ty, xk);
-        res = res + tmp * scale;
+        tmp = tmp * scale;
+        res = res + tmp;
         scale = scale / mul;
         if (scale && scale->is_zero())
             break;
@@ -1352,11 +1353,13 @@ algebraic_p decimal::to_fraction(uint count, uint decimals) const
         i = ip->to_bignum();
 
         s = n1;
-        n1 = i * n1 + n2;
+        n1 = i * n1;
+        n1 = n1 + n2;
         n2 = s;
 
         s = d1;
-        d1 = i * d1 + d2;
+        d1 = i * d1;
+        d1 = d1 + d2;
         d2 = s;
 
         fraction_g f = +big_fraction::make(n1, d1);
@@ -2060,6 +2063,8 @@ decimal_p decimal::mod(decimal_r x, decimal_r y)
 //   Modulo
 // ----------------------------------------------------------------------------
 {
+    if (!x || !y)
+        return nullptr;
     decimal_g r = rem(x, y);
     if (x->is_negative() && !r->is_zero())
         r = y->is_negative() ? r - y : r + y;
@@ -2090,6 +2095,8 @@ decimal_p decimal::atan2(decimal_r x, decimal_r y)
 //   Arc-tangent with two arguments (arctan(x/y))
 // ----------------------------------------------------------------------------
 {
+    if (!x || !y)
+        return nullptr;
     if (y->is_zero())
     {
         if (x->is_zero())
