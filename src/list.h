@@ -286,6 +286,16 @@ struct list : text
         return y->map(x, fn);
     }
 
+    static object::result push_list_from_stack(uint depth);
+    static list_p list_from_stack(uint depth);
+    // ------------------------------------------------------------------------
+    //   Convert `depth` items to a list
+    // ------------------------------------------------------------------------
+
+
+
+
+
     // Append data to a list
     list_p append(list_p a) const;
     list_p append(object_p o) const;
@@ -374,13 +384,6 @@ inline list_g operator*(list_r x, uint y)
     text_r xt = (text_r) x;
     return list_p(+(xt * y));
 }
-
-
-object::result to_list(uint depth);
-list_p to_list_object(uint depth);
-// ----------------------------------------------------------------------------
-//   Convert `depth` items to a list
-// ----------------------------------------------------------------------------
 
 
 int value_compare(object_p *xp, object_p *yp);

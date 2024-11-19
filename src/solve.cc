@@ -858,7 +858,7 @@ COMMAND_BODY(NextEq)
             if (list_p(obj)->expand_without_size(&sz))
             {
                 rt.roll(sz);
-                list_g now = list_from_stack(sz);
+                list_g now = list::list_from_stack(sz);
                 if (directory::store_here(eqname, now))
                 {
                     ui.menu_refresh(ID_SolvingMenu);

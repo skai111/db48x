@@ -4477,7 +4477,7 @@ bool user_interface::handle_editing(int key)
             else if (shift)
             {
                 // To List
-                to_list(interactive);
+                list::push_list_from_stack(interactive);
                 Stack.interactive = 1;
             }
             else

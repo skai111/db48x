@@ -938,7 +938,7 @@ HELP_BODY(list)
 //
 // ============================================================================
 
-list_p to_list_object(uint depth)
+list_p list::list_from_stack(uint depth)
 // ----------------------------------------------------------------------------
 //  Make a list from the stack as an object
 // ----------------------------------------------------------------------------
@@ -958,12 +958,12 @@ list_p to_list_object(uint depth)
 }
 
 
-object::result to_list(uint depth)
+object::result list::push_list_from_stack(uint depth)
 // ----------------------------------------------------------------------------
 //  Make a list on the stack
 // ----------------------------------------------------------------------------
 {
-    if (object_g list = to_list_object(depth))
+    if (object_g list = list_from_stack(depth))
         if (rt.push(list))
             return object::OK;
     return object::ERROR;
@@ -982,7 +982,7 @@ COMMAND_BODY(ToList)
             return ERROR;
 
         if (rt.pop())
-            return to_list(depth);
+            return list::push_list_from_stack(depth);
     }
     return ERROR;
 }
