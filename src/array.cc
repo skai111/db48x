@@ -912,9 +912,9 @@ array_p array::invert() const
                             goto err;
                         algebraic_g mjka = mjk->as_algebraic();
                         algebraic_g mika = mik->as_algebraic();
-                        if (!mjka || !mika)
-                            goto err;
                         mjka = aa * mjka - ca * mika;
+                        if (!mjka)
+                            goto err;
                         rt.stack(p + ~ojk, +mjka);
                         record(matrix, "%+s[%u,%u] is now %t",
                                mat ? "t" : "m", j, k, +mjka);
