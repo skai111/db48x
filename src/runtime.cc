@@ -196,21 +196,39 @@ bool runtime::integrity_test(object_p first,
 // ----------------------------------------------------------------------------
 {
     object_p next, obj;
+    uint count = 0;
 
     for (obj = first; obj < last; obj = next)
     {
         object::id type = obj->type();
         if (type >= object::NUM_IDS)
+        {
+            record(runtime_error, "Object at %p (%u) has type %u (max %u)",
+                   obj, count, type, object::NUM_IDS);
+            object::object_error(type, obj);
             return false;
+        }
         next = obj->skip();
+        count++;
     }
     if (obj != last)
+    {
+        record(runtime_error, "Reach past last object, %p vs %p, count=%u",
+               obj, last, count);
         return false;
-
+    }
     for (object_p *s = stack; s < stackEnd; s++)
+    {
         if (!*s || (*s)->type() >= object::NUM_IDS)
+        {
+            record(runtime_error, "Stack at %p (%u) has type %u (max %u)",
+                   *s, s - stack, (*s) ? (*s)->type() : object::ID_object,
+                   object::NUM_IDS);
+            if (*s)
+                object::object_error((*s)->type(), *s);
             return false;
-
+        }
+    }
     return true;
 }
 
