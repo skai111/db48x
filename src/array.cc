@@ -423,12 +423,12 @@ array_p array::build(size_t rows, size_t columns, item_fn items, void *data)
                     for (size_t c = 0; c < columns; c++)
                     {
                         object_g it = items(rows, columns, r, c, data);
-                        if (!rt.append(it))
+                        if (program::interrupted() || !rt.append(it))
                             return nullptr;
                     }
                     row = list::make(ID_array, srow.scratch(), srow.growth());
                 }
-                if (!rt.append(row))
+                if (program::interrupted() || !rt.append(row))
                     return nullptr;
             }
         }
@@ -437,7 +437,7 @@ array_p array::build(size_t rows, size_t columns, item_fn items, void *data)
             for (size_t r = 0; r < rows; r++)
             {
                 object_g it = items(rows, columns, r, 0, data);
-                if (!rt.append(it))
+                if (program::interrupted() || !rt.append(it))
                     return nullptr;
             }
         }
@@ -516,6 +516,9 @@ algebraic_p array::determinant() const
             // Find the index of first non-zero element
             bool zero = true;
             size_t index;
+
+            if (program::interrupted())
+                goto err;
 
             record(matrix, " Row %u", i);
             for (index = i; zero && index < n; index++)
@@ -607,6 +610,9 @@ algebraic_p array::determinant() const
                 // Traverse columns in this row
                 for (size_t k = 0; k < n; k++)
                 {
+                    if (program::interrupted())
+                        goto err;
+
                     size_t ixjk = j * n + k;
                     object_p mjk = rt.stack(px + ~ixjk);
                     object_p tk = rt.stack(pt + ~k);
@@ -809,6 +815,9 @@ array_p array::invert() const
         // Loop across the diagonal
         for (size_t i = 0; i < n; i++)
         {
+            if (program::interrupted())
+                goto err;
+
             // Find the index of first non-zero element
             bool zero = true;
             size_t index;
@@ -850,6 +859,9 @@ array_p array::invert() const
                     size_t ob = i * n + j;
                     for (uint mat = 0; mat < 2; mat++)
                     {
+                        if (program::interrupted())
+                            goto err;
+
                         size_t p = mat ? pt : pm;
 
                         object_p a = rt.stack(p + ~oa);
@@ -958,6 +970,9 @@ array_p array::invert() const
                 // This is only needed on the right matrix
                 for (uint mat = 0; mat < 2; mat++)
                 {
+                    if (program::interrupted())
+                        goto err;
+
                     size_t p = mat ? pt : pm;
                     for (size_t k = mat ? 0 : i; k < n; k++)
                     {
@@ -989,6 +1004,8 @@ array_p array::invert() const
                 scribble sv;
                 for (uint c = 0; c < n; c++)
                 {
+                    if (program::interrupted())
+                        goto err;
                     size_t orc = r * n + c;
                     object_p mrc = rt.stack(pt + ~orc);
                     if (!rt.append(mrc))
@@ -1031,6 +1048,8 @@ algebraic_p array::norm_square() const
     algebraic_g sum;
     for (object_p obj : *this)
     {
+        if (program::interrupted())
+            return nullptr;
         id oty = obj->type();
         if (oty == ID_array)
         {
@@ -1102,6 +1121,9 @@ algebraic_p array::dot(array_r &x, array_r &y)
     cleaner         purge;
     while (object_p xo = *xi++)
     {
+        if (program::interrupted())
+            return nullptr;
+
         object_p yo = *yi++;
         if (!yo)
         {
@@ -1189,6 +1211,9 @@ array_p array::cross(array_r &x, array_r &y)
     cleaner         purge;
     while (count < 3)
     {
+        if (program::interrupted())
+            return nullptr;
+
         object_p xo = *xi++;
         object_p yo = *yi++;
         bool hadx = xo;
@@ -1894,6 +1919,9 @@ array_p array::add_sub(array_r x, array_r y, bool sub)
     cleaner         purge;
     while (object_p xo = *xi++)
     {
+        if (program::interrupted())
+            return nullptr;
+
         object_p yo = *yi++;
         if (!yo)
         {
@@ -1997,6 +2025,9 @@ array_p array::mul(array_r x, array_r y)
     cleaner         purge;
     while (object_p xo = *xi++)
     {
+        if (program::interrupted())
+            return nullptr;
+
         cleaner purge;
         xo = object::strip(xo);
         xa = xo->as_extended_algebraic();
