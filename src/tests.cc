@@ -179,7 +179,10 @@ void tests::run(uint onlyCurrent)
     {
         here().begin("Current");
         if (onlyCurrent & 1)
+        {
             matrix_functions();
+            vector_functions();
+        }
         if (onlyCurrent & 2)
             demo_ui();
         if (onlyCurrent & 4)
@@ -5676,7 +5679,7 @@ void tests::vector_functions()
     test(CLEAR, "[1 2  3 4 6][4 5 2 1 3] /", ENTER)
         .expect("[ ¹/₄ ²/₅ 1 ¹/₂ 4 2 ]");
     test(CLEAR, "[a b c][d e f] /", ENTER)
-        .expect("[ 'a÷d' 'b÷e' 'c÷f' ]");
+        .expect("[ 'd⁻¹·a' 'e⁻¹·b' 'f⁻¹·c' ]");
 
     step("Addition of constant (extension)");
     test(CLEAR, "[1 2 3] 3 +", ENTER)
@@ -5889,7 +5892,9 @@ void tests::matrix_functions()
 
     step("Non-rectangular matrices");
     test(CLEAR, "[  [ 1.5  2.300 ] [ 3.02 ]]", ENTER)
-        .type(ID_array).want("[[ 1.5 2.3 ] [ 3.02 ]]");
+        .type(ID_array).want("[[ 1.5 2.3 ] [ 3.02 ]]")
+        .test(ENTER, ID_add)
+        .want("[[ 3. 4.6 ] [ 6.04 ]]");
 
     step("Symbolic matrix");
     test(CLEAR, "[[a b] [c d]]", ENTER)
@@ -5966,29 +5971,44 @@ void tests::matrix_functions()
     test(CLEAR, "x [[a b] [c d]] /", ENTER)
         .want("[[ 'x÷a' 'x÷b' ] [ 'x÷c' 'x÷d' ]]");
 
-    step("Invalid dimension for binary operations");
-    test(CLEAR, "[[1 2] [3 4]][1 2] +", ENTER)
-        .error("Bad argument type");
-    test(CLEAR, "[[1 2] [3 4]][[1 2][3 4][5 6]] +", ENTER)
+    step("Invalid dimension for addition (second is larger)")
+        .test(CLEAR, "[[1 2] [3 4]][[1 2][3 4][5 6]] +", ENTER)
         .error("Invalid dimension");
-    test(CLEAR, "[[1 2] [3 4]][1 2] +", ENTER)
-        .error("Bad argument type");
-    test(CLEAR, "[[1 2] [3 4]][[1 2][3 4][5 6]] -", ENTER)
+    step("Invalid dimension for addition (second is smaller)")
+        .test(CLEAR, "[[1 2] [3 4] [5 6]][[1 2][3 4]] +", ENTER)
         .error("Invalid dimension");
-    test(CLEAR, "[[1 2] [3 4]][1 2] +", ENTER)
-        .error("Bad argument type");
-    test(CLEAR, "[[1 2] [3 4]][[1 2][3 4][5 6]] -", ENTER)
+    step("Invalid dimension for subtraction (second is larger)")
+        .test(CLEAR, "[[1 2] [3 4]][[1 2][3 4][5 6]] -", ENTER)
         .error("Invalid dimension");
-    test(CLEAR, "[[1 2] [3 4]][1 2] +", ENTER)
-        .error("Bad argument type");
-    test(CLEAR, "[[1 2] [3 4]][[1 2][3 4][5 6]] *", ENTER)
+    step("Invalid dimension for subtraction (second is smaller)")
+        .test(CLEAR, "[[1 2] [3 4] [5 6]][[1 2][3 4]] -", ENTER)
         .error("Invalid dimension");
-    test(CLEAR, "[[1 2] [3 4]][1 2 3] *", ENTER)
-        .error("Invalid dimension");
-    test(CLEAR, "[[1 2] [3 4]][[1 2][3 4][5 6]] /", ENTER)
-        .error("Invalid dimension");
-    test(CLEAR, "[[1 2] [3 4]][1 2] /", ENTER)
-        .error("Bad argument type");
+    step("Element-wise addition (extension)")
+        .test(CLEAR, "[[1 2] [3 4]][1 2] +", ENTER)
+        .want("[[ 2 3 ] [ 5 6 ]]");
+    step("Element-wise subtraction (extension)")
+        .test(CLEAR, "[[1 2] [3 4]][1 2] -", ENTER)
+        .want("[[ 0 1 ] [ 1 2 ]]");
+    step("Element-wise multiplication (extension)")
+        .test(CLEAR, "[[1 2] [3 4]] 4 *", ENTER)
+        .want("[[ 4 8 ] [ 12 16 ]]");
+    step("Matrix-vector multiplication")
+        .test(CLEAR, "[[1 2] [3 4]][4 5] *", ENTER)
+        .want("[ 14 32 ]");
+    step("Element-wise division (extension)")
+        .test(CLEAR, "[[1 2] [3 4]][2 3] /", ENTER)
+        .want("[[ ¹/₂ 1 ] [ 1 1 ¹/₃ ]]");
+
+    step("Non-rectangular addition (extension)")
+        .test(CLEAR, "[[1][2 3]][[4][5 6]] +", ENTER)
+        .want("[[ 5 ] [ 7 9 ]]");
+    step("Non-rectangular subtraction (extension)")
+        .test(CLEAR, "[[1][2 3]][4 [5 6]] -", ENTER)
+        .want("[[ -3 ] [ -3 -3 ]]");
+    step("Matrix of matrices")
+        .test(CLEAR, "[[[ 1 2 ][3 4]][[ 1 2 ][3 4]]]", ENTER,
+              ENTER, 3, ID_mul, ID_mul)
+        .want("[[[ 12 24 ] [ 54 72 ]] [[ 12 24 ] [ 54 72 ]]]");
 
     step("Min and max")
         .test(CLEAR, "[[1 2][3 4][5 6]] [[0 3][4 6][2 1]] MIN", ENTER)
