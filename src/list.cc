@@ -938,18 +938,18 @@ HELP_BODY(list)
 //
 // ============================================================================
 
-list_p list::list_from_stack(uint depth)
+list_p list::list_from_stack(uint depth, id ty)
 // ----------------------------------------------------------------------------
 //  Make a list from the stack as an object
 // ----------------------------------------------------------------------------
 {
     scribble scr;
     for (uint i = 0; i < depth; i++)
-        if (object_g obj = rt.stack(depth - 1 - i))
+        if (object_g obj = rt.stack(depth + ~i))
             if (!rt.append(obj))
                 return nullptr;
 
-    if (list_p result = list::make(scr.scratch(), scr.growth()))
+    if (list_p result = list::make(ty, scr.scratch(), scr.growth()))
     {
         rt.drop(depth);
         return result;
@@ -958,12 +958,12 @@ list_p list::list_from_stack(uint depth)
 }
 
 
-object::result list::push_list_from_stack(uint depth)
+object::result list::push_list_from_stack(uint depth, id ty)
 // ----------------------------------------------------------------------------
 //  Make a list on the stack
 // ----------------------------------------------------------------------------
 {
-    if (object_g list = list_from_stack(depth))
+    if (object_g list = list_from_stack(depth, ty))
         if (rt.push(list))
             return object::OK;
     return object::ERROR;

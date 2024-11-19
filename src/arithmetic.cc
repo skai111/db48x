@@ -1518,6 +1518,11 @@ algebraic_p arithmetic::evaluate(algebraic_r x, algebraic_r y)
 //   Evaluate the operation for C++ use (not using RPL stack)
 // ----------------------------------------------------------------------------
 {
+    if (!x || !y)
+        return nullptr;
+    if (Op::target)
+        if (arithmetic_fn code = Op::target(x, y))
+            return code(x, y);
     return evaluate(Op::static_id, x, y, Ops<Op>());
 }
 
@@ -1795,3 +1800,16 @@ COMMAND_BODY(Div2)
         return OK;
     return ERROR;
 }
+
+
+#define ARITHMETIC_DEFINE(derived)      arithmetic::target_fn derived::target;
+
+ARITHMETIC_DEFINE(add);
+ARITHMETIC_DEFINE(sub);
+ARITHMETIC_DEFINE(mul);
+ARITHMETIC_DEFINE(div);
+ARITHMETIC_DEFINE(mod);
+ARITHMETIC_DEFINE(rem);
+ARITHMETIC_DEFINE(pow);
+ARITHMETIC_DEFINE(hypot);
+ARITHMETIC_DEFINE(atan2);

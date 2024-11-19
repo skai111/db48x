@@ -286,8 +286,8 @@ struct list : text
         return y->map(x, fn);
     }
 
-    static object::result push_list_from_stack(uint depth);
-    static list_p list_from_stack(uint depth);
+    static object::result push_list_from_stack(uint depth, id ty = ID_list);
+    static list_p list_from_stack(uint depth, id ty = ID_list);
     // ------------------------------------------------------------------------
     //   Convert `depth` items to a list
     // ------------------------------------------------------------------------

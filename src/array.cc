@@ -1915,7 +1915,6 @@ array_p array::add_sub(array_r x, array_r y, bool sub)
     algebraic_g     xa, ya;
     id              xty = x->type();
 
-    scribble        scr;
     cleaner         purge;
     while (object_p xo = *xi++)
     {
@@ -1949,7 +1948,7 @@ array_p array::add_sub(array_r x, array_r y, bool sub)
                     yangles |= (1 << count);
         }
         xa = sub ? xa - ya : xa + ya;
-        if (!xa || !rt.append(+xa))
+        if (!xa || !rt.push(+xa))
             return nullptr;
         count++;
     }
@@ -1964,7 +1963,7 @@ array_p array::add_sub(array_r x, array_r y, bool sub)
     // Check if we actually deal with polar or cylindrical or spherical vectors
     if (count == 2 && (xangles == 2 || yangles == 2))
     {
-        scr.clear();
+        rt.drop(count);
         array_g xx = xangles == 2 ? x->to_rectangular() : +x;
         array_g yy = yangles == 2 ? y->to_rectangular() : +y;
         xx = add_sub(xx, yy, sub);
@@ -1978,7 +1977,7 @@ array_p array::add_sub(array_r x, array_r y, bool sub)
         bool ynonrect = (yangles == 2 || yangles == 4 || yangles == 6);
         if (xnonrect || ynonrect)
         {
-            scr.clear();
+            rt.drop(count);
             array_g xx = xnonrect ? x->to_rectangular() : +x;
             array_g yy = ynonrect ? y->to_rectangular() : +y;
             xx = add_sub(xx, yy, sub);
@@ -1991,7 +1990,7 @@ array_p array::add_sub(array_r x, array_r y, bool sub)
     }
 
     // Normal rectangular case
-    array_p result = array_p(list::make(xty, scr.scratch(), scr.growth()));
+    array_p result = array_p(list::list_from_stack(count, xty));
     result = purge(result);
     return result;
 }
@@ -2021,7 +2020,6 @@ array_p array::mul(array_r x, array_r y)
     array_g         xrow;
     enum { UNKNOWN, MATRIX, VECTOR } matvec = UNKNOWN;
 
-    scribble        scr;
     cleaner         purge;
     while (object_p xo = *xi++)
     {
@@ -2080,7 +2078,7 @@ array_p array::mul(array_r x, array_r y)
             matvec = VECTOR;
         }
         xa = purge(xa);
-        if (!xa || !rt.append(+xa))
+        if (!xa || !rt.push(+xa))
             return nullptr;
         count++;
     }
@@ -2098,7 +2096,7 @@ array_p array::mul(array_r x, array_r y)
     // Check if we actually deal with polar or cylindrical or spherical vectors
     if (count == 2 && (xangles == 2 || yangles == 2))
     {
-        scr.clear();
+        rt.drop(count);
         array_g xx = xangles == 2 ? x->to_rectangular() : +x;
         array_g yy = yangles == 2 ? y->to_rectangular() : +y;
         xx = mul(xx, yy);
@@ -2112,7 +2110,7 @@ array_p array::mul(array_r x, array_r y)
         bool ynonrect = (yangles == 2 || yangles == 4 || yangles == 6);
         if (xnonrect || ynonrect)
         {
-            scr.clear();
+            rt.drop(count);
             array_g xx = xnonrect ? x->to_rectangular() : +x;
             array_g yy = ynonrect ? y->to_rectangular() : +y;
             xx = mul(xx, yy);
@@ -2125,7 +2123,7 @@ array_p array::mul(array_r x, array_r y)
     }
 
     // Normal rectangular case
-    array_p result = array_p(list::make(xty, scr.scratch(), scr.growth()));
+    array_p result = array_p(list::list_from_stack(count, xty));
     result = purge(result);
     return result;
 }

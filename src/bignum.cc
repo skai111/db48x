@@ -29,6 +29,7 @@
 
 #include "bignum.h"
 
+#include "arithmetic.h"
 #include "fraction.h"
 #include "integer.h"
 #include "parser.h"
@@ -437,11 +438,22 @@ bignum_p bignum::add_sub(bignum_r y, bignum_r x, bool issub)
 }
 
 
+template <bignum_p (*code)(bignum_r, bignum_r)>
+arithmetic_fn target(algebraic_r x, algebraic_r y)
+// ----------------------------------------------------------------------------
+//  Target function for bignum objects
+// ----------------------------------------------------------------------------
+{
+    return x->is_bignum() && y->is_bignum() ? arithmetic_fn(code) : nullptr;
+}
+
+
 bignum_p operator+(bignum_r y, bignum_r x)
 // ----------------------------------------------------------------------------
 //   Add the two bignum values, result has type of x
 // ----------------------------------------------------------------------------
 {
+    add::remember(target<operator+>);
     return bignum::add_sub(y, x, false);
 }
 
@@ -451,6 +463,7 @@ bignum_p operator-(bignum_r y, bignum_r x)
 //   Subtract two bignum values, result has type of x
 // ----------------------------------------------------------------------------
 {
+    sub::remember(target< operator- >);
     return bignum::add_sub(y, x, true);
 }
 
@@ -557,6 +570,7 @@ bignum_p operator*(bignum_r y, bignum_r x)
 {
     if (!x || !y)
         return nullptr;
+    mul::remember(target<operator*>);
     object::id xt = x->type();
     object::id yt = y->type();
     object::id prodtype = bignum::product_type(yt, xt);
@@ -685,10 +699,11 @@ bignum_p operator/(bignum_r y, bignum_r x)
 {
     if (!x || !y)
         return nullptr;
+    // Can't do: div::remember(target<operator/>);
+    // because the division can generate fractions
     object::id yt = y->type();
     object::id xt = x->type();
     object::id prodtype = bignum::product_type(yt, xt);
-
     bignum_g q = nullptr;
     bignum::quorem(y, x, prodtype, &q, nullptr);
     return q;
@@ -702,6 +717,7 @@ bignum_p operator%(bignum_r y, bignum_r x)
 {
     if (!x || !y)
         return nullptr;
+    rem::remember(target< operator% >);
     object::id yt = y->type();
     bignum_g r = nullptr;
     bignum::quorem(y, x, yt, nullptr, &r);
@@ -717,6 +733,7 @@ bignum_p bignum::pow(bignum_r yr, bignum_r xr)
 {
     if (!xr || !yr)
         return nullptr;
+    pow::remember(target<pow>);
     bignum_g r  = bignum::make(1);
     size_t   xs = 0;
     byte_p   x  = xr->value(&xs);

@@ -350,6 +350,16 @@ fraction_p big_fraction::make(bignum_r nn, bignum_r dd)
 //
 // ============================================================================
 
+template <fraction_p (*code)(fraction_r, fraction_r)>
+arithmetic_fn target(algebraic_r x, algebraic_r y)
+// ----------------------------------------------------------------------------
+//  Target function for bignum objects
+// ----------------------------------------------------------------------------
+{
+    return x->is_fraction() && y->is_fraction() ? arithmetic_fn(code) : nullptr;
+}
+
+
 fraction_p operator-(fraction_r x)
 // ----------------------------------------------------------------------------
 //    Negation of a fraction
@@ -371,6 +381,7 @@ fraction_p operator+(fraction_r x, fraction_r y)
 {
     if (!x || !y)
         return nullptr;
+    add::remember(target< operator+ >);
     bignum_g  xn = x->numerator();
     bignum_g  xd = x->denominator();
     bignum_g  yn = y->numerator();
@@ -390,6 +401,7 @@ fraction_p operator-(fraction_r x, fraction_r y)
 {
     if (!x || !y)
         return nullptr;
+    sub::remember(target< operator- >);
     bignum_g  xn = x->numerator();
     bignum_g  xd = x->denominator();
     bignum_g  yn = y->numerator();
@@ -409,6 +421,7 @@ fraction_p operator*(fraction_r x, fraction_r y)
 {
     if (!x || !y)
         return nullptr;
+    mul::remember(target< operator* >);
     bignum_g  xn = x->numerator();
     bignum_g  xd = x->denominator();
     bignum_g  yn = y->numerator();
@@ -426,6 +439,7 @@ fraction_p operator/(fraction_r x, fraction_r y)
 {
     if (!x || !y)
         return nullptr;
+    div::remember(target< operator/ >);
     bignum_g  xn = x->numerator();
     bignum_g  xd = x->denominator();
     bignum_g  yn = y->numerator();
@@ -443,6 +457,7 @@ fraction_p operator%(fraction_r x, fraction_r y)
 {
     if (!x || !y)
         return nullptr;
+    rem::remember(target< operator% >);
     bignum_g   xn = x->numerator();
     bignum_g   xd = x->denominator();
     bignum_g   yn = y->numerator();
