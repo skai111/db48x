@@ -1778,6 +1778,7 @@ decimal_p decimal::mul(decimal_r x, decimal_r y)
 {
     if (!x || !y)
         return nullptr;
+    mul::remember(target<mul>);
 
     // Read information from both numbers
     info     xi  = x->shape();
@@ -1787,7 +1788,6 @@ decimal_p decimal::mul(decimal_r x, decimal_r y)
     id       xty = x->type();
     id       yty = y->type();
     id       ty  = xty == yty ? ID_decimal : ID_neg_decimal;
-    mul::remember(target<mul>);
 
     // Check dimensions
     size_t   xs  = xi.nkigits;
@@ -1903,6 +1903,7 @@ decimal_p decimal::div(decimal_r x, decimal_r y)
 {
     if (!x || !y)
         return nullptr;
+    div::remember(target<div>);
 
     // Check if we divide by zero
     if (y->is_zero())
@@ -1919,7 +1920,6 @@ decimal_p decimal::div(decimal_r x, decimal_r y)
     id       xty = x->type();
     id       yty = y->type();
     id       ty  = xty == yty ? ID_decimal : ID_neg_decimal;
-    div::remember(target<div>);
 
     // Size of result
     size_t   rs  = (Settings.Precision() + 2) / 3 + 1;
@@ -2126,6 +2126,7 @@ decimal_p decimal::atan2(decimal_r x, decimal_r y)
 {
     if (!x || !y)
         return nullptr;
+    atan2::remember(target<atan2>);
     if (y->is_zero())
     {
         if (x->is_zero())

@@ -860,3 +860,12 @@ algebraic_p algebraic::as_numeric_constant() const
         return this;
     return nullptr;
 }
+
+
+algebraic_p algebraic::zero_divide(algebraic_r x)
+// ----------------------------------------------------------------------------
+//   Deal with division by zero
+// ----------------------------------------------------------------------------
+{
+    return rt.zero_divide(x && x->is_negative(false));
+}

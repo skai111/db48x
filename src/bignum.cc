@@ -453,7 +453,7 @@ bignum_p operator+(bignum_r y, bignum_r x)
 //   Add the two bignum values, result has type of x
 // ----------------------------------------------------------------------------
 {
-    add::remember(target<operator+>);
+    add::remember(target< operator+ >);
     return bignum::add_sub(y, x, false);
 }
 
@@ -570,7 +570,7 @@ bignum_p operator*(bignum_r y, bignum_r x)
 {
     if (!x || !y)
         return nullptr;
-    mul::remember(target<operator*>);
+    mul::remember(target< operator* >);
     object::id xt = x->type();
     object::id yt = y->type();
     object::id prodtype = bignum::product_type(yt, xt);
@@ -692,6 +692,22 @@ bool bignum::quorem(bignum_r yg, bignum_r xg, id ty, bignum_g *q, bignum_g *r)
 }
 
 
+static bignum_p divide_and_optimize(bignum_r y, bignum_r x)
+// ----------------------------------------------------------------------------
+//   Invoked we are called through the arithmetic optimization target
+// ----------------------------------------------------------------------------
+{
+    object::id yt = y->type();
+    object::id xt = x->type();
+    object::id prodtype = bignum::product_type(yt, xt);
+    bignum_g q, r;
+    bignum::quorem(y, x, prodtype, &q, &r);
+    if (r->is_zero())
+        return q;
+    return bignum_p(big_fraction::make(y, x));
+}
+
+
 bignum_p operator/(bignum_r y, bignum_r x)
 // ----------------------------------------------------------------------------
 //   Perform long division of y by x
@@ -701,10 +717,11 @@ bignum_p operator/(bignum_r y, bignum_r x)
         return nullptr;
     // Can't do: div::remember(target<operator/>);
     // because the division can generate fractions
+    div::remember(target<divide_and_optimize>);
     object::id yt = y->type();
     object::id xt = x->type();
     object::id prodtype = bignum::product_type(yt, xt);
-    bignum_g q = nullptr;
+    bignum_g q;
     bignum::quorem(y, x, prodtype, &q, nullptr);
     return q;
 }

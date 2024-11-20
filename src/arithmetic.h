@@ -90,8 +90,9 @@ struct arithmetic : algebraic
         return algebraic::complex_promotion(x, type);
     }
     static bool complex_promotion(algebraic_g &x, algebraic_g &y);
-
     static fraction_p fraction_promotion(algebraic_g &x);
+    static algebraic_p zero_divide(algebraic_r y, algebraic_r x);
+
 
     // We do not insert parentheses for algebraic values
     INSERT_DECL(arithmetic);
@@ -141,11 +142,21 @@ protected:
     template <typename Op>
     static algebraic_p non_numeric(algebraic_r UNUSED x, algebraic_r UNUSED y)
     // ------------------------------------------------------------------------
-    //   Return true if we can process non-numeric objects of the type
+    //   Return value if we can process non-numeric objects of the type
     // ------------------------------------------------------------------------
     {
         return nullptr;
     }
+
+    template <typename Op>
+    static algebraic_p optimize(algebraic_r UNUSED x, algebraic_r UNUSED y)
+    // ------------------------------------------------------------------------
+    //   Return optimizations that are shared between fast and slow path
+    // ------------------------------------------------------------------------
+    {
+        return nullptr;
+    }
+
 };
 
 
@@ -177,14 +188,12 @@ struct derived : arithmetic                                             \
                                                                         \
     static hwfloat_p do_float(hwfloat_r x, hwfloat_r y)                 \
     {                                                                   \
-        if (ID_##derived != ID_atan2)                                   \
-            remember(target_float);                                     \
+        remember(target_float);                                         \
         return hwfloat::derived(x, y);                                  \
     }                                                                   \
     static hwdouble_p do_double(hwdouble_r x, hwdouble_r y)             \
     {                                                                   \
-        if (ID_##derived != ID_atan2)                                   \
-            remember(target_double);                                    \
+        remember(target_double);                                        \
         return hwdouble::derived(x, y);                                 \
     }                                                                   \
     static constexpr auto       fop   = do_float;                       \

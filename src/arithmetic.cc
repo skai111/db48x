@@ -109,6 +109,24 @@ fraction_p arithmetic::fraction_promotion(algebraic_g &x)
 
 
 template<>
+algebraic_p arithmetic::optimize<add>(algebraic_r x, algebraic_r y)
+// ----------------------------------------------------------------------------
+//   Auto-simplification rules for addition
+// ----------------------------------------------------------------------------
+{
+    // Deal with basic auto-simplifications rules
+    if (Settings.AutoSimplify() && x->is_algebraic() && y->is_algebraic())
+    {
+        if (x->is_zero(false))                  // 0 + X = X
+            return y;
+        if (y->is_zero(false))                  // X + 0 = X
+            return x;
+    }
+    return nullptr;
+}
+
+
+template<>
 algebraic_p arithmetic::non_numeric<add>(algebraic_r x, algebraic_r y)
 // ----------------------------------------------------------------------------
 //   Deal with non-numerical data types for addition
@@ -198,17 +216,7 @@ algebraic_p arithmetic::non_numeric<add>(algebraic_r x, algebraic_r y)
         return nullptr;
     }
 
-    // Deal with basic auto-simplifications rules
-    if (Settings.AutoSimplify() && x->is_algebraic() && y->is_algebraic())
-    {
-        if (x->is_zero(false))                  // 0 + X = X
-            return y;
-        if (y->is_zero(false))                  // X + 0 = X
-            return x;
-    }
-
-    // Not yet implemented
-    return nullptr;
+    return optimize<add>(x, y);
 }
 
 
@@ -284,6 +292,27 @@ bool add::complex_ok(complex_g &x, complex_g &y)
 
 
 template <>
+algebraic_p arithmetic::optimize<sub>(algebraic_r x, algebraic_r y)
+// ----------------------------------------------------------------------------
+//   Optimizations for subtractions
+// ----------------------------------------------------------------------------
+{
+    if (Settings.AutoSimplify() && x->is_algebraic() && y->is_algebraic())
+    {
+        if (y->is_zero(false))                  // X - 0 = X
+            return x;
+        if (x->is_same_as(y))                   // X - X = 0
+            return integer::make(0);
+        if (x->is_zero(false) && y->is_symbolic())
+            return neg::run(y);                 // 0 - X = -X
+    }
+
+    // Not yet implemented
+    return nullptr;
+}
+
+
+template <>
 algebraic_p arithmetic::non_numeric<sub>(algebraic_r x, algebraic_r y)
 // ----------------------------------------------------------------------------
 //   Deal with non-numerical data types for multiplication
@@ -331,20 +360,7 @@ algebraic_p arithmetic::non_numeric<sub>(algebraic_r x, algebraic_r y)
         rt.inconsistent_units_error();
         return nullptr;
     }
-
-    // Deal with basic auto-simplifications rules
-    if (Settings.AutoSimplify() && x->is_algebraic() && y->is_algebraic())
-    {
-        if (y->is_zero(false))                  // X - 0 = X
-            return x;
-        if (x->is_same_as(y))                   // X - X = 0
-            return integer::make(0);
-        if (x->is_zero(false) && y->is_symbolic())
-            return neg::run(y);                 // 0 - X = -X
-    }
-
-    // Not yet implemented
-    return nullptr;
+    return optimize<sub>(x, y);
 }
 
 
@@ -415,6 +431,37 @@ bool sub::complex_ok(complex_g &x, complex_g &y)
 {
     x = x - y;
     return x;
+}
+
+
+template <>
+algebraic_p arithmetic::optimize<mul>(algebraic_r x, algebraic_r y)
+// ----------------------------------------------------------------------------
+//   Optimization rules for multiplication
+// ----------------------------------------------------------------------------
+{
+    // Deal with basic auto-simplifications rules
+    if (Settings.AutoSimplify() && x->is_algebraic() && y->is_algebraic())
+    {
+        if (x->is_zero(false))                  // 0 * X = 0
+            return x;
+        if (y->is_zero(false))                  // X * 0 = Y
+            return y;
+        if (x->is_one(false))                   // 1 * X = X
+            return y;
+        if (y->is_one(false))                   // X * 1 = X
+            return x;
+        if (x->is_symbolic() && x->is_same_as(y))
+        {
+            if (constant_p cst = x->as<constant>())
+                if (cst->is_imaginary_unit())
+                    return integer::make(-1);
+            return sq::run(x);                  // X * X = X²
+        }
+    }
+
+    // Not yet implemented
+    return nullptr;
 }
 
 
@@ -490,31 +537,8 @@ algebraic_p arithmetic::non_numeric<mul>(algebraic_r x, algebraic_r y)
             return unit::simple(yv, ye);
         }
     }
-
-    // Deal with basic auto-simplifications rules
-    if (Settings.AutoSimplify() && x->is_algebraic() && y->is_algebraic())
-    {
-        if (x->is_zero(false))                  // 0 * X = 0
-            return x;
-        if (y->is_zero(false))                  // X * 0 = Y
-            return y;
-        if (x->is_one(false))                   // 1 * X = X
-            return y;
-        if (y->is_one(false))                   // X * 1 = X
-            return x;
-        if (x->is_symbolic() && x->is_same_as(y))
-        {
-            if (constant_p cst = x->as<constant>())
-                if (cst->is_imaginary_unit())
-                    return integer::make(-1);
-            return sq::run(x);                  // X * X = X²
-        }
-    }
-
-    // Not yet implemented
-    return nullptr;
+    return optimize<mul>(x, y);
 }
-
 
 bool mul::integer_ok(object::id &xt, object::id &yt,
                      ularge &xv, ularge &yv)
@@ -573,6 +597,34 @@ bool mul::complex_ok(complex_g &x, complex_g &y)
 {
     x = x * y;
     return x;
+}
+
+
+template <>
+algebraic_p arithmetic::optimize<struct div>(algebraic_r x, algebraic_r y)
+// ----------------------------------------------------------------------------
+//   Optimizations for division
+// ----------------------------------------------------------------------------
+{
+    // Check divide by zero
+    if (y->is_zero(false))
+        return zero_divide(x, y);
+
+    // Deal with basic auto-simplifications rules
+    if (Settings.AutoSimplify() && x->is_algebraic() && y->is_algebraic())
+    {
+        if (x->is_zero(false))                  // 0 / X = 0
+            return x;
+        if (y->is_one(false))                   // X / 1 = X
+            return x;
+        if (x->is_one(false) && y->is_symbolic())
+            return inv::run(y);                 // 1 / X = X⁻¹
+        if (x->is_same_as(y))
+            return integer::make(1);            // X / X = 1
+    }
+
+    // Not yet implemented
+    return nullptr;
 }
 
 
@@ -647,34 +699,7 @@ algebraic_p arithmetic::non_numeric<struct div>(algebraic_r x, algebraic_r y)
         }
     }
 
-    // Check divide by zero
-    if (y->is_zero(false))
-    {
-        if (x->is_zero(false))
-        {
-            if (Settings.ZeroOverZeroIsUndefined())
-                return rt.undefined_result();
-            rt.zero_divide_error();
-            return nullptr;
-        }
-        return rt.zero_divide(x->is_negative());
-    }
-
-    // Deal with basic auto-simplifications rules
-    if (Settings.AutoSimplify() && x->is_algebraic() && y->is_algebraic())
-    {
-        if (x->is_zero(false))                  // 0 / X = 0
-            return x;
-        if (y->is_one(false))                   // X / 1 = X
-            return x;
-        if (x->is_one(false) && y->is_symbolic())
-            return inv::run(y);                 // 1 / X = X⁻¹
-        if (x->is_same_as(y))
-            return integer::make(1);            // X / X = 1
-    }
-
-    // Not yet implemented
-    return nullptr;
+    return optimize<struct div>(x, y);
 }
 
 
@@ -684,9 +709,10 @@ bool div::integer_ok(object::id &xt, object::id &yt,
 //   Check if dividing two integers works or if we need to promote to real
 // ----------------------------------------------------------------------------
 {
-    // Check divide by zero
+    // Check divide by zero (defensive coding: optimize<div> should have done it
     if (yv == 0)
     {
+        ASSERT(!"integer_ok divide by zero, optimize<div> failed?");
         rt.zero_divide_error();
         return false;
     }
@@ -720,6 +746,7 @@ bool div::bignum_ok(bignum_g &x, bignum_g &y)
 {
     if (!y)
     {
+        ASSERT(!"bignum divide by zero, optimize<div> failed");
         rt.zero_divide_error();
         return false;
     }
@@ -747,6 +774,7 @@ bool div::fraction_ok(fraction_g &x, fraction_g &y)
 {
     if (!y->numerator())
     {
+        ASSERT(!"fraction divide by zero, optimize<div> failed");
         rt.zero_divide_error();
         return false;
     }
@@ -762,11 +790,35 @@ bool div::complex_ok(complex_g &x, complex_g &y)
 {
     if (y->is_zero())
     {
+        ASSERT(!"complex divide by zero, optimize<div> failed");
         rt.zero_divide_error();
         return false;
     }
     x = x / y;
     return x;
+}
+
+
+template <>
+algebraic_p arithmetic::optimize<mod>(algebraic_r x, algebraic_r y)
+// ----------------------------------------------------------------------------
+//   Optimizations for modulo
+// ----------------------------------------------------------------------------
+{
+    // Check divide by zero
+    if (y->is_zero(false))
+        return zero_divide(x, y);
+    return nullptr;
+}
+
+
+template <>
+algebraic_p arithmetic::non_numeric<mod>(algebraic_r x, algebraic_r y)
+// ----------------------------------------------------------------------------
+//   Deal with modulo non-numerical cases
+// ----------------------------------------------------------------------------
+{
+    return optimize<mod>(x, y);
 }
 
 
@@ -779,6 +831,7 @@ bool mod::integer_ok(object::id &xt, object::id &yt,
     // Check divide by zero
     if (yv == 0)
     {
+        ASSERT(!"integer mod divide by zero, optimize<div> failed");
         rt.zero_divide_error();
         return false;
     }
@@ -824,6 +877,7 @@ bool mod::fraction_ok(fraction_g &x, fraction_g &y)
 {
     if (!y->numerator())
     {
+        ASSERT(!"fraction mod divide by zero, optimize<div> failed");
         rt.zero_divide_error();
         return false;
     }
@@ -843,6 +897,29 @@ bool mod::complex_ok(complex_g &, complex_g &)
 }
 
 
+template <>
+algebraic_p arithmetic::optimize<rem>(algebraic_r x, algebraic_r y)
+// ----------------------------------------------------------------------------
+//   Optimizations for modulo
+// ----------------------------------------------------------------------------
+{
+    // Check divide by zero
+    if (y->is_zero(false))
+        return zero_divide(x, y);
+    return nullptr;
+}
+
+
+template <>
+algebraic_p arithmetic::non_numeric<rem>(algebraic_r x, algebraic_r y)
+// ----------------------------------------------------------------------------
+//   Deal with modulo non-numerical cases
+// ----------------------------------------------------------------------------
+{
+    return optimize<rem>(x, y);
+}
+
+
 bool rem::integer_ok(object::id &/* xt */, object::id &/* yt */,
                             ularge &xv, ularge &yv)
 // ----------------------------------------------------------------------------
@@ -852,6 +929,7 @@ bool rem::integer_ok(object::id &/* xt */, object::id &/* yt */,
     // Check divide by zero
     if (yv == 0)
     {
+        ASSERT(!"integer rem divide by zero, optimize<div> failed");
         rt.zero_divide_error();
         return false;
     }
@@ -897,28 +975,11 @@ bool rem::complex_ok(complex_g &, complex_g &)
 
 
 template <>
-algebraic_p arithmetic::non_numeric<struct pow>(algebraic_r x, algebraic_r y)
+algebraic_p arithmetic::optimize<struct pow>(algebraic_r x, algebraic_r y)
 // ----------------------------------------------------------------------------
-//   Deal with non-numerical data types for multiplication
+//    Optimizations for X^Y
 // ----------------------------------------------------------------------------
 {
-    if (!x || !y)
-        return nullptr;
-
-    // Deal with the case of units
-    if (unit_p xu = unit::get(x))
-    {
-        algebraic_g xv = xu->value();
-        algebraic_g xe = xu->uexpr();
-        xv = pow(xv, y);
-        {
-            save<bool> umode(unit::mode, false);
-            save<bool> ufact(unit::factoring, true);
-            xe = pow(xe, y);
-        }
-        return unit::simple(xv, xe);
-    }
-
     // Check 0^0 (but check compatibility flag, since HPs return 1)
     // See https://www.hpcalc.org/hp48/docs/faq/48faq-5.html#ss5.2 as
     // to rationale on why HP calculators compute 0^0 as 1.
@@ -962,6 +1023,33 @@ algebraic_p arithmetic::non_numeric<struct pow>(algebraic_r x, algebraic_r y)
 
     // Not yet implemented
     return nullptr;
+}
+
+
+template <>
+algebraic_p arithmetic::non_numeric<struct pow>(algebraic_r x, algebraic_r y)
+// ----------------------------------------------------------------------------
+//   Deal with non-numerical data types for multiplication
+// ----------------------------------------------------------------------------
+{
+    if (!x || !y)
+        return nullptr;
+
+    // Deal with the case of units
+    if (unit_p xu = unit::get(x))
+    {
+        algebraic_g xv = xu->value();
+        algebraic_g xe = xu->uexpr();
+        xv = pow(xv, y);
+        {
+            save<bool> umode(unit::mode, false);
+            save<bool> ufact(unit::factoring, true);
+            xe = pow(xe, y);
+        }
+        return unit::simple(xv, xe);
+    }
+
+    return optimize<struct pow>(x, y);
 }
 
 
@@ -1119,13 +1207,21 @@ bool atan2::complex_ok(complex_g &, complex_g &)
 
 
 template <>
-algebraic_p arithmetic::non_numeric<struct atan2>(algebraic_r y, algebraic_r x)
+algebraic_p arithmetic::optimize<struct atan2>(algebraic_r y, algebraic_r x)
 // ----------------------------------------------------------------------------
 //   Deal with various exact angle optimizations for atan2
 // ----------------------------------------------------------------------------
 //   Note that the first argument to atan2 is traditionally called y,
 //   and represents the imaginary axis for complex numbers
 {
+    if (Settings.SetAngleUnits() && x->is_real() && y->is_real())
+    {
+        settings::SaveSetAngleUnits save(false);
+        algebraic_g r = atan2::evaluate(y, x);
+        add_angle(r);
+        return r;
+    }
+
     id angle_mode = Settings.AngleMode();
     if (angle_mode != object::ID_Rad)
     {
@@ -1150,6 +1246,18 @@ algebraic_p arithmetic::non_numeric<struct atan2>(algebraic_r y, algebraic_r x)
         }
     }
     return nullptr;
+}
+
+
+template <>
+algebraic_p arithmetic::non_numeric<struct atan2>(algebraic_r x, algebraic_r y)
+// ----------------------------------------------------------------------------
+//   Deal with various exact angle optimizations for atan2
+// ----------------------------------------------------------------------------
+//   Note that the first argument to atan2 is traditionally called y,
+//   and represents the imaginary axis for complex numbers
+{
+    return optimize<struct atan2>(x, y);
 }
 
 
@@ -1184,15 +1292,6 @@ algebraic_p arithmetic::evaluate(id          op,
 
     id xt = x->type();
     id yt = y->type();
-
-    if (op == ID_atan2 && Settings.SetAngleUnits() &&
-        is_real(xt) && is_real(yt))
-    {
-        settings::SaveSetAngleUnits save(false);
-        x = evaluate(op, xr, yr, ops);
-        add_angle(x);
-        return x;
-    }
 
     // All non-numeric cases, e.g. string concatenation
     // Must come first, e.g. for optimization of X^3 or list + tagged object
@@ -1521,8 +1620,15 @@ algebraic_p arithmetic::evaluate(algebraic_r x, algebraic_r y)
     if (!x || !y)
         return nullptr;
     if (Op::target)
+    {
         if (arithmetic_fn code = Op::target(x, y))
-            return code(x, y);
+        {
+            if (algebraic_p result = optimize<Op>(x, y))
+                return result;
+            else
+                return code(x, y);
+        }
+    }
     return evaluate(Op::static_id, x, y, Ops<Op>());
 }
 
@@ -1534,6 +1640,24 @@ object::result arithmetic::evaluate()
 // ----------------------------------------------------------------------------
 {
     return evaluate(Op::static_id, Ops<Op>());
+}
+
+
+algebraic_p arithmetic::zero_divide(algebraic_r num, algebraic_r den)
+// ----------------------------------------------------------------------------
+//   Deal with zero divide according to current configuration
+// ----------------------------------------------------------------------------
+{
+    ASSERT(den && den->is_zero(false));
+    if (num && num->is_zero(false))
+    {
+        if (Settings.ZeroOverZeroIsUndefined())
+            return rt.undefined_result();
+        bool negative = num->is_negative(false) != den->is_negative(false);
+        return rt.zero_divide(negative);
+    }
+    bool negative = (num && num->is_negative(false)) != den->is_negative(false);
+    return rt.zero_divide(negative);
 }
 
 
@@ -1650,8 +1774,8 @@ COMMAND_BODY(Div2)
 //   Process the Div2 command
 // ----------------------------------------------------------------------------
 {
-    object_p xo = rt.stack(0);
-    object_p yo = rt.stack(1);
+    object_p xo = strip(rt.stack(0));
+    object_p yo = strip(rt.stack(1));
     if (!xo || !yo)
         return ERROR;
 
