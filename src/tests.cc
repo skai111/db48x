@@ -735,12 +735,12 @@ void tests::keyboard_entry()
     test(CLEAR, special).editor(special);
 
     step("Separators");
-    cstring seps = "\"Hello [A] (B) {C} 'Test' D";
+    cstring seps = "\"Hello [A] (B) {C} 'Test' D\"";
     test(CLEAR, seps).editor(seps);
 
     step("Separators with auto-spacing");
     cstring seps2     = "{}()[]";
-    cstring seps2auto = "{ } () []";
+    cstring seps2auto = "{} () []";
     test(CLEAR, seps2).editor(seps2auto);
 
     step("Key repeat");
@@ -7337,15 +7337,15 @@ void tests::tagged_objects()
     step("Parsing tagged integer");
     test(CLEAR, ":ABC:123", ENTER)
         .type(ID_tag)
-        .expect("ABC :123");
+        .expect("ABC:123");
     step("Parsing tagged fraction");
     test(CLEAR, ":Label:123/456", ENTER)
         .type(ID_tag)
-        .expect("Label :⁴¹/₁₅₂");
+        .expect("Label:⁴¹/₁₅₂");
     step("Parsing nested label");
     test(CLEAR, ":Nested::Label:123.456", ENTER)
         .type(ID_tag)
-        .expect("Nested :Label :123.456");
+        .expect("Nested:Label:123.456");
 
     step("Arithmetic");
     test(CLEAR, ":First:1 :Second:2 +", ENTER)
@@ -7371,7 +7371,7 @@ void tests::tagged_objects()
     step("FromTag");
     test(CLEAR, ":Hello:123 FromTag", ENTER)
         .type(ID_text)
-        .expect("\"Hello \"")
+        .expect("\"Hello\"")
         .test("Drop", ENTER)
         .expect("123");
 
@@ -7381,7 +7381,7 @@ void tests::tagged_objects()
 
     step("Tagged unit")
         .test(CLEAR, ":ABC:1_kg", ENTER)
-        .expect("ABC :1 kg");
+        .expect("ABC:1 kg");
     step("Tagged unit (without space)")
         .test(CLEAR, ALPHA, KEY0, A, B, C, NOSHIFT, DOWN,
               KEY1, ID_UnitsMenu, F1,
@@ -7474,9 +7474,9 @@ void tests::cycle_test()
     step("Convert program to list")
         .test(O).expect("{ 1 2 3 }");
     step("Tags are preserved, cycle applies to tagged value")
-        .test(CLEAR, ":ABC:1.25", ENTER).expect("ABC :1.25")
-        .test(O).expect("ABC :1 ¹/₄")
-        .test(O).expect("ABC :1.25");
+        .test(CLEAR, ":ABC:1.25", ENTER).expect("ABC:1.25")
+        .test(O).expect("ABC:1 ¹/₄")
+        .test(O).expect("ABC:1.25");
     step("Cycle unit orders of magnitude up (as fractions)")
         .test(CLEAR, "1_kN", ENTER).expect("1 kN")
         .test(O).expect("¹/₁ ₀₀₀ MN")
@@ -10053,26 +10053,26 @@ void tests::object_structure()
         .test(CLEAR, LSHIFT, RUNSTOP, "A B + 5 *", ENTER, ID_ObjectMenu, ID_Explode)
         .got("5", "×", "5", "+", "B", "A");
     step("Obj→ on expression")
-        .test(CLEAR, LSHIFT, "'5*(A+B)'", ENTER, ID_ObjectMenu, ID_Explode)
+        .test(CLEAR, "'5*(A+B)'", ENTER, ID_ObjectMenu, ID_Explode)
         .got("5", "×", "+", "B", "A", "5");
     step("Obj→ on list")
-        .test(CLEAR, LSHIFT, "{ A B + 5 * }", ENTER, ID_ObjectMenu, ID_Explode)
+        .test(CLEAR, "{ A B + 5 * }", ENTER, ID_ObjectMenu, ID_Explode)
         .got("5", "×", "5", "+", "B", "A");
     step("Obj→ on user-defined function call")
-        .test(CLEAR, LSHIFT, "'F(A+B;C*D;E-F)'", ENTER, ID_ObjectMenu, ID_Explode)
+        .test(CLEAR, "'F(A+B;C*D;E-F)'", ENTER, ID_ObjectMenu, ID_Explode)
         .expect("1")
         .test(BSP)
         .expect("'F(A+B;C·D;E-F)'")
         .test(F4)
         .got("[ F 'A+B' 'C·D' 'E-F' ]");
     step("Obj→ on vector")
-        .test(CLEAR, LSHIFT, "[a b c d]", ENTER, ID_ObjectMenu, ID_Explode)
+        .test(CLEAR, "[a b c d]", ENTER, ID_ObjectMenu, ID_Explode)
         .got("{ 4 }", "d", "c", "b", "a");
     step("Obj→ on matrix")
-        .test(CLEAR, LSHIFT, "[[a b][c d]]", ENTER, ID_ObjectMenu, ID_Explode)
+        .test(CLEAR, "[[a b][c d]]", ENTER, ID_ObjectMenu, ID_Explode)
         .got("{ 2 2 }", "d", "c", "b", "a");
     step("Obj→ on polynomial")
-        .test(CLEAR, LSHIFT, "'X-Y+3*(X+Y^2)' →Poly", ENTER)
+        .test(CLEAR, "'X-Y+3*(X+Y^2)' →Poly", ENTER)
         .expect("4·X-Y+3·Y↑2")
         .test(ID_ObjectMenu, ID_Explode)
         .expect("'4·X+-1·Y+3·Y²'")
@@ -10086,7 +10086,7 @@ void tests::object_structure()
         .got("2", "1");
     step("Obj→ on tags")
         .test(CLEAR, ":abc:1.5", ENTER, ID_ObjectMenu, ID_Explode)
-        .got("\"abc \"", "1.5");
+        .got("\"abc\"", "1.5");
 }
 
 
@@ -11549,6 +11549,7 @@ tests &tests::clear(uint extrawait)
 //   Make sure we are in a clean state
 // ----------------------------------------------------------------------------
 {
+    flush();
     nokeys(extrawait);
     rpl_command(CLEAR, extrawait);
     noerror(extrawait);
@@ -11565,6 +11566,7 @@ tests &tests::clear_error(uint extrawait)
 //   - Having a beep may delay how long it takes for screen refresh to show up
 //   So for that reason, we send a special key to
 {
+    flush();
     nokeys(extrawait);
     rpl_command(CLEARERR, extrawait);
     noerror(extrawait);
@@ -11763,7 +11765,6 @@ tests &tests::itest(tests::key k, bool release)
         longpress = true; // Next key will be a long press
         return *this;
 
-
     default: break;
     }
 
@@ -11893,12 +11894,52 @@ tests &tests::itest(char c)
 }
 
 
+void tests::end(unicode closer)
+// ----------------------------------------------------------------------------
+//   Add a terminator to the list of closing characters
+// ----------------------------------------------------------------------------
+{
+    terminators.push_back(closer);
+}
+
+
+bool tests::had(unicode closer)
+// ----------------------------------------------------------------------------
+//   Check that we have the expected terminator, if so just skip right
+// ----------------------------------------------------------------------------
+{
+    if (terminators.size() && terminators.back() == closer)
+    {
+        itest(NOSHIFT, DOWN);
+        terminators.pop_back();
+        return true;
+    }
+    return false;
+}
+
+
+void tests::flush()
+// ----------------------------------------------------------------------------
+//  Remove the terminator we did not use
+// ----------------------------------------------------------------------------
+{
+    if (size_t sz = terminators.size())
+    {
+        terminators.clear();
+        for (size_t i = 0; i < sz; i++)
+            itest(LSHIFT, BSP);
+    }
+}
+
+
 tests &tests::itest(cstring txt)
 // ----------------------------------------------------------------------------
 //   Type the string on the calculator's keyboard
 // ----------------------------------------------------------------------------
 {
     utf8 u = utf8(txt);
+    shift(false);
+    xshift(false);
 
     while (*u)
     {
@@ -11908,12 +11949,11 @@ tests &tests::itest(cstring txt)
         nokeys();
 
         bool alpha  = ui.alpha;
+        bool lower  = ui.lowercase;
         bool shift  = false;
         bool xshift = false;
-        bool lower  = ui.lowercase;
         key  k      = RELEASE;
         key  fn     = RELEASE;
-        bool del    = false;
         bool bsp    = false;
 
         switch(c)
@@ -11991,24 +12031,33 @@ tests &tests::itest(cstring txt)
         case '.': k = DOT;          shift = alpha; break;
         case ',': k = DOT;          alpha = true;  break;
         case ' ': k = RUNSTOP;      alpha = true;  break;
-        case '?': k = KEY7;         alpha = true; xshift = true; break;
-        case '!': k = ADD;          alpha = true; xshift = true; break;
+        case '?': k = KEY7;         alpha = true; xshift = true;  break;
+        case '!': k = ADD;          alpha = true; xshift = true;  break;
         case '_': k = SUB;          alpha = true;  break;
-        case '%': k = RCL;          alpha = true;  shift = true; break;
-        case ':': k = KEY0;         alpha = true;  bsp   = true; break;
+        case '%': k = RCL;          alpha = true;  shift = true;  break;
+        case ':': if (had(':')) continue; end(':');
+                  k = KEY0;         alpha = true;                 break;
         case ';': k = KEY0;         alpha = true; xshift = true;  break;
         case '<': k = SIN;          alpha = true;  shift = true;  break;
         case '=': k = COS;          alpha = true;  shift = true;  break;
         case '>': k = TAN;          alpha = true;  shift = true;  break;
         case '^': k = INV;          alpha = true;  shift = true;  break;
-        case '(': k = XEQ;          alpha = true;  shift = true;  del = true; break;
-        case ')': k = XEQ;          alpha = true;  shift = true;  bsp = true; break;
-        case '[': k = KEY9;         alpha = false; shift = true;  del = true; break;
-        case ']': k = KEY9;         alpha = false; shift = true;  bsp = true; break;
-        case '{': k = RUNSTOP;      alpha = true; xshift = true;  del = true; break;
-        case '}': k = RUNSTOP;      alpha = true; xshift = true;  bsp = true; break;
-        case '"': k = ENTER;        alpha = true; xshift = true;  bsp = true; break;
-        case '\'': k = XEQ;         alpha = true; xshift = true;  bsp = true; break;
+        case '(': end(')');
+                  k = XEQ;          alpha = true;  shift = true;  break;
+        case ')': if (had(')')) continue;
+                  k = XEQ;          alpha = true;  shift = true;  bsp = true; break;
+        case '[': end(']');
+                  k = KEY9;         xshift = alpha; shift = !alpha; break;
+        case ']': if (had(']')) continue;
+                  k = KEY9;         xshift = alpha; shift = !alpha;  bsp = true; break;
+        case '{': end('}');
+                  k = RUNSTOP;      xshift = true; break;
+        case '}': if (had('}')) continue;
+                  k = RUNSTOP;      xshift = true;  bsp = true; break;
+        case '"': if (had('"')) continue; end('"');
+                  k = ENTER;        xshift = true; break;
+        case '\'':if (had('\'')) continue; end('\'');
+                  k = XEQ;          xshift = alpha; break;
         case '&': k = KEY1;         alpha = true; xshift = true; break;
         case '@': k = KEY2;         alpha = true; xshift = true; break;
         case '$': k = KEY3;         alpha = true; xshift = true; break;
@@ -12016,8 +12065,10 @@ tests &tests::itest(cstring txt)
         case '|': k = KEY6;         alpha = true; xshift = true; break;
         case '\\': k = ADD;         alpha = true; xshift = true; break;
         case '\n': k = BSP;         alpha = true; xshift = true; break;
-        case L'«': k = RUNSTOP;     alpha = false; shift = true; del = true; break;
-        case L'»': k = RUNSTOP;     alpha = false; shift = true; bsp = true; break;
+        case L'«': end(L'»');
+                   k = RUNSTOP;     shift = true; break;
+        case L'»': if (had(L'»')) continue;
+                   k = RUNSTOP;     shift = true; bsp = true; break;
         case L'▶': k = STO;         alpha = true;  shift = true; break;
         case L'→': k = STO;         alpha = true; xshift = true; break;
         case L'←': k = H;           alpha = true; xshift = true; break;
@@ -12165,8 +12216,6 @@ tests &tests::itest(cstring txt)
             // If we have a pair, like (), check if we need bsp or del
             if (bsp)
                 itest(BSP, DOWN);
-            else if (del)
-                itest(SHIFT, BSP);
 
             // If we have a follow-up key, use that
             if (fn != RELEASE)

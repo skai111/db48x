@@ -360,6 +360,11 @@ public:
         return itest(first).itest(args...);
     }
 
+    // Accelerate processing of terminators
+    void   end(unicode closer);
+    bool   had(unicode closer);
+    void   flush();
+
     tests &rpl_command(uint command, uint extrawait = 0);
     tests &clear(uint extrawait = 0);
     tests &keysync(uint extrawait = 0);
@@ -467,6 +472,7 @@ public:
     bool                 longpress;
     std::vector<failure> failures;
     std::string          explanation;
+    std::vector<unicode> terminators;
 
   public:
     static uint          default_wait_time;
