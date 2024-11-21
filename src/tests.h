@@ -36,6 +36,7 @@
 #include "object.h"
 #include "recorder.h"
 #include "runtime.h"
+#include "user_interface.h"
 #include "target.h"
 
 #include <sstream>
@@ -302,6 +303,12 @@ public:
         uint length;
     };
 
+    struct DIRECT
+    {
+        DIRECT(std::string text): text(text) {}
+        std::string text;
+    };
+
     struct KEY_DELAY
     {
         KEY_DELAY(uint kd): key_delay(kd) {}
@@ -331,6 +338,7 @@ public:
     tests &itest(char c);
     tests &itest(cstring alpha);
     tests &itest(WAIT delay);
+    tests &itest(DIRECT direct);
 
     template <typename... Args>
     tests &itest(LENGTHY length, Args... args)

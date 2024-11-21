@@ -6245,7 +6245,7 @@ void tests::eqnlib_parsing()
         if (eq[i+1])
         {
             istep(eq[i]);
-            test(CLEAR, eq[i+1], ENTER).noerror();
+            test(CLEAR, DIRECT(eq[i+1]), ENTER).noerror();
         }
         else
         {
@@ -8178,26 +8178,26 @@ void tests::flags_by_name()
     BEGIN(sysflags);
 
 #define ID(id)
-#define FLAG(Enable, Disable)                                   \
-    step("Clearing flag " #Disable " (default)")                \
-        .test(CLEAR, #Disable, ENTER).noerror()                 \
-        .test("'" #Enable "' RCL", ENTER).expect("False")       \
-        .test("'" #Disable "' RCL", ENTER).expect("True");      \
-    step("Setting flag " #Enable)                               \
-        .test(CLEAR, #Enable, ENTER).noerror()                  \
-        .test("'" #Enable "' RCL", ENTER).expect("True")        \
-        .test("'" #Disable "' RCL", ENTER).expect("False");     \
-    step("Purging flag " #Enable " (return to default)")        \
-        .test(CLEAR, "'" #Disable "' PURGE", ENTER).noerror()   \
-        .test("'" #Enable "' RCL", ENTER).expect("False")       \
-        .test("'" #Disable "' RCL", ENTER).expect("True");      \
-    step("Purging flag " #Disable " (return to default)")       \
-        .test(CLEAR, "'" #Enable "' PURGE", ENTER).noerror()    \
-        .test("'" #Enable "' RCL", ENTER).expect("False")       \
-        .test("'" #Disable "' RCL", ENTER).expect("True");
-#define SETTING(Name, Low, High, Init)                          \
-    step("Purging " #Name " to revert it to default " #Init)    \
-        .test(CLEAR, "'" #Name "' PURGE", ENTER).noerror();
+#define FLAG(Enable, Disable)                                           \
+    step("Clearing flag " #Disable " (default)")                        \
+        .test(CLEAR, DIRECT(#Disable), ENTER).noerror()                 \
+        .test(DIRECT("'" #Enable "' RCL"), ENTER).expect("False")       \
+        .test(DIRECT("'" #Disable "' RCL"), ENTER).expect("True");      \
+    step("Setting flag " #Enable)                                       \
+        .test(CLEAR, DIRECT(#Enable), ENTER).noerror()                  \
+        .test(DIRECT("'" #Enable "' RCL"), ENTER).expect("True")        \
+        .test(DIRECT("'" #Disable "' RCL"), ENTER).expect("False");     \
+    step("Purging flag " #Enable " (return to default)")                \
+        .test(CLEAR, DIRECT("'" #Disable "' PURGE"), ENTER).noerror()   \
+        .test(DIRECT("'" #Enable "' RCL"), ENTER).expect("False")       \
+        .test(DIRECT("'" #Disable "' RCL"), ENTER).expect("True");      \
+    step("Purging flag " #Disable " (return to default)")               \
+        .test(CLEAR, DIRECT("'" #Enable "' PURGE"), ENTER).noerror()    \
+        .test(DIRECT("'" #Enable "' RCL"), ENTER).expect("False")       \
+        .test(DIRECT("'" #Disable "' RCL"), ENTER).expect("True");
+#define SETTING(Name, Low, High, Init)                                  \
+    step("Purging " #Name " to revert it to default " #Init)            \
+        .test(CLEAR, DIRECT("'" #Name "' PURGE"), ENTER).noerror();
 #include "ids.tbl"
 
     step("Clear DebugOnError for testing")
@@ -8216,10 +8216,10 @@ void tests::settings_by_name()
 #define FLAG(Enable, Disable)
 #define SETTING(Name, Low, High, Init)                  \
     step("Getting " #Name " current value")             \
-        .test("'" #Name "' RCL", ENTER)                 \
+        .test(DIRECT("'" #Name "' RCL"), ENTER)         \
         .noerror();                                     \
     step("Setting " #Name " to its current value")      \
-        .test("" #Name "", ENTER)                       \
+        .test(DIRECT("" #Name ""), ENTER)               \
         .noerror();
 #include "ids.tbl"
 }
@@ -8238,7 +8238,13 @@ void tests::parsing_commands_by_name()
         if (name)                                                       \
         {                                                               \
             step("Parsing " #name " for " #ty);                         \
-            test(CLEAR, "{ ", (cstring) name, " } 1 GET", ENTER)        \
+            test(CLEAR,                                                 \
+                 DIRECT("{ " + std::string(name) + " } 1 GET"),         \
+                 ENTER)                                                 \
+                .type(ID_##ty);                                         \
+            test(CLEAR,                                                 \
+                 DIRECT("\"{ \" " #name " + \" }\" + Str→ 1 GET"),      \
+                 ENTER)                                                 \
                 .type(ID_##ty);                                         \
         }                                                               \
     }
@@ -10215,7 +10221,7 @@ void tests::check_help_examples()
         }
 
         if (testing && c != '`')
-            itest(cstring(ubuf));
+            itest(DIRECT(cstring(ubuf)));
 
         if (c == open[opencheck])
         {
@@ -12217,6 +12223,18 @@ tests &tests::itest(tests::WAIT delay)
     sys_delay(delay.delay);
     return *this;
 }
+
+
+tests &tests::itest(tests::DIRECT direct)
+// ----------------------------------------------------------------------------
+//   Insert some text directly into the editor
+// ----------------------------------------------------------------------------
+{
+    nokeys(2000);
+    ui.insert(utf8(direct.text.c_str()), direct.text.size(), ui.TEXT);
+    return *this;
+}
+
 
 
 // ============================================================================
