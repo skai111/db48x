@@ -795,6 +795,7 @@ array_p array::invert() const
             goto err;
         }
 
+        cleaner     purge;
         size_t      n   = cx;
         size_t      pt  = n * n;    // n temporary elements to save diagonal
         size_t      pm  = 2 * pt;
@@ -803,6 +804,7 @@ array_p array::invert() const
         algebraic_g tot;
         algebraic_g one = integer::make(1);
         algebraic_g zero = integer::make(0);
+        algebraic_g aa, ca, mika, mjka;
 
         // Create an identity matrix of the right size
         for (size_t i = 0; i < n; i++)
@@ -819,13 +821,13 @@ array_p array::invert() const
                 goto err;
 
             // Find the index of first non-zero element
-            bool zero = true;
+            bool   zero = true;
             size_t index;
 
             record(matrix, "Row %u", i);
             for (index = i; zero && index < n; index++)
             {
-                size_t ix = index * n + i;
+                size_t   ix  = index * n + i;
                 object_p xij = rt.stack(pm + ~ix);
                 if (!xij)
                     goto err;
@@ -863,7 +865,6 @@ array_p array::invert() const
                             goto err;
 
                         size_t p = mat ? pt : pm;
-
                         object_p a = rt.stack(p + ~oa);
                         object_p b = rt.stack(p + ~ob);
                         rt.stack(p + ~oa, b);
@@ -883,17 +884,18 @@ array_p array::invert() const
             }
 
             // Fetch 'a', which we now know to be non-zero
-            size_t oii = i * n + i;
-            object_p a = rt.stack(pm + ~oii);
+            size_t   oii = i * n + i;
+            object_p a   = rt.stack(pm + ~oii);
             record(matrix, "m[%u,%u]     a=%t", i, i, a);
             if (!a)
                 goto err;
-            algebraic_g aa = a->as_algebraic();
+            aa = a->as_algebraic();
             if (!aa)
                 goto err;
 
             // Loop below row i to compute r[j] = r[j] * a - r[i] * c
             record(matrix, "Zeroing sub-diagonals below %u", i);
+            cleaner purge;
             for (size_t j = i + 1; j < n; j++)
             {
                 // Fetch value on diagonal and in next row
@@ -902,7 +904,7 @@ array_p array::invert() const
                 record(matrix, "m[%u,%u]     c=%t", j, i, c);
                 if (!c)
                     goto err;
-                algebraic_g ca = c->as_algebraic();
+                ca = c->as_algebraic();
                 if (!ca)
                     goto err;
 
@@ -915,18 +917,19 @@ array_p array::invert() const
                     // We don't bother computing r[j] below i, they are 0
                     for (size_t k = mat ? 0 : i; k < n; k++)
                     {
-                        size_t ojk = j * n + k;
-                        size_t oik = i * n + k;
-
+                        cleaner  purge;
+                        size_t   ojk = j * n + k;
+                        size_t   oik = i * n + k;
                         object_p mjk = rt.stack(p + ~ojk);
                         object_p mik = rt.stack(p + ~oik);
                         if (!mjk || !mik)
                             goto err;
-                        algebraic_g mjka = mjk->as_algebraic();
-                        algebraic_g mika = mik->as_algebraic();
+                        mjka = mjk->as_algebraic();
+                        mika = mik->as_algebraic();
                         mjka = aa * mjka - ca * mika;
                         if (!mjka)
                             goto err;
+                        mjka = purge(mjka);
                         rt.stack(p + ~ojk, +mjka);
                         record(matrix, "%+s[%u,%u] is now %t",
                                mat ? "t" : "m", j, k, +mjka);
@@ -943,14 +946,16 @@ array_p array::invert() const
                 size_t p = mat ? pt : pm;
                 for (size_t k = mat ? 0 : i + 1; k < n; k++)
                 {
-                    size_t oik = i * n + k;
+                    cleaner purge;
+                    size_t   oik = i * n + k;
                     object_p mik = rt.stack(p + ~oik);
                     if (!mik)
                         goto err;
-                    algebraic_g mika = mik->as_algebraic();
+                    mika = mik->as_algebraic();
                     if (!mika)
                         goto err;
                     mika = mika / aa;
+                    mika = purge(mika);
                     rt.stack(p + ~oik, +mika);
                 }
             }
@@ -963,8 +968,8 @@ array_p array::invert() const
                 object_p z = rt.stack(pm + ~oz);
                 if (!z)
                     goto err;
-                algebraic_g za = z->as_algebraic();
-                if (!za)
+                ca = z->as_algebraic();
+                if (!ca)
                     goto err;
 
                 // This is only needed on the right matrix
@@ -976,17 +981,19 @@ array_p array::invert() const
                     size_t p = mat ? pt : pm;
                     for (size_t k = mat ? 0 : i; k < n; k++)
                     {
-                        size_t oik = i * n + k;
-                        size_t ojk = j * n + k;
+                        cleaner  purge;
+                        size_t   oik = i * n + k;
+                        size_t   ojk = j * n + k;
                         object_p mik = rt.stack(p + ~oik);
                         object_p mjk = rt.stack(p + ~ojk);
                         if (!mik || !mjk)
                             goto err;
-                        algebraic_g mika = mik->as_algebraic();
-                        algebraic_g mjka = mjk->as_algebraic();
+                        mika = mik->as_algebraic();
+                        mjka = mjk->as_algebraic();
                         if (!mika || !mjka)
                             goto err;
-                        mjka = mjka  - za * mika;
+                        mjka = mjka  - ca * mika;
+                        mjka = purge(mjka);
                         rt.stack(p + ~ojk, +mjka);
                     }
                 }
@@ -1020,6 +1027,8 @@ array_p array::invert() const
         // Return result
         rt.drop(rt.depth() - depth);
         object_p inv = list::make(atype, sr.scratch(), sr.growth());
+        sr.clear();
+        inv = purge(inv);
         record(matrix, "Result inv=%t", inv);
         return array_p(inv);
     }
