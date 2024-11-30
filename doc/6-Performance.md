@@ -321,14 +321,11 @@ After `cleaner`:
 |                 2500ms | 5218| 5318|  446|
 
 
-
-<!--- !DMNONE --->
-
 ## Matrix multiplication speed comparison across models and software versions
 Timings on matrix multiplication across different calculator models.
-MAtC = MatA * MatB.
+MatC = MatA * MatB.
 MatA and MatB are medium matrix size of dimension [25x25].
-Both matrix are pre-generated using a random generator, each element is forced to floating point by equivalent of  (-->Num(Ran#))/(-->Num(Ran#)). 
+Both matrix are pre-generated using a random generator, each element is forced to floating point by equivalent of  (-->Num(Ran#))/(-->Num(Ran#)). Furthermore, numerical arrays are used for HP48GX and HP50g.
 Garbage collection is done prior to each test case, (LastX cleared/minimized prior to start), and result dropped to avoid spending time on displaying it.
  
 All timings in seconds.Typical lowest runtime in 3 runs.
@@ -346,7 +343,7 @@ All timings in seconds.Typical lowest runtime in 3 runs.
 | DM42n Battery |  1.87   | DB50X 0.8.6-10 |  HwFP  5 digits               |
 | DM42n USB     |  0.67   | DB50X 0.8.6-10 |  HwFP 15 digits               |
 | DM42n Battery |  2.33   | DB50X 0.8.6-10 |  HwFP 15 digits               |
-| DM42n USB     |  1.15   | DB50X 0.8.6-10 |  24 digit                     | 
+| DM42n USB     |  1.15   | DB50X 0.8.6-10 |  24 digits                     | 
 | DM42n Battery |  4.16   | DB50X 0.8.6-10 |  24 digits                    | 
 | DM42n USB     |  1.57   | DB50X 0.8.6-10 |  34 digits                    | 
 | DM42n Battery |  5.48   | DB50X 0.8.6-10 |  34 digits                    | 
@@ -355,5 +352,7 @@ All timings in seconds.Typical lowest runtime in 3 runs.
 a) matrix numerical only library in HPGCC3, using binary double, equiv. to 15-16 
    decimal digits, calculator overclocked to 120 MHz.   
 b) almost all time spent in memory operations and GC.   
-c) 400 random bits used for each ran# function.    
+c) 400 random bits used for ran# function.    
+
+<!--- !DMNONE --->
 
